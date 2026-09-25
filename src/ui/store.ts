@@ -6,12 +6,13 @@ import type { Difficulty } from "../sim/tuning.ts";
 import type { Stats } from "../sim/game.ts";
 import type { WeaponId } from "../combat/weapons.ts";
 
-export type RadbroId = "652" | "4764" | "2564" | "723";
+export type RadbroId = "652" | "4764" | "2564" | "723" | "3171";
 export const RADBROS: Array<{ id: RadbroId; name: string; blurb: string; color: string }> = [
   { id: "652", name: "#652", blurb: "the original. he has been here before.", color: "#ff3d7f" },
   { id: "4764", name: "#4764", blurb: "brought a katana to a gunfight. also guns.", color: "#3ff0ff" },
   { id: "2564", name: "#2564", blurb: "GHOST. you won't see him. they won't either.", color: "#b8c4ff" },
   { id: "723", name: "#723", blurb: "cowboy. this street ain't big enough.", color: "#ffb03f" },
+  { id: "3171", name: "#3171", blurb: "wears a halo. isn't one.", color: "#ffdc4a" },
 ];
 
 export type Screen = "title" | "loading" | "cutscene" | "play" | "paused" | "results";
