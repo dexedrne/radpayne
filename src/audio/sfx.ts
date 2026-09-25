@@ -1,14 +1,63 @@
-// Procedural SFX on the shared engine (no files yet; generated sounds replace these later by name).
-// Everything pitches with the time scale: new one-shots play at rate 0.55 + 0.45 x timeScale and the
-// whole mix goes through a low-pass that closes in bullet time. A heartbeat loops while bullet time is
-// on; the club's bass thumps through the wall, louder near the door.
-import { engine, live, sfxOn, whenCreated, type Engine } from "./engine.ts";
+// Round-1 audio on the shared engine: the generated files in public/audio (decoded once after the
+// first gesture), a couple of small procedural blips, and the loops (rain, the club's bass through the
+// wall, the heartbeat, wet footsteps, the neon buzz, the two noir music loops).
+// Bullet time: every world sound plays at rate 0.55 + 0.45 x timeScale through a low-pass that closes
+// as time slows, running loops glide to the same rate, the music drops a little and muffles. The
+// heartbeat and the bullet-time whooshes stay at normal pitch (they are "inside his head").
+import { engine, live, sfxOn, voiceOn, whenCreated, type Engine } from "./engine.ts";
+
+/** Files under public/audio (no extension). Keys are the paths. */
+const FILES = [
+  "sfx/pistol_shot", "sfx/pistol_shot_2", "sfx/pistol_shot_3", "sfx/dry_fire", "sfx/reload_mag_out", "sfx/reload_mag_in", "sfx/reload_slide",
+  "sfx/shell_casing", "sfx/shell_casing_2", "sfx/shell_casing_3", "sfx/impact_concrete", "sfx/impact_concrete_2", "sfx/impact_metal", "sfx/impact_metal_2",
+  "sfx/impact_glass", "sfx/impact_glass_2", "sfx/impact_body", "sfx/impact_body_2", "sfx/bullet_whiz", "sfx/bullet_whiz_2", "sfx/bt_enter", "sfx/bt_exit",
+  "sfx/heartbeat_loop", "sfx/dive_whoosh", "sfx/dive_land", "sfx/dive_land_2", "sfx/footsteps_wet_loop", "sfx/copium_hiss", "sfx/rain_loop",
+  "sfx/club_bass_loop", "sfx/neon_buzz", "music/street_calm", "music/fight_tense",
+  ...["alert_1", "alert_2", "spotted_1", "cover_1", "cover_2", "reload_1", "hit_1", "hit_2"].flatMap(k => [`voices/goon_a/${k}`, `voices/goon_b/${k}`]),
+  ...["cs1_01", "cs1_02", "cs1_03", "cs1_04", "cs1_05", "tut_shoot", "tut_bullet_time", "tut_shootdodge", "tut_copium", "room_clear"].map(k => `voices/narrator/${k}`),
+] as const;
+
+const buffers = new Map<string, AudioBuffer>();
+let loading: Promise<void> | null = null;
+
+/** Decode every file once (starts on the first call after the context exists). */
+export function loadSamples(): Promise<void> {
+  if (loading) return loading;
+  loading = new Promise<void>(resolve => {
+    whenCreated(e => {
+      void Promise.all(FILES.map(async k => {
+        try {
+          const r = await fetch(`/audio/${k}.mp3`);
+          if (!r.ok) return;
+          buffers.set(k, await e.ac.decodeAudioData(await r.arrayBuffer()));
+        } catch {
+          /* a missing file is a silent sound */
+        }
+      })).then(() => resolve());
+    });
+  });
+  return loading;
+}
+
+/** Wait for the samples, at most `ms`. */
+export async function samplesReady(ms = 4000): Promise<boolean> {
+  const p = loadSamples();
+  await Promise.race([p, new Promise(r => setTimeout(r, ms))]);
+  return buffers.size > 0;
+}
+
+export function sampleDuration(k: string): number {
+  return buffers.get(k)?.duration ?? 0;
+}
+
+// ---- time scale ----------------------------------------------------------------------------------
 
 let rate = 1;
+let ts = 1;
 let slow: { filter: BiquadFilterNode; out: GainNode } | null = null;
-let heart: { gain: GainNode; timer: number } | null = null;
-let club: { gain: GainNode; filter: BiquadFilterNode; timer: number; next: number; kicks: number[] } | null = null;
+let voiceBus: BiquadFilterNode | null = null;
 
+/** World sounds go through this low-pass (it closes in bullet time). */
 function bus(e: Engine): AudioNode {
   if (!slow) {
     const filter = e.ac.createBiquadFilter();
@@ -20,35 +69,59 @@ function bus(e: Engine): AudioNode {
   }
   return slow.filter;
 }
+/** In-world voices (barks): pitched and muffled with the world, on the voice volume. */
+function vbus(e: Engine): AudioNode {
+  if (!voiceBus) {
+    voiceBus = e.ac.createBiquadFilter();
+    voiceBus.type = "lowpass";
+    voiceBus.frequency.value = 18000;
+    voiceBus.connect(e.voiceGain);
+  }
+  return voiceBus;
+}
+
+const variant = (keys: readonly string[]) => keys[Math.floor(Math.random() * keys.length)];
+
+type PlayOpts = { gain?: number; rate?: number; pan?: number; at?: number; dest?: AudioNode };
+
+/** One-shot buffer; returns the source (null when silent / not loaded). */
+function play(e: Engine, key: string, o: PlayOpts = {}): AudioBufferSourceNode | null {
+  const buf = buffers.get(key);
+  if (!buf) return null;
+  const src = e.ac.createBufferSource();
+  src.buffer = buf;
+  src.playbackRate.value = o.rate ?? rate;
+  const g = e.ac.createGain();
+  g.gain.value = o.gain ?? 1;
+  let node: AudioNode = src.connect(g);
+  if (o.pan) {
+    const p = e.ac.createStereoPanner();
+    p.pan.value = Math.max(-1, Math.min(1, o.pan));
+    node = node.connect(p);
+  }
+  node.connect(o.dest ?? bus(e));
+  src.start(o.at ?? e.ac.currentTime);
+  return src;
+}
 
 /** Called every frame by the driver with the sim's time scale. */
-export function setTimeScaleAudio(ts: number): void {
-  rate = 0.55 + 0.45 * ts;
+export function setTimeScaleAudio(timeScale: number): void {
+  ts = timeScale;
+  rate = 0.55 + 0.45 * timeScale;
   const e = live();
-  if (!e || !slow) return;
-  const f = ts >= 0.99 ? 18000 : 900 + 9000 * ts * ts;
-  slow.filter.frequency.setTargetAtTime(f, e.ac.currentTime, 0.05);
-  // the music goes muffled too
-  e.musicFilter.frequency.setTargetAtTime(ts >= 0.99 ? 16000 : 700 + 6000 * ts, e.ac.currentTime, 0.08);
+  if (!e) return;
+  const t = e.ac.currentTime;
+  if (slow) slow.filter.frequency.setTargetAtTime(timeScale >= 0.99 ? 18000 : 900 + 9000 * timeScale * timeScale, t, 0.05);
+  if (voiceBus) voiceBus.frequency.setTargetAtTime(timeScale >= 0.99 ? 18000 : 1400 + 9000 * timeScale, t, 0.05);
+  e.musicFilter.frequency.setTargetAtTime(timeScale >= 0.99 ? 16000 : 700 + 6000 * timeScale, t, 0.08);
+  for (const l of loops.values()) if (l.follow) l.src.playbackRate.setTargetAtTime(l.follow === "music" ? 0.8 + 0.2 * timeScale : rate, t, 0.12);
+  // the club's beat clock (the neon pulses on it)
+  const now = performance.now() / 1000;
+  if (clubClock.last) clubClock.pos += (now - clubClock.last) * rate;
+  clubClock.last = now;
 }
 
-function noiseBurst(e: Engine, t: number, dur: number, freq: number, q: number, gain: number, type: BiquadFilterType = "bandpass", sweepTo?: number): void {
-  const src = e.ac.createBufferSource();
-  src.buffer = e.noise;
-  src.playbackRate.value = rate;
-  src.loopStart = Math.random();
-  const f = e.ac.createBiquadFilter();
-  f.type = type;
-  f.frequency.setValueAtTime(freq * rate, t);
-  if (sweepTo) f.frequency.exponentialRampToValueAtTime(Math.max(20, sweepTo * rate), t + dur / rate);
-  f.Q.value = q;
-  const g = e.ac.createGain();
-  g.gain.setValueAtTime(gain, t);
-  g.gain.exponentialRampToValueAtTime(0.0008, t + dur / rate);
-  src.connect(f).connect(g).connect(bus(e));
-  src.start(t, Math.random() * 1.5);
-  src.stop(t + dur / rate + 0.05);
-}
+// ---- procedural blips -----------------------------------------------------------------------------
 
 function tone(e: Engine, t: number, dur: number, f0: number, f1: number, gain: number, type: OscillatorType = "sine", dest?: AudioNode): void {
   const o = e.ac.createOscillator();
@@ -64,182 +137,239 @@ function tone(e: Engine, t: number, dur: number, f0: number, f1: number, gain: n
 }
 
 /** Distance attenuation 0..1. */
-const att = (d: number) => Math.max(0.08, Math.min(1, 6 / Math.max(6, d)));
+const att = (d: number) => Math.max(0.06, Math.min(1, 7 / Math.max(7, d)));
+
+const SHOTS = ["sfx/pistol_shot", "sfx/pistol_shot_2", "sfx/pistol_shot_3"];
+const CASINGS = ["sfx/shell_casing", "sfx/shell_casing_2", "sfx/shell_casing_3"];
 
 export const sfx = {
-  shot(player: boolean, dist = 0): void {
+  shot(player: boolean, dist = 0, pan = 0): void {
     const e = sfxOn();
     if (!e) return;
-    const t = e.ac.currentTime;
-    const a = player ? 1 : 0.7 * att(dist);
-    noiseBurst(e, t, 0.16, player ? 1800 : 1300, 0.7, 0.9 * a);
-    noiseBurst(e, t, 0.35, 420, 0.5, 0.35 * a, "lowpass", 90);
-    tone(e, t, 0.12, player ? 150 : 120, 45, 0.7 * a);
+    play(e, variant(SHOTS), { gain: player ? 0.85 : 0.55 * att(dist), pan: player ? 0 : pan * 0.8, rate: rate * (player ? 1 : 0.94 + Math.random() * 0.08) });
+    // brass on the wet street a beat later
+    if (player) play(e, variant(CASINGS), { gain: 0.22, at: e.ac.currentTime + (0.28 + Math.random() * 0.2) / rate, pan: 0.3 });
   },
-  impact(surface: string, dist = 0): void {
+  impact(surface: string, dist = 0, pan = 0): void {
     const e = sfxOn();
     if (!e) return;
-    const t = e.ac.currentTime;
-    const a = 0.5 * att(dist);
-    if (surface === "metal") { tone(e, t, 0.18, 2400 + Math.random() * 800, 1400, 0.12 * a, "triangle"); noiseBurst(e, t, 0.05, 5000, 1, 0.3 * a); }
-    else noiseBurst(e, t, 0.07, 2600, 0.9, 0.45 * a);
+    const k = surface === "metal" ? ["sfx/impact_metal", "sfx/impact_metal_2"] : surface === "glass" ? ["sfx/impact_glass", "sfx/impact_glass_2"] : ["sfx/impact_concrete", "sfx/impact_concrete_2"];
+    play(e, variant(k), { gain: 0.5 * att(dist), pan });
   },
-  flesh(): void {
+  flesh(dist = 0, pan = 0): void {
     const e = sfxOn();
-    if (!e) return;
-    const t = e.ac.currentTime;
-    noiseBurst(e, t, 0.1, 600, 0.8, 0.5, "lowpass", 150);
-    tone(e, t, 0.08, 90, 50, 0.4);
+    if (e) play(e, variant(["sfx/impact_body", "sfx/impact_body_2"]), { gain: 0.7 * att(dist), pan });
   },
   kill(headshot: boolean): void {
     const e = sfxOn();
     if (!e) return;
     const t = e.ac.currentTime;
-    tone(e, t, 0.25, headshot ? 880 : 520, headshot ? 1320 : 390, 0.08, "triangle");
+    tone(e, t, 0.25, headshot ? 880 : 520, headshot ? 1320 : 390, 0.05, "triangle");
   },
   hurt(): void {
     const e = sfxOn();
     if (!e) return;
-    const t = e.ac.currentTime;
-    tone(e, t, 0.22, 70, 40, 0.8);
-    noiseBurst(e, t, 0.12, 400, 0.6, 0.4, "lowpass");
+    play(e, variant(["sfx/impact_body", "sfx/impact_body_2"]), { gain: 0.9 });
+    tone(e, e.ac.currentTime, 0.22, 70, 40, 0.6);
   },
-  reload(): void {
+  /** Mag out, mag in, slide over `dur` real seconds. */
+  reload(dur: number): void {
     const e = sfxOn();
     if (!e) return;
     const t = e.ac.currentTime;
-    for (const [dt, f] of [[0, 3200], [0.22, 2400], [0.9, 2800], [1.1, 3600]] as const) noiseBurst(e, t + dt / rate, 0.04, f, 4, 0.35);
+    play(e, "sfx/reload_mag_out", { gain: 0.6 });
+    play(e, "sfx/reload_mag_in", { gain: 0.6, at: t + dur * 0.5 });
+    play(e, "sfx/reload_slide", { gain: 0.6, at: t + dur * 0.82 });
   },
   dry(): void {
     const e = sfxOn();
-    if (e) noiseBurst(e, e.ac.currentTime, 0.03, 4200, 6, 0.3);
+    if (e) play(e, "sfx/dry_fire", { gain: 0.5 });
   },
-  whoosh(up: boolean): void {
+  bullettime(on: boolean): void {
     const e = sfxOn();
-    if (!e) return;
-    const t = e.ac.currentTime;
-    noiseBurst(e, t, 0.55, up ? 300 : 2400, 1.4, 0.35, "bandpass", up ? 2400 : 250);
-    tone(e, t, 0.6, up ? 60 : 180, up ? 180 : 45, 0.25);
+    if (e) play(e, on ? "sfx/bt_enter" : "sfx/bt_exit", { gain: 0.7, rate: 1, dest: e.sfxGain });
   },
   dodge(): void {
     const e = sfxOn();
-    if (e) noiseBurst(e, e.ac.currentTime, 0.45, 800, 1, 0.3, "bandpass", 300);
+    if (e) play(e, "sfx/dive_whoosh", { gain: 0.8, rate: 1, dest: e.sfxGain });
   },
   land(): void {
     const e = sfxOn();
-    if (!e) return;
-    const t = e.ac.currentTime;
-    tone(e, t, 0.2, 80, 40, 0.8);
-    noiseBurst(e, t, 0.15, 300, 0.7, 0.5, "lowpass");
+    if (e) play(e, variant(["sfx/dive_land", "sfx/dive_land_2"]), { gain: 0.8 });
   },
   copium(): void {
     const e = sfxOn();
-    if (!e) return;
-    const t = e.ac.currentTime;
-    for (let i = 0; i < 5; i++) noiseBurst(e, t + i * 0.045, 0.03, 5200 + i * 300, 5, 0.25);
-    tone(e, t + 0.35, 0.18, 220, 140, 0.25, "sine");
+    if (e) play(e, "sfx/copium_hiss", { gain: 0.7 });
+  },
+  whiz(pan: number): void {
+    const e = sfxOn();
+    if (e) play(e, variant(["sfx/bullet_whiz", "sfx/bullet_whiz_2"]), { gain: 0.55, pan });
   },
   pickup(): void {
     const e = sfxOn();
     if (!e) return;
     const t = e.ac.currentTime;
-    tone(e, t, 0.12, 660, 990, 0.12, "triangle");
-    tone(e, t + 0.08, 0.14, 990, 1320, 0.1, "triangle");
-  },
-  alert(): void {
-    const e = sfxOn();
-    if (e) tone(e, e.ac.currentTime, 0.18, 740, 1100, 0.05, "square");
-  },
-  clear(): void {
-    const e = sfxOn();
-    if (!e) return;
-    const t = e.ac.currentTime;
-    [392, 494, 587, 784].forEach((f, i) => tone(e, t + i * 0.09, 0.6, f, f, 0.08, "triangle"));
+    tone(e, t, 0.12, 660, 990, 0.1, "triangle");
+    tone(e, t + 0.08, 0.14, 990, 1320, 0.08, "triangle");
   },
 };
 
-/** Heartbeat loop while bullet time is on. */
-export function setHeartbeat(on: boolean): void {
+// ---- loops ----------------------------------------------------------------------------------------
+
+type Loop = { src: AudioBufferSourceNode; gain: GainNode; follow: "world" | "music" | null; filter?: BiquadFilterNode };
+const loops = new Map<string, Loop>();
+
+/** Start (once) a looping buffer at gain 0; `follow` = glide its rate with bullet time. */
+function loop(e: Engine, key: string, dest: AudioNode, follow: Loop["follow"], filter?: BiquadFilterNode): Loop | null {
+  let l = loops.get(key);
+  if (l) return l;
+  const buf = buffers.get(key);
+  if (!buf) return null;
+  const src = e.ac.createBufferSource();
+  src.buffer = buf;
+  src.loop = true;
+  src.playbackRate.value = follow === "music" ? 0.8 + 0.2 * ts : follow ? rate : 1;
+  const gain = e.ac.createGain();
+  gain.gain.value = 0;
+  if (filter) src.connect(filter).connect(gain);
+  else src.connect(gain);
+  gain.connect(dest);
+  src.start();
+  l = { src, gain, follow, filter };
+  loops.set(key, l);
+  return l;
+}
+
+function fade(l: Loop | null, to: number, tau = 0.3): void {
   const e = engine();
+  if (l && e) l.gain.gain.setTargetAtTime(to, e.ac.currentTime, tau);
+}
+
+/** Street ambience (rain + distant traffic) while in a room. */
+export function setAmbience(on: boolean): void {
+  const e = live();
   if (!e) return;
-  if (on && !heart) {
-    const gain = e.ac.createGain();
-    gain.gain.value = 0.9;
-    gain.connect(e.sfxGain);
-    const beat = () => {
-      const x = live();
-      if (!x) return;
-      const t = x.ac.currentTime;
-      tone(x, t, 0.14, 62, 40, 0.9, "sine", gain);
-      tone(x, t + 0.22, 0.16, 55, 36, 0.7, "sine", gain);
-    };
-    beat();
-    heart = { gain, timer: window.setInterval(beat, 820) };
-  } else if (!on && heart) {
-    clearInterval(heart.timer);
-    const h = heart;
-    heart = null;
-    h.gain.gain.setTargetAtTime(0, e.ac.currentTime, 0.1);
-    setTimeout(() => h.gain.disconnect(), 600);
-  }
+  fade(loop(e, "sfx/rain_loop", bus(e), "world"), on ? 0.42 : 0, 0.6);
 }
 
-/**
- * The rave's bass through the wall: a 124 bpm kick + bass behind a low-pass. `near` 0..1 = how close
- * to the club door (louder and brighter); 0 stops it.
- */
+/** Heartbeat loop while bullet time / a dive is on (normal pitch). */
+export function setHeartbeat(on: boolean): void {
+  const e = live();
+  if (!e) return;
+  fade(loop(e, "sfx/heartbeat_loop", e.sfxGain, null), on ? 0.75 : 0, on ? 0.08 : 0.25);
+}
+
+/** Wet footsteps: 0 = standing, 1 = full run. */
+export function setFootsteps(speed01: number): void {
+  const e = live();
+  if (!e) return;
+  const l = loop(e, "sfx/footsteps_wet_loop", bus(e), null);
+  fade(l, Math.min(1, speed01) * 0.35, 0.08);
+  if (l) l.src.playbackRate.setTargetAtTime(rate * (0.75 + 0.5 * speed01), e.ac.currentTime, 0.1);
+}
+
+/** The neon's hum near the club door: 0..1. */
+export function setNeonBuzz(near: number): void {
+  const e = live();
+  if (e) fade(loop(e, "sfx/neon_buzz", bus(e), "world"), near * near * 0.18, 0.3);
+}
+
+/** The rave's bass through the wall: `near` 0..1 = how close to the club door (louder, brighter). */
 export function setClubBass(near: number): void {
-  whenCreated(e => {
-    if (!club) {
-      const filter = e.ac.createBiquadFilter();
-      filter.type = "lowpass";
-      filter.frequency.value = 160;
-      const gain = e.ac.createGain();
-      gain.gain.value = 0;
-      filter.connect(gain).connect(e.musicIn);
-      const beat = 60 / 124;
-      const c = { gain, filter, timer: 0, next: e.ac.currentTime + 0.1, kicks: [] as number[] };
-      c.timer = window.setInterval(() => {
-        const x = live();
-        if (!x) return;
-        const now = x.ac.currentTime;
-        if (c.next < now) c.next = now + 0.05;
-        while (c.next < now + 0.3) {
-          const t = c.next;
-          const o = x.ac.createOscillator();
-          o.frequency.setValueAtTime(110 * rate, t);
-          o.frequency.exponentialRampToValueAtTime(42 * rate, t + 0.18 / rate);
-          const g = x.ac.createGain();
-          g.gain.setValueAtTime(1, t);
-          g.gain.exponentialRampToValueAtTime(0.001, t + 0.35 / rate);
-          o.connect(g).connect(filter);
-          o.start(t);
-          o.stop(t + 0.4 / rate);
-          c.kicks.push(t);
-          if (c.kicks.length > 8) c.kicks.shift();
-          c.next += beat / rate;
-        }
-      }, 100);
-      club = c;
-    }
-    const t = e.ac.currentTime;
-    club.gain.gain.setTargetAtTime(near * 0.9, t, 0.2);
-    club.filter.frequency.setTargetAtTime(120 + 260 * near, t, 0.2);
-  });
+  const e = live();
+  if (!e) return;
+  let l = loops.get("sfx/club_bass_loop") ?? null;
+  if (!l) {
+    const f = e.ac.createBiquadFilter();
+    f.type = "lowpass";
+    f.frequency.value = 180;
+    l = loop(e, "sfx/club_bass_loop", bus(e), "world", f);
+    if (l) { clubClock.pos = 0; clubClock.last = performance.now() / 1000; }
+  }
+  if (!l) return;
+  fade(l, near * 0.85, 0.25);
+  l.filter?.frequency.setTargetAtTime(140 + 420 * near * near, e.ac.currentTime, 0.25);
 }
 
+/** Beat clock of the bass loop (128 bpm, the kick on the beat). */
+const clubClock = { pos: 0, last: 0 };
+const BEAT = 60 / 128;
+
 /**
- * The club's kick as a light hook: 0..1, peaking on each kick the bass engine has played and decaying
- * over ~0.25 s (slower in bullet time, like the kick itself), scaled by how loud the bass is. -1 when
- * no audio is running (muted / no gesture yet), so the look falls back to its own beat.
+ * The club's kick as a light hook: 0..1, peaking on each kick of the bass loop and decaying over
+ * ~0.25 s (slower in bullet time), scaled by how loud the bass is. -1 when no audio is running
+ * (muted / no gesture yet), so the look falls back to its own beat.
  */
 export function clubPulse(): number {
+  const l = loops.get("sfx/club_bass_loop");
+  if (!live() || !l) return -1;
+  const since = clubClock.pos % BEAT;
+  const level = Math.min(1, l.gain.gain.value / 0.5);
+  return Math.exp(-since * 7) * (0.35 + 0.65 * level);
+}
+
+export type MusicCue = "calm" | "fight" | null;
+let cue: MusicCue = null;
+
+/** Noir music: calm street loop, the fight loop, or silence; crossfades. */
+export function setMusic(c: MusicCue): void {
   const e = live();
-  if (!e || !club || !club.kicks.length) return -1;
-  const now = e.ac.currentTime;
-  let last = -1;
-  for (const k of club.kicks) if (k <= now) last = k;
-  if (last < 0) return 0;
-  const level = Math.min(1, club.gain.gain.value / 0.5);
-  return Math.exp(-(now - last) * 7 * rate) * (0.35 + 0.65 * level);
+  if (!e || c === cue) return;
+  const calm = loop(e, "music/street_calm", e.musicIn, "music");
+  const fight = loop(e, "music/fight_tense", e.musicIn, "music");
+  if (!calm && !fight) return;
+  cue = c;
+  fade(calm, c === "calm" ? 0.9 : 0, c === "calm" ? 1.2 : 0.6);
+  fade(fight, c === "fight" ? 0.95 : 0, c === "fight" ? 0.35 : 1.2);
+}
+
+/** Everything in the room goes quiet (title / results). Music keeps its cue unless `music`. */
+export function stopRoomAudio(music = false): void {
+  for (const k of ["sfx/rain_loop", "sfx/club_bass_loop", "sfx/footsteps_wet_loop", "sfx/heartbeat_loop", "sfx/neon_buzz"]) fade(loops.get(k) ?? null, 0, 0.3);
+  if (music) setMusic(null);
+}
+
+// ---- voices ---------------------------------------------------------------------------------------
+
+export type GoonVoice = "goon_a" | "goon_b";
+export type BarkKind = "alert" | "spotted" | "cover" | "reload" | "hit";
+const BARKS: Record<BarkKind, string[]> = {
+  alert: ["alert_1", "alert_2"], spotted: ["spotted_1"], cover: ["cover_1", "cover_2"], reload: ["reload_1"], hit: ["hit_1", "hit_2"],
+};
+
+/** A goon's line in the world (pitched with bullet time). Returns its length in REAL seconds, 0 = silent. */
+export function bark(voice: GoonVoice, kind: BarkKind, dist: number, pan: number): number {
+  const e = voiceOn();
+  if (!e) return 0;
+  const key = `voices/${voice}/${variant(BARKS[kind])}`;
+  const src = play(e, key, { gain: 0.95 * att(dist * 0.7), pan: pan * 0.7, dest: vbus(e) });
+  return src ? (src.buffer?.duration ?? 0) / rate : 0;
+}
+
+let narrating: AudioBufferSourceNode | null = null;
+
+/**
+ * The narrator (outside time: never pitched). Dips the music under the line; returns the line's length
+ * in seconds (0 when silent or not loaded). A new line cuts the previous one.
+ */
+export function narrate(line: string): number {
+  const e = voiceOn();
+  if (!e) return 0;
+  try { narrating?.stop(); } catch { /* already ended */ }
+  const src = play(e, `voices/narrator/${line}`, { gain: 1, rate: 1, dest: e.voiceGain });
+  if (!src) return 0;
+  narrating = src;
+  const t = e.ac.currentTime, d = src.buffer!.duration;
+  e.talk.gain.cancelScheduledValues(t);
+  e.talk.gain.setTargetAtTime(0.4, t, 0.15);
+  e.talk.gain.setTargetAtTime(1, t + d, 0.4);
+  src.onended = () => { if (narrating === src) narrating = null; };
+  return d;
+}
+
+export function stopNarration(): void {
+  try { narrating?.stop(); } catch { /* ended */ }
+  narrating = null;
+  const e = engine();
+  if (e) { e.talk.gain.cancelScheduledValues(e.ac.currentTime); e.talk.gain.setTargetAtTime(1, e.ac.currentTime, 0.2); }
 }

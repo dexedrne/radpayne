@@ -81,6 +81,19 @@ export function Crosshair() {
   );
 }
 
+function Subtitle({ now }: { now: number }) {
+  const sub = useUi(s => s.subtitle);
+  if (now > sub.until || !sub.text) return null;
+  const left = sub.until - now;
+  const o = Math.min(1, left / 400);
+  return (
+    <div style={{ position: "fixed", left: 0, right: 0, bottom: "12vh", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, pointerEvents: "none", zIndex: 12, opacity: o }}>
+      <div style={{ maxWidth: "min(760px, 86vw)", textAlign: "center", color: "#f6ecd6", font: "italic 600 18px/1.35 Georgia, 'Times New Roman', serif", textShadow: "0 2px 6px #000, 0 0 2px #000", background: "rgba(0,0,0,0.28)", padding: "4px 12px" }}>{sub.text}</div>
+      {sub.hint && <div style={{ color: "#ffcf6a", font: `700 13px ${font}`, letterSpacing: 2, textShadow: "0 1px 3px #000" }}>{sub.hint}</div>}
+    </div>
+  );
+}
+
 export function Hud() {
   const h = useUi(s => s.hud);
   const now = useNow(60);
@@ -95,6 +108,7 @@ export function Hud() {
       <div style={{ position: "fixed", left: 0, right: 0, top: 0, height: h.killcam ? "11vh" : 0, background: "#000", transition: "height 0.25s", zIndex: 13, pointerEvents: "none" }} />
       <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, height: h.killcam ? "11vh" : 0, background: "#000", transition: "height 0.25s", zIndex: 13, pointerEvents: "none" }} />
       {h.killcam && <div style={{ position: "fixed", left: 0, right: 0, bottom: "3.5vh", textAlign: "center", color: "#aaa", font: `600 11px ${font}`, letterSpacing: 3, zIndex: 14, pointerEvents: "none" }}>ANY KEY TO SKIP</div>}
+      {!h.killcam && <Subtitle now={now} />}
       {!h.killcam && (
         <>
           <Crosshair />

@@ -1,28 +1,29 @@
-// The player's Radbro: RadRun's game character with its own AnimPlayer, driven from the sim.
-//   -5 actors: root placement (feet on the sim position; lying along the dive for dive / prone, a
-//      procedural forward roll), leg facing (runs the way he moves; backpedals with the walk reversed),
-//      the clip for the state.
-//   -4 animator: mixer on the player's clock (0.5x in bullet time).
-//   -3 bones: spine twist back toward the aim, both arms swing onto the crosshair point, recoil kicks,
-//      the pistols follow the hands.
+// The player's Radbro: RadRun's game character driven from the sim with the shooter clip set.
+//   -5 actors: root placement + facing, the clip for the state. The body faces the aim; the legs pick
+//      aimed forward / back / strafe clips by the move direction (a small leg yaw for diagonals, the
+//      spine twists back). Shift: Shootdodge -> Prone_Idle -> Prone_GetUp (or Land_Roll into a run).
+//   -4 animator: mixer on the player's clock (0.5x in bullet time; the dive chain runs in real time).
+//   -3 bones: spine twist + pitch toward the aim, both arms onto the crosshair point, recoil kicks,
+//      the reload layer (upper body) and the additive hit flinch; the pistols sit in the hands with the
+//      clip set's grip offsets and swing (clamped) onto the crosshair point.
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useAssetRuntime } from "react-three-game";
-import { Group, Matrix4, Quaternion, Vector3, type AnimationClip, type Bone, type Material, type Object3D } from "three";
+import { AnimationUtils, Group, LoopOnce, Quaternion, Vector3, type AnimationAction, type AnimationClip, type Bone, type Material, type Object3D } from "three";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 import type { Session } from "./session.ts";
 import { AnimPlayer } from "../anim/animPlayer.ts";
-import { AIMED, CLIPS, aimLimb, findBone, pick, rotateBoneWorld } from "../anim/rig.ts";
+import { CLIPS, UPPER_BODY, aimLimb, deathFor, findBone, pick, rotateBoneWorld } from "../anim/rig.ts";
+import { RADBRO_GRIPS } from "../anim/grips.ts";
 import { clipsPath, gunClipsPath, lightUp, modelPath } from "./characters.ts";
-import { makePistol, muzzleWorld } from "./guns.ts";
+import { aimGun, attachGun, makePistol, muzzleWorld } from "./guns.ts";
 import { useUi, type RadbroId } from "../ui/store.ts";
 import { FRAME } from "./frame.ts";
-import { DODGE, TIME } from "../sim/tuning.ts";
+import { TIME } from "../sim/tuning.ts";
+import { WEAPONS } from "../combat/weapons.ts";
 import { wrapAngle } from "../sim/aim.ts";
 
 const UP = new Vector3(0, 1, 0);
-/** Hips height of the standing Radbro (feet at 0). */
-const HIPS = 0.75;
 
 type Rig = {
   id: RadbroId;
@@ -32,6 +33,8 @@ type Rig = {
   materials: Material[];
   bones: Record<"hips" | "spine02" | "spine01" | "spine" | "neck" | "head" | "lArm" | "lFore" | "lHand" | "rArm" | "rFore" | "rHand", Bone | undefined>;
   guns: [Group, Group];
+  hit: AnimationAction | null;
+  reload: AnimationAction | null;
 };
 
 /** Rendered muzzles (hand 0 = right, 1 = left) for flashes and tracers. */
@@ -39,27 +42,52 @@ export const playerMuzzles: [Vector3, Vector3] = [new Vector3(), new Vector3()];
 /** Rendered head / chest points (the kill cam and hit FX look at these). */
 export const playerHead = new Vector3();
 
+const clipsOf = (o: Object3D | null) => ((o as unknown as { animations?: AnimationClip[] } | null)?.animations ?? []) as AnimationClip[];
+
 function makeRig(id: RadbroId, src: Object3D, pack: Object3D | null, gunPack: Object3D | null): Rig {
   const model = cloneSkeleton(src);
   const materials = lightUp(model);
   const root = new Group();
   root.name = `radbro-${id}`;
   root.add(model);
-  const clipsOf = (o: Object3D | null) => ((o as unknown as { animations?: AnimationClip[] } | null)?.animations ?? []) as AnimationClip[];
-  const pinY = new Set(["Regular_Jump", "Free_Fall", "Leap_of_Faith", "Pistol_Jump"]);
+  const pinY = new Set(["Regular_Jump", "Free_Fall", "Leap_of_Faith"]);
   const player = new AnimPlayer(model, [clipsOf(gunPack), clipsOf(src), clipsOf(pack)], {
     fade: 0.18,
-    policy: name => ({ xz: "pin", y: pinY.has(name) ? "pin" : "keep" }),
+    // deaths keep their travel (the body flies where the clip puts it); the game moves the capsule otherwise
+    policy: name => ({ xz: name.startsWith("Death_") ? "keep" : "pin", y: pinY.has(name) ? "pin" : "keep" }),
   });
   const b = (n: string) => findBone(model, n);
-  const guns: [Group, Group] = [makePistol(), makePistol()];
-  return {
-    id, root, model, player, materials, guns,
-    bones: {
-      hips: b("Hips"), spine02: b("Spine02"), spine01: b("Spine01"), spine: b("Spine"), neck: b("neck"), head: b("Head"),
-      lArm: b("LeftArm"), lFore: b("LeftForeArm"), lHand: b("LeftHand"), rArm: b("RightArm"), rFore: b("RightForeArm"), rHand: b("RightHand"),
-    },
+  const bones = {
+    hips: b("Hips"), spine02: b("Spine02"), spine01: b("Spine01"), spine: b("Spine"), neck: b("neck"), head: b("Head"),
+    lArm: b("LeftArm"), lFore: b("LeftForeArm"), lHand: b("LeftHand"), rArm: b("RightArm"), rFore: b("RightForeArm"), rHand: b("RightHand"),
   };
+  const guns: [Group, Group] = [makePistol(), makePistol()];
+  const grips = RADBRO_GRIPS[id];
+  if (bones.rHand) attachGun(guns[0], bones.rHand, grips.right);
+  if (bones.lHand) attachGun(guns[1], bones.lHand, grips.left);
+  // additive hit flinch (no root translation) and the upper-body reload layer
+  const gunClips = clipsOf(gunPack);
+  let hit: AnimationAction | null = null;
+  const hc = gunClips.find(c => c.name === "Hit_Small");
+  if (hc) {
+    const c = hc.clone();
+    c.name = "Hit_Small_add";
+    c.tracks = c.tracks.filter(t => !t.name.endsWith(".position"));
+    AnimationUtils.makeClipAdditive(c);
+    hit = player.mixer.clipAction(c);
+    hit.setLoop(LoopOnce, 1);
+  }
+  let reload: AnimationAction | null = null;
+  const rc = gunClips.find(c => c.name === "Reload");
+  if (rc) {
+    const c = rc.clone();
+    c.name = "Reload_upper";
+    c.tracks = c.tracks.filter(t => UPPER_BODY.test(t.name));
+    reload = player.mixer.clipAction(c);
+    reload.setLoop(LoopOnce, 1);
+    reload.clampWhenFinished = true;
+  }
+  return { id, root, model, player, materials, guns, bones, hit, reload };
 }
 
 export function PlayerView({ s }: { s: Session }) {
@@ -72,18 +100,19 @@ export function PlayerView({ s }: { s: Session }) {
     if (!src) return null;
     return makeRig(radbro, src, assets.getModel(clipsPath(radbro)), assets.getModel(gunClipsPath(radbro)));
   }, [assets, radbro, version]);
-  const st = useRef({ legYaw: 0, lie: 0, roll: 0, twist: 0, recoil: [0, 0], flinch: 0, dead: false, run: -1, clip: "", jumpHold: false, reloadW: 0 });
-  const tmp = useMemo(() => ({
-    qs: new Quaternion(), ql: new Quaternion(), q: new Quaternion(), m: new Matrix4(), x: new Vector3(), y: new Vector3(), z: new Vector3(),
-    aim: new Vector3(), side: new Vector3(), a: new Vector3(), fwd: new Vector3(), rollAxis: new Vector3(), qr: new Quaternion(), hand: new Vector3(),
-  }), []);
+  const st = useRef({ legYaw: 0, bodyYaw: 0, twist: 0, recoil: [0, 0], run: -1, clip: "", mode: "", jumpHold: false, reloadW: 0, armW: 1, diveY: 0 });
+  const tmp = useMemo(() => ({ aim: new Vector3(), side: new Vector3(), a: new Vector3(), q: new Quaternion() }), []);
 
   useEffect(() => {
     if (!rig) return;
     const off = s.on(e => {
       const r = st.current;
       if (e.type === "shot" && e.shooter === -1) r.recoil[e.hand] = 1;
-      if (e.type === "hurt" && e.target === -1) r.flinch = 1;
+      if (e.type === "hurt" && e.target === -1 && e.hp > 0 && rig.hit) rig.hit.reset().setEffectiveWeight(0.9).play();
+      if (e.type === "reload" && rig.reload) {
+        const d = rig.reload.getClip().duration;
+        rig.reload.reset().setEffectiveTimeScale(d / WEAPONS[s.game.player.weapon.id].reload).setEffectiveWeight(0).play();
+      }
     });
     return () => {
       off();
@@ -98,165 +127,148 @@ export function PlayerView({ s }: { s: Session }) {
     const g = s.game;
     const p = g.player;
     const r = st.current;
-    const dt = Math.min(rawDelta, 0.1);
-    if (r.run !== s.run) {
-      r.run = s.run; r.dead = false; r.clip = ""; r.lie = 0; r.legYaw = p.facing; r.jumpHold = false;
-      rig.player.force(pick(rig.player, CLIPS.idle), 0);
-    }
-    const pos = s.renderP;
     const pl = rig.player;
-
-    // lying blend: dive / prone -> 1, get-up eases back over its 0.6 s
-    const lyingNow = p.mode === "dive" || p.mode === "prone";
-    const lieWant = lyingNow ? 1 : p.mode === "getup" ? Math.max(0, 1 - p.modeT / DODGE.getUp) : 0;
-    r.lie += (lieWant - r.lie) * Math.min(1, (lyingNow ? 16 : 30) * dt);
-    if (p.mode === "getup") r.lie = lieWant;
-
-    // clip for the state
-    const speed = Math.sqrt(p.vx * p.vx + p.vz * p.vz);
-    let want = "";
-    let rate = 1;
-    let twistWant = 0;
-    let legYawWant = p.facing;
-    if (p.mode === "dead") {
-      if (!r.dead) {
-        r.dead = true;
-        pl.play(pick(pl, CLIPS.death), { hold: true, fade: 0.1 });
-      }
-    } else if (p.mode === "dive") want = pick(pl, CLIPS.dive);
-    else if (p.mode === "prone" || p.mode === "getup") want = pick(pl, p.mode === "prone" ? CLIPS.prone : CLIPS.idle);
-    else if (p.mode === "roll") want = pick(pl, CLIPS.run);
-    else if (!p.grounded) {
-      if (!r.jumpHold) {
-        r.jumpHold = true;
-        const j = pick(pl, CLIPS.jump);
-        if (j) pl.play(j, { hold: true, startAt: 0.48, freezeAt: 0.8, fade: 0.1 });
-      }
-    } else if (speed > 0.4) {
-      const moveYaw = Math.atan2(p.vx, p.vz);
-      const rel = wrapAngle(moveYaw - p.facing);
-      if (Math.abs(rel) <= 1.95) {
-        legYawWant = moveYaw;
-        twistWant = -rel;
-        want = pick(pl, speed > 3.2 ? CLIPS.run : CLIPS.walk);
-        rate = want === "Run_02" ? speed / 5.6 : speed / 1.6;
+    const dt = Math.min(rawDelta, 0.1);
+    const pos = s.renderP;
+    if (r.run !== s.run) {
+      r.run = s.run; r.clip = ""; r.mode = ""; r.legYaw = p.facing; r.bodyYaw = p.facing; r.jumpHold = false; r.reloadW = 0;
+      pl.force(pick(pl, CLIPS.idle), 0);
+      rig.hit?.stop();
+      rig.reload?.stop();
+    }
+    // mode entries: the dive chain, the roll, the get-up, death
+    if (p.mode !== r.mode) {
+      const prev = r.mode;
+      r.mode = p.mode;
+      if (p.mode === "dive") {
+        r.diveY = pos.y;
+        r.bodyYaw = Math.atan2(p.dirX, p.dirZ);
+        const dive = pick(pl, CLIPS.dive);
+        // the clip's airborne span (0.15-0.95 s) over the sim's 0.9 s; it ends on Prone_Idle's first frame
+        if (dive) pl.play(dive, { once: true, then: pick(pl, CLIPS.prone), startAt: 0.1, timeScale: 0.95, fade: 0.08 });
+        r.clip = dive;
+      } else if (p.mode === "prone") {
+        if (!pl.busy) pl.force(pick(pl, CLIPS.prone), 0.15);
+        else pl.base = pick(pl, CLIPS.prone);
+        r.clip = "prone";
+      } else if (p.mode === "roll") {
+        r.bodyYaw = Math.atan2(p.dirX, p.dirZ);
+        pl.play(pick(pl, CLIPS.roll), { hold: true, timeScale: 3.2, fade: 0.1, startAt: 0.1 });
+        r.clip = "roll";
+      } else if (p.mode === "getup") {
+        pl.play(pick(pl, CLIPS.getUp), { hold: true, timeScale: 2.8, fade: 0.12 });
+        r.clip = "getup";
+      } else if (p.mode === "dead") {
+        // how much street is behind him decides how far he flies
+        const yaw = prev === "normal" ? r.legYaw : r.bodyYaw;
+        r.bodyYaw = yaw;
+        const hit = g.world.raycast(p.x, p.y + 0.9, p.z, -Math.sin(yaw), 0, -Math.cos(yaw), 6, false);
+        pl.play(pick(pl, deathFor(hit ? hit.t : 6, Math.random())), { hold: true, fade: 0.1 });
+        rig.reload?.stop();
+        r.clip = "dead";
       } else {
-        legYawWant = moveYaw + Math.PI;
-        twistWant = wrapAngle(p.facing - legYawWant);
-        want = pick(pl, CLIPS.back);
-        rate = -Math.max(0.9, speed / 1.5);
+        r.clip = "";
+        r.legYaw = r.bodyYaw;
       }
-    } else want = pick(pl, CLIPS.idle);
-    if (p.grounded && r.jumpHold && p.mode !== "dead") { r.jumpHold = false; r.clip = ""; }
-    if (want && !r.dead && !r.jumpHold) {
-      if (want !== r.clip) { pl.force(want, 0.15, rate); r.clip = want; }
-      else pl.setTimeScale(rate);
     }
-    r.twist += (Math.max(-1.3, Math.min(1.3, twistWant)) - r.twist) * Math.min(1, 12 * dt);
-    r.legYaw += wrapAngle(legYawWant - r.legYaw) * Math.min(1, 12 * dt);
 
-    // standing orientation
-    tmp.qs.setFromAxisAngle(UP, r.legYaw);
-    let px = pos.x, py = pos.y, pz = pos.z;
-    // lying orientation: head along the dive, chest toward the aim (face down when aiming ahead)
-    if (r.lie > 0.001) {
-      const dx = p.dirX, dz = p.dirZ;
-      tmp.y.set(dx, 0, dz).normalize(); // head direction
-      tmp.aim.set(-Math.sin(p.yaw) * Math.cos(p.pitch), Math.sin(p.pitch), -Math.cos(p.yaw) * Math.cos(p.pitch));
-      const along = tmp.aim.dot(tmp.y);
-      tmp.z.copy(tmp.aim).addScaledVector(tmp.y, -along); // chest normal = aim across the body
-      tmp.z.addScaledVector(UP, along > 0.5 ? -0.8 : 0.6);
-      if (tmp.z.lengthSq() < 1e-4) tmp.z.set(0, 1, 0);
-      tmp.z.normalize();
-      tmp.x.crossVectors(tmp.y, tmp.z).normalize();
-      tmp.z.crossVectors(tmp.x, tmp.y);
-      tmp.m.makeBasis(tmp.x, tmp.y, tmp.z);
-      tmp.ql.setFromRotationMatrix(tmp.m);
-      tmp.q.copy(tmp.qs).slerp(tmp.ql, r.lie);
-      const lieH = p.mode === "dive" ? 0.45 : 0.27;
-      // hips at the body point, the root (feet) one hips-height back along the body
-      const lx = pos.x - tmp.y.x * HIPS, ly = pos.y + lieH - tmp.y.y * HIPS, lz = pos.z - tmp.y.z * HIPS;
-      px += (lx - px) * r.lie; py += (ly - py) * r.lie; pz += (lz - pz) * r.lie;
-    } else tmp.q.copy(tmp.qs);
-    // forward roll: one turn about the axis across the roll direction, pivoting at mid height
-    if (p.mode === "roll") {
-      const k = Math.min(1, p.modeT / DODGE.roll);
-      tmp.rollAxis.set(p.dirZ, 0, -p.dirX).normalize();
-      tmp.qr.setFromAxisAngle(tmp.rollAxis, k * Math.PI * 2);
-      tmp.q.premultiply(tmp.qr);
-      const pivotY = 0.55;
-      tmp.a.set(0, -pivotY, 0).applyQuaternion(tmp.qr);
-      px = pos.x + tmp.a.x; py = pos.y + pivotY + tmp.a.y; pz = pos.z + tmp.a.z;
-    }
-    rig.root.position.set(px, py, pz);
-    rig.root.quaternion.copy(tmp.q);
+    let rate = 1, twistWant = 0, legYawWant = p.facing, want = "";
+    if (p.mode === "normal") {
+      const speed = Math.sqrt(p.vx * p.vx + p.vz * p.vz);
+      if (!p.grounded) {
+        if (!r.jumpHold) {
+          r.jumpHold = true;
+          const j = pick(pl, CLIPS.jump);
+          if (j) pl.play(j, { hold: true, startAt: 0.48, freezeAt: 0.8, fade: 0.1 });
+        }
+      } else if (speed > 0.4) {
+        const moveYaw = Math.atan2(p.vx, p.vz);
+        const rel = wrapAngle(moveYaw - p.facing);
+        const strafe = rel > 0 ? pick(pl, CLIPS.strafeL) : pick(pl, CLIPS.strafeR);
+        if (Math.abs(rel) <= 1.0 || !strafe.startsWith("Aim_") && Math.abs(rel) <= 1.95) {
+          legYawWant = moveYaw;
+          want = pick(pl, speed > 3.2 ? CLIPS.run : CLIPS.walk);
+          rate = want.endsWith("Run") || want === "Run_02" ? speed / 5.6 : speed / 1.6;
+        } else if (Math.abs(rel) >= 2.2 || !strafe.startsWith("Aim_")) {
+          legYawWant = moveYaw + Math.PI;
+          want = pick(pl, CLIPS.back);
+          rate = want === "Casual_Walk" ? -Math.max(0.9, speed / 1.5) : Math.max(0.8, speed / 1.6);
+        } else {
+          legYawWant = moveYaw - Math.sign(rel) * Math.PI / 2;
+          want = strafe;
+          rate = Math.max(0.8, Math.min(2.6, speed / 1.5));
+        }
+        twistWant = wrapAngle(p.facing - legYawWant);
+      } else want = pick(pl, CLIPS.idle);
+      if (p.grounded && r.jumpHold) { r.jumpHold = false; r.clip = ""; }
+      if (want && !r.jumpHold) {
+        if (want !== r.clip) { pl.force(want, 0.18, rate); r.clip = want; }
+        else pl.setTimeScale(rate);
+      }
+      r.twist += (Math.max(-1.3, Math.min(1.3, twistWant)) - r.twist) * Math.min(1, 12 * dt);
+      r.legYaw += wrapAngle(legYawWant - r.legYaw) * Math.min(1, 12 * dt);
+      r.bodyYaw = r.legYaw;
+    } else r.twist += (0 - r.twist) * Math.min(1, 12 * dt);
+
+    const yaw = p.mode === "normal" ? r.legYaw : r.bodyYaw;
+    rig.root.position.set(pos.x, p.mode === "dive" ? Math.min(pos.y, r.diveY) : pos.y, pos.z);
+    rig.root.quaternion.setFromAxisAngle(UP, yaw);
   }, FRAME.actors);
 
-  // -4: mixer on the player's clock
+  // -4: mixer on the player's clock (the dive chain is authored in real time)
   useFrame((_, rawDelta) => {
     if (!rig) return;
-    const ts = s.paused ? 0 : Math.max(s.game.timeScale, TIME.playerInBulletTime);
+    const m = s.game.player.mode;
+    const realTime = m === "dive" || m === "prone" || m === "getup" || m === "roll";
+    const ts = s.paused ? 0 : realTime ? 1 : Math.max(s.game.timeScale, TIME.playerInBulletTime);
+    // the reload layer's weight rides on the weapon's reload
+    const r = st.current;
+    const reloading = s.game.player.weapon.reloadT > 0 && m === "normal";
+    r.reloadW += ((reloading ? 1 : 0) - r.reloadW) * Math.min(1, 12 * Math.min(rawDelta, 0.1));
+    rig.reload?.setEffectiveWeight(2.4 * r.reloadW);
     rig.player.update(Math.min(rawDelta, 0.1) * ts);
   }, FRAME.animator);
 
-  // -3: bones (twist, aim arms, recoil, guns)
+  // -3: bones (twist, pitch, aim arms, recoil, guns)
   useFrame((_, rawDelta) => {
     if (!rig) return;
     const g = s.game, p = g.player, r = st.current, B = rig.bones;
     const dt = Math.min(rawDelta, 0.1);
     rig.root.updateMatrixWorld(true);
     const alive = p.mode !== "dead";
-    // spine twist back toward the aim (standing only)
-    const tw = r.twist * (1 - r.lie);
-    if (alive && Math.abs(tw) > 1e-3) {
-      rotateBoneWorld(B.spine02, UP, tw * 0.3);
-      rotateBoneWorld(B.spine01, UP, tw * 0.3);
-      rotateBoneWorld(B.spine, UP, tw * 0.4);
+    const normal = p.mode === "normal";
+    tmp.side.set(Math.cos(p.yaw), 0, -Math.sin(p.yaw));
+    if (alive && normal) {
+      // spine twist back toward the aim, and a little pitch with it
+      if (Math.abs(r.twist) > 1e-3) {
+        rotateBoneWorld(B.spine02, UP, r.twist * 0.3);
+        rotateBoneWorld(B.spine01, UP, r.twist * 0.3);
+        rotateBoneWorld(B.spine, UP, r.twist * 0.4);
+      }
+      rotateBoneWorld(B.spine01, tmp.side, p.pitch * 0.22 * (1 - r.reloadW));
+      rotateBoneWorld(B.spine, tmp.side, p.pitch * 0.18 * (1 - r.reloadW));
     }
-    // hit flinch: the upper body snaps back
-    r.flinch = Math.max(0, r.flinch - dt * 5);
-    if (r.flinch > 0 && alive) {
-      tmp.side.set(Math.cos(p.yaw), 0, -Math.sin(p.yaw));
-      rotateBoneWorld(B.spine, tmp.side, 0.25 * r.flinch);
-    }
-    // arms onto the aim point; reload drops the left arm for a moment
-    r.reloadW += ((p.weapon.reloadT > 0 ? 1 : 0) - r.reloadW) * Math.min(1, 10 * dt);
-    const aimed = AIMED.has(rig.player.current);
-    const w = alive && p.mode !== "getup" ? (aimed ? 0.35 : 1) : 0;
+    // arms onto the aim point (the clips already hold them out; this makes it exact)
+    const armWant = !alive || p.mode === "roll" || p.mode === "getup" ? 0 : 1;
+    r.armW += (armWant - r.armW) * Math.min(1, (armWant ? 8 : 16) * dt);
     const t = g.aimPoint;
     tmp.aim.set(t.x, t.y, t.z);
-    tmp.side.set(Math.cos(p.yaw), 0, -Math.sin(p.yaw)).multiplyScalar(0.08);
-    aimLimb(B.rArm, B.rHand, tmp.a.copy(tmp.aim).add(tmp.side), w);
-    aimLimb(B.lArm, B.lHand, tmp.a.copy(tmp.aim).sub(tmp.side), w * (1 - 0.7 * r.reloadW));
+    const off = tmp.a.copy(tmp.side).multiplyScalar(0.07);
+    aimLimb(B.rArm, B.rHand, off.clone().add(tmp.aim), r.armW * (1 - 0.6 * r.reloadW));
+    aimLimb(B.lArm, B.lHand, off.negate().add(tmp.aim), r.armW * (1 - 0.95 * r.reloadW));
     // recoil: a quick kick up at the elbow
     for (const h of [0, 1] as const) {
       r.recoil[h] = Math.max(0, r.recoil[h] - dt * 14 * Math.max(g.timeScale, 0.3));
-      if (r.recoil[h] > 0 && alive) {
-        tmp.side.set(Math.cos(p.yaw), 0, -Math.sin(p.yaw));
-        rotateBoneWorld(h === 0 ? B.rFore : B.lFore, tmp.side, 0.35 * r.recoil[h]);
-      }
+      if (r.recoil[h] > 0 && alive) rotateBoneWorld(h === 0 ? B.rFore : B.lFore, tmp.side, 0.3 * r.recoil[h]);
     }
-    // pistols in the hands, pointing at the aim point
+    // pistols: grip in the hand, barrel swung onto the crosshair point
     rig.guns.forEach((gun, h) => {
-      const hand = h === 0 ? B.rHand : B.lHand;
-      gun.visible = !!hand && rig.root.visible;
-      if (!hand) return;
-      hand.getWorldPosition(tmp.hand);
-      gun.position.copy(tmp.hand);
-      if (alive) gun.lookAt(tmp.aim);
-      else gun.quaternion.copy(rig.root.quaternion);
-      gun.updateMatrixWorld(true);
+      aimGun(gun, alive ? tmp.aim : null, r.armW * (1 - (h === 1 ? 0.9 : 0.5) * r.reloadW), 0.5);
       muzzleWorld(gun, playerMuzzles[h]);
     });
     B.head?.getWorldPosition(playerHead);
   }, FRAME.bones);
 
   if (!rig) return null;
-  return (
-    <>
-      <primitive object={rig.root} />
-      <primitive object={rig.guns[0]} />
-      <primitive object={rig.guns[1]} />
-    </>
-  );
+  return <primitive object={rig.root} />;
 }

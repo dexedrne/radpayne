@@ -2,7 +2,7 @@
 // CDN, parsed per goon, lit, scaled so the Head bone sits where the sim's hit skeleton expects it, and
 // given the Radbro clips retargeted onto their rig. Never blocks the game: a goon shows a stand-in
 // until its model is ready and keeps it when the fetch fails.
-import { AnimationClip, Group, Vector3, type Material, type Mesh, type Object3D } from "three";
+import { AnimationClip, AnimationUtils, Group, Vector3, type Material, type Mesh, type Object3D } from "three";
 import { MeshStandardNodeMaterial } from "three/webgpu";
 import type { VRM } from "@pixiv/three-vrm";
 import { parseVrm } from "./loadVrm.ts";
@@ -47,8 +47,13 @@ export function fetchPockit(n: number): Promise<{ buf: ArrayBuffer; url: string 
   return p;
 }
 
-/** The clips a goon uses, by name in the Radbro packs. */
-export const GOON_CLIPS = ["Idle", "Casual_Walk", "Run_02", "Falling_Down", "Big_Land", "Pistol_Aim_Idle", "Pistol_Run", "Pistol_Death", "Pistol_Crouch_Aim", "Pistol_Hit"];
+/** The clips a goon uses, by name: the shooter set (milady.gun.glb, Radbro rig) first, RadRun's as fallbacks. */
+export const GOON_CLIPS = [
+  "Aim_Idle", "Aim_Walk_Fwd", "Aim_Walk_Back", "Aim_Strafe_L", "Aim_Strafe_R", "Aim_Run", "Cover_Crouch_Idle", "Hit_Small",
+  "Death_Back", "Death_Back_2", "Death_Fwd", "Death_Fwd_2", "Idle", "Casual_Walk", "Run_02", "Falling_Down", "Big_Land",
+];
+/** Clips that keep their root travel on the Miladys (bodies fly / fall where the clip puts them). */
+const TRAVEL = /^(Death_|Falling_Down)/;
 
 export type LoadedGoon = {
   vrm: VRM;
@@ -61,6 +66,13 @@ export type LoadedGoon = {
   materials: Material[];
   /** Big_Land's deepest crouch time (the cover pose), if the clip exists. */
   crouchAt: number;
+  /** Additive flinch (Hit_Small without root motion), if the clip exists. */
+  hit: AnimationClip | null;
+  /** Mouth expression for talking, if bound. */
+  talk: string | null;
+  /** Right forearm length in the model's own units (scales the pistol grip). */
+  forearm: number;
+  vrm0: boolean;
 };
 
 function lit(vrm: VRM): Material[] {
@@ -73,6 +85,11 @@ function lit(vrm: VRM): Material[] {
       const mat = new MeshStandardNodeMaterial({ roughness: 0.75, metalness: 0 });
       Object.assign(mat, { map: src.map ?? null, transparent: src.transparent, opacity: src.opacity, side: src.side, alphaTest: src.alphaTest, depthWrite: src.depthWrite });
       if (src.color && typeof (src.color as { clone?: () => unknown }).clone === "function") (mat as unknown as { color: { copy: (c: unknown) => void } }).color.copy(src.color);
+      // a small emissive lift of the same texture: the gang reads under the neon instead of going black
+      if (src.map) {
+        Object.assign(mat, { emissiveMap: src.map, emissiveIntensity: 0.24 });
+        mat.emissive.set("#ffffff");
+      }
       m.dispose();
       out.push(mat);
       return mat;
@@ -89,6 +106,9 @@ export async function buildGoon(n: number, sources: Object3D[]): Promise<LoadedG
   const { vrm } = await parseVrm(got.buf.slice(0), got.url);
   const materials = lit(vrm);
   vrm.scene.updateMatrixWorld(true);
+  const lower = vrm.humanoid?.getNormalizedBoneNode("rightLowerArm");
+  const hand = vrm.humanoid?.getNormalizedBoneNode("rightHand");
+  const forearm = lower && hand ? lower.getWorldPosition(new Vector3()).distanceTo(hand.getWorldPosition(new Vector3())) : 0.217;
   const head = vrm.humanoid?.getNormalizedBoneNode("head");
   const headY = head ? head.getWorldPosition(new Vector3()).y : 1.6;
   const scale = headY > 0.3 ? MILADY_HEAD_BONE / headY : 1;
@@ -104,7 +124,7 @@ export async function buildGoon(n: number, sources: Object3D[]): Promise<LoadedG
       if (!GOON_CLIPS.includes(c.name) || seen.has(c.name)) continue;
       seen.add(c.name);
       try {
-        clips.push(retargetClip(c, src, vrm, RADBRO_RIG, { inPlace: true, alignRestPose: true }));
+        clips.push(retargetClip(c, src, vrm, RADBRO_RIG, { inPlace: !TRAVEL.test(c.name), alignRestPose: true }));
       } catch (e) {
         console.info(`[milady] retarget ${c.name} failed on #${n}: ${String(e)}`);
       }
@@ -113,6 +133,15 @@ export async function buildGoon(n: number, sources: Object3D[]): Promise<LoadedG
   const em = vrm.expressionManager;
   const bound = (name: string) => (em?.getExpression(name)?.binds.length ?? 0) > 0;
   const pain = ["sorrow", "sad", "angry", "surprised"].find(bound) ?? null;
+  const talk = ["aa", "a", "oh", "ou"].find(bound) ?? null;
+  let hit: AnimationClip | null = null;
+  const hc = clips.find(c => c.name === "Hit_Small");
+  if (hc) {
+    hit = hc.clone();
+    hit.name = "Hit_Small_add";
+    hit.tracks = hit.tracks.filter(t => !t.name.endsWith(".position"));
+    AnimationUtils.makeClipAdditive(hit);
+  }
   // deepest crouch in Big_Land: the lowest key of the hips position track
   let crouchAt = -1;
   const land = clips.find(c => c.name === "Big_Land");
@@ -124,5 +153,5 @@ export async function buildGoon(n: number, sources: Object3D[]): Promise<LoadedG
       if (y < lo) { lo = y; crouchAt = hipsTrack.times[i]; }
     }
   }
-  return { vrm, body, clips, scale, blink: bound("blink"), pain, materials, crouchAt };
+  return { vrm, body, clips, scale, blink: bound("blink"), pain, materials, crouchAt, hit, talk, forearm, vrm0: vrm.meta?.metaVersion === "0" };
 }

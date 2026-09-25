@@ -55,27 +55,43 @@ export function pick(pl: AnimPlayer, names: readonly string[]): string {
 }
 
 /**
- * Clip names per animation state, best first. The pistol clip set (bought once, copied onto every
- * Radbro and retargeted onto the Miladys) plugs in by these names; until then the RadRun clips stand
- * in and the procedural aim layer points the arms.
+ * Clip names per animation state, best first: the shooter clip set (radbro<id>.gun.glb: aimed
+ * dual-pistol locomotion, the shootdodge chain, hits, deaths, cover; the same set is retargeted onto
+ * the Miladys), then RadRun's clips as fallbacks.
  */
 export const CLIPS = {
-  idle: ["Pistol_Aim_Idle", "Idle"],
-  run: ["Pistol_Run", "Run_02"],
-  walk: ["Pistol_Walk", "Casual_Walk"],
-  back: ["Pistol_Walk_Back", "Casual_Walk"],
-  strafeL: ["Pistol_Strafe_Left", "Walk_Strafe_Left"],
-  strafeR: ["Pistol_Strafe_Right", "Walk_Strafe_Right"],
-  jump: ["Pistol_Jump", "Regular_Jump"],
-  dive: ["Pistol_Dive", "Falling_To_Roll", "Free_Fall"],
-  prone: ["Pistol_Prone", "Prone_Idle", "Free_Fall"],
-  getUp: ["Pistol_Get_Up", "Get_Up", "Big_Land"],
-  roll: ["Pistol_Roll", "Roll_Dodge", "Run_02"],
-  hit: ["Pistol_Hit", "Hit_Reaction"],
-  death: ["Pistol_Death", "Dying", "Falling_Down"],
-  death2: ["Pistol_Death_2", "Prone_Death", "Falling_Down"],
-  crouch: ["Pistol_Crouch_Aim", "Crouch_Idle", "Big_Land"],
+  idle: ["Aim_Idle", "Idle"],
+  relaxed: ["Idle", "Aim_Idle"],
+  run: ["Aim_Run", "Run_02"],
+  walk: ["Aim_Walk_Fwd", "Casual_Walk"],
+  stroll: ["Casual_Walk", "Aim_Walk_Fwd"],
+  back: ["Aim_Walk_Back", "Casual_Walk"],
+  strafeL: ["Aim_Strafe_L", "Walk_Strafe_Left"],
+  strafeR: ["Aim_Strafe_R", "Walk_Strafe_Right"],
+  jump: ["Regular_Jump"],
+  dive: ["Shootdodge", "Falling_To_Roll", "Free_Fall"],
+  prone: ["Prone_Idle", "Free_Fall"],
+  getUp: ["Prone_GetUp", "Get_Up", "Big_Land"],
+  roll: ["Land_Roll", "Roll_Dodge", "Run_02"],
+  hit: ["Hit_Small", "Hit_Reaction"],
+  reload: ["Reload"],
+  deathBack: ["Death_Back", "Falling_Down"],
+  deathBack2: ["Death_Back_2", "Falling_Down"],
+  deathFwd: ["Death_Fwd", "Falling_Down"],
+  deathFwd2: ["Death_Fwd_2", "Falling_Down"],
+  crouch: ["Cover_Crouch_Idle", "Crouch_Idle"],
+  kneel: ["Kneel_Aim", "Aim_Idle"],
 } as const;
 
-/** Clips that already hold a pistol pose: the procedural arm aim blends down on them. */
-export const AIMED = new Set(["Pistol_Aim_Idle", "Pistol_Run", "Pistol_Walk", "Pistol_Walk_Back", "Pistol_Strafe_Left", "Pistol_Strafe_Right", "Pistol_Crouch_Aim", "Pistol_Dive", "Pistol_Prone"]);
+/** Bones the upper-body layers (reload) drive. */
+export const UPPER_BODY = /^(Spine|Spine01|Spine02|neck|Head|LeftShoulder|LeftArm|LeftForeArm|LeftHand|RightShoulder|RightArm|RightForeArm|RightHand)\./;
+
+/**
+ * Death clip for the space behind the body (metres free along the shot): the big blown-back one only
+ * with room to fly, a short fall back, else forward. `k` (0..1) picks between the two variants.
+ */
+export function deathFor(free: number, k: number): readonly string[] {
+  if (free > 4.6) return k < 0.6 ? CLIPS.deathBack : CLIPS.deathBack2;
+  if (free > 1.6) return k < 0.5 ? CLIPS.deathBack2 : CLIPS.deathFwd;
+  return k < 0.5 ? CLIPS.deathFwd : CLIPS.deathFwd2;
+}

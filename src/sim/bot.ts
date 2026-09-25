@@ -18,13 +18,23 @@ export class Bot {
   private strafe = 1;
   private strafeT = 0;
   private onTarget = 0;
+  /** Unstick: progress check while walking (hop over low stuff, sidestep). */
+  private stuckT = 0;
+  private stuckX = 0;
+  private stuckZ = 0;
+  private sidestep = 0;
   readonly frame: InputFrame = emptyInput();
   /** Aim turn rate (rad/s) and the time on target before the first shot: a human-ish handicap. */
   readonly turnRate: number;
   readonly settle: number;
-  constructor(turnRate = 3.5, settle = 0.3) {
+  /** Demo run (the browser check): bullet time at first contact, a sideways shootdodge after the first kill, the full kill cam. */
+  readonly demo: boolean;
+  private demoBt = false;
+  private demoDodge = false;
+  constructor(turnRate = 3.5, settle = 0.3, demo = false) {
     this.turnRate = turnRate;
     this.settle = settle;
+    this.demo = demo;
   }
 
   /** Turn the aim toward yaw / pitch at most turnRate per step. */
@@ -45,7 +55,7 @@ export class Bot {
     f.moveX = f.moveY = 0;
     f.yaw = p.yaw;
     f.pitch = p.pitch;
-    if (g.phase === "killcam") { f.skip = g.killcam !== null && g.killcam.t > 0.6; return f; }
+    if (g.phase === "killcam") { f.skip = !this.demo && g.killcam !== null && g.killcam.t > 0.6; return f; }
     if (p.mode === "dead") return f;
     this.dodgeCd -= 1 / 120;
     const piv = pivotOf(p, this.piv);
@@ -77,6 +87,10 @@ export class Bot {
       f.moveX = this.strafe * 0.6;
       if (shooting >= 2 && !g.bulletTime && g.meter > 3) f.bt = true;
       if (p.health < 70 && this.dodgeCd <= 0 && p.mode === "normal" && shooting >= 1) { f.dodge = true; this.dodgeCd = 4; }
+      if (this.demo) {
+        if (!this.demoBt && shooting >= 1 && !g.bulletTime && g.meter > 3) { f.bt = true; this.demoBt = true; }
+        if (!this.demoDodge && g.stats.kills >= 1 && p.mode === "normal" && p.grounded) { f.dodge = true; f.moveX = this.strafe; this.demoDodge = true; this.dodgeCd = 4; }
+      }
     } else {
       if (g.bulletTime) f.bt = true; // off again
       // walk toward the nearest live goon (or the exit once clear)
@@ -109,6 +123,11 @@ export class Bot {
         const dx = wp.x - p.x, dz = wp.z - p.z;
         this.turn(f, Math.atan2(-dx, -dz), 0);
         f.moveY = 1;
+        // no progress for a second: hop (low barriers) and sidestep, then repath
+        this.stuckT += 1 / 120;
+        if ((p.x - this.stuckX) ** 2 + (p.z - this.stuckZ) ** 2 > 0.25) { this.stuckT = 0; this.stuckX = p.x; this.stuckZ = p.z; }
+        if (this.stuckT > 1) { f.jump = true; this.sidestep = 0.6; this.stuckT = 0; this.repath = 0; this.strafe = -this.strafe; }
+        if (this.sidestep > 0) { this.sidestep -= 1 / 120; f.moveX = this.strafe; }
       }
     }
     if (p.health < 50 && p.copium > 0 && p.healLeft <= 0) f.copium = true;

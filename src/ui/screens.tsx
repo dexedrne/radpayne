@@ -122,8 +122,9 @@ export function ResultsScreen({ onRetry, onTitle }: { onRetry: () => void; onTit
     <div style={{ ...layer, background: "rgba(5,6,12,0.85)" }} data-testid="results">
       <div style={{ width: "min(460px, 92vw)" }}>
         <div style={{ font: `400 56px/1 ${display}`, letterSpacing: 3, color: r.cleared ? INK : "#ff4a5a" }}>{r.cleared ? "ROOM CLEAR" : "RUGGED"}</div>
+        {r.cleared && <div style={{ font: `400 26px/1.1 ${display}`, letterSpacing: 3, color: "#ff3fa8", textShadow: "0 0 14px rgba(255,63,168,0.55)", margin: "4px 0 8px" }}>TO BE CONTINUED: THE RAVE</div>}
         <div style={{ opacity: 0.75, marginBottom: 16, fontStyle: "italic", fontFamily: "Georgia, serif", fontSize: 15 }}>
-          {r.cleared ? "the door was open. the bass was louder. my bag was in there somewhere. to be continued." : "they said wagmi. they lied. get up and try again."}
+          {r.cleared ? "the door was open. the bass was louder. my bag was in there somewhere." : "they said wagmi. they lied. get up and try again."}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "4px 20px", marginBottom: 20 }}>
           {rows.map(([k, v]) => (

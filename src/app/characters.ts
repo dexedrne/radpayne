@@ -9,6 +9,9 @@ export const clipsPath = (id: RadbroId) => `/models/radbro${id}.clips.glb`;
 /** Optional pistol clip pack (same rig, copied onto every Radbro by bone name). */
 export const gunClipsPath = (id: RadbroId) => `/models/radbro${id}.gun.glb`;
 
+/** The shooter clip set on the Radbro rig: the Miladys' retarget source (optional, loaded with the Radbro). */
+export const MILADY_CLIPS = "/models/milady.gun.glb";
+
 /** The Miladys' clips are retargeted from this Radbro's rig. */
 export const RETARGET_SOURCE: RadbroId = "652";
 
@@ -60,10 +63,11 @@ export async function loadOptional(path: string): Promise<boolean> {
 
 /**
  * RadRun's GLBs are unlit (its daytime flat look). At night under neon the characters must take the
- * scene's light, so unlit materials become standard ones with the same map / colour. Returns the new
+ * scene's light, so unlit materials become standard ones with the same map / colour (plus a small
+ * emissive lift of the same map, `lift`, so the hero is not a black silhouette). Returns the new
  * per-instance materials (for fades and disposal).
  */
-export function lightUp(root: Object3D, roughness = 0.7): Material[] {
+export function lightUp(root: Object3D, roughness = 0.7, lift = 0.32): Material[] {
   const out: Material[] = [];
   root.traverse(o => {
     const m = o as Mesh;
@@ -73,6 +77,8 @@ export function lightUp(root: Object3D, roughness = 0.7): Material[] {
       if (src instanceof MeshBasicMaterial || (src as { isMeshBasicMaterial?: boolean }).isMeshBasicMaterial) {
         const b = src as MeshBasicMaterial;
         const s = new MeshStandardMaterial({ map: b.map, color: b.color, roughness, metalness: 0, transparent: b.transparent, opacity: b.opacity, alphaTest: b.alphaTest, side: b.side });
+        // a little of the texture glows through, so he reads against the night street (not a silhouette)
+        if (lift > 0 && b.map) { s.emissive.set("#ffffff"); s.emissiveMap = b.map; s.emissiveIntensity = lift; }
         out.push(s);
         return s;
       }

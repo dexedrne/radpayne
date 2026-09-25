@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Session } from "./session.ts";
 import { Scene } from "./Scene.tsx";
-import { assetsRef, loadManifest, manifestFor, loadOptional, gunClipsPath } from "./characters.ts";
+import { assetsRef, loadManifest, manifestFor, loadOptional, gunClipsPath, MILADY_CLIPS } from "./characters.ts";
 import { readLevel } from "../world/level.ts";
 import { useUi } from "../ui/store.ts";
 import { Hud, gradeFilter } from "../ui/Hud.tsx";
@@ -14,11 +14,14 @@ import { Loading, Pause, ResultsScreen, Title, btn, layer } from "../ui/screens.
 import { Cutscene, loadCutscene, type CutsceneData } from "../ui/Cutscene.tsx";
 import { attachDom } from "../input/input.ts";
 import { setMuted, unlockAudio } from "../audio/engine.ts";
+import { loadSamples, setFootsteps, setHeartbeat, setMusic, stopNarration, stopRoomAudio } from "../audio/sfx.ts";
 import { Bot } from "../sim/bot.ts";
 
 const DEV = import.meta.env.MODE !== "production";
 const params = new URLSearchParams(location.search);
 const BOT = DEV && params.has("bot");
+/** ?bot=demo: the bot shows off bullet time, a shootdodge and the full kill cam (browser check). */
+const BOT_DEMO = params.get("bot") === "demo";
 const SKIP = DEV && (params.has("skip") || BOT);
 const ROOM = params.get("room") ?? "room1";
 /** ?q=low: low quality for this page load only (headless smoke runs). */
@@ -75,7 +78,7 @@ export default function PlayPage() {
     const tryLoad = async () => {
       for (let i = 0; i < 50 && !assetsRef.current; i++) await new Promise(r => setTimeout(r, 50));
       const failed = await loadManifest(manifestFor(radbro), f => { if (useUi.getState().screen === "loading") useUi.setState({ load: { progress: f, label: "radbro", error: null } }); });
-      await loadOptional(gunClipsPath(radbro));
+      await Promise.all([loadOptional(gunClipsPath(radbro)), loadOptional(MILADY_CLIPS)]);
       if (!live) return;
       if (failed) { useUi.setState({ load: { progress: 0, label: "", error: failed } }); return; }
       useUi.setState(s => ({ assetsVersion: s.assetsVersion + 1 }));
@@ -133,15 +136,16 @@ export default function PlayPage() {
   const play = useCallback(async () => {
     if (!session) return;
     unlockAudio();
+    void loadSamples();
     useUi.setState({ screen: "loading", load: { progress: modelsReady ? 1 : 0, label: "radbro", error: null } });
     for (let i = 0; i < 400 && !useUi.getState().assetsVersion; i++) await new Promise(r => setTimeout(r, 50));
     session.restart({ difficulty: useUi.getState().difficulty });
-    session.bot = BOT ? new Bot() : null;
+    session.bot = BOT ? new Bot(3.5, 0.3, BOT_DEMO) : null;
     session.paused = true;
     if (!seenCutscene.current && !SKIP) {
       seenCutscene.current = true;
       const c = await loadCutscene("c1");
-      if (c) { setCut(c); useUi.setState({ screen: "cutscene" }); return; }
+      if (c) { setCut(c); useUi.setState({ screen: "cutscene" }); void loadSamples().then(() => setMusic("calm")); return; }
     }
     startPlay();
   }, [session, modelsReady, startPlay]);
@@ -157,6 +161,8 @@ export default function PlayPage() {
     if (phase === "done" || phase === "dead") {
       session.paused = true;
       if (document.pointerLockElement) document.exitPointerLock();
+      setHeartbeat(false);
+      setFootsteps(0);
       const g = session.game;
       useUi.setState({ screen: "results", results: { cleared: phase === "done", stats: { ...g.stats }, room: session.roomId, difficulty: g.difficulty, radbro: useUi.getState().radbro } });
     }
@@ -171,13 +177,15 @@ export default function PlayPage() {
   const retry = () => {
     if (!session) return;
     session.restart({ difficulty: useUi.getState().difficulty });
-    session.bot = BOT ? new Bot() : null;
+    session.bot = BOT ? new Bot(3.5, 0.3, BOT_DEMO) : null;
     startPlay();
   };
   const toTitle = () => {
     if (!session) return;
     session.paused = true;
     session.restart();
+    stopNarration();
+    stopRoomAudio(true);
     useUi.setState({ screen: "title" });
   };
 

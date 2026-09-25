@@ -5,9 +5,10 @@ a Milady gang's rave in bullet time: dual pistols, slow motion, shootdodges, and
 
 > they said wagmi. they lied.
 
-**Status:** chapter 1, first round. Room 1 is playable with the core mechanics: the rainy Manhattan
-street outside the Milady rave, with puddle reflections, neon bloom and rain that slows in bullet time.
-The pistol animations and the other rooms come next.
+**Status:** chapter 1, first round. The opening plays start to finish: title, the comic-panel
+cutscene with the narrator, then room 1, the rainy Manhattan street outside CLUB MILADY (puddle
+reflections, neon bloom, rain that slows in bullet time). Clear the Milady goons, watch the last bullet
+land, walk to the club door. To be continued: the rave.
 
 ## Play
 
@@ -32,6 +33,8 @@ Pick a Radbro and a difficulty, then press **PLAY**. Click the game to lock the 
 
 A gamepad also works: left stick to move, right stick to aim, RT to fire, LT for bullet time, B to dive,
 A to jump, X to reload, Y for copium.
+
+The cutscene: click, Space or Enter turns the page, Esc skips it.
 
 After you land from a dive you lie prone and can keep shooting. Press a move key to get up (0.6 s). If
 you hold a move key as you land, you roll straight into a run. Kill the whole room, watch the last
@@ -63,7 +66,8 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
 - **Dev URL flags:**
   - `?room=<id>` loads a level file.
   - `?skip` skips the title and the cutscene.
-  - `?bot` lets a bot play the room.
+  - `?bot` lets a bot play the room (`?bot=demo`: it also pops bullet time, shootdodges once and
+    watches the whole kill cam).
   - `?seed=N` fixes the seed.
   - `?hitboxes` shows the hit skeletons.
   - `?markers` shows the level markers.
@@ -75,10 +79,27 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
 The simulation runs at a fixed 120 Hz and is deterministic for a given level, seed, difficulty and
 input log. Bullet time is a time scale on it.
 
+- **Assets** (all generated outputs, web-ready):
+  - `public/models/radbro<id>.gun.glb`: the shooter clip set per Radbro (aimed idle / walk / back /
+    strafe / run, Shootdodge -> Prone_Idle -> Prone_GetUp, Land_Roll, Hit_Small, Reload, cover crouch,
+    four deaths). `milady.gun.glb` is the same set as the source the Miladys are retargeted from.
+    Pistol grip offsets per hand: `src/anim/grips.ts`.
+  - `public/audio/`: `sfx/`, `music/` (calm street + fight loops), `voices/narrator/` and the two goon
+    voices in `voices/goon_a|goon_b/`. `src/audio/sfx.ts` plays them; `src/app/director.ts` runs the
+    barks and the narrator's tutorial lines.
+  - `public/cutscenes/c1.json` + `c1/panel_*.webp`: the comic panels, each with its caption box
+    position and narrator lines.
+- **Headless check:** with the dev server up,
+  `RADPAYNE_CHROME_PROFILE=<throwaway dir> RADPAYNE_GPU=1 RADPAYNE_CUTSCENE=1 node tools/smoke.ts
+  "http://localhost:4880/?bot=demo&seed=1&webgl2" .local/shots/run` plays title -> cutscene, then the
+  bot clears the room, and saves screenshots. `RADPAYNE_GPU=1` uses the machine's GPU (WebGL2);
+  without it Chromium falls back to SwiftShader (very slow).
+
 ## Credits
 
 - Built on [react-three-game](https://prnth.com/react-three-game/) by prnth.
 - The Milady gang are [Pockit](https://github.com/prnthh/Pockit) models by prnth, loaded at runtime from
   one pinned commit.
 - The Radbros come from RadRun.
+- Some of the gun clips are retargeted from free clips in prnth's [moviemaker](https://github.com/prnthh/moviemaker) set.
 - By [@dexedrne](https://x.com/dexedrne).

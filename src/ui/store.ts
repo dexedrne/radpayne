@@ -60,6 +60,8 @@ type Ui = {
   backend: string;
   /** Bumped whenever character models finish loading (the views rebuild their rigs). */
   assetsVersion: number;
+  /** Narrator subtitle + key hint on the HUD (until = performance.now()). */
+  subtitle: { text: string; hint: string; until: number };
 };
 
 const stored = (k: string, d: string): string => {
@@ -97,4 +99,5 @@ export const useUi = create<Ui>(() => ({
   muted: stored("muted", "0") === "1",
   backend: "",
   assetsVersion: 0,
+  subtitle: { text: "", hint: "", until: 0 },
 }));

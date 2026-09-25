@@ -3,32 +3,37 @@
   "title": "Chapter 1: Rugged",
   "panels": [
     {
-      "image": "",
-      "tone": "street",
-      "caption": "manhattan. 3 a.m.",
-      "narration": "the rain came down like a rug pull. all at once, and right on me.",
-      "dur": 5
-    },
-    {
-      "image": "",
+      "image": "/cutscenes/c1/panel_1.webp",
       "tone": "phone",
-      "caption": "they said wagmi.",
-      "narration": "they lied. one signature and the bag was gone. every last jpeg.",
-      "dur": 5
+      "box": [0.031, 0.036, 0.234, 0.093],
+      "lines": [
+        { "audio": "cs1_01", "text": "they said wagmi. they lied." },
+        { "audio": "cs1_02", "text": "the rain in manhattan never stops. neither does the rug." }
+      ]
     },
     {
-      "image": "",
+      "image": "/cutscenes/c1/panel_2.webp",
+      "tone": "street",
+      "box": [0.025, 0.037, 0.193, 0.107],
+      "lines": [
+        { "audio": "cs1_03", "text": "one minute i was comfy. diamond hands, a fat bag, a future. then the chart went vertical... the wrong way." }
+      ]
+    },
+    {
+      "image": "/cutscenes/c1/panel_3.webp",
       "tone": "club",
-      "caption": "the trail went cold at one door.",
-      "narration": "pink neon. a queue of Miladys. CLUB MILADY. my bag was somewhere inside.",
-      "dur": 5.5
+      "box": [0.019, 0.028, 0.167, 0.078],
+      "lines": [
+        { "audio": "cs1_04", "text": "the miladys had my bag. three floors of bass and bad intentions, and my bag was on the top one." }
+      ]
     },
     {
-      "image": "",
+      "image": "/cutscenes/c1/panel_4.webp",
       "tone": "guns",
-      "caption": "the bass was loud.",
-      "narration": "my heart was louder. two pistols, zero copium to spare. time to get it back.",
-      "dur": 5
+      "box": [0.013, 0.028, 0.221, 0.111],
+      "lines": [
+        { "audio": "cs1_05", "text": "soaked to the bone outside club milady. two pistols, and nothing left to lose but my cope." }
+      ]
     }
   ]
 }
