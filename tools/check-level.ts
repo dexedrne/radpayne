@@ -31,6 +31,10 @@ for (const f of files) {
     if (m.kind === "crowd" && typeof m.data.flee === "string" && !level.markers.some(x => x.kind === "crowdExit" && x.id === m.data.flee)) issues.push(`crowd ${m.id}: flee exit ${m.data.flee} does not exist`);
     if (m.kind === "enemy" && m.data.kind && !["goon", "rusher", "heavy"].includes(String(m.data.kind))) issues.push(`enemy ${m.id}: unknown kind ${String(m.data.kind)}`);
     if (m.kind === "pickup" && !["copium", "shotgun", "smgs", "shotgun_ammo", "smgs_ammo"].includes(String(m.data.item ?? "copium"))) issues.push(`pickup ${m.id}: unknown item ${String(m.data.item)}`);
+    // room 3: the breach door must be a collider; conditional triggers need their group / checkpoint
+    if (m.kind === "trigger" && m.data.action === "breach" && !level.boxes.some(b => b.node === m.data.door)) issues.push(`trigger ${m.id}: breach door ${String(m.data.door)} is not a collider`);
+    if (m.kind === "trigger" && typeof m.data.whenClear === "string" && !level.markers.some(e => e.kind === "enemy" && e.data.group === m.data.whenClear)) issues.push(`trigger ${m.id}: no enemy in group ${m.data.whenClear}`);
+    if (m.kind === "trigger" && typeof m.data.at === "string" && !level.markers.some(c => c.kind === "checkpoint" && c.id === m.data.at)) issues.push(`trigger ${m.id}: checkpoint marker ${m.data.at} does not exist`);
   }
   if (level.markers.some(m => m.kind === "crowd") && !level.markers.some(m => m.kind === "crowdExit")) issues.push("crowd without a crowdExit: they all cower");
   for (const m of level.markers) {

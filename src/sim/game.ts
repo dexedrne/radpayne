@@ -15,9 +15,9 @@ import { aimDir } from "./aim.ts";
 import { Crowd } from "./crowd.ts";
 import { Fnv1a, Rand, hash01 } from "./math.ts";
 import { PM_DIVE, PM_GETUP, PM_JUMP, PM_LAND, PM_PRONE, muzzleOf, pivotOf, stepPlayer } from "./player.ts";
-import { AI, DIFFICULTY, DT, ENEMY, HEAVY, HEAVY_SCALE, KILLCAM, MAX_RANGE, METER, PLAYER, PROJECTILE_SPEED, RUSHER, TIME, type Difficulty } from "./tuning.ts";
+import { AI, BREACH, CHECKPOINT_MIN_HEALTH, DIFFICULTY, DODGE, DT, ENEMY, HEAVY, HEAVY_SCALE, KILLCAM, MAX_RANGE, METER, PLAYER, PROJECTILE_SPEED, RUSHER, TIME, type Difficulty } from "./tuning.ts";
 import { PLAYER_ID, type GameEvent, type InputFrame, type V3 } from "./types.ts";
-import { World } from "./world.ts";
+import { World, circleRectOverlap, type Box } from "./world.ts";
 
 export const POCKIT_COUNT = 3333;
 
@@ -57,12 +57,25 @@ export type KillCam = {
   headshot: boolean;
 };
 
-/** loadout: extra weapons owned from the start (tests, dev ?loadout=); the pistols are always owned. */
-export type GameOptions = { seed?: number; difficulty?: Difficulty; ai?: boolean; loadout?: WeaponId[] };
+/** loadout: extra weapons owned from the start (tests, dev ?loadout=); the pistols are always owned.
+ *  resume: start from a checkpoint saved in an earlier attempt (Game.saved). */
+export type GameOptions = { seed?: number; difficulty?: Difficulty; ai?: boolean; loadout?: WeaponId[]; resume?: Resume };
+
+/** What a checkpoint keeps (room 3's, after the security office): where he stands, who is down, which
+ *  doors are open, what was picked up and fired, his guns and ammo, health, copium and the stats so far.
+ *  A retry after it rebuilds the room from the level and applies this (deterministic, like any start). */
+export type Resume = {
+  x: number; y: number; z: number; facing: number;
+  dead: string[]; breached: string[]; taken: string[]; fired: string[];
+  drops: Array<{ id: string; item: string; x: number; y: number; z: number }>;
+  owned: WeaponId[]; weapon: WeaponId; ammo: Array<[WeaponId, number, number, number]>;
+  health: number; copium: number; meter: number; stats: Stats;
+};
 
 export type Stats = { kills: number; headshots: number; shots: number; hits: number; damageTaken: number; copiumUsed: number; time: number; btTime: number; dodges: number };
 
-type Trigger = Marker & { fired: boolean };
+/** wait: real seconds the player has stood in it (the breach door's fallback); prompted: its hint was given. */
+type Trigger = Marker & { fired: boolean; wait: number; prompted: boolean };
 export type Pickup = { id: string; item: string; amount: number; x: number; y: number; z: number; taken: boolean };
 
 export class Game {
@@ -95,6 +108,15 @@ export class Game {
   wakeNext = 0;
   /** Real seconds. */
   realTime = 0;
+  /** Doors taken out of the world (prefab node ids): the breach. */
+  readonly breached: string[] = [];
+  /** Real seconds of the breach's slow motion left. */
+  breachSlow = 0;
+  /** The last checkpoint this attempt reached (a retry resumes from it), and whether this attempt is one. */
+  saved: Resume | null = null;
+  readonly resumed: boolean;
+  /** Meter the last shootdodge cost (a dive through the breach door gives it back). */
+  private dodgeSpent = 0;
   timeScale = 1;
   bulletTime = false;
   meter: number = METER.start;
@@ -133,6 +155,9 @@ export class Game {
     this.checkpoint = { x: sx, y: this.player.y, z: sz, facing: spawn?.yaw ?? 0 };
     let n = 0;
     const drops = (level.room.drops ?? {}) as Record<string, string>;
+    // a group waits unseen (inactive) only when a spawn trigger brings it in; a group named by an alert
+    // or a breach trigger only (the back rooms' storage and security office) is there from the start
+    const spawned = new Set(level.markers.filter(m => m.kind === "trigger" && m.data.action === "spawn" && typeof m.data.group === "string").map(m => m.data.group as string));
     for (const m of level.markers) {
       if (m.kind === "enemy") {
         const kindName = (m.data.kind as string | undefined) ?? "goon";
@@ -141,7 +166,10 @@ export class Game {
         const pick = kind === "heavy" ? 0 : typeof m.data.milady === "number" ? (m.data.milady as number) : 1 + Math.floor(hash01(this.seed, n, 0x6d, 0) * POCKIT_COUNT);
         const gy = this.world.groundBelow(m.x, m.z, 0.3, m.y + 1);
         const e = makeEnemy(n, m.id, m.x, Number.isFinite(gy) ? gy : m.y, m.z, m.yaw, ENEMY[kind].hp, pick, typeof m.data.group === "string" ? m.data.group : "", kind);
+        if (e.group && !spawned.has(e.group)) e.state = "idle";
         e.perch = m.data.perch === true;
+        e.deaf = m.data.deaf === true;
+        e.hold = m.data.hold === true;
         if (kind === "heavy") e.model = m.data.model === "rival723" || (m.data.model === undefined && n % 2 === 1) ? "rival723" : "rival652";
         if (kind === "rusher") e.engageAt = RUSHER.engage[0] + (RUSHER.engage[1] - RUSHER.engage[0]) * hash01(this.seed, n, 0x72, 1);
         // the drop at the body: the marker's, else the room's per kind, else a heavy's shotgun
@@ -155,7 +183,7 @@ export class Game {
         const base = typeof m.data.amount === "number" ? (m.data.amount as number) : item === "copium" ? 1 : PICKUPS[item]?.amount ?? 1;
         // copium scales with the difficulty; weapons and ammo do not
         this.pickups.push({ id: m.id, item, amount: item === "copium" ? Math.max(1, Math.floor(base * this.diff.copium)) : base, x: m.x, y: m.y, z: m.z, taken: false });
-      } else if (m.kind === "trigger") this.triggers.push({ ...m, fired: false });
+      } else if (m.kind === "trigger") this.triggers.push({ ...m, fired: false, wait: 0, prompted: false });
     }
     this.actors = [this.player.hit, ...this.enemies.map(e => e.hit)];
     for (const e of this.enemies) this.syncEnemyPose(e);
@@ -164,9 +192,61 @@ export class Game {
     // a loadout starts with its last weapon in hand
     const last = opts.loadout?.[opts.loadout.length - 1];
     if (last && this.player.arsenal[last]) this.player.weapon = this.player.arsenal[last]!;
+    this.resumed = !!opts.resume;
+    if (opts.resume) this.applyResume(opts.resume);
     // First aim state so the camera and crosshair are valid before the first step.
     this.player.yaw = this.player.facing - Math.PI;
     this.updateAim();
+  }
+
+  /** The checkpoint as it stands now (the trigger's `at` checkpoint marker, else the trigger itself). */
+  private snapshot(at: { x: number; y: number; z: number; yaw: number }): Resume {
+    const p = this.player;
+    return {
+      x: at.x, y: at.y, z: at.z, facing: at.yaw,
+      dead: this.enemies.filter(e => e.state === "dead").map(e => e.id),
+      breached: [...this.breached],
+      taken: this.pickups.filter(k => k.taken).map(k => k.id),
+      fired: this.triggers.filter(t => t.fired).map(t => t.id),
+      drops: this.pickups.filter(k => k.id.startsWith("drop-")).map(k => ({ id: k.id, item: k.item, x: k.x, y: k.y, z: k.z })),
+      owned: [...p.owned], weapon: p.weapon.id,
+      ammo: p.owned.map(w => { const a = p.arsenal[w]!; return [w, a.mags[0], a.mags[1], a.reserve] as [WeaponId, number, number, number]; }),
+      health: p.health, copium: p.copium, meter: this.meter, stats: { ...this.stats },
+    };
+  }
+
+  /** Rebuild the room as the checkpoint left it (no events: the views read the state). */
+  private applyResume(r: Resume): void {
+    const p = this.player;
+    const gy = this.world.groundBelow(r.x, r.z, PLAYER.radius, r.y + 1);
+    p.x = r.x; p.y = Number.isFinite(gy) ? gy : r.y; p.z = r.z; p.facing = r.facing;
+    this.checkpoint = { x: p.x, y: p.y, z: p.z, facing: r.facing };
+    for (const id of r.breached) if (this.world.setEnabled(id, false)) this.breached.push(id);
+    for (const d of r.drops) this.pickups.push({ ...d, amount: PICKUPS[d.item]?.amount ?? 1, taken: false });
+    for (const k of this.pickups) if (r.taken.includes(k.id)) k.taken = true;
+    for (const e of this.enemies) {
+      if (!r.dead.includes(e.id)) continue;
+      setState(e, "dead");
+      e.hit.hittable = false;
+      e.deadT = 30;
+      this.syncEnemyPose(e);
+    }
+    for (const t of this.triggers) {
+      if (!r.fired.includes(t.id)) continue;
+      t.fired = true;
+      t.prompted = true;
+      // the groups those triggers woke are awake again (the living ones)
+      if (t.data.action === "spawn") for (const e of this.enemies) if (e.state === "inactive" && e.group === t.data.group) { setState(e, "idle"); e.hit.hittable = true; }
+      if (t.data.action === "breach") for (const e of this.enemies) if (e.group === t.data.group) e.deaf = false;
+    }
+    for (const w of r.owned) this.giveWeapon(w);
+    for (const [w, m0, m1, res] of r.ammo) { const a = p.arsenal[w]; if (a) { a.mags[0] = m0; a.mags[1] = m1; a.reserve = res; } }
+    if (p.arsenal[r.weapon]) p.weapon = p.arsenal[r.weapon]!;
+    p.health = Math.max(r.health, CHECKPOINT_MIN_HEALTH);
+    p.copium = r.copium;
+    this.meter = Math.max(r.meter, METER.start * 0.5);
+    this.stats = { ...r.stats };
+    this.saved = r;
   }
 
   emit(e: GameEvent): void {
@@ -206,7 +286,8 @@ export class Game {
       if (this.meter <= 0) { this.meter = 0; this.setBulletTime(false); }
     }
     const diving = p.mode === "dive";
-    const target = this.phase === "killcam" ? TIME.killCam : this.bulletTime || diving ? TIME.bulletTime : 1;
+    if (this.breachSlow > 0) this.breachSlow = Math.max(0, this.breachSlow - DT);
+    const target = this.phase === "killcam" ? TIME.killCam : this.breachSlow > 0 ? BREACH.slowScale : this.bulletTime || diving ? TIME.bulletTime : 1;
     this.timeScale += (target - this.timeScale) * Math.min(1, TIME.ease * DT);
     if (Math.abs(this.timeScale - target) < 1e-4) this.timeScale = target;
     const ts = this.timeScale;
@@ -223,7 +304,9 @@ export class Game {
       if (inp.reload && startReload(p.weapon)) this.emit({ type: "reload", hand: 0 });
       if (inp.copium) this.useCopium();
       if (inp.dodge && p.mode === "normal" && p.dodgeCooldown <= 0) {
+        const before = this.meter;
         if (this.meter > 0) this.meter = Math.max(0, this.meter - METER.dodgeCost);
+        this.dodgeSpent = before - this.meter;
         this.stats.dodges++;
       }
     }
@@ -233,6 +316,8 @@ export class Game {
     if (pm & PM_LAND) this.emit({ type: "land", prone: (pm & PM_PRONE) !== 0 });
     if (pm & PM_GETUP) this.emit({ type: "getup" });
     if (p.y < -30) this.hurtPlayer(1000, -1);
+    // a dive into a breach door (inside its trigger) takes the door out before he hits it
+    if (inControl && p.mode === "dive") this.tryBreach();
 
     // copium over time (player clock)
     if (p.healLeft > 0 && p.mode !== "dead") {
@@ -285,18 +370,28 @@ export class Game {
       }
       for (const t of this.triggers) {
         if (t.fired && t.data.once !== false) continue;
+        // conditional triggers fire on their condition only; the breach door has its own rules
+        if (typeof t.data.afterKills === "number" || typeof t.data.whenClear === "string") continue;
         if (!insideTrigger(t, p.x, p.y + 0.9, p.z)) continue;
+        if (t.data.action === "breach") { this.standAtDoor(t); continue; }
         this.fireTrigger(t);
       }
     }
 
-    // fallback triggers: {afterKills: N} fires once N hostiles are down, wherever the player is
+    // conditional triggers, wherever the player is: {afterKills: N} once N hostiles are down,
+    // {whenClear: group} once every hostile of that group is down
     for (const t of this.triggers) {
-      const after = t.data.afterKills;
-      if (t.fired || typeof after !== "number" || this.phase !== "play") continue;
-      let down = 0;
-      for (const e of this.enemies) if (e.state === "dead") down++;
-      if (down >= after) this.fireTrigger(t);
+      if (t.fired || this.phase !== "play") continue;
+      const after = t.data.afterKills, clear = t.data.whenClear;
+      if (typeof after === "number") {
+        let down = 0;
+        for (const e of this.enemies) if (e.state === "dead") down++;
+        if (down >= after) this.fireTrigger(t);
+      } else if (typeof clear === "string") {
+        let n = 0, down = 0;
+        for (const e of this.enemies) if (e.group === clear) { n++; if (e.state === "dead") down++; }
+        if (n > 0 && down === n) this.fireTrigger(t);
+      }
     }
 
     // phases
@@ -386,10 +481,87 @@ export class Game {
         alertGoon(this, e, 0.3 + 0.4 * this.rng.next());
       }
     } else if (action === "checkpoint") {
-      this.checkpoint = { x: t.x, y: t.y, z: t.z, facing: t.yaw };
+      const at = typeof t.data.at === "string" ? this.level.markers.find(m => m.kind === "checkpoint" && m.id === t.data.at) ?? t : t;
+      this.checkpoint = { x: at.x, y: at.y, z: at.z, facing: at.yaw };
+      this.saved = this.snapshot(at);
     } else if (action === "exit") {
       if (this.phase === "clear") { this.setPhase("done"); this.emit({ type: "exit" }); }
       else t.fired = false; // not yet: try again once the room is clear
+    }
+  }
+
+  // ---- the breach door ------------------------------------------------------------------------
+
+  /** The door box a breach trigger names (null once it is gone). */
+  doorOf(t: Marker): Box | null {
+    const id = t.data.door;
+    if (typeof id !== "string" || this.world.off.has(id)) return null;
+    return this.level.boxes.find(b => b.node === id) ?? null;
+  }
+
+  /** The player stands in a breach trigger: the hint once, and after BREACH.kickAfter real seconds
+   *  the heavy inside kicks the door open (nobody stays stuck in the hall). */
+  private standAtDoor(t: Trigger): void {
+    if (!t.prompted) {
+      t.prompted = true;
+      this.emit({ type: "trigger", id: t.id, action: "breach", group: typeof t.data.group === "string" ? t.data.group : undefined });
+    }
+    if (this.phase !== "play") return;
+    t.wait += DT;
+    if (t.wait >= BREACH.kickAfter) this.breach(t, true);
+  }
+
+  /** A dive (inside a breach trigger) about to hit its door: the door goes. */
+  private tryBreach(): void {
+    const p = this.player;
+    for (const t of this.triggers) {
+      if (t.fired || t.data.action !== "breach" || !insideTrigger(t, p.x, p.y + 0.9, p.z)) continue;
+      const b = this.doorOf(t);
+      if (!b) continue;
+      const toX = b.cx - p.x, toZ = b.cz - p.z;
+      if (toX * p.dirX + toZ * p.dirZ <= 0) continue; // diving away from it
+      if (!circleRectOverlap(b, p.x + p.dirX * 0.25, p.z + p.dirZ * 0.25, PLAYER.radius + 0.05)) continue;
+      this.breach(t, false);
+      // the door was in the way this step: the dive keeps its speed through the frame
+      p.vx = p.dirX * DODGE.speed;
+      p.vz = p.dirZ * DODGE.speed;
+    }
+  }
+
+  /** Take the door out: slow motion without a meter cost for the dive, the group behind it wakes (late:
+   *  the reward for going in fast). `kick`: the fallback, the heavy inside kicked it (no slow motion,
+   *  a normal wake, and he stands in the doorway). */
+  private breach(t: Trigger, kick: boolean): void {
+    const b = this.doorOf(t);
+    t.fired = true;
+    if (!b) return;
+    this.world.setEnabled(b.node, false);
+    this.breached.push(b.node);
+    const group = typeof t.data.group === "string" ? t.data.group : "";
+    // which way the door flies: along the dive, or out toward the hall when kicked
+    let dx = t.x - b.cx, dz = t.z - b.cz;
+    const l = Math.hypot(dx, dz) || 1;
+    dx /= l; dz /= l;
+    if (!kick) {
+      dx = this.player.dirX; dz = this.player.dirZ;
+      this.breachSlow = BREACH.slowReal;
+      this.timeScale = BREACH.slowScale;
+      this.meter = Math.min(METER.max, this.meter + this.dodgeSpent);
+      this.dodgeSpent = 0;
+    } else {
+      // the kicker: the group's first heavy, now just inside the doorway, facing the hall
+      const k = this.enemies.find(e => e.group === group && e.kind === "heavy" && e.state !== "dead");
+      if (k) {
+        k.x = b.cx - dx * 1.0; k.z = b.cz - dz * 1.0;
+        k.facing = Math.atan2(dx, dz);
+        this.syncEnemyPose(k);
+      }
+    }
+    this.emit({ type: "breach", id: b.node, kick, dx, dz });
+    for (const e of this.enemies) {
+      if (!group || e.group !== group) continue;
+      e.deaf = false;
+      alertGoon(this, e, kick ? 0.2 * this.rng.next() : BREACH.react);
     }
   }
 
@@ -417,7 +589,7 @@ export class Game {
     this.stats.shots++;
     // hearing: idle goons in range wake up
     for (const e of this.enemies) {
-      if (e.state !== "idle") continue;
+      if (e.state !== "idle" || e.deaf) continue;
       const ex = e.x - p.x, ez = e.z - p.z;
       if (ex * ex + ez * ez < AI.hearing * AI.hearing) alertGoon(this, e, 0.15);
     }
@@ -498,7 +670,7 @@ export class Game {
   /** Tell alertable friends nearby. */
   shout(e: Enemy): void {
     for (const o of this.enemies) {
-      if (o === e || o.state !== "idle") continue;
+      if (o === e || o.state !== "idle" || o.deaf) continue;
       const dx = o.x - e.x, dz = o.z - e.z;
       if (dx * dx + dz * dz < 16 * 16) alertGoon(this, o, 0.25);
     }
@@ -729,13 +901,13 @@ export class Game {
     h.str(p.weapon.id).i32(p.weapon.mags[0]).i32(p.weapon.mags[1]).f64(p.weapon.cooldown).f64(p.weapon.reloadT).f64(p.weapon.reserve);
     h.f64(this.meter).f64(this.timeScale).f64(this.time).i32(this.rng.s).str(this.phase);
     for (const e of this.enemies) h.f64(e.x).f64(e.z).f64(e.facing).f64(e.hp).str(e.state).f64(e.timer).i32(e.cover).f64(e.tell).f64(e.stagger);
-    h.i32(this.projectiles.length);
+    h.i32(this.projectiles.length).i32(this.breached.length).f64(this.breachSlow);
     for (const b of this.projectiles) h.f64(b.x).f64(b.y).f64(b.z);
     return h.hex();
   }
 }
 
-function insideTrigger(t: Marker, x: number, y: number, z: number): boolean {
+export function insideTrigger(t: Marker, x: number, y: number, z: number): boolean {
   const dx = x - t.x, dz = z - t.z;
   const c = Math.cos(t.yaw), s = Math.sin(t.yaw);
   const lx = dx * c - dz * s, lz = dx * s + dz * c;

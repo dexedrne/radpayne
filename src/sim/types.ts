@@ -61,6 +61,9 @@ export type GameEvent =
   | { type: "drop"; id: string; item: string; x: number; y: number; z: number }
   | { type: "firstShot"; x: number; z: number }
   | { type: "stagger"; enemy: number }
+  /** A door taken out of the world: `kick` = kicked open from inside (the fallback), else the player's
+   *  dive went through it; (dx, dz) = the way the door flies. */
+  | { type: "breach"; id: string; kick: boolean; dx: number; dz: number }
   | { type: "copium" }
   | { type: "playerDead" }
   | { type: "roomClear" }

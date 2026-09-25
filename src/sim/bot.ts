@@ -3,10 +3,11 @@
 // shooting, dives when hurt, uses copium below half health, walks to the exit once the room is clear.
 // It never shoots the crowd (they are not hostiles), picks up the weapons it walks past (and goes for
 // one lying within 20 m when nothing is in sight), and takes the shotgun up close, the SMGs at range.
+// At a locked breach door (room 3) it dives through when it is within 4 m and heading for it.
 // Used by the Node smoke test and the browser's ?bot mode (same input frames -> same result).
 import { HB_HEAD, HB_TORSO, aimPoint, makeCapsules } from "../combat/hitboxes.ts";
 import { PICKUPS, SLOT_ORDER, WEAPONS, ammoLeft, type WeaponId } from "../combat/weapons.ts";
-import type { Game } from "./game.ts";
+import { insideTrigger, type Game } from "./game.ts";
 import { pivotOf } from "./player.ts";
 import { emptyInput, type InputFrame } from "./types.ts";
 
@@ -151,7 +152,20 @@ export class Bot {
         const wp = this.path[0];
         const dx = wp.x - p.x, dz = wp.z - p.z;
         this.turn(f, Math.atan2(-dx, -dz), 0);
-        f.moveY = 1;
+        // walk straight at the waypoint whatever the view is doing (camera-relative input, like a
+        // player strafing round a corner): walking along the view while it turns drifts off the path
+        const dl = Math.hypot(dx, dz) || 1;
+        const sy = Math.sin(f.yaw), cy = Math.cos(f.yaw);
+        f.moveY = (dx * -sy + dz * -cy) / dl;
+        f.moveX = (dx * cy - dz * sy) / dl;
+        // a locked door in the way: dive through it (inside its trigger, within 4 m, heading for it)
+        if (p.mode === "normal" && p.grounded && p.dodgeCooldown <= 0) for (const t of g.triggers) {
+          if (t.fired || t.data.action !== "breach" || !insideTrigger(t, p.x, p.y + 0.9, p.z)) continue;
+          const b = g.doorOf(t);
+          if (!b) continue;
+          const ox = b.cx - p.x, oz = b.cz - p.z, od = Math.hypot(ox, oz);
+          if (od < 4 && (ox * dx + oz * dz) / (od * dl) > 0.85) f.dodge = true;
+        }
         // no progress for a second: hop (low barriers) and sidestep, then repath
         this.stuckT += 1 / 120;
         if ((p.x - this.stuckX) ** 2 + (p.z - this.stuckZ) ** 2 > 0.25) { this.stuckT = 0; this.stuckX = p.x; this.stuckZ = p.z; }

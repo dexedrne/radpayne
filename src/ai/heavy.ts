@@ -3,7 +3,8 @@
 //   ~4.5 m) and fires whenever he is within 12 m with a line of sight. Every shot has a tell: he raises
 //   the gun for 0.35 s with a faint red laser sight on (e.tell > 0), stands still, then fires 8 pellets.
 //   A single hit of 40+ damage staggers him for 0.6 s (e.stagger > 0), which cancels the shot in the
-//   tell. Six shells, then a 1.6 s reload.
+//   tell. Six shells, then a 1.6 s reload. A heavy with marker data {hold: true} (the manager behind his
+//   desk) never walks: he turns to the player and fires from his spot.
 // Runs on world time like the goon.
 import type { Enemy } from "../sim/actors.ts";
 import type { Game } from "../sim/game.ts";
@@ -81,8 +82,8 @@ export function stepHeavy(g: Game, e: Enemy, dt: number): void {
     return;
   }
 
-  // advance (not while reloading: he stands and racks shells in)
-  if (playerAlive && dist > HEAVY.holdAt && e.reloadT <= 0) {
+  // advance (not while reloading: he stands and racks shells in; a holding heavy stays put)
+  if (playerAlive && !e.hold && dist > HEAVY.holdAt && e.reloadT <= 0) {
     e.repath -= dt;
     if (e.repath <= 0 || e.pathI >= e.path.length) {
       e.repath = HEAVY.repath;

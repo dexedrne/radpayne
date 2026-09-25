@@ -137,6 +137,11 @@ export type Enemy = {
   repath: number;
   /** Item dropped at the body on death ("" = none). */
   drop: string;
+  /** Behind a closed door (marker data {deaf: true}): gunshots and a friend's shout do not wake her; she
+   *  still sees, feels a hit and answers a trigger (the back rooms' storage and security office). */
+  deaf: boolean;
+  /** Heavy with marker data {hold: true}: holds his spot (the manager behind his desk) and fires from it. */
+  hold: boolean;
 };
 
 export function makeEnemy(idx: number, id: string, x: number, y: number, z: number, facing: number, hp: number, milady: number, group: string, kind: EnemyKind = "goon"): Enemy {
@@ -146,6 +151,6 @@ export function makeEnemy(idx: number, id: string, x: number, y: number, z: numb
     idx, id, kind, weapon: KIND_WEAPON[kind], milady, model: "", group, x, y, z, vx: 0, vz: 0, facing, hp, state: group ? "inactive" : "idle", stateT: 0, react: 0, timer: 0,
     cover: -1, lastCover: -1, path: [], pathI: 0, peeks: 0, peeksMax: 2, burstLeft: 0, fireT: 0, flinch: 0, sees: false, lastSeenX: x, lastSeenZ: z,
     lean: 0, leanTarget: 0, crouch: false, deadT: 0, deathHold: false, killDX: 0, killDZ: 1, headshot: false, strafe: 1, hit, patrol: [], shots: 0,
-    lastShotT: -1e9, perch: false, tell: 0, stagger: 0, shells: 6, reloadT: 0, coverUsed: false, engageAt: 7, repath: 0, drop: "",
+    lastShotT: -1e9, perch: false, tell: 0, stagger: 0, shells: 6, reloadT: 0, coverUsed: false, engageAt: 7, repath: 0, drop: "", deaf: false, hold: false,
   };
 }

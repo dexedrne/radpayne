@@ -13,11 +13,11 @@ import { makeBox, type Box } from "../sim/world.ts";
 
 export type MarkerKind =
   | "spawn" // player start (facing = yaw)
-  | "enemy" // an enemy: { kind?: "goon" | "rusher" | "heavy", group?: string (spawned by a trigger), patrol?: string[] waypoint ids, milady?: number, perch?: boolean, model?: "rival652" | "rival723" (heavies), drop?: string | false }
+  | "enemy" // an enemy: { kind?: "goon" | "rusher" | "heavy", group?: string (spawned by a trigger), patrol?: string[] waypoint ids, milady?: number, perch?: boolean, model?: "rival652" | "rival723" (heavies), drop?: string | false, deaf?: boolean (gunshots and shouts do not wake her), hold?: boolean (a heavy that never walks) }
   | "cover" // a cover point: { height?: "low" | "high" (default low), side?: "left" | "right" (high cover lean side) }; facing = the direction it protects toward
   | "waypoint" // an AI path node: { links?: string[] } (else auto-linked to waypoints in line of sight within 14 m)
   | "pickup" // { item: "copium" | "shotgun" | "smgs" | "shotgun_ammo" | "smgs_ammo", amount?: number }
-  | "trigger" // volume = the node's scale: { action: "alert" | "spawn" | "exit" | "checkpoint" | "cutscene", group?: string, once?: boolean, afterKills?: number (also fires once this many hostiles are down) }
+  | "trigger" // volume = the node's scale: { action: "alert" | "spawn" | "exit" | "checkpoint" | "cutscene" | "breach", group?: string, once?: boolean, afterKills?: number (fires once this many hostiles are down, wherever he is), whenClear?: string (fires once every hostile of that group is down), door?: string (breach: the door box's node id), at?: string (checkpoint: a checkpoint marker's id) }
   | "crowd" // non-hostile dancers in an area (the node's scale): { count, clips: string[], milady?: number, role?: string, flee?: crowdExit id }
   | "crowdExit" // where the crowd runs to and vanishes (the entrance, the staff door, the fire exit)
   | "checkpoint" // respawn point (facing = yaw)
@@ -129,7 +129,8 @@ export function readLevel(prefab: Prefabish): LevelData {
         }
         if (hot(comp(node, "Material")?.materialId)) glare.push({ x: xf.x, y: xf.y, z: xf.z });
         const thick = Math.min(Math.abs(sx), Math.abs(sy), Math.abs(sz)) >= 0.2;
-        if (mesh.visible !== false && data.camera !== false && (collider || thick)) {
+        // an invisible collider drawn by a view (the breach door, a glass pane) opts in with {camera: true}
+        if ((mesh.visible !== false || data.camera === true) && data.camera !== false && (collider || thick)) {
           camBoxes.push(makeBox(camBoxes.length, node.id, xf.x, xf.y, xf.z, sx, sy, sz, xf.yaw, surface));
         }
       }

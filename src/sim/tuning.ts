@@ -125,6 +125,20 @@ export const HEAVY = {
   repath: 0.6,
 } as const;
 
+/** Room 3's breach door (round-2 plan section 3): a shootdodge through the locked office door. */
+export const BREACH = {
+  /** World speed for `real` seconds of real time after the door gives (no meter cost). */
+  slowScale: 0.2,
+  slowReal: 1.0,
+  /** The office wakes this much later than a normal alert: the reward for going in fast. */
+  react: 0.5,
+  /** Real seconds in front of the door without a dive before the heavy inside kicks it open. */
+  kickAfter: 25,
+} as const;
+
+/** A checkpoint restores at least this much health (the fight after it starts fair). */
+export const CHECKPOINT_MIN_HEALTH = 60;
+
 /** The rave crowd (not part of the fight: never hit, never in the trace, never blocks the player). */
 export const CROWD = {
   /** Flee speed (m/s): the flee clips' planted-foot speed on a Pockit, so the feet do not skate. */
