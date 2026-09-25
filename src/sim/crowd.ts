@@ -41,6 +41,10 @@ export type Dancer = {
   speed: number;
   /** 1 = visible, 0 = gone (the fade behind the door). */
   fade: number;
+  /** Seated (a booth): she stands up at (standX, standZ) before she runs (NaN = where she is). */
+  seated: boolean;
+  standX: number;
+  standZ: number;
 };
 
 export type CrowdOptions = { seed: number; pockitCount: number };
@@ -62,6 +66,8 @@ export class Crowd {
     this.graph = graph;
     this.rng = new Rand((o.seed ^ 0xc40d) >>> 0);
     this.exits = markers.filter(m => m.kind === "crowdExit");
+    // an armed girl mixed into the dancers keeps her own spot
+    const armed = markers.filter(m => m.kind === "enemy");
     for (const m of markers) {
       if (m.kind !== "crowd") continue;
       const count = Math.max(0, Math.floor(Number(m.data.count ?? 1)));
@@ -75,15 +81,18 @@ export class Crowd {
           const lx = (this.rng.next() * 2 - 1) * m.hx, lz = (this.rng.next() * 2 - 1) * m.hz;
           x = m.x + lx * c + lz * s;
           z = m.z - lx * s + lz * c;
-          if (this.free(x, z, m.y) && this.people.every(p => (p.x - x) ** 2 + (p.z - z) ** 2 >= CROWD.spacing ** 2)) break;
+          if (this.free(x, z, m.y) && this.people.every(p => (p.x - x) ** 2 + (p.z - z) ** 2 >= CROWD.spacing ** 2) && armed.every(a => (a.x - x) ** 2 + (a.z - z) ** 2 >= 1.1 ** 2)) break;
         }
-        const gy = world.groundBelow(x, z, 0.2, m.y + 1);
+        const seated = m.data.seated === true;
+        const stand = Array.isArray(m.data.stand) ? (m.data.stand as number[]) : null;
+        const gy = seated ? m.y : world.groundBelow(x, z, 0.2, m.y + 1);
         const milady = typeof m.data.milady === "number" ? m.data.milady : 1 + Math.floor(this.rng.next() * o.pockitCount);
         this.people.push({
           i: this.people.length, from: m.id, role: typeof m.data.role === "string" ? m.data.role : "", milady,
           x, y: Number.isFinite(gy) ? gy : m.y, z, facing: m.yaw + (count > 1 ? (this.rng.next() - 0.5) * 1.2 : 0),
           state: "dance", stateT: 0, delay: 0, clip: clips[Math.floor(this.rng.next() * clips.length)], phase: this.rng.next(),
           exit: typeof m.data.flee === "string" ? m.data.flee : "", path: [], pathI: 0, speed: 0, fade: 1,
+          seated, standX: stand ? stand[0] : NaN, standZ: stand ? stand[1] : NaN,
         });
       }
     }
@@ -124,9 +133,13 @@ export class Crowd {
   private route(p: Dancer, px: number, pz: number): void {
     const cands = p.exit ? this.exits.filter(e => e.id === p.exit) : this.exits;
     let best: Array<{ x: number; z: number }> | null = null, bestCost = Infinity, bestId = "";
+    // out of a booth: first to where she stands up
+    const up = Number.isFinite(p.standX);
+    const sx = up ? p.standX : p.x, sz = up ? p.standZ : p.z;
     for (const e of cands) {
-      const path = this.graph.path(p.x, p.y, p.z, e.x, e.y, e.z);
-      if (!path) continue;
+      const found = this.graph.path(sx, p.y, sz, e.x, e.y, e.z);
+      if (!found) continue;
+      const path = up ? [{ x: sx, z: sz }, ...found] : found;
       let len = 0, lx = p.x, lz = p.z, past = 0;
       for (const q of path) {
         len += Math.sqrt((q.x - lx) ** 2 + (q.z - lz) ** 2);
@@ -142,12 +155,12 @@ export class Crowd {
     } else {
       // nowhere to go: the nearest wall within 5 m, else right here
       p.exit = "";
-      let bt = 5, bx = p.x, bz = p.z;
+      let bt = 5, bx = sx, bz = sz;
       for (const [dx, dz] of DIRS) {
-        const h = this.world.raycast(p.x, p.y + 0.5, p.z, dx, 0, dz, bt, false);
-        if (h && h.t < bt) { bt = h.t; bx = p.x + dx * Math.max(0, h.t - 0.45); bz = p.z + dz * Math.max(0, h.t - 0.45); }
+        const h = this.world.raycast(sx, p.y + 0.5, sz, dx, 0, dz, bt, false);
+        if (h && h.t < bt) { bt = h.t; bx = sx + dx * Math.max(0, h.t - 0.45); bz = sz + dz * Math.max(0, h.t - 0.45); }
       }
-      p.path = [{ x: bx, z: bz }];
+      p.path = up ? [{ x: sx, z: sz }, { x: bx, z: bz }] : [{ x: bx, z: bz }];
     }
     p.pathI = 0;
   }
