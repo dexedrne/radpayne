@@ -27,14 +27,14 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
-  AdditiveBlending, BufferAttribute, BufferGeometry, DirectionalLight, DoubleSide, Mesh, MeshStandardMaterial, RepeatWrapping, Sphere, TextureLoader, Vector3,
+  AdditiveBlending, BufferAttribute, BufferGeometry, DoubleSide, Mesh, MeshStandardMaterial, RepeatWrapping, Sphere, TextureLoader, Vector3,
   type Material, type Object3D, type Texture,
 } from "three";
 import { MeshBasicNodeMaterial, MeshStandardNodeMaterial, RenderPipeline, type WebGPURenderer } from "three/webgpu";
 import {
   Fn, abs, attribute, cameraPosition, clamp, color, cross, densityFogFactor, dot, float, floor, fog, fract, hash, length, luminance,
   materialColor, materialRoughness, max, mix, mx_noise_float, neutralToneMapping, normalView, normalWorld, normalize, pass,
-  positionLocal, positionViewDirection, positionWorld, pow, reflector, replaceDefaultUV, saturate, screenUV, select, sign, sin, smoothstep,
+  positionLocal, positionViewDirection, positionWorld, pow, reflector, saturate, screenUV, sin, smoothstep,
   texture, uniform, uniformArray, uv, varying, vec2, vec3, vec4,
 } from "three/tsl";
 import { bloom } from "three/examples/jsm/tsl/display/BloomNode.js";
@@ -45,6 +45,7 @@ import { clubPulse } from "../../audio/sfx.ts";
 import { MarkerLights } from "./lights.tsx";
 import { useFx } from "./fx.ts";
 import { COMBAT, CombatRead, enemyMaskPass, enemyOutline, neonDim } from "./read.tsx";
+import { CameraKey, WORLD_UV, isActor, readTokens, type Tokens } from "./tokens.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type N = any; // TSL node graphs: the three typings are too narrow for chained swizzles / mixes
@@ -95,21 +96,8 @@ export const streetFx = {
 };
 
 // ------------------------------------------------------------------ level material rules
-const worldUV = (): N => {
-  const n = normalWorld, p = positionWorld;
-  const wallX = vec2(p.z.mul(sign(n.x)).negate(), p.y); // faces along +-x: "right" is -+z
-  const wallZ = vec2(p.x.mul(sign(n.z)), p.y);
-  const top = vec2(p.x, p.z);
-  return select(abs(n.y).greaterThan(0.5), top, select(abs(n.x).greaterThan(abs(n.z)), wallX, wallZ));
-};
-const WORLD_UV = replaceDefaultUV(() => worldUV());
-
-type Tokens = { kind: "" | "wet" | "lit" | "glow"; k: number; pulse: boolean; flicker: boolean; blink: boolean };
-function tokens(name: string): Tokens {
-  const t = name.trim().toLowerCase().split(/\s+/);
-  const kind = (["wet", "lit", "glow"].includes(t[0]) ? t[0] : "") as Tokens["kind"];
-  return { kind, k: Number(t[1]) || 1, pulse: t.includes("pulse"), flicker: t.includes("flicker"), blink: t.includes("blink") };
-}
+// (the tokens, the world-space UV rule, the actor test and the camera key are shared: tokens.ts)
+const tokens = readTokens;
 function gain(t: Tokens): N {
   const soft = READ.softGlow.find(([below]) => t.k < below);
   let g: N = float(soft ? t.k * soft[1] : t.k);
@@ -226,11 +214,6 @@ function liftActor(m: Material, lift: number): void {
   std.emissiveMap = lift > 0 ? std.map : null;
   m.needsUpdate = true;
 }
-
-/** Characters (skinned rigs, the Milady models) are not level geometry: their textures keep their
- *  own UVs (the repeat rule would re-map them to world space) and they get the actor lift instead. */
-const isActor = (o: Object3D) =>
-  (o as { isSkinnedMesh?: boolean }).isSkinnedMesh === true || /^(milady|goon|radbro)-/.test(o.name) || o.userData.rpActor === true;
 
 function walk(o: Object3D, ground: Ground | null, lift: number, actor: boolean): void {
   const a = actor || isActor(o);
@@ -468,30 +451,6 @@ function StreetPost({ low, clean }: { low: boolean; clean: boolean }) {
   return null;
 }
 
-// ------------------------------------------------------------------ camera key light
-const KEY_FWD = new Vector3(), KEY_POS = new Vector3(), KEY_UP = new Vector3(0, 1, 0);
-
-/** A directional key that rides with the camera: from just above and behind the lens, down the view.
- *  Whatever faces the camera (the player's back, the goons, their cover) is lit at any distance;
- *  the facades running along the street catch it at a grazing angle and stay dark. */
-function CameraKey() {
-  const key = useMemo(() => new DirectionalLight(READ.key.color, READ.key.intensity), []);
-  useFrame(({ camera }) => {
-    camera.updateWorldMatrix(true, false);
-    camera.getWorldPosition(KEY_POS);
-    camera.getWorldDirection(KEY_FWD);
-    key.position.copy(KEY_POS).addScaledVector(KEY_UP, 3).addScaledVector(KEY_FWD, -4);
-    key.target.position.copy(KEY_POS).addScaledVector(KEY_FWD, 12);
-    key.target.updateMatrixWorld();
-  }, FRAME.fx);
-  return (
-    <>
-      <primitive object={key} />
-      <primitive object={key.target} />
-    </>
-  );
-}
-
 // ------------------------------------------------------------------ the look
 export function StreetLook({ level, s, lowQuality }: { level: LevelData; s?: Session; lowQuality?: boolean }) {
   const scene = useThree(st => st.scene);
@@ -566,7 +525,8 @@ export function StreetLook({ level, s, lowQuality }: { level: LevelData; s?: Ses
     <>
       <hemisphereLight args={[READ.hemi.sky, READ.hemi.ground, READ.hemi.intensity]} />
       <directionalLight position={[30, 50, 25]} intensity={READ.moon} color="#86a0ff" />
-      <CameraKey />
+      {/* the facades running along the street catch the camera key at a grazing angle and stay dark */}
+      <CameraKey color={READ.key.color} intensity={READ.key.intensity} />
       <MarkerLights level={level} />
       <LevelMaterials ground={ground} actorLift={READ.actorLift} />
       <primitive object={rain} />
