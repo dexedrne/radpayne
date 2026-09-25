@@ -345,7 +345,9 @@ function ClubPost({ low }: { low: boolean }) {
     const b: N = bloom(col, low ? B.strength * 0.7 : B.strength, B.radius, B.threshold);
     b.setResolutionScale(low ? 0.25 : 0.5);
     let c: N = col.rgb.add(b.rgb);
-    c = enemyOutline(c, maskPass, RIM_EDGE, 0.22);
+    // the room is small (fights at 5-25 m): a lighter far fill than the street's, or a girl by the
+    // bar turns into a glowing pink cut-out
+    c = enemyOutline(c, maskPass, RIM_EDGE, 0.14, 0.4);
     c = neutralToneMapping(c, float(CLUB.exposure));
     const v = smoothstep(0.5, 1.05, length(uv().sub(0.5).mul(vec2(1.0, 0.8))));
     c = c.mul(float(1).sub(v.mul(CLUB.vignette)));

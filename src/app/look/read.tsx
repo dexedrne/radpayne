@@ -155,7 +155,7 @@ export function enemyMaskPass(scene: Scene, camera: Camera, gl: WebGPURenderer):
 
 /** Composites the goon outline / fill / flashes onto the HDR image (before tone mapping). `edge` swaps
  *  the outline colour (the club's pink-red rim instead of the street's coral), `silhouette` the far fill. */
-export function enemyOutline(hdr: N, maskPass: PassNode, edgeColour: readonly [number, number, number] = COMBAT.edge, silhouette: number = COMBAT.silhouette): N {
+export function enemyOutline(hdr: N, maskPass: PassNode, edgeColour: readonly [number, number, number] = COMBAT.edge, silhouette: number = COMBAT.silhouette, fill: number = COMBAT.fill): N {
   const tex: N = (maskPass as N).getTextureNode("output");
   const at = uv();
   const c: N = tex.sample(at);
@@ -184,7 +184,7 @@ export function enemyOutline(hdr: N, maskPass: PassNode, edgeColour: readonly [n
   let out: N = hdr.mul(float(1).sub(key.mul(mix(COMBAT.keyline[0], COMBAT.keyline[1], far)).mul(S)));
   out = mix(out, edgeCol, saturate(a).mul(0.92));
   // fill: a far goon's own colours lifted plus a warm floor; firing = red glow, hit = white flash
-  const lift = hdr.mul(far.mul(COMBAT.fill)).add(E.mul(far.mul(COMBAT.floor))).add(R.mul(c.g.mul(0.6)));
+  const lift = hdr.mul(far.mul(fill)).add(E.mul(far.mul(COMBAT.floor))).add(R.mul(c.g.mul(0.6)));
   out = out.add(lift.mul(cov).mul(S));
   // from range the body is a solid, slowly breathing silhouette in the edge colour (a figure, not a line)
   const breath = sin(readFx.time.mul(Math.PI * 2 * COMBAT.breathHz)).mul(0.5).add(0.5);

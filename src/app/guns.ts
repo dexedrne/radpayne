@@ -17,7 +17,7 @@ export const SHOTGUN_PUMP = new Vector3(0, 0.035, 0.4);
 export const SHOTGUN_RACK = 0.08;
 export const SMG_MUZZLE = new Vector3(0, 0.06, 0.25);
 /** Shotgun cross-sections over true size (x / y); the length follows the character's grip scale. */
-export const SHOTGUN_THICK = 1.25;
+export const SHOTGUN_THICK = 1.3;
 
 const slideGeo = new BoxGeometry(0.034, 0.036, 0.2);
 const frameGeo = new BoxGeometry(0.03, 0.022, 0.16);
@@ -31,15 +31,17 @@ const grip = new MeshStandardMaterial({ color: "#4a3a30", roughness: 0.75, metal
 const chrome = new MeshStandardMaterial({ color: "#c3c8d0", roughness: 0.25, metalness: 0.45, emissive: "#34373d" });
 
 // the shotgun: a lighter gunmetal and a dark walnut stock, so it reads against a dark hoodie
-const gunmetal = new MeshStandardMaterial({ color: "#8a909b", roughness: 0.36, metalness: 0.3, emissive: "#30343b" });
+const gunmetal = new MeshStandardMaterial({ color: "#8f96a2", roughness: 0.36, metalness: 0.3, emissive: "#40454e" });
 const walnut = new MeshStandardMaterial({ color: "#5a3b26", roughness: 0.6, metalness: 0.05, emissive: "#1c120b" });
 const polymer = new MeshStandardMaterial({ color: "#2d3036", roughness: 0.55, metalness: 0.1, emissive: "#16181c" });
-const sgGrip = new BoxGeometry(0.03, 0.1, 0.045);
-const sgReceiver = new BoxGeometry(0.05, 0.07, 0.22);
-const sgBarrel = new CylinderGeometry(0.012, 0.012, 0.46, 10);
-const sgTube = new CylinderGeometry(0.012, 0.012, 0.4, 10);
-const sgPump = new CylinderGeometry(0.022, 0.022, 0.16, 12);
-const sgStock = new BoxGeometry(0.04, 0.08, 0.3);
+// the section-4 sizes, chunkier across (REVIEW F5: at the clips' attach scale the true-size gun was
+// a 1-3 px stick at 10 m); lengths and the points the clips use (grip, pump, muzzle) are unchanged
+const sgGrip = new BoxGeometry(0.034, 0.1, 0.05);
+const sgReceiver = new BoxGeometry(0.06, 0.082, 0.22);
+const sgBarrel = new CylinderGeometry(0.017, 0.017, 0.46, 10);
+const sgTube = new CylinderGeometry(0.015, 0.015, 0.4, 10);
+const sgPump = new CylinderGeometry(0.027, 0.027, 0.16, 12);
+const sgStock = new BoxGeometry(0.046, 0.09, 0.3);
 const sgGuard = new BoxGeometry(0.01, 0.03, 0.06);
 
 /** The pump shotgun (plan section 4). The pump is gun.userData.pump (rack it by moving it along -z). */
