@@ -63,6 +63,13 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
   - Room 1's look (`src/app/look/street.tsx`) reads material names: `wet <k>` for reflective ground,
     `lit <gain>` for facades whose lit windows glow, and `glow <gain>` for neon, with `pulse` (the
     club's bass), `flicker` or `blink` added. Change the gain in the editor to retune a sign.
+- **Readability comes before the effects.** The fight is 23-46 m out, so room 1 keeps it legible
+  (`READ` in `src/app/look/street.tsx`, `COMBAT` in `src/app/look/read.tsx`):
+  - Goons: a bright edge with a dark keyline, and from range a solid, slowly breathing silhouette.
+    Neon near a goon on screen dims, and everything past the fight (~46 m) is dimmer.
+  - Gunfire has one colour code: gold / white is yours (flashes, bullets, where your shots land),
+    red is theirs (muzzle flashes, tracers, bullets). Their misses kick up only dull grit.
+  - Rain, bloom and puddle reflections stay subtle; the pause menu's Effects: Clean turns them off.
 - **Dev URL flags:**
   - `?room=<id>` loads a level file.
   - `?skip` skips the title and the cutscenes (`&cutscene` plays cutscene 1 anyway, `&ending` the
