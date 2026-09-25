@@ -3,7 +3,7 @@
 A third-person noir shooter in the browser. You play a Radbro who got rugged and shoots his way into
 a Milady gang's rave in bullet time: dual pistols, slow motion, shootdodges, and a final-kill cam.
 
-> they said wagmi. they lied.
+> they took everything I had. I went back for it.
 
 **Status:** chapter 1, first round. The opening plays start to finish: title, the comic-panel
 cutscene with the narrator, then room 1, the rainy Manhattan street outside CLUB MILADY (puddle

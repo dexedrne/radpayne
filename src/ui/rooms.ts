@@ -22,7 +22,7 @@ export type RoomText = {
   of: number;
 };
 
-export const RUGGED_LINE = "they said wagmi. they lied. get up and try again.";
+export const RUGGED_LINE = "the street took this one. get up. the bag is still in there.";
 
 const ROOMS: Record<string, Partial<RoomText>> = {
   room1: {

@@ -283,3 +283,14 @@ test("z-order: the HUD root is its own layer above every screen effect and world
   // the kill cam and the menus still cover it
   assert.ok(z(".rp-lb") > hud && z(".rp-kc") > hud && z(".rp-layer") > hud);
 });
+
+test("player-facing lines stay plain: no meme slang in the death line, the room text or the Radbro blurbs", async () => {
+  const { RUGGED_LINE } = await import("../src/ui/rooms.ts");
+  const { RADBROS } = await import("../src/ui/store.ts");
+  const slang = /\b(wagmi|ngmi|cop(e|ing)|gm|gn|fren|frens|based|rekt|lfg|degen|hodl|ser|anon|probably nothing)\b/i;
+  const t = roomText("room1");
+  const lines = [RUGGED_LINE, t.objective, t.objectiveClear, t.killcamLine, t.clearLine, t.pauseLine, ...RADBROS.map(r => r.blurb)];
+  for (const l of lines) assert.ok(!slang.test(l), `slang in "${l}"`);
+  const readme = fs.readFileSync(new URL("../README.md", import.meta.url), "utf8");
+  assert.ok(!/wagmi/i.test(readme), "README tagline");
+});
