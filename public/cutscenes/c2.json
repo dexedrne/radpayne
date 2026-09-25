@@ -1,0 +1,59 @@
+{
+  "id": "c2",
+  "title": "Chapter 1: Rugged",
+  "panels": [
+    {
+      "image": "/cutscenes/c2/panel_1.webp",
+      "tone": "club",
+      "box": [0.019, 0.029, 0.189, 0.075],
+      "lines": [
+        {
+          "audio": "cs2_01",
+          "text": "the dj was gone. the record kept spinning for nobody. glitter and brass all over the floor."
+        }
+      ],
+      "dur": 7.3
+    },
+    {
+      "image": "/cutscenes/c2/panel_2.webp",
+      "tone": "club",
+      "box": [0.02, 0.029, 0.192, 0.078],
+      "lines": [
+        {
+          "audio": "cs2_02",
+          "text": "up past the lights, behind the glass: my bag, going up. it always goes up for somebody else."
+        }
+      ],
+      "dur": 7.7
+    },
+    {
+      "image": "/cutscenes/c2/panel_3.webp",
+      "tone": "guns",
+      "box": [0.018, 0.027, 0.186, 0.08],
+      "lines": [
+        {
+          "audio": "cs2_03",
+          "text": "the girl from the door. she'd kept the key and lost her nerve."
+        },
+        {
+          "audio": "cs2_bouncer",
+          "speaker": "goon_b",
+          "text": "\"top floor. she's waiting for you.\""
+        }
+      ],
+      "dur": 8.8
+    },
+    {
+      "image": "/cutscenes/c2/panel_4.webp",
+      "tone": "guns",
+      "box": [0.02, 0.031, 0.18, 0.088],
+      "lines": [
+        {
+          "audio": "cs2_04",
+          "text": "back here the music thinned out. back here they kept the other radbros. the ones who sold early."
+        }
+      ],
+      "dur": 7.9
+    }
+  ]
+}
