@@ -16,6 +16,10 @@ In scope:
 - four comic-panel cutscenes with a narrator
 - checkpoints at each room, three difficulties, and a results screen
 
+**First round (tonight):** a playable slice of room 1, outside the Milady rave, with its look
+(section 3) and the core mechanics: dual pistols, bullet time, shootdodge, Milady goons, the
+final-kill cam and cutscene 1. The other rooms follow in later rounds.
+
 Out of scope for now: phone controls, more chapters, online leaderboards, multiplayer. A later
 leaderboard would use its own tables in an existing hosted database.
 
@@ -34,9 +38,9 @@ they lied."). The rooms:
 
 | # | Room | Beat |
 |---|---|---|
-| 0 | Cutscene 1 | The rug: the bag is gone, the Radbro wakes up in the rain |
-| 1 | Rainy alley | Tutorial fight: move, shoot, first bullet time |
-| 2 | Club Milady, dance floor | Neon, many goons, cover behind booths |
+| 0 | Cutscene 1 | The rug: the bag is gone. He ends up outside the Milady rave, soaked, and the gang has his bag inside |
+| 1 | Outside the Milady rave | Rainy Manhattan street at night: the club door, the queue barriers, parked cabs. Tutorial fight: move, shoot, first bullet time |
+| 2 | The rave, dance floor | Neon, lasers, many goons, cover behind booths and speaker stacks |
 | — | Cutscene 2 | The bouncer talks; the elevator key |
 | 3 | Back rooms and office | Tight corridors, shotgun heavies, first shootdodge through a door |
 | 4 | Service elevator ride | Doors open on two floors of goons in turn (arena) |
@@ -44,7 +48,25 @@ they lied."). The rooms:
 | 5 | Penthouse | The boss fight: she has phases and goons respawn from two doors |
 | — | Cutscene 4 | The bag back, the narrator's last line, "to be continued" |
 
-## 3. Core mechanics
+## 3. Look: rainy Manhattan at night
+
+The owner's opening: *he's outside the Milady rave. Rainy NYC night in Manhattan. Puddle
+reflections, light bloom, neon signs.*
+
+- **Street:** wet black asphalt with puddles that mirror the neon and the headlights (a planar
+  reflector on the ground, with a puddle mask for the mirror-like patches), sidewalks, a
+  crosswalk, steam from a manhole, yellow cabs, fire escapes on brick and brownstone fronts, and
+  lit windows up the towers with a skyline beyond.
+- **The rave:** "CLUB MILADY" in pink and cyan neon over the door, a queue rope, a bouncer, and
+  bass thumping through the walls (muffled outside, full inside).
+- **Light:** neon and emissive signs drive bloom, the street lamps are sodium orange, and colour
+  grading is cool blue against warm neon. Fog in the distance.
+- **Rain:** falling streaks near the camera, splash rings in the puddles, drips off awnings.
+  Everything slows in bullet time, including the rain.
+- **Quality:** a Low / High toggle. Low drops the reflector resolution, bloom and rain density.
+  The target is 60 fps on a normal desktop GPU at High.
+
+## 4. Core mechanics
 
 All gameplay runs in a fixed 120 Hz simulation. Bullet time is a `timeScale` on that simulation;
 nothing else changes. This is the same approach RadRun's simulation uses.
@@ -86,7 +108,7 @@ projectile at 60 m/s (world time), with a trail.
 - hit enemies flinch (a VRM pain expression plus an additive hit clip)
 - the dead play a death clip and stay down for the rest of the room
 
-## 4. Enemies
+## 5. Enemies
 
 | Kind | Model | Weapon | HP | Behaviour |
 |---|---|---|---|---|
@@ -105,7 +127,7 @@ effectively 3× the reaction window.
 Difficulty scales enemy damage (0.5 / 1 / 1.5), reaction delay (0.9 / 0.6 / 0.4 s) and the copium
 in pickups.
 
-## 5. Camera and controls (desktop first)
+## 6. Camera and controls (desktop first)
 
 The camera is over the right shoulder with pointer lock. Mouse aims, and the camera collides with
 walls. A gamepad works as twin-stick with aim assist.
@@ -122,7 +144,7 @@ walls. A gamepad works as twin-stick with aim assist.
 | H | copium |
 | Esc | pause |
 
-## 6. Architecture
+## 7. Architecture
 
 The layout mirrors RadRun so its modules can be copied and slimmed:
 
@@ -146,7 +168,7 @@ tools/          asset build, level checks
 - **Level markers** are plain prefab objects with a `marker` field, so levels stay editable in the
   editor.
 
-## 7. Assets
+## 8. Assets
 
 - **Radbros:**
   - the four finished game characters from RadRun (same rig, 24 bones)
@@ -167,7 +189,7 @@ tools/          asset build, level checks
   music (calm and fight loops), the narrator, and the Radbro and Milady barks. The voices follow
   RadRun's Radbro and Milady voices.
 
-## 8. Testing (kept light)
+## 9. Testing (kept light)
 
 - **Unit tests:**
   - timeScale stepping
@@ -179,7 +201,7 @@ tools/          asset build, level checks
 - **Smoke test:** one headless playthrough with a simple bot that clears room 1.
 - Everything else is tuned by hand in the editor.
 
-## 9. Release
+## 10. Release
 
 - Repo `github.com/dexedrne/radpayne`, public.
 - `radpayne.vyvanse.beer`, deployed the same way as RadRun.
