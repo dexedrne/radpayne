@@ -88,7 +88,7 @@ try {
       if (fightAt && Date.now() - fightAt > 1500) await shot("2-fight");
       if (last.ts < 0.99 && last.phase === "play" && last.proj >= 1 && slowShots < 3) { const n = `3-slowmo-${slowShots + 1}`; if (!shots.has(n)) { await shot(n); slowShots++; await sleep(700); } }
       if (last.mode === "dive") await shot("3-dive");
-      if (last.phase === "killcam") { await sleep(150); await shot("4-killcam"); }
+      if (last.phase === "killcam" && !shots.has("4-killcam")) { await sleep(150); await shot("4-killcam"); await sleep(750); await shot("4-killcam-2"); }
       if (last.phase === "clear") { await sleep(800); await shot("4b-clear"); }
       if (last.screen === "results") { await sleep(400); await shot("5-results"); code = 0; break; }
       if (last.phase === "dead") { await sleep(1500); await shot("5-dead"); break; }

@@ -47,6 +47,9 @@ export type LevelData = {
   markers: Marker[];
   room: RoomSettings;
   warnings: string[];
+  /** Hot emitters (material "glow k", k >= 3: headlights, lamps, neon): the kill cam keeps them out
+   *  of the lens. Centre points. */
+  glare: Array<{ x: number; y: number; z: number }>;
 };
 
 type Node = {
@@ -56,7 +59,7 @@ type Node = {
   children?: Node[];
   components?: Record<string, { type?: string; properties?: Record<string, unknown> } | undefined>;
 };
-type Prefabish = { root: unknown };
+type Prefabish = { root: unknown; materials?: Record<string, { name?: string } | undefined> };
 
 type Xf = { x: number; y: number; z: number; yaw: number; sx: number; sy: number; sz: number };
 
@@ -72,7 +75,12 @@ export function readLevel(prefab: Prefabish): LevelData {
   const camBoxes: Box[] = [];
   const markers: Marker[] = [];
   const warnings: string[] = [];
+  const glare: LevelData["glare"] = [];
   let room: RoomSettings = { name: "room" };
+  const hot = (id: unknown) => {
+    const m = /^glow\s+([\d.]+)/.exec((typeof id === "string" && prefab.materials?.[id]?.name) || "");
+    return !!m && Number(m[1]) >= 3;
+  };
 
   const walk = (node: Node, parent: Xf, decor: boolean) => {
     if (node.disabled) return;
@@ -111,6 +119,7 @@ export function readLevel(prefab: Prefabish): LevelData {
           if (Math.abs(rot[0] ?? 0) > 1e-4 || Math.abs(rot[2] ?? 0) > 1e-4) warnings.push(`${node.id}: X/Z rotation ignored by the collider (yaw only)`);
           boxes.push(makeBox(boxes.length, node.id, xf.x, xf.y, xf.z, sx, sy, sz, xf.yaw, surface, data.shootThrough === true));
         }
+        if (hot(comp(node, "Material")?.materialId)) glare.push({ x: xf.x, y: xf.y, z: xf.z });
         const thick = Math.min(Math.abs(sx), Math.abs(sy), Math.abs(sz)) >= 0.2;
         if (mesh.visible !== false && data.camera !== false && (collider || thick)) {
           camBoxes.push(makeBox(camBoxes.length, node.id, xf.x, xf.y, xf.z, sx, sy, sz, xf.yaw, surface));
@@ -121,5 +130,5 @@ export function readLevel(prefab: Prefabish): LevelData {
   };
   walk(prefab.root as Node, { x: 0, y: 0, z: 0, yaw: 0, sx: 1, sy: 1, sz: 1 }, false);
   if (!markers.some(m => m.kind === "spawn")) warnings.push("no spawn marker: the player starts at the origin");
-  return { boxes, camBoxes, markers, room, warnings };
+  return { boxes, camBoxes, markers, room, warnings, glare };
 }

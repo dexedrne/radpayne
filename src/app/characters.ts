@@ -48,9 +48,22 @@ export async function loadManifest(paths: string[], onProgress: (f: number) => v
 }
 
 /** Optional file: resolves true when it loaded (a 404 is fine). */
-export async function loadOptional(path: string): Promise<boolean> {
+const optional = new Map<string, Promise<boolean>>();
+
+/** Loads a model that may be missing (HEAD first). Once per path: a second call shares the first load. */
+export function loadOptional(path: string): Promise<boolean> {
+  let p = optional.get(path);
+  if (!p) {
+    p = loadOptionalOnce(path).then(ok => { if (!ok) optional.delete(path); return ok; });
+    optional.set(path, p);
+  }
+  return p;
+}
+
+async function loadOptionalOnce(path: string): Promise<boolean> {
   const assets = assetsRef.current;
   if (!assets) return false;
+  if (assets.getModel(path)) return true;
   try {
     const head = await fetch(path, { method: "HEAD" });
     if (!head.ok || !(head.headers.get("content-type") ?? "").includes("model") && !(head.headers.get("content-type") ?? "").includes("octet")) return false;

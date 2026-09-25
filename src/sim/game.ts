@@ -80,6 +80,8 @@ export class Game {
   stepN = 0;
   /** World seconds. */
   time = 0;
+  /** World time the next woken goon may come to (the wake stagger, see alertGoon). */
+  wakeNext = 0;
   /** Real seconds. */
   realTime = 0;
   timeScale = 1;

@@ -51,6 +51,9 @@ type GoonView = {
   blinkT: number;
   blinkAt: number;
   deadShown: boolean;
+  /** A death clip is on her model (false while dead on the stand-in: a model that mounts late drops
+   *  straight into the death's last pose instead of standing in the bind pose). */
+  deathPlayed: boolean;
   fallYaw: number;
   loading: boolean;
 };
@@ -83,7 +86,7 @@ function makeView(e: Enemy): GoonView {
   const standIn = makeStandIn();
   root.add(standIn);
   const gun = makePistol();
-  return { idx: e.idx, n: e.milady, root, standIn, gun, gunInHand: false, model: null, player: null, hit: null, clip: "", yaw: e.facing, legYaw: e.facing, back: false, flinch: 0, pain: 0, blinkT: -1, blinkAt: 1 + Math.random() * 3, deadShown: false, fallYaw: 0, loading: false };
+  return { idx: e.idx, n: e.milady, root, standIn, gun, gunInHand: false, model: null, player: null, hit: null, clip: "", yaw: e.facing, legYaw: e.facing, back: false, flinch: 0, pain: 0, blinkT: -1, blinkAt: 1 + Math.random() * 3, deadShown: false, deathPlayed: false, fallYaw: 0, loading: false };
 }
 
 /** Deterministic 0..1 per goon and attempt (death variant picks). */
@@ -102,41 +105,58 @@ export function EnemiesView({ s }: { s: Session }) {
     for (const v of views) group.add(v.root, v.gun);
     enemyMuzzles.length = 0;
     for (let i = 0; i < views.length; i++) enemyMuzzles.push(new Vector3());
-    // start every download now; build one at a time (parse + retarget are main-thread work)
+    // start every download now; build one at a time (parse + retarget are main-thread work), in the
+    // order the downloads finish, so one slow model never holds up the rest. A failed or stuck goon
+    // is logged and tried once more at the end; until then (or for good) she keeps her stand-in.
     let cancelled = false;
     if (!NO_MILADY && sourcesReady) {
-      for (const v of views) void fetchPockit(v.n);
       const sources = [assets.getModel(MILADY_CLIPS), assets.getModel(modelPath(RETARGET_SOURCE)), assets.getModel(clipsPath(RETARGET_SOURCE))].filter(Boolean) as Object3D[];
+      const mount = (v: GoonView, m: LoadedGoon) => {
+        if (cancelled || v.model) return;
+        v.model = m;
+        v.player = new AnimPlayer(m.vrm.scene, [m.clips], { fade: 0.2 });
+        if (m.hit) { v.hit = v.player.mixer.clipAction(m.hit); v.hit.setLoop(LoopOnce, 1); }
+        v.root.add(m.body);
+        v.standIn.visible = false;
+        v.clip = "";
+        // the pistol into her right hand (VRM grip, scaled to her forearm; VRM0 is turned 180 deg)
+        const hand = m.vrm.humanoid.getNormalizedBoneNode("rightHand");
+        if (hand) {
+          const g = MILADY_GRIP.right;
+          const grip = m.vrm0
+            ? { p: [-g.p[0], g.p[1], -g.p[2]] as [number, number, number], q: new Quaternion(0, 1, 0, 0).multiply(new Quaternion(...g.q)).toArray() as [number, number, number, number] }
+            : g;
+          attachGun(v.gun, hand, grip, m.forearm / MILADY_GRIP.forearm, 1 / m.scale);
+          v.gunInHand = true;
+        }
+        console.info(`[milady] goon ${v.idx}: #${v.n} ready (${m.clips.length} clips, scale ${m.scale.toFixed(2)}, blink ${m.blink ? "yes" : "no"}, talk ${m.talk ?? "no"})`);
+      };
+      const wait = (ms: number) => new Promise<null>(r => setTimeout(() => r(null), ms));
+      /** Build + mount one goon; false when it failed or is still stuck after 40 s (a late model still mounts). */
+      const build = async (v: GoonView): Promise<boolean> => {
+        v.loading = true;
+        const job = buildGoon(v.n, sources).then(
+          m => { if (m) mount(v, m); else console.info(`[milady] goon ${v.idx}: #${v.n} failed (no model data)`); return !!m; },
+          e => { console.info(`[milady] goon ${v.idx}: #${v.n} failed: ${String(e)}`); return false; },
+        ).finally(() => { v.loading = false; });
+        const ok = await Promise.race([job, wait(40_000)]);
+        if (ok === null) console.info(`[milady] goon ${v.idx}: #${v.n} still loading after 40 s, moving on`);
+        return ok === true;
+      };
       void (async () => {
-        for (const v of views) {
+        const pending = new Map(views.map(v => [v, fetchPockit(v.n).then(() => v)]));
+        const retry: GoonView[] = [];
+        while (pending.size && !cancelled) {
+          const v = await Promise.race(pending.values());
+          pending.delete(v);
           if (cancelled) return;
-          v.loading = true;
-          try {
-            const m = await buildGoon(v.n, sources);
-            if (cancelled || !m) continue;
-            v.model = m;
-            v.player = new AnimPlayer(m.vrm.scene, [m.clips], { fade: 0.2 });
-            if (m.hit) { v.hit = v.player.mixer.clipAction(m.hit); v.hit.setLoop(LoopOnce, 1); }
-            v.root.add(m.body);
-            v.standIn.visible = false;
-            v.clip = "";
-            // the pistol into her right hand (VRM grip, scaled to her forearm; VRM0 is turned 180 deg)
-            const hand = m.vrm.humanoid.getNormalizedBoneNode("rightHand");
-            if (hand) {
-              const g = MILADY_GRIP.right;
-              const grip = m.vrm0
-                ? { p: [-g.p[0], g.p[1], -g.p[2]] as [number, number, number], q: new Quaternion(0, 1, 0, 0).multiply(new Quaternion(...g.q)).toArray() as [number, number, number, number] }
-                : g;
-              attachGun(v.gun, hand, grip, m.forearm / MILADY_GRIP.forearm, 1 / m.scale);
-              v.gunInHand = true;
-            }
-            console.info(`[milady] goon ${v.idx}: #${v.n} ready (${m.clips.length} clips, scale ${m.scale.toFixed(2)}, blink ${m.blink ? "yes" : "no"}, talk ${m.talk ?? "no"})`);
-          } catch (e) {
-            console.info(`[milady] #${v.n} failed: ${String(e)}`);
-          } finally {
-            v.loading = false;
-          }
-          await new Promise(r => setTimeout(r, 30));
+          if (!(await build(v))) retry.push(v);
+          await wait(30);
+        }
+        for (const v of retry) {
+          if (cancelled || v.model) continue;
+          console.info(`[milady] goon ${v.idx}: retrying #${v.n}`);
+          await build(v);
         }
       })();
     }
@@ -169,7 +189,7 @@ export function EnemiesView({ s }: { s: Session }) {
     if (run.current !== s.run) {
       run.current = s.run;
       for (const v of views) {
-        v.deadShown = false; v.clip = ""; v.flinch = 0; v.pain = 0; v.yaw = g.enemies[v.idx]?.facing ?? 0; v.legYaw = v.yaw; v.back = false;
+        v.deadShown = false; v.deathPlayed = false; v.clip = ""; v.flinch = 0; v.pain = 0; v.yaw = g.enemies[v.idx]?.facing ?? 0; v.legYaw = v.yaw; v.back = false;
         v.hit?.stop();
         if (v.player) v.player.force(pick(v.player, CLIPS.relaxed), 0);
       }
@@ -195,7 +215,12 @@ export function EnemiesView({ s }: { s: Session }) {
             const hit = g.world.raycast(e.x, e.y + 0.9, e.z, e.killDX / l, 0, e.killDZ / l, 6, false);
             const death = pick(pl, deathFor(hit ? hit.t : 6, k01(v.idx, s.run)));
             if (death) pl.play(death, { hold: true, fade: 0.08 });
+            v.deathPlayed = true;
           }
+        } else if (v.deadShown && v.player && !v.deathPlayed) {
+          const death = pick(v.player, deathFor(6, k01(v.idx, s.run)));
+          if (death) v.player.play(death, { hold: true, fade: 0, startAt: 1e3 });
+          v.deathPlayed = true;
         }
       } else v.yaw += wrapAngle(e.facing - v.yaw) * Math.min(1, 14 * dt);
       v.root.position.set(p.x, p.y, p.z);

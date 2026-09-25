@@ -11,7 +11,11 @@ import { MILADY_HEAD_BONE } from "../combat/hitboxes.ts";
 
 /** prnthh/Pockit main at the time of writing (same pin as RadRun); bump deliberately. */
 export const POCKIT_SHA = "8009d19eb16815e2f5e39f0fb7adaac69cf691c8";
-const TIMEOUT_MS = 12_000;
+/** A download that makes no progress for this long is dropped for the next mirror (a stall, not a
+ *  total time: the biggest models are ~3 MB and all eight start at once). */
+const STALL_MS = 10_000;
+/** Hard cap per mirror. */
+const MAX_MS = 45_000;
 
 export const pockitUrls = (n: number) => [
   `https://raw.githubusercontent.com/prnthh/Pockit/${POCKIT_SHA}/web/${n}.vrm`,
@@ -20,28 +24,58 @@ export const pockitUrls = (n: number) => [
 
 const bytes = new Map<number, Promise<{ buf: ArrayBuffer; url: string } | null>>();
 
-/** Start (once per number) the download of a model. */
+/** One mirror: streamed, aborted on a stall or the hard cap. Throws with the reason. */
+async function download(url: string): Promise<ArrayBuffer> {
+  const ctl = new AbortController();
+  let why = "";
+  const cap = setTimeout(() => { why = `over ${MAX_MS / 1000} s`; ctl.abort(); }, MAX_MS);
+  let stall = setTimeout(() => { why = `no data for ${STALL_MS / 1000} s`; ctl.abort(); }, STALL_MS);
+  const alive = () => {
+    clearTimeout(stall);
+    stall = setTimeout(() => { why = `stalled for ${STALL_MS / 1000} s`; ctl.abort(); }, STALL_MS);
+  };
+  try {
+    const r = await fetch(url, { mode: "cors", signal: ctl.signal });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    alive();
+    if (!r.body) return await r.arrayBuffer();
+    const reader = r.body.getReader();
+    const parts: Uint8Array[] = [];
+    let size = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      parts.push(value);
+      size += value.byteLength;
+      alive();
+    }
+    const out = new Uint8Array(size);
+    let o = 0;
+    for (const p of parts) { out.set(p, o); o += p.byteLength; }
+    return out.buffer;
+  } catch (e) {
+    throw new Error(why || String(e));
+  } finally {
+    clearTimeout(cap);
+    clearTimeout(stall);
+  }
+}
+
+/** Start (once per number) the download of a model: every mirror in turn, each failure logged. A
+ *  failed number is forgotten, so a later call tries again. */
 export function fetchPockit(n: number): Promise<{ buf: ArrayBuffer; url: string } | null> {
   let p = bytes.get(n);
   if (p) return p;
   p = (async () => {
-    const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS);
-    try {
-      for (const url of pockitUrls(n)) {
-        try {
-          const r = await fetch(url, { mode: "cors", signal: ctl.signal });
-          if (r.ok) return { buf: await r.arrayBuffer(), url };
-          console.info(`[milady] ${r.status} for #${n}`);
-        } catch (e) {
-          if (ctl.signal.aborted) break;
-          console.info(`[milady] fetch failed for #${n}: ${String(e)}`);
-        }
+    for (const url of pockitUrls(n)) {
+      try {
+        return { buf: await download(url), url };
+      } catch (e) {
+        console.info(`[milady] #${n}: ${new URL(url).host} failed (${e instanceof Error ? e.message : String(e)})`);
       }
-      return null;
-    } finally {
-      clearTimeout(timer);
     }
+    bytes.delete(n);
+    return null;
   })();
   bytes.set(n, p);
   return p;
@@ -85,6 +119,8 @@ function lit(vrm: VRM): Material[] {
     const convert = (m: Material) => {
       const src = m as unknown as { map?: unknown; color?: unknown; transparent: boolean; opacity: number; side: number; alphaTest: number; depthWrite: boolean };
       const mat = new MeshStandardNodeMaterial({ roughness: 0.75, metalness: 0 });
+      // her own UVs: the room looks' level rules (world-space repeat textures) must never touch it
+      mat.userData.rpOwn = true;
       Object.assign(mat, { map: src.map ?? null, transparent: src.transparent, opacity: src.opacity, side: src.side, alphaTest: src.alphaTest, depthWrite: src.depthWrite });
       if (src.color && typeof (src.color as { clone?: () => unknown }).clone === "function") (mat as unknown as { color: { copy: (c: unknown) => void } }).color.copy(src.color);
       // a small emissive lift of the same texture: the gang reads under the neon instead of going black
@@ -119,6 +155,7 @@ export async function buildGoon(n: number, sources: Object3D[]): Promise<LoadedG
   const legScale = hipsY > 0.1 && srcHipsY > 0.1 ? Math.min(1.4, Math.max(0.5, (hipsY * scale) / srcHipsY)) : 1;
   const body = new Group();
   body.name = `milady-${n}`;
+  body.userData.rpActor = true;
   body.scale.setScalar(scale);
   body.add(vrm.scene);
   const clips: AnimationClip[] = [];

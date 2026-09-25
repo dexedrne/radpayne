@@ -104,6 +104,8 @@ export type Enemy = {
   hit: HitActor;
   patrol: number[];
   shots: number;
+  /** World time of the last shot (the shooter slots, see DIFFICULTY.shooters). */
+  lastShotT: number;
   /** Perched (fire escape / balcony, marker data {perch: true}): holds position, never paths to cover. */
   perch: boolean;
 };
@@ -113,6 +115,6 @@ export function makeEnemy(idx: number, id: string, x: number, y: number, z: numb
     idx, id, kind: "goon", milady, group, x, y, z, vx: 0, vz: 0, facing, hp, state: group ? "inactive" : "idle", stateT: 0, react: 0, timer: 0,
     cover: -1, lastCover: -1, path: [], pathI: 0, peeks: 0, peeksMax: 2, burstLeft: 0, fireT: 0, flinch: 0, sees: false, lastSeenX: x, lastSeenZ: z,
     lean: 0, leanTarget: 0, crouch: false, deadT: 0, deathHold: false, killDX: 0, killDZ: 1, headshot: false, strafe: 1, hit: makeHitActor("milady", 1), patrol: [], shots: 0,
-    perch: false,
+    lastShotT: -1e9, perch: false,
   };
 }

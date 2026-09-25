@@ -77,10 +77,13 @@ export const ENEMY = {
 } as const;
 
 export type Difficulty = "easy" | "normal" | "hard";
-export const DIFFICULTY: Record<Difficulty, { damage: number; reaction: number; copium: number; accuracy: number; label: string }> = {
-  easy: { damage: 0.5, reaction: 0.9, copium: 2, accuracy: 0.8, label: "Chill" },
-  normal: { damage: 1, reaction: 0.6, copium: 1, accuracy: 1, label: "Normal" },
-  hard: { damage: 1.5, reaction: 0.4, copium: 0.5, accuracy: 1.15, label: "Payne" },
+// wake: goons woken together (a trigger, a shout, a shot heard) come to one after another, this many
+//   world seconds apart, so a gang never opens up as one volley.
+// shooters: at most this many goons shooting at once (a burst only starts when a slot is free).
+export const DIFFICULTY: Record<Difficulty, { damage: number; reaction: number; copium: number; accuracy: number; wake: number; shooters: number; label: string }> = {
+  easy: { damage: 0.5, reaction: 0.9, copium: 2, accuracy: 0.8, wake: 0.9, shooters: 1, label: "Chill" },
+  normal: { damage: 1, reaction: 0.6, copium: 1, accuracy: 1, wake: 0.6, shooters: 2, label: "Normal" },
+  hard: { damage: 1.5, reaction: 0.4, copium: 0.5, accuracy: 1.15, wake: 0.35, shooters: 3, label: "Payne" },
 };
 
 export const AI = {
@@ -96,6 +99,8 @@ export const AI = {
   peeksBeforeMove: [2, 3] as const,
   /** Flinch on a hit (world seconds). */
   flinch: 0.35,
+  /** A goon counts as shooting (holds a slot) until this long after its last shot (world seconds). */
+  shooterHold: 0.9,
   /** Base hit chance before falloffs. */
   baseHit: 0.5,
   /** Distance falloff: full chance under near, floor at far. */

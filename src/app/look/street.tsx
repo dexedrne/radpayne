@@ -229,7 +229,8 @@ function liftActor(m: Material, lift: number): void {
 
 /** Characters (skinned rigs, the Milady models) are not level geometry: their textures keep their
  *  own UVs (the repeat rule would re-map them to world space) and they get the actor lift instead. */
-const isActor = (o: Object3D) => (o as { isSkinnedMesh?: boolean }).isSkinnedMesh === true || o.name.startsWith("milady-");
+const isActor = (o: Object3D) =>
+  (o as { isSkinnedMesh?: boolean }).isSkinnedMesh === true || /^(milady|goon|radbro)-/.test(o.name) || o.userData.rpActor === true;
 
 function walk(o: Object3D, ground: Ground | null, lift: number, actor: boolean): void {
   const a = actor || isActor(o);

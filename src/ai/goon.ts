@@ -17,7 +17,10 @@ export function setState(e: Enemy, s: Enemy["state"]): void {
 export function alertGoon(g: Game, e: Enemy, extraDelay = 0): void {
   if (e.state !== "idle") return;
   setState(e, "alert");
-  e.react = g.diff.reaction * (0.85 + 0.3 * g.rng.next()) + extraDelay;
+  // one after another: the next goon's turn comes `wake` world seconds after the last one's
+  const turn = Math.max(g.time, g.wakeNext);
+  g.wakeNext = turn + g.diff.wake;
+  e.react = g.diff.reaction * (0.85 + 0.3 * g.rng.next()) + extraDelay + (turn - g.time);
   g.emit({ type: "alert", enemy: e.idx });
 }
 
@@ -228,6 +231,13 @@ function tryFire(g: Game, e: Enemy, dt: number, moving: boolean): void {
   e.fireT -= dt;
   if (e.fireT > 0) return;
   if (!g.canShoot(e)) { e.fireT = 0.15; return; }
+  // a new burst needs a free shooter slot (mid-burst goons keep theirs)
+  if (g.time - e.lastShotT > AI.shooterHold) {
+    let busy = 0;
+    for (const o of g.enemies) if (o !== e && o.state !== "dead" && g.time - o.lastShotT <= AI.shooterHold) busy++;
+    if (busy >= g.diff.shooters) { e.fireT = 0.2 + 0.3 * g.rng.next(); return; }
+  }
+  e.lastShotT = g.time;
   g.enemyFire(e, moving);
   e.burstLeft--;
   if (e.burstLeft <= 0) {

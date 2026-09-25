@@ -12,9 +12,11 @@ const frameGeo = new BoxGeometry(0.03, 0.022, 0.16);
 const barrelGeo = new CylinderGeometry(0.008, 0.008, 0.03, 8);
 const gripGeo = new BoxGeometry(0.03, 0.1, 0.045);
 const guardGeo = new BoxGeometry(0.008, 0.028, 0.05);
-const metal = new MeshStandardMaterial({ color: "#1b1c20", roughness: 0.35, metalness: 0.8 });
-const grip = new MeshStandardMaterial({ color: "#2a2320", roughness: 0.8, metalness: 0.1 });
-const chrome = new MeshStandardMaterial({ color: "#9aa0ab", roughness: 0.25, metalness: 1 });
+// Satin steel, not black: the street has no environment map, so a high-metalness gun renders as a black
+// hole against the night. Low metalness + a small self-lift keeps the silhouette readable from behind.
+const metal = new MeshStandardMaterial({ color: "#7d838e", roughness: 0.38, metalness: 0.35, emissive: "#2a2d33" });
+const grip = new MeshStandardMaterial({ color: "#4a3a30", roughness: 0.75, metalness: 0.05, emissive: "#140e0b" });
+const chrome = new MeshStandardMaterial({ color: "#c3c8d0", roughness: 0.25, metalness: 0.45, emissive: "#34373d" });
 
 export function makePistol(shiny = false): Group {
   const g = new Group();
@@ -30,6 +32,7 @@ export function makePistol(shiny = false): Group {
   const guard = new Mesh(guardGeo, metal);
   guard.position.set(0, 0.012, 0.045);
   g.add(slide, frame, barrel, gr, guard);
+  g.userData.rpGun = true;
   g.traverse(o => { o.frustumCulled = false; });
   return g;
 }

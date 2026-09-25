@@ -347,7 +347,7 @@ export function FxView({ s }: { s: Session }) {
         let dx = k.to.x - k.from.x, dy = k.to.y - k.from.y, dz = k.to.z - k.from.z;
         const l = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
         dx /= l; dy /= l; dz /= l;
-        put(k.from.x + (k.to.x - k.from.x) * f, k.from.y + (k.to.y - k.from.y) * f, k.from.z + (k.to.z - k.from.z) * f, dx, dy, dz, Math.min(1.5, l * f), 0.07);
+        put(k.from.x + (k.to.x - k.from.x) * f, k.from.y + (k.to.y - k.from.y) * f, k.from.z + (k.to.z - k.from.z) * f, dx, dy, dz, Math.min(0.55, l * f), 0.05); // the chase cam rides 0.9 m back: the trail stops short of the lens
       }
       for (let i = n; i < B.items.length; i++) { B.mesh.setMatrixAt(i, HIDE); T.mesh.setMatrixAt(i, HIDE); H.mesh.setMatrixAt(i, HIDE); }
       B.mesh.instanceMatrix.needsUpdate = true;
