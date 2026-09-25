@@ -7,7 +7,7 @@ import type { Session } from "./session.ts";
 import { useUi } from "../ui/store.ts";
 import { FRAME } from "./frame.ts";
 import { WEAPONS } from "../combat/weapons.ts";
-import { setAmbience, setClubBass, setFootsteps, setHeartbeat, setMusic, setNeonBuzz, setTimeScaleAudio, sfx, voiceLog } from "../audio/sfx.ts";
+import { setAmbience, setClubBass, setCrowd, setFootsteps, setHeartbeat, setIndoor, setMusic, setNeonBuzz, setTimeScaleAudio, sfx, voiceLog } from "../audio/sfx.ts";
 import { audioState } from "../audio/engine.ts";
 import { Director } from "./director.ts";
 import { PLAYER, TIME } from "../sim/tuning.ts";
@@ -37,7 +37,7 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
       case "shot": {
         const player = e.shooter === -1;
         const w = where(e.ox, e.oz);
-        sfx.shot(player, player ? 0 : w.dist, w.pan);
+        if (e.pellet === 0) sfx.shot(player, player ? 0 : w.dist, w.pan, e.weapon);
         if (!player && p.mode !== "dead") {
           // a near miss past his head: closest approach of the shot line to the head
           const hx = p.x, hy = p.y + 1.55, hz = p.z;
@@ -52,16 +52,22 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
         break;
       }
       case "impact": { const w = where(e.x, e.z); sfx.impact(e.surface, w.dist, w.pan); break; }
-      case "blood": if (e.target >= 0) { const w = where(e.x, e.z); sfx.flesh(w.dist, w.pan); } break;
+      case "blood": if (e.target >= 0) { const w = where(e.x, e.z); if (g.enemies[e.target]?.kind === "heavy") sfx.fleshHeavy(w.dist, w.pan); else sfx.flesh(w.dist, w.pan); } break;
       case "hurt": if (e.target === -1) sfx.hurt(); break;
       case "kill": sfx.kill(e.headshot); break;
-      case "reload": sfx.reload(WEAPONS[p.weapon.id].reload / Math.max(g.timeScale, TIME.playerInBulletTime)); break;
+      case "reload": {
+        const d = WEAPONS[p.weapon.id].reload / Math.max(g.timeScale, TIME.playerInBulletTime);
+        if (p.weapon.id === "shotgun") sfx.reloadShotgun(d); else sfx.reload(d);
+        break;
+      }
+      case "swap": sfx.swap(); break;
+      case "firstShot": if (g.level.room.music === "rave") { sfx.scatter(); setCrowd("panic"); } break;
       case "dryfire": sfx.dry(); break;
       case "bt": sfx.bullettime(e.on); setHeartbeat(e.on); break;
       case "dodge": sfx.dodge(); setHeartbeat(true); break;
       case "land": sfx.land(); if (!g.bulletTime) setHeartbeat(false); break;
       case "copium": sfx.copium(); break;
-      case "pickup": sfx.pickup(); break;
+      case "pickup": if (e.item === "copium") sfx.pickup(); else sfx.weaponPickup(e.item.endsWith("_ammo")); break;
       case "roomClear": setHeartbeat(false); break;
       case "playerDead": setHeartbeat(false); break;
     }
@@ -76,19 +82,35 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
     const inRoom = screen === "play" || screen === "paused";
     setTimeScaleAudio(s.paused ? 1 : g.timeScale);
     if (inRoom) {
-      // the club's bass and the neon hum: louder toward the door (the exit marker)
-      const door = g.level.markers.find(m => m.kind === "exit");
-      const d = door ? Math.sqrt((door.x - g.player.x) ** 2 + (door.z - g.player.z) ** 2) : 99;
-      const near = Math.max(0.15, Math.min(1, 1 - d / 45));
-      setAmbience(true);
-      setClubBass(near);
-      setNeonBuzz(Math.max(0, 1 - d / 14));
+      const room = g.level.room;
+      const indoor = room.footsteps === "hard";
+      setIndoor(indoor);
+      if (!indoor) {
+        // the club's bass and the neon hum: louder toward the door (the exit marker)
+        const door = g.level.markers.find(m => m.kind === "exit");
+        const d = door ? Math.sqrt((door.x - g.player.x) ** 2 + (door.z - g.player.z) ** 2) : 99;
+        const near = Math.max(0.15, Math.min(1, 1 - d / 45));
+        setAmbience(true);
+        setClubBass(near);
+        setNeonBuzz(Math.max(0, 1 - d / 14));
+      } else {
+        setAmbience(false);
+        setClubBass(0);
+        setNeonBuzz(0);
+      }
       const p = g.player;
       const moving = !s.paused && p.grounded && p.mode === "normal" ? Math.sqrt(p.vx * p.vx + p.vz * p.vz) / PLAYER.runSpeed : 0;
       setFootsteps(moving > 0.07 ? moving : 0);
-      // music: calm on the street, the fight loop once the gang is awake, calm again when clear
-      const awake = g.enemies.some(e => e.state !== "idle" && e.state !== "inactive" && e.state !== "dead");
-      setMusic(g.phase === "play" && awake ? "fight" : "calm");
+      const music = typeof room.music === "string" ? room.music : "street";
+      if (music === "rave") {
+        // the club's track until the first shot, the fight loop after it, the track back (quiet) once clear
+        setMusic(g.firstShotAt < 0 ? "calm" : g.phase === "play" ? "fight" : "clear", "rave");
+        if (g.firstShotAt < 0) setCrowd("party");
+      } else {
+        // music: calm on the street, the fight loop once the gang is awake, calm again when clear
+        const awake = g.enemies.some(e => e.state !== "idle" && e.state !== "inactive" && e.state !== "dead");
+        setMusic(g.phase === "play" && awake ? "fight" : "calm", music);
+      }
       if (!s.paused) director.frame();
     } else setFootsteps(0);
     window.__rp = { session: s, fps: fps.current, frames: frames.current, audio: audioState(), voices: voiceLog };
@@ -107,7 +129,7 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
         mags: [w.mags[0], w.mags[1]], magSize: WEAPONS[w.id].mag, reloading: w.reloadT > 0 ? 1 - w.reloadT / WEAPONS[w.id].reload : 0,
         weapon: WEAPONS[w.id].name, alive: g.alive, total: g.enemies.length, phase: g.phase, onTarget: g.aimEnemy >= 0, mode: p.mode,
         fps: fps.current, hurtAgo: g.realTime - g.hurtAt, killcam: g.phase === "killcam",
-        prompt: g.phase === "clear" && hasExit ? "the bag is inside. get to the door." : "",
+        prompt: g.phase === "clear" && hasExit ? (typeof g.level.room.prompt === "string" ? g.level.room.prompt : "the bag is inside. get to the door.") : "",
       },
     });
   }, FRAME.sim);
