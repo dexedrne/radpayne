@@ -47,9 +47,13 @@
 .rp-check.on { background: var(--paper); border-color: var(--paper); }
 
 /* ---------- the HUD root ---------- */
-.rp-hud { position: fixed; inset: 0; pointer-events: none; color: var(--paper); transition: opacity 150ms linear; }
+/* z-order (spec 1.6): a fixed element is always its own stacking context, so the HUD root carries
+   its layer's z-index itself (10) and the screen fx live in one z 5 root under it; the corner,
+   caption and crosshair z-indexes below only order things inside the HUD. */
+.rp-hud { position: fixed; inset: 0; z-index: 10; isolation: isolate; pointer-events: none; color: var(--paper); transition: opacity 150ms linear; }
 .rp-hud.kc { opacity: 0; transition-duration: 150ms; }
 .rp-hud.dead { opacity: 0; transition-duration: 600ms; }
+.rp-fxroot { position: fixed; inset: 0; z-index: 5; isolation: isolate; pointer-events: none; }
 .rp-fxl { position: fixed; inset: 0; pointer-events: none; }
 
 /* top-left: room tag, tally, objective */

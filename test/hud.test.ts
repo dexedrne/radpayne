@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { Game } from "../src/sim/game.ts";
 import { METER } from "../src/sim/tuning.ts";
 import { emptyInput } from "../src/sim/types.ts";
@@ -239,4 +240,19 @@ test("sim: bullet time refused with too little meter emits btRefused; hits carry
   g.hurtPlayer(1, -1);
   const fall = g.drain().find(e => e.type === "hurt" && e.target === -1);
   assert.ok(fall && fall.type === "hurt" && fall.fromX === undefined);
+});
+
+test("z-order: the HUD root is its own layer above every screen effect and world marker", () => {
+  const css = fs.readFileSync(new URL("../src/ui/hud/tokens.css", import.meta.url), "utf8");
+  const z = (sel: string): number => {
+    const m = new RegExp(`(^|\\n)${sel.replace(/\./g, "\\.")} \\{[^}]*z-index: (\\d+)`).exec(css);
+    assert.ok(m, `${sel} has a z-index`);
+    return Number(m[2]);
+  };
+  const hud = z(".rp-hud");
+  // grain / speed lines / low-HP vignette + halftone (5), hurt rims (5), threat markers (8), damage slashes (9)
+  for (const sel of [".rp-fxroot", ".rp-rims", ".rp-threats", ".rp-damage"]) assert.ok(z(sel) < hud, `${sel} (${z(sel)}) under .rp-hud (${hud})`);
+  assert.ok(z(".rp-threats") < z(".rp-damage"));
+  // the kill cam and the menus still cover it
+  assert.ok(z(".rp-lb") > hud && z(".rp-kc") > hud && z(".rp-layer") > hud);
 });
