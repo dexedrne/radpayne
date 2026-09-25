@@ -54,9 +54,19 @@ type GoonView = {
   /** A death clip is on her model (false while dead on the stand-in: a model that mounts late drops
    *  straight into the death's last pose instead of standing in the bind pose). */
   deathPlayed: boolean;
+  /** Death clips tried on her model, frames since the last one started, and the procedural fall-back
+   *  (a clip that leaves her in the bind pose is swapped for the next; with none left she is posed
+   *  lying down by hand). A dead goon never stands in a T-pose. */
+  deathTried: Set<string>;
+  deathFrames: number;
+  deathFallback: boolean;
   fallYaw: number;
   loading: boolean;
 };
+
+const DEATHS = ["Death_Back", "Death_Back_2", "Death_Fwd", "Death_Fwd_2", "Falling_Down"];
+const LIMBS = ["hips", "leftUpperArm", "rightUpperArm", "leftUpperLeg", "rightUpperLeg"] as const;
+const AX = new Vector3(1, 0, 0), AZ = new Vector3(0, 0, 1);
 
 const coat = new MeshStandardMaterial({ color: "#1c1a24", roughness: 0.8 });
 const skin = new MeshStandardMaterial({ color: "#f3d9cc", roughness: 0.7 });
@@ -86,7 +96,7 @@ function makeView(e: Enemy): GoonView {
   const standIn = makeStandIn();
   root.add(standIn);
   const gun = makePistol();
-  return { idx: e.idx, n: e.milady, root, standIn, gun, gunInHand: false, model: null, player: null, hit: null, clip: "", yaw: e.facing, legYaw: e.facing, back: false, flinch: 0, pain: 0, blinkT: -1, blinkAt: 1 + Math.random() * 3, deadShown: false, deathPlayed: false, fallYaw: 0, loading: false };
+  return { idx: e.idx, n: e.milady, root, standIn, gun, gunInHand: false, model: null, player: null, hit: null, clip: "", yaw: e.facing, legYaw: e.facing, back: false, flinch: 0, pain: 0, blinkT: -1, blinkAt: 1 + Math.random() * 3, deadShown: false, deathPlayed: false, deathTried: new Set(), deathFrames: 0, deathFallback: false, fallYaw: 0, loading: false };
 }
 
 /** Deterministic 0..1 per goon and attempt (death variant picks). */
@@ -190,6 +200,9 @@ export function EnemiesView({ s }: { s: Session }) {
       run.current = s.run;
       for (const v of views) {
         v.deadShown = false; v.deathPlayed = false; v.clip = ""; v.flinch = 0; v.pain = 0; v.yaw = g.enemies[v.idx]?.facing ?? 0; v.legYaw = v.yaw; v.back = false;
+        v.deathTried.clear(); v.deathFrames = 0;
+        if (v.deathFallback && v.model) { v.model.body.rotation.x = 0; v.model.body.position.y = 0; }
+        v.deathFallback = false;
         v.hit?.stop();
         if (v.player) v.player.force(pick(v.player, CLIPS.relaxed), 0);
       }
@@ -214,13 +227,19 @@ export function EnemiesView({ s }: { s: Session }) {
             const l = Math.sqrt(e.killDX * e.killDX + e.killDZ * e.killDZ) || 1;
             const hit = g.world.raycast(e.x, e.y + 0.9, e.z, e.killDX / l, 0, e.killDZ / l, 6, false);
             const death = pick(pl, deathFor(hit ? hit.t : 6, k01(v.idx, s.run)));
-            if (death) pl.play(death, { hold: true, fade: 0.08 });
+            if (death) { pl.play(death, { hold: true, fade: 0.08 }); v.deathTried.add(death); } else v.deathFallback = true;
+            v.deathFrames = 0;
             v.deathPlayed = true;
           }
         } else if (v.deadShown && v.player && !v.deathPlayed) {
           const death = pick(v.player, deathFor(6, k01(v.idx, s.run)));
-          if (death) v.player.play(death, { hold: true, fade: 0, startAt: 1e3 });
+          if (death) { v.player.play(death, { hold: true, fade: 0, startAt: 1e3 }); v.deathTried.add(death); } else v.deathFallback = true;
+          v.deathFrames = 0;
           v.deathPlayed = true;
+        } else if (!v.deadShown && e.deathHold && v.player && !v.clip) {
+          // mounted while the kill cam holds her (its mixer is frozen): give her a pose now, not the bind pose
+          const idle = pick(v.player, CLIPS.idle);
+          if (idle) { v.player.force(idle, 0); v.player.update(0); v.clip = idle; }
         }
       } else v.yaw += wrapAngle(e.facing - v.yaw) * Math.min(1, 14 * dt);
       v.root.position.set(p.x, p.y, p.z);
@@ -309,6 +328,24 @@ export function EnemiesView({ s }: { s: Session }) {
           }
           if (v.flinch > 0) rotateBoneWorld(nb("chest"), tmp.side, -0.2 * v.flinch);
           if (aiming) aimLimb(nb("rightUpperArm"), nb("rightHand"), tmp.a, 1);
+        } else if (v.player && v.deathPlayed) {
+          // a death clip that binds nothing leaves her in the bind pose: try the next, then pose by hand
+          if (!v.deathFallback && ++v.deathFrames >= 2 && LIMBS.every(n => { const b = nb(n); return !!b && Math.abs(b.quaternion.w) > 0.9994; })) {
+            const next = DEATHS.find(n => v.player!.has(n) && !v.deathTried.has(n));
+            console.info(`[milady] goon ${v.idx}: death clip left the bind pose${next ? `, trying ${next}` : ", posing by hand"}`);
+            if (next) { v.deathTried.add(next); v.player.play(next, { hold: true, fade: 0, startAt: 1e3 }); v.player.update(0); v.deathFrames = 0; }
+            else v.deathFallback = true;
+          }
+          if (v.deathFallback) {
+            // on her back, arms down, knees a little bent (the wrapper turned about her feet)
+            nb("leftUpperArm")?.quaternion.setFromAxisAngle(AZ, -1.2);
+            nb("rightUpperArm")?.quaternion.setFromAxisAngle(AZ, 1.2);
+            nb("leftUpperLeg")?.quaternion.setFromAxisAngle(AX, -0.3);
+            nb("leftLowerLeg")?.quaternion.setFromAxisAngle(AX, 0.5);
+            nb("rightUpperLeg")?.quaternion.setFromAxisAngle(AX, -0.1);
+            m.body.rotation.x = -Math.PI / 2;
+            m.body.position.y = 0.12;
+          }
         }
         // expressions: blink, pain, talk
         const em = m.vrm.expressionManager;

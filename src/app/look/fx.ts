@@ -15,8 +15,8 @@ function initial(): Effects {
   }
 }
 
-/** What the active room look draws itself (FxView skips it): the street look draws enemy tracers red. */
-export const lookOwns = { enemyTracers: false };
+/** What the active room look draws itself (FxView skips it): the street look draws the tracers (gold for him, red for the gang). */
+export const lookOwns = { tracers: false };
 
 export const useFx = create<{ effects: Effects }>(() => ({ effects: initial() }));
 

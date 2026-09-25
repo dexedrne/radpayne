@@ -467,7 +467,7 @@ export class Game {
   /** Damage, blood, decals, kills. `o` is where the shot came from (the kill cam replays it). */
   private resolveHit(h: TraceHit, ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, damage: number, team: number, shooter: number): void {
     if (h.kind === HIT_WORLD) {
-      this.emit({ type: "impact", x: h.x, y: h.y, z: h.z, nx: h.nx, ny: h.ny, nz: h.nz, surface: h.surface });
+      this.emit({ type: "impact", x: h.x, y: h.y, z: h.z, nx: h.nx, ny: h.ny, nz: h.nz, surface: h.surface, shooter });
       this.emit({ type: "decal", x: h.x, y: h.y, z: h.z, nx: h.nx, ny: h.ny, nz: h.nz, blood: false });
       return;
     }

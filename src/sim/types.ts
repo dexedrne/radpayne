@@ -36,7 +36,7 @@ export const PLAYER_ID = -1;
 
 export type GameEvent =
   | { type: "shot"; shooter: number; hand: number; ox: number; oy: number; oz: number; ex: number; ey: number; ez: number; projectile: boolean; id: number }
-  | { type: "impact"; x: number; y: number; z: number; nx: number; ny: number; nz: number; surface: string }
+  | { type: "impact"; x: number; y: number; z: number; nx: number; ny: number; nz: number; surface: string; shooter: number }
   | { type: "blood"; x: number; y: number; z: number; dx: number; dy: number; dz: number; target: number; part: number }
   | { type: "decal"; x: number; y: number; z: number; nx: number; ny: number; nz: number; blood: boolean }
   | { type: "hurt"; target: number; amount: number; part: number; hp: number }

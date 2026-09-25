@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { SHOULDER } from "../src/sim/aim.ts";
 import { HIT_ACTOR, HIT_NONE, makeHitActor, makeTraceHit, trace } from "../src/combat/trace.ts";
 import { World, makeBox } from "../src/sim/world.ts";
 import { Rand } from "../src/sim/math.ts";
@@ -63,7 +64,7 @@ test("in game: the same headshot in bullet time (projectile) kills like at norma
     if (bt) { inp.bt = true; g.step(inp); inp.bt = false; }
     for (let k = 0; k < 3; k++) {
       const p = g.player;
-      const q = { x: p.x + Math.cos(inp.yaw) * 0.6, y: p.y + p.pivotUp, z: p.z - Math.sin(inp.yaw) * 0.6 };
+      const q = { x: p.x + Math.cos(inp.yaw) * SHOULDER.right, y: p.y + p.pivotUp, z: p.z - Math.sin(inp.yaw) * SHOULDER.right };
       const ex = t.x - q.x, ey = t.y - q.y, ez = t.z - q.z, el = Math.hypot(ex, ey, ez);
       inp.yaw = Math.atan2(-ex, -ez);
       inp.pitch = Math.asin(ey / el);

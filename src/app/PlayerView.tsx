@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useAssetRuntime } from "react-three-game";
-import { AnimationUtils, Group, LoopOnce, Quaternion, Vector3, type AnimationAction, type AnimationClip, type Bone, type Material, type Mesh, type Object3D } from "three";
+import { AnimationUtils, Group, LoopOnce, Quaternion, Vector3, type AnimationAction, type Camera, type PerspectiveCamera, type AnimationClip, type Bone, type Material, type Mesh, type Object3D } from "three";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 import type { Session } from "./session.ts";
 import { AnimPlayer } from "../anim/animPlayer.ts";
@@ -34,6 +34,26 @@ const GUN_SCALE = 1.3;
 const ARM_SPREAD = [0.5, 0.25] as const;
 /** Under this fade he is hidden outright: a dither this close to the lens breaks up into solid blobs. */
 const HIDE_BELOW = 0.45;
+/** How far he fades while his head covers the crosshair (stays above the guns' 0.6 cut-off). */
+const CROSSHAIR_FADE = 0.36;
+/** Head + hair ball for the crosshair test: radius and height of its centre over the Head bone (m). */
+const HEAD_R = 0.36;
+const HEAD_UP = 0.25;
+
+const vHead = new Vector3();
+/** 0..1: how much his head (a HEAD_R ball over the `head` bone) covers the crosshair zone in the middle of the view. */
+function crosshairOverlap(cam: Camera, head: Vector3): number {
+  const pc = cam as PerspectiveCamera;
+  if (!pc.isPerspectiveCamera || head.lengthSq() === 0) return 0;
+  vHead.copy(head);
+  vHead.y += HEAD_UP; // the Head bone sits at his neck; the big chibi head is above it
+  vHead.applyMatrix4(pc.matrixWorldInverse);
+  const depth = -vHead.z;
+  if (depth < 0.3) return 0;
+  const t = depth * Math.tan((pc.fov * Math.PI) / 360); // half the view height at that depth
+  const d = Math.hypot(vHead.x, vHead.y) / t - HEAD_R / t; // gap from the crosshair to his head's edge (1 = half the screen height)
+  return 1 - Math.min(1, Math.max(0, (d - 0.02) / 0.12));
+}
 
 type Rig = {
   id: RadbroId;
@@ -251,7 +271,7 @@ export function PlayerView({ s }: { s: Session }) {
   }, FRAME.animator);
 
   // -3: bones (twist, pitch, aim arms, recoil, guns)
-  useFrame((_, rawDelta) => {
+  useFrame((state, rawDelta) => {
     if (!rig) return;
     const g = s.game, p = g.player, r = st.current, B = rig.bones;
     const dt = Math.min(rawDelta, 0.1);
@@ -293,7 +313,10 @@ export function PlayerView({ s }: { s: Session }) {
     B.head?.getWorldPosition(playerHead);
     // a short camera arm (wall or cover right behind him) fades him out so he never fills the frame
     // (and a pivot slid in by a wall at his right puts him in front of the crosshair: half see-through)
-    const fadeWant = g.killcam ? 1 : Math.max(0, Math.min(1, (camView.arm - 0.75) / 0.75, 0.5 + (0.5 * camView.right) / SHOULDER.right));
+    let fadeWant = g.killcam ? 1 : Math.max(0, Math.min(1, (camView.arm - 0.75) / 0.75, 0.5 + (0.5 * camView.right) / SHOULDER.right));
+    // his head and hair must never sit on the crosshair: where they overlap the middle of the screen
+    // (turning, strafing, a pivot slid in by a wall) he thins out while he aims
+    if (!g.killcam && alive) fadeWant = Math.min(fadeWant, 1 - CROSSHAIR_FADE * crosshairOverlap(state.camera, playerHead));
     r.fade += (fadeWant - r.fade) * Math.min(1, 14 * dt);
     const fade = r.fade > 0.98 ? 1 : r.fade;
     // every material under him (the street look can swap / add some after the rig is built)

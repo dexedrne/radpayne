@@ -1,7 +1,12 @@
 // Gunfire and hit effects, all pooled InstancedMeshes fed by the sim's events:
-//  tracer streaks (hitscan), visible bullets with trails (bullet time + the kill cam's replayed shot),
-//  muzzle flashes with a light, a stylised red blood spray + mist (not gory), bullet holes and blood decals on the
-//  wall behind, impact sparks, copium pickups, the exit marker once the room is clear.
+//  tracer streaks (hitscan; the street look draws its own), visible bullets with trails (bullet time +
+//  the kill cam's replayed shot), muzzle flashes with a light, a stylised red blood spray + mist (not
+//  gory), bullet holes and blood decals on the wall behind, impact sparks, copium pickups, the exit
+//  marker once the room is clear.
+// One colour code for gunfire: the player's is gold / white (flashes, bullets, the sparks where his shots
+// land), the gang's is red (their muzzle flashes and bullets; their misses only kick up dull grey grit).
+// Nothing is drawn as a big flat quad next to the lens: flashes shrink with their distance to the camera,
+// bullets fade out inside ~3 m of it.
 // Particles age on world time, so bullet time slows them with everything else.
 import { useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
@@ -10,7 +15,7 @@ import {
   MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, PointLight, Quaternion, SRGBColorSpace, Vector3, type BufferGeometry, type Material,
 } from "three";
 import { MeshBasicNodeMaterial } from "three/webgpu";
-import { attribute } from "three/tsl";
+import { attribute, float, max, pow, saturate, smoothstep, uv, vec4, abs } from "three/tsl";
 import type { Session } from "./session.ts";
 import type { GameEvent } from "../sim/types.ts";
 import { playerMuzzles } from "./PlayerView.tsx";
@@ -52,33 +57,34 @@ class Pool {
   }
 }
 
-/** Muzzle-flash billboard: a hot core with four long and four short spikes. */
-function flashTexture(): CanvasTexture {
-  const c = document.createElement("canvas");
-  c.width = c.height = 128;
-  const x = c.getContext("2d")!;
-  x.translate(64, 64);
-  const core = x.createRadialGradient(0, 0, 0, 0, 0, 40);
-  core.addColorStop(0, "rgba(255,255,240,1)");
-  core.addColorStop(0.25, "rgba(255,226,140,0.95)");
-  core.addColorStop(0.6, "rgba(255,150,40,0.45)");
-  core.addColorStop(1, "rgba(255,90,0,0)");
-  x.fillStyle = core;
-  x.beginPath(); x.arc(0, 0, 40, 0, Math.PI * 2); x.fill();
-  for (let i = 0; i < 8; i++) {
-    const long = i % 2 === 0, len = long ? 62 : 36, w = long ? 7 : 5;
-    x.save();
-    x.rotate((i / 8) * Math.PI * 2 + (long ? 0 : 0.12));
-    const g = x.createLinearGradient(0, 0, len, 0);
-    g.addColorStop(0, "rgba(255,240,190,0.95)");
-    g.addColorStop(1, "rgba(255,120,20,0)");
-    x.fillStyle = g;
-    x.beginPath(); x.moveTo(0, -w); x.lineTo(len, 0); x.lineTo(0, w); x.closePath(); x.fill();
-    x.restore();
-  }
-  const t = new CanvasTexture(c);
-  t.colorSpace = SRGBColorSpace;
-  return t;
+/** Gunfire colours (linear, HDR): the player's gold / white, the gang's red. */
+export const GUNFIRE = {
+  player: [1.0, 0.82, 0.5] as const,
+  enemy: [1.0, 0.16, 0.1] as const,
+  grit: [0.42, 0.42, 0.46] as const,
+};
+
+/** Muzzle-flash star, drawn in the shader (no texture, no card edge): a hot core with four long and
+ *  four short spikes, white-hot in the middle, tinted by the instance colour (who fired). */
+function flashMaterial(): MeshBasicNodeMaterial {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const q: any = uv().sub(0.5).mul(2);
+  const r2 = q.x.mul(q.x).add(q.y.mul(q.y));
+  const r = r2.sqrt();
+  const inv = float(1).div(max(r2, 1e-5));
+  const c2 = abs(q.x.mul(q.x).sub(q.y.mul(q.y)).mul(inv)); // |cos 2a|: the four long spikes
+  const s2 = abs(q.x.mul(q.y).mul(2).mul(inv)); // |sin 2a|: the four short ones
+  const core = pow(saturate(float(1).sub(r.div(0.42))), 2.0);
+  const long = pow(c2, 36).mul(smoothstep(1.0, 0.1, r));
+  const short = pow(s2, 30).mul(smoothstep(0.6, 0.05, r)).mul(0.7);
+  const k = saturate(core.mul(1.6).add(long).add(short));
+  const m = new MeshBasicNodeMaterial({ transparent: true, depthWrite: false, blending: AdditiveBlending });
+  // white-hot core, the tint toward the rim (the instance colour multiplies the whole thing)
+  m.colorNode = vec4(k.mul(2.4).add(core.mul(1.2)), k.mul(2.4).add(core.mul(1.2)), k.mul(2.4).add(core.mul(1.2)), 1);
+  m.fog = false;
+  m.toneMapped = false;
+  m.userData.rpOwn = true;
+  return m;
 }
 
 /** Soft round glow (the bullet heads in bullet time). */
@@ -165,11 +171,13 @@ export function FxView({ s }: { s: Session }) {
       new MeshBasicMaterial({ color: new Color(color).multiplyScalar(hdr), toneMapped: false, transparent: additive || opacity < 1, opacity, blending: additive ? AdditiveBlending : NormalBlending, depthWrite: !additive });
     const group = new Group();
     const tracers = new Pool(unit, glow("#ffe7a8", true, 0.9, 3), 48);
-    const bullets = new Pool(unit, glow("#fff6d8", false, 1, 3), 64);
-    const trails = new Pool(unit, glow("#ffb070", true, 0.6, 2.5), 64);
-    const flashMat = new MeshBasicMaterial({ map: flashTexture(), color: new Color(2.5, 2.5, 2.5), toneMapped: false, transparent: true, blending: AdditiveBlending, depthWrite: false });
-    const flashes = new Pool(new PlaneGeometry(1, 1), flashMat, 16);
+    // bullet-time bullets: additive (never an opaque card), white x the shooter's colour per instance
+    const bullets = new Pool(unit, glow("#ffffff", true, 1, 3), 64);
+    const trails = new Pool(unit, glow("#ffffff", true, 0.6, 2.2), 64);
+    const flashes = new Pool(new PlaneGeometry(1, 1), flashMaterial(), 16);
     const heads = new Pool(new PlaneGeometry(1, 1), new MeshBasicMaterial({ map: glowTexture(), color: "#ffffff", toneMapped: false, transparent: true, blending: AdditiveBlending, depthWrite: false }), 64);
+    const white = new Color(1, 1, 1);
+    for (const P of [bullets, trails, heads, flashes]) for (let i = 0; i < P.items.length; i++) P.mesh.setColorAt(i, white); // instanceColor before the first compile
     // blood: a red spray of small droplets (fading, stretched along their flight) + a soft mist that
     // blooms out and thins away. Normal blending, no glow: it reads as blood in the neon.
     const drops = spritePool(false, 240);
@@ -177,12 +185,13 @@ export function FxView({ s }: { s: Session }) {
     const blood = drops.pool, mist = mists.pool;
     blood.mesh.renderOrder = 2;
     mist.mesh.renderOrder = 1;
-    const sparks = new Pool(unit, glow("#ffcf6a"), 120);
+    const sparks = new Pool(unit, glow("#ffffff"), 120);
+    for (let i = 0; i < sparks.items.length; i++) sparks.mesh.setColorAt(i, white);
     const holes = new Pool(unit, new MeshStandardMaterial({ color: "#050505", roughness: 1 }), 120);
     const splats = new Pool(new CylinderGeometry(0.5, 0.5, 1, 10), new MeshStandardMaterial({ color: "#5c0710", roughness: 0.5 }), 60);
     for (const p of [tracers, bullets, trails, heads, flashes, blood, mist, sparks, holes, splats]) group.add(p.mesh);
-    // one flash light for the player's guns, one for the gang's (a fixed light count: no shader rebuilds)
-    const lights = [new PointLight("#ffc46b", 0, 7, 2), new PointLight("#ffc46b", 0, 7, 2)];
+    // one flash light for the player's guns (gold), one for the gang's (red); a fixed light count: no shader rebuilds
+    const lights = [new PointLight("#ffc46b", 0, 7, 2), new PointLight("#ff3a24", 0, 7, 2)];
     lights.forEach(l => group.add(l));
     const lightT = [0, 0];
     // pickups: an orange canister with a white cap
@@ -224,15 +233,19 @@ export function FxView({ s }: { s: Session }) {
         case "shot": {
           const muzzle = e.shooter === -1 ? playerMuzzles[e.hand] : enemyMuzzles[e.shooter];
           const from = muzzle && muzzle.lengthSq() > 0 ? muzzle : tmpA.set(e.ox, e.oy, e.oz);
-          // flash + light
+          // flash (gold for him, red for them) + light
+          const me = e.shooter === -1;
           const f = fx.flashes.spawn(0.05);
           f.p.copy(from);
           f.v.set(0, 0, 0);
-          f.s = e.shooter === -1 ? 0.34 : 0.28;
-          const li = e.shooter === -1 ? 0 : 1;
+          f.s = me ? 0.34 : 0.3;
+          const c = me ? GUNFIRE.player : GUNFIRE.enemy;
+          fx.flashes.mesh.setColorAt(fx.flashes.last, col.setRGB(c[0], c[1], c[2]));
+          if (fx.flashes.mesh.instanceColor) fx.flashes.mesh.instanceColor.needsUpdate = true;
+          const li = me ? 0 : 1;
           fx.lights[li].position.copy(from);
           fx.lightT[li] = 0.06;
-          if (!e.projectile && (e.shooter === -1 || !lookOwns.enemyTracers)) {
+          if (!e.projectile && !lookOwns.tracers) {
             const t = fx.tracers.spawn(0.07);
             t.a.copy(from);
             t.b.set(e.ex, e.ey, e.ez);
@@ -269,12 +282,17 @@ export function FxView({ s }: { s: Session }) {
           break;
         }
         case "impact": {
-          for (let i = 0; i < 6; i++) {
+          // his shots land in gold sparks; the gang's misses only kick up a little dull grit
+          const me = e.shooter === -1;
+          const c = me ? GUNFIRE.player : GUNFIRE.grit;
+          for (let i = 0; i < (me ? 6 : 3); i++) {
             const k = fx.sparks.spawn(0.18 + Math.random() * 0.12);
             k.p.set(e.x, e.y, e.z);
             k.v.set(e.nx * 3 + (Math.random() - 0.5) * 5, e.ny * 3 + Math.random() * 3, e.nz * 3 + (Math.random() - 0.5) * 5);
-            k.s = 0.018;
+            k.s = me ? 0.018 : 0.014;
+            fx.sparks.mesh.setColorAt(fx.sparks.last, col.setRGB(c[0] * (me ? 1.3 : 1), c[1] * (me ? 1.3 : 1), c[2] * (me ? 1.3 : 1)));
           }
+          if (fx.sparks.mesh.instanceColor) fx.sparks.mesh.instanceColor.needsUpdate = true;
           break;
         }
         case "decal": {
@@ -323,23 +341,30 @@ export function FxView({ s }: { s: Session }) {
       P.mesh.instanceMatrix.needsUpdate = true;
     }
     // projectiles (+ the kill cam's cinematic bullet)
+    const camPos = state.camera.getWorldPosition(camP);
     {
       const B = fx.bullets, T = fx.trails, H = fx.heads;
       let n = 0;
-      const put = (x: number, y: number, z: number, dx: number, dy: number, dz: number, trail: number, glow = 0.24) => {
-        if (n >= B.items.length) return;
-        m4.compose(vd.set(x, y, z), camQ, vs.set(glow, glow, 1));
+      const put = (x: number, y: number, z: number, dx: number, dy: number, dz: number, trail: number, c: readonly number[], glow = 0.24, near = 1) => {
+        if (n >= B.items.length || near <= 0.02) return;
+        m4.compose(vd.set(x, y, z), camQ, vs.set(glow * near, glow * near, 1));
         H.mesh.setMatrixAt(n, m4);
         // a fat slug with a long hot trail: readable in bullet time from across the street
         const a = vs.set(x - dx * 0.1, y - dy * 0.1, z - dz * 0.1).clone();
         const b = new Vector3(x + dx * 0.05, y + dy * 0.05, z + dz * 0.05);
-        segment(B.mesh, n, a, b, 0.04);
-        segment(T.mesh, n, new Vector3(x - dx * trail, y - dy * trail, z - dz * trail), a, 0.026);
+        segment(B.mesh, n, a, b, 0.04 * near);
+        segment(T.mesh, n, new Vector3(x - dx * trail, y - dy * trail, z - dz * trail), a, 0.026 * near);
+        col.setRGB(c[0], c[1], c[2]);
+        B.mesh.setColorAt(n, col);
+        T.mesh.setColorAt(n, col);
+        H.mesh.setColorAt(n, col);
         n++;
       };
       for (const b of g.projectiles) {
         const travelled = Math.sqrt((b.x - b.sx) ** 2 + (b.y - b.sy) ** 2 + (b.z - b.sz) ** 2);
-        put(b.x, b.y, b.z, b.dx, b.dy, b.dz, Math.min(5, travelled));
+        // fades out inside ~3 m of the lens (his own bullets leave the muzzle right in front of it)
+        const near = Math.min(1, Math.max(0, (vd.set(b.x, b.y, b.z).distanceTo(camPos) - 1.2) / 1.8));
+        put(b.x, b.y, b.z, b.dx, b.dy, b.dz, Math.min(5, travelled), b.shooter === -1 ? GUNFIRE.player : GUNFIRE.enemy, 0.24, near);
       }
       const k = g.killcam;
       if (k && k.t < k.flight) {
@@ -347,12 +372,13 @@ export function FxView({ s }: { s: Session }) {
         let dx = k.to.x - k.from.x, dy = k.to.y - k.from.y, dz = k.to.z - k.from.z;
         const l = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
         dx /= l; dy /= l; dz /= l;
-        put(k.from.x + (k.to.x - k.from.x) * f, k.from.y + (k.to.y - k.from.y) * f, k.from.z + (k.to.z - k.from.z) * f, dx, dy, dz, Math.min(0.55, l * f), 0.05); // the chase cam rides 0.9 m back: the trail stops short of the lens
+        put(k.from.x + (k.to.x - k.from.x) * f, k.from.y + (k.to.y - k.from.y) * f, k.from.z + (k.to.z - k.from.z) * f, dx, dy, dz, Math.min(0.55, l * f), GUNFIRE.player, 0.05); // the chase cam rides 0.9 m back: the trail stops short of the lens
       }
       for (let i = n; i < B.items.length; i++) { B.mesh.setMatrixAt(i, HIDE); T.mesh.setMatrixAt(i, HIDE); H.mesh.setMatrixAt(i, HIDE); }
-      B.mesh.instanceMatrix.needsUpdate = true;
-      T.mesh.instanceMatrix.needsUpdate = true;
-      H.mesh.instanceMatrix.needsUpdate = true;
+      for (const P of [B, T, H]) {
+        P.mesh.instanceMatrix.needsUpdate = true;
+        if (n && P.mesh.instanceColor) P.mesh.instanceColor.needsUpdate = true;
+      }
     }
     // flashes + lights (world time: bullet time holds them longer)
     {
@@ -361,8 +387,9 @@ export function FxView({ s }: { s: Session }) {
         if (!f.alive) return;
         f.life += wdt;
         if (f.life >= f.max) { f.alive = false; P.mesh.setMatrixAt(i, HIDE); return; }
-        // a camera-facing star, spun a little each frame, shrinking over its life
-        const k = 1 - 0.6 * (f.life / f.max);
+        // a camera-facing star, spun a little each frame, shrinking over its life; right at the lens
+        // (his own guns, ~1 m out) it is capped so it never covers the view
+        const k = (1 - 0.6 * (f.life / f.max)) * Math.min(1, (0.1 * f.p.distanceTo(camPos)) / f.s);
         if (f.v.x === 0) f.v.x = 0.001 + Math.random() * 6.28;
         q.copy(camQ).multiply(qSpin.setFromAxisAngle(Z, f.v.x));
         m4.compose(f.p, q, vs.set(f.s * k, f.s * k, 1));
@@ -377,7 +404,6 @@ export function FxView({ s }: { s: Session }) {
     // blood spray: camera-facing droplets stretched along their flight, fading out as they fall; far
     // away they grow a little so a hit across the street still reads
     qInv.copy(camQ).invert();
-    const camPos = state.camera.getWorldPosition(camP);
     const farK = (p: Vector3) => Math.max(1, p.distanceTo(camPos) / 7);
     {
       const P = fx.blood, F = fx.dropFade.array as Float32Array;

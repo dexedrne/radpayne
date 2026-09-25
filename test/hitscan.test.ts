@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { SHOULDER } from "../src/sim/aim.ts";
 import { HB_HEAD, HB_LEG_L, HB_LEG_R, HB_TORSO, aimPoint, makeCapsules } from "../src/combat/hitboxes.ts";
 import { HIT_ACTOR, HIT_NONE, HIT_WORLD, makeHitActor, makeTraceHit, trace } from "../src/combat/trace.ts";
 import { World, makeBox } from "../src/sim/world.ts";
@@ -75,12 +76,12 @@ test("in game: a pistol headshot kills a goon (34 x 3), a body shot does not", (
     // aim from the shoulder pivot
     const p = g.player;
     const inp = emptyInput();
-    const px = p.x + Math.cos(0) * 0.6, py = p.y + p.pivotUp, pz = p.z;
+    const px = p.x + Math.cos(0) * SHOULDER.right, py = p.y + p.pivotUp, pz = p.z;
     const dx = t.x - px, dy = t.y - py, dz = t.z - pz, l = Math.hypot(dx, dy, dz);
     inp.yaw = Math.atan2(-dx, -dz);
     inp.pitch = Math.asin(dy / l);
     g.step(inp); // aim settles (pivot follows the new yaw)
-    const q = { x: p.x + Math.cos(inp.yaw) * 0.6, y: p.y + p.pivotUp, z: p.z - Math.sin(inp.yaw) * 0.6 };
+    const q = { x: p.x + Math.cos(inp.yaw) * SHOULDER.right, y: p.y + p.pivotUp, z: p.z - Math.sin(inp.yaw) * SHOULDER.right };
     const ex = t.x - q.x, ey = t.y - q.y, ez = t.z - q.z, el = Math.hypot(ex, ey, ez);
     inp.yaw = Math.atan2(-ex, -ez);
     inp.pitch = Math.asin(ey / el);

@@ -44,7 +44,7 @@ import { FRAME } from "../frame.ts";
 import { clubPulse } from "../../audio/sfx.ts";
 import { MarkerLights } from "./lights.tsx";
 import { useFx } from "./fx.ts";
-import { CombatRead, enemyMaskPass, enemyOutline } from "./read.tsx";
+import { COMBAT, CombatRead, enemyMaskPass, enemyOutline, neonDim } from "./read.tsx";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type N = any; // TSL node graphs: the three typings are too narrow for chained swizzles / mixes
@@ -203,10 +203,10 @@ function applyRules(m: Material, ground: Ground | null): void {
   ground?.mats.delete(m);
   m.colorNode = null;
   if (std) { std.emissiveNode = null; std.roughnessNode = null; }
-  if (t.kind === "glow") m.colorNode = materialColor.mul(gain(t));
+  if (t.kind === "glow") m.colorNode = materialColor.mul(gain(t)).mul(neonDim("glow"));
   else if (t.kind === "lit" && std) {
     const d: N = materialColor.rgb;
-    std.emissiveNode = d.mul(smoothstep(0.2, 0.42, luminance(d))).mul(gain(t));
+    std.emissiveNode = d.mul(smoothstep(0.2, 0.42, luminance(d))).mul(gain(t)).mul(neonDim("lit"));
   } else if (t.kind === "wet" && std && ground) {
     std.colorNode = ground.color;
     std.roughnessNode = ground.roughness;
@@ -419,7 +419,9 @@ function clearSteam(mesh: Mesh, s: Session, camera: Object3D, dt: number): void 
         block = Math.max(block, 1 - smooth(r * 0.7, r + 2.2, segDist(P0, P1, Q0, Q1)));
       }
     }
-    const want = 1 - READ.steamClear * block;
+    // and plumes past the far edge of the fight thin out (they sit behind the girls, not in front)
+    const far = smooth(COMBAT.beyond.from - 10, COMBAT.beyond.to - 14, Math.hypot(m.x - Q0.x, m.z - Q0.z));
+    const want = (1 - READ.steamClear * block) * (1 - 0.75 * far);
     const arr = st.fade.array as number[];
     arr[i] += (want - arr[i]) * Math.min(1, dt * 5);
   });

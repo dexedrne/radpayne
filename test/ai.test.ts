@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { SHOULDER } from "../src/sim/aim.ts";
 import { Game } from "../src/sim/game.ts";
 import { DIFFICULTY, DT } from "../src/sim/tuning.ts";
 import { emptyInput } from "../src/sim/types.ts";
@@ -81,7 +82,7 @@ test("goon: a hit alerts an idle goon (facing away) and flinches it", () => {
   const inp = emptyInput();
   for (let k = 0; k < 3; k++) {
     const p = g.player;
-    const q = { x: p.x + Math.cos(inp.yaw) * 0.6, y: p.y + p.pivotUp, z: p.z - Math.sin(inp.yaw) * 0.6 };
+    const q = { x: p.x + Math.cos(inp.yaw) * SHOULDER.right, y: p.y + p.pivotUp, z: p.z - Math.sin(inp.yaw) * SHOULDER.right };
     const ex = 0 - q.x, ey = 1.25 - q.y, ez = -12 - q.z, el = Math.hypot(ex, ey, ez);
     inp.yaw = Math.atan2(-ex, -ez);
     inp.pitch = Math.asin(ey / el);

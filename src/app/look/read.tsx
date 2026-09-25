@@ -3,14 +3,20 @@
 //
 //  - Goon outline: an enemy mask pass (goons + the level as occluders, one flat override material)
 //    feeds the post chain, which draws a warm edge around every live goon that is actually visible.
-//    Thin up close, thicker with a soft halo and a lifted fill from ~12 m out. It also shows through
-//    the player's own body, so the Radbro never hides who is behind him.
-//  - Shooter flash: a goon that fires lights up (outline + fill) for ~0.45 s; a goon you hit flashes
-//    white for a moment.
+//    Thin up close, thicker from ~12 m out. It is told apart from the neon tubes by its FORM, not its
+//    colour: a dark keyline hugs the bright edge (a neon tube only glows), and from range the body is a
+//    solid warm silhouette that breathes slowly (the club's neon pulses on the beat, twice as fast).
+//    It also shows through the player's own body, so the Radbro never hides who is behind him.
+//  - Neon near a goon dims (neonDim: the "glow" materials within a few body widths of a live goon on
+//    screen), and everything past the far edge of the fight (~46 m) is dimmer: the far signs, lit
+//    windows and steam stop competing with the girls at 23-46 m.
+//  - Shooter flash: a goon that fires lights up red (outline + fill) for ~0.45 s; a goon you hit
+//    flashes white for a moment.
 //  - Range assist for gunfire: tracer lines and glows with a minimum on-screen size (they grow with
-//    distance and fade in past ~8 m, so close-up gunfire is left to the regular effects). Enemy fire
-//    is red, the player's is gold: enemy muzzle flashes, enemy tracers from the shooter, the player's
-//    tracer from the muzzle to the hit, impact sparks and hit bursts downrange, bullet-time bullets.
+//    distance and fade in past ~8 m, so close-up gunfire is left to the regular effects). One colour
+//    code: the gang's fire is red (muzzle glows, tracers from the shooter, their bullets), the
+//    player's is gold / white (his tracer from the muzzle to the hit, the sparks and hit bursts where
+//    his shots land, his bullet-time bullets). The gang's misses get no glow at all.
 import { useEffect, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
@@ -19,7 +25,8 @@ import {
 } from "three";
 import { MeshBasicNodeMaterial, MeshStandardNodeMaterial, type PassNode, type WebGPURenderer } from "three/webgpu";
 import {
-  abs, attribute, cameraPosition, float, length, max, mix, pass, positionWorld, pow, saturate, smoothstep, uniform, userData, uv, vec2, vec3, vec4,
+  abs, attribute, cameraPosition, cross, dot, float, length, max, mix, normalize, pass, positionWorld, pow, saturate, sin, smoothstep, uniform,
+  uniformArray, userData, uv, vec2, vec3, vec4,
 } from "three/tsl";
 import type { Session } from "../session.ts";
 import type { GameEvent } from "../../sim/types.ts";
@@ -48,7 +55,22 @@ export const COMBAT = {
   hitSecs: 0.22,
   enemy: [1.0, 0.16, 0.1] as const,
   player: [1.0, 0.76, 0.36] as const,
+  /** Where the player's shots land (impact sparks, hit bursts): white-gold, never red / orange. */
+  playerHit: [2.4, 2.1, 1.55] as const,
+  /** Dark keyline strength (close, far): the ring outside the bright edge. */
+  keyline: [0.55, 0.85] as const,
+  /** Far silhouette: how much of a far goon is painted flat in the edge colour, and its slow breathing. */
+  silhouette: 0.4,
+  breathHz: 0.9,
+  /** Neon near a goon on screen: dimmed by this much within near[0] x her angular radius, fading out
+   *  by near[1] x. */
+  neonNear: { dim: 0.65, near: [1.4, 4.2] as const },
+  /** Past the fight band: "glow" / "lit" materials and steam dim over these camera distances (m). */
+  beyond: { from: 46, to: 74, glow: 0.55, lit: 0.4 },
 };
+
+/** Goons the neon dim looks at (the room has 8). */
+const MAX_GOONS = 8;
 
 /** Layer the enemy mask pass renders (goons + level occluders also stay on layer 0). */
 export const MASK_LAYER = 7;
@@ -59,6 +81,10 @@ export const readFx = {
   /** 0 on the title / cutscene / kill cam, 1 in play. */
   strength: uniform(0),
   aspect: uniform(16 / 9),
+  /** Real seconds (the silhouette's breathing). */
+  time: uniform(0),
+  /** Per live goon: xyz = unit direction from the camera to her chest, w = her angular radius (0 = none). */
+  goons: uniformArray(Array.from({ length: MAX_GOONS }, () => new Vector4()), "vec4"),
   /** Per goon: x = visible (1 + hit flash), y = firing flash. userData.rpMask on its meshes. */
   masks: [] as Vector4[],
   fire: [] as number[],
@@ -151,15 +177,45 @@ export function enemyOutline(hdr: N, maskPass: PassNode): N {
   const S: N = readFx.strength;
   const a = edge.mul(mix(0.45, 1.0, far)).mul(S);
   const E = vec3(...COMBAT.edge);
-  const edgeCol = mix(E.mul(1.6), vec3(2.2, 0.8, 0.45), saturate(fire));
-  // the dark keyline first (only really shows on bright backdrops), then the bright edge over it
-  let out: N = hdr.mul(float(1).sub(key.mul(mix(0.3, 0.6, far)).mul(S)));
+  const R = vec3(...COMBAT.enemy);
+  const edgeCol = mix(E.mul(1.6), R.mul(2.4), saturate(fire));
+  // the dark keyline first (a solid ring, the thing a neon tube never has), then the bright edge over it
+  let out: N = hdr.mul(float(1).sub(key.mul(mix(COMBAT.keyline[0], COMBAT.keyline[1], far)).mul(S)));
   out = mix(out, edgeCol, saturate(a).mul(0.92));
-  // fill: a far goon's own colours lifted plus a warm floor; firing = warm glow, hit = white flash
-  const lift = hdr.mul(far.mul(COMBAT.fill)).add(E.mul(far.mul(COMBAT.floor).add(c.g.mul(0.45))));
+  // fill: a far goon's own colours lifted plus a warm floor; firing = red glow, hit = white flash
+  const lift = hdr.mul(far.mul(COMBAT.fill)).add(E.mul(far.mul(COMBAT.floor))).add(R.mul(c.g.mul(0.6)));
   out = out.add(lift.mul(cov).mul(S));
+  // from range the body is a solid, slowly breathing silhouette in the edge colour (a figure, not a line)
+  const breath = sin(readFx.time.mul(Math.PI * 2 * COMBAT.breathHz)).mul(0.5).add(0.5);
+  const sil = cov.mul(far).mul(COMBAT.silhouette).mul(mix(0.7, 1.0, breath)).mul(S);
+  out = mix(out, mix(E.mul(0.9), R.mul(1.6), saturate(fire)), saturate(sil));
   out = mix(out, vec3(1.3, 1.2, 1.15), hit.mul(0.6).mul(S));
   return out;
+}
+
+/**
+ * Multiplier for the street's emitters (street.tsx gain()): 1 = untouched. "glow" (neon, lamps) dims
+ * near a live goon on screen and past the fight band; "lit" (facade windows) only past the band.
+ * Only in play (readFx.strength): the title and the cutscenes keep the full neon.
+ */
+export function neonDim(kind: "glow" | "lit"): N {
+  const toFrag: N = positionWorld.sub(cameraPosition);
+  const d: N = length(toFrag);
+  const F = COMBAT.beyond;
+  let k: N = smoothstep(F.from, F.to, d).mul(kind === "glow" ? F.glow : F.lit);
+  if (kind === "glow") {
+    const fd: N = normalize(toFrag);
+    let near: N = float(0);
+    for (let i = 0; i < MAX_GOONS; i++) {
+      const g: N = readFx.goons.element(i);
+      const r: N = max(g.w, 1e-4);
+      const off: N = length(cross(fd, g.xyz)); // ~ the angle between the fragment and her, seen from the lens
+      const on: N = g.w.greaterThan(0).and(dot(fd, g.xyz).greaterThan(0)).select(float(1), float(0));
+      near = max(near, float(1).sub(smoothstep(r.mul(COMBAT.neonNear.near[0]), r.mul(COMBAT.neonNear.near[1]), off)).mul(on));
+    }
+    k = max(k, near.mul(COMBAT.neonNear.dim));
+  }
+  return float(1).sub(k.mul(readFx.strength));
 }
 
 // ------------------------------------------------------------------ range-assist gunfire overlay
@@ -226,8 +282,8 @@ export function CombatRead({ s }: { s: Session }) {
   const scene = useThree(st => st.scene);
   const o = useMemo(() => ({ lines: new Quads(96, false), glows: new Quads(96, true), fx: [] as Fx[], n: 0, run: -1 }), []);
   useEffect(() => {
-    lookOwns.enemyTracers = true;
-    return () => { lookOwns.enemyTracers = false; o.lines.dispose(); o.glows.dispose(); };
+    lookOwns.tracers = true;
+    return () => { lookOwns.tracers = false; o.lines.dispose(); o.glows.dispose(); };
   }, [o]);
 
   useEffect(() => {
@@ -250,12 +306,13 @@ export function CombatRead({ s }: { s: Session }) {
           break;
         }
         case "impact":
-          push({ kind: "glow", a: new Vector3(e.x + e.nx * 0.05, e.y + e.ny * 0.05, e.z + e.nz * 0.05), b: V.t, max: 0.13, world: true, col: [2.4, 2.0, 1.3], px: 11, minD: 9, enemy: false });
+          // only his shots get a glow where they land (the gang's misses must not read as his hits)
+          if (e.shooter === -1) push({ kind: "glow", a: new Vector3(e.x + e.nx * 0.05, e.y + e.ny * 0.05, e.z + e.nz * 0.05), b: V.t, max: 0.13, world: true, col: COMBAT.playerHit, px: 11, minD: 9, enemy: false });
           break;
         case "blood":
           if (e.target >= 0) {
             readFx.hit[e.target] = 1;
-            push({ kind: "glow", a: new Vector3(e.x, e.y, e.z), b: V.t, max: 0.14, world: true, col: [2.6, 1.1, 0.8], px: 16, minD: 7, enemy: false });
+            push({ kind: "glow", a: new Vector3(e.x, e.y, e.z), b: V.t, max: 0.14, world: true, col: scaled(COMBAT.playerHit, 1.1), px: 16, minD: 7, enemy: false });
           }
           break;
       }
@@ -274,6 +331,7 @@ export function CombatRead({ s }: { s: Session }) {
     readFx.strength.value += (want - readFx.strength.value) * Math.min(1, dt * 6);
     const size = st.gl.domElement;
     readFx.aspect.value = size.clientWidth / Math.max(1, size.clientHeight);
+    readFx.time.value = performance.now() / 1000;
     // tag new meshes (models load late): the whole scene every 30 frames, the goons every 3
     if (o.n++ % 30 === 0) { goonRoots.clear(); tag(scene, null, false); }
     else if (o.n % 3 === 0) for (const r of goonRoots) tag(r, null, false);
@@ -285,6 +343,22 @@ export function CombatRead({ s }: { s: Session }) {
       readFx.hit[i] = Math.max(0, (readFx.hit[i] ?? 0) - dt / COMBAT.hitSecs);
       const live = e.state !== "dead" && e.state !== "inactive";
       m.set(live ? 1 + readFx.hit[i] : 0, live ? readFx.fire[i] : 0, 0, 0);
+    }
+    // where the live goons are, seen from the lens (the neon near them dims)
+    {
+      const cam = st.camera;
+      cam.getWorldPosition(V.cam);
+      const arr = readFx.goons.array as Vector4[];
+      for (let i = 0; i < MAX_GOONS; i++) {
+        const e = g.enemies[i];
+        const p = s.renderE[i] ?? e;
+        if (!e || !p || e.state === "dead" || e.state === "inactive") { arr[i].set(0, 0, 0, 0); continue; }
+        V.d.set(p.x, p.y + (e.crouch ? 0.7 : 1.05), p.z).sub(V.cam);
+        const dist = V.d.length();
+        if (dist < 3 || dist > 90) { arr[i].set(0, 0, 0, 0); continue; }
+        V.d.divideScalar(dist);
+        arr[i].set(V.d.x, V.d.y, V.d.z, Math.max(0.012, 0.85 / dist));
+      }
     }
 
     // range assist
