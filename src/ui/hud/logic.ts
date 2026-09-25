@@ -77,23 +77,17 @@ export const threatScale = (dist: number): number => (dist <= 12 ? 1 : dist >= 3
 
 /** The corner groups' authored heights: the bottom-left plates; bottom-right, the weapon tabs + ammo plate. */
 export const BL_H = 150, BR_H = 166;
-
-/**
- * Edge arrows' insets at --s: 22 px + half the 40 px arrow from the top and the sides; from the
- * bottom, clear of the corner group under it (margin 28 + its height + 10 + half the arrow) so an
- * arrow for a Milady behind you is never hidden under the health, copium or ammo plates. `ux` is
- * the arrow's direction (x of the unit vector): left of centre the BL strip, right of it the taller
- * BR group, eased across the middle so an arrow sweeping past straight-behind never jumps.
- */
-export function arrowInsets(s: number, ux = 0): { edge: number; bottom: number } {
-  const plates = BL_H + (BR_H - BL_H) * clamp01((ux + 0.25) / 0.5);
-  return { edge: 22 + 20 * s, bottom: (28 + plates + 10 + 20) * s };
-}
+/** The top-left group (room tag + tally) when it can't be measured, authored. */
+export const TL_W = 350, TL_H = 73;
 
 /** The smallest a head marker draws, in screen px across (the chevron is 32 authored). */
 export const MARK_MIN_PX = 20;
 /** A head marker's scale: the distance scale x --s, never under MARK_MIN_PX across (far ones at 720p). */
 export const markerScale = (dist: number, s: number): number => Math.max(threatScale(dist) * s, MARK_MIN_PX / 32);
+
+/** The edge arrow's size on screen: 40 px authored (x --s), never under 36 px (720p). */
+export const ARROW_MIN_PX = 36;
+export const arrowPx = (s: number): number => Math.max(40 * s, ARROW_MIN_PX);
 
 /**
  * The edge arrow's direction from the screen centre (screen px, y down). Behind the lens a projection
@@ -115,16 +109,91 @@ export function arrowDir(front: boolean, px: number, py: number, W: number, H: n
 }
 
 /**
- * Pin an off-screen bearing to the screen edge: the direction (dx, dy) from the centre (screen
- * pixels, y down), a W x H screen, `inset` px inside the edge (`insetBottom` at the bottom). Returns
- * the point and the arrow's rotation (deg, 0 = pointing up).
+ * The ring the edge arrows ride (arrow centres, screen px): the top edge and the two side edges,
+ * 22 px (x --s) inside the screen plus half an arrow. It never uses the bottom edge (the Radbro,
+ * the crosswalk under him and the subtitles are there): the side edges stop above the corner plates
+ * (and above a nudge caption on the left), and the top-left corner steps round the room tag, tally
+ * and objective (`tl`: that group's measured right / bottom, screen px).
  */
-export function edgePin(dx: number, dy: number, W: number, H: number, inset: number, insetBottom = inset): { x: number; y: number; rot: number } {
+export type Ring = { left: number; right: number; top: number; nx: number; ny: number; lowL: number; lowR: number };
+export function arrowRing(W: number, H: number, s: number, opts: { a?: number; tl?: { right: number; bottom: number } | null; nudgeTop?: number | null } = {}): Ring {
+  const half = (opts.a ?? arrowPx(s)) / 2;
+  const edge = 22 * s + half, cy = H / 2;
+  const tlR = opts.tl ? opts.tl.right : (28 + TL_W) * s, tlB = opts.tl ? opts.tl.bottom : (28 + TL_H) * s;
+  let lowL = H - (28 + BL_H + 10) * s - half;
+  if (opts.nudgeTop != null) lowL = Math.min(lowL, opts.nudgeTop - 8 * s - half);
+  const lowR = H - (28 + BR_H + 10) * s - half;
+  return { left: edge, right: W - edge, top: edge, nx: tlR + 8 * s + half, ny: Math.min(tlB + 8 * s + half, cy - 1), lowL: Math.max(lowL, cy), lowR: Math.max(lowR, cy) };
+}
+
+/** Degrees either side of straight down where an arrow keeps the side it was on (no flicker). */
+export const RING_HYST = 15;
+
+/**
+ * Pin an off-screen direction (dx, dy from the centre, screen px, y down) to the arrow ring. Above
+ * the horizon it is where the ray leaves the ring (stopping where it would enter the top-left group);
+ * below it, the side edge on her side, sliding from mid height (90 deg) down to the lowest point
+ * above the plates (straight behind), or lower when the ray itself says so. `prevSide` is the side
+ * this arrow was on last frame (-1 left, 1 right): near straight behind it stays there. Returns the
+ * point, the arrow's rotation (deg, 0 = pointing up, it always points along the direction) and the side.
+ */
+export function ringPin(dx: number, dy: number, W: number, H: number, r: Ring, prevSide: -1 | 0 | 1 = 0): { x: number; y: number; rot: number; side: -1 | 1 } {
   const l = Math.hypot(dx, dy) || 1;
   const ux = dx / l, uy = dy / l;
-  const hw = W / 2 - inset, hh = H / 2 - (uy > 0 ? insetBottom : inset);
-  const t = Math.min(Math.abs(ux) > 1e-6 ? hw / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-6 ? hh / Math.abs(uy) : Infinity);
-  return { x: W / 2 + ux * t, y: H / 2 + uy * t, rot: (Math.atan2(ux, -uy) * 180) / Math.PI };
+  const rot = (Math.atan2(ux, -uy) * 180) / Math.PI;
+  const cx = W / 2, cy = H / 2;
+  if (uy > 1e-9) {
+    let side: -1 | 1 = ux > 1e-9 ? 1 : ux < -1e-9 ? -1 : prevSide || 1;
+    if (prevSide && prevSide !== side && 180 - Math.abs(rot) < RING_HYST) side = prevSide;
+    // degrees round from straight up on that side: 90 (level) .. 180 (behind), past it inside the hysteresis
+    const a = side > 0 ? (rot >= 0 ? rot : 360 + rot) : rot <= 0 ? -rot : 360 - rot;
+    const x = side > 0 ? r.right : r.left, low = side > 0 ? r.lowR : r.lowL;
+    const along = side * ux;
+    const yRay = along > 1e-9 ? cy + (uy / along) * Math.abs(x - cx) : Infinity;
+    const y = Math.min(low, Math.max(cy + (low - cy) * clamp01((a - 90) / 90), yRay));
+    return { x, y, rot, side };
+  }
+  let t = Infinity;
+  if (ux > 1e-9) t = Math.min(t, (r.right - cx) / ux);
+  if (ux < -1e-9) t = Math.min(t, (cx - r.left) / -ux);
+  if (uy < -1e-9) t = Math.min(t, (cy - r.top) / -uy);
+  if (!Number.isFinite(t)) t = 0;
+  let x = cx + ux * t, y = cy + uy * t;
+  if (x < r.nx && y < r.ny) {
+    // the ray runs into the top-left group: stop where it enters it
+    const tx = cx < r.nx ? 0 : (cx - r.nx) / -ux, ty = cy < r.ny ? 0 : (cy - r.ny) / -uy;
+    t = Math.max(tx, ty);
+    x = cx + ux * t; y = cy + uy * t;
+  }
+  return { x, y, rot, side: ux >= 0 ? 1 : -1 };
+}
+
+// ---- the player's silhouette (head markers fade over it) ----------------------------------------
+
+/** One hit capsule on screen: a segment and a radius, screen px. */
+export type ScreenCapsule = { ax: number; ay: number; bx: number; by: number; r: number };
+
+/** Distance from (px, py) to the segment a-b. */
+export function segDist(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
+  const vx = bx - ax, vy = by - ay, l2 = vx * vx + vy * vy;
+  const t = l2 > 1e-9 ? clamp01(((px - ax) * vx + (py - ay) * vy) / l2) : 0;
+  return Math.hypot(px - (ax + vx * t), py - (ay + vy * t));
+}
+
+/** How close to the reticle (screen px) a Milady's head fades her marker: ~30 px, x --s above 1080p. */
+export const reticleFadePx = (s: number): number => 30 * Math.max(1, s);
+/** A faded head marker's opacity factor. */
+export const MARK_FADED = 0.25;
+
+/**
+ * A head marker fades when her head (hx, hy, screen px) is inside the Radbro's drawn silhouette (his
+ * hit capsules on screen, padded for the hair and the guns) or within `near` px of the reticle at the
+ * screen centre: the marker would sit on him or on the crosshair, right where you are looking.
+ */
+export function markerFades(hx: number, hy: number, W: number, H: number, silhouette: readonly ScreenCapsule[], near: number): boolean {
+  if (Math.hypot(hx - W / 2, hy - H / 2) < near) return true;
+  for (const c of silhouette) if (segDist(hx, hy, c.ax, c.ay, c.bx, c.by) <= c.r) return true;
+  return false;
 }
 
 // ---- captions: the transient-text budget ---------------------------------------------------------

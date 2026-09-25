@@ -6,8 +6,8 @@ import { METER } from "../src/sim/tuning.ts";
 import { emptyInput } from "../src/sim/types.ts";
 import { level, markerNode } from "./helpers.ts";
 import {
-  BL_H, BR_H, NUDGE_HOLD, STRIP_W, ammoLow, arrowDir, arrowInsets, canvasFx, captionBudget, damageAngle, edgePin, hudScale, hurtPhase, hurtStrength, markerScale, parseHint, recordBest, rowLow,
-  slashPath, subtitleWidth, threatScale,
+  BL_H, BR_H, NUDGE_HOLD, STRIP_W, TL_H, TL_W, ammoLow, arrowDir, arrowPx, arrowRing, canvasFx, captionBudget, damageAngle, hudScale, hurtPhase, hurtStrength, markerFades, markerScale, parseHint,
+  recordBest, reticleFadePx, ringPin, rowLow, segDist, slashPath, subtitleWidth, threatScale,
 } from "../src/ui/hud/logic.ts";
 import type { Hud } from "../src/ui/store.ts";
 import { roomLabel, roomText } from "../src/ui/rooms.ts";
@@ -74,62 +74,89 @@ test("ammo: total low at 25% of capacity, a row low at 3", () => {
   assert.equal(rowLow(4), false);
 });
 
-test("threat markers shrink with distance; edge arrows pin inside the screen", () => {
+test("threat markers shrink with distance", () => {
   assert.equal(threatScale(5), 1);
   assert.equal(threatScale(40), 0.7);
   near(threatScale(23.5), 0.85);
-  const l = edgePin(-100, 0, 1920, 1080, 42);
-  near(l.x, 42); near(l.y, 540); near(l.rot, -90);
-  const d = edgePin(0, 5, 1920, 1080, 42);
-  near(d.y, 1080 - 42); near(Math.abs(d.rot), 180);
 });
 
-test("edge arrows: behind you is the bottom edge, whatever the camera's pitch; in front, the projection", () => {
-  const W = 1280, H = 720, inset = 36;
-  const pin = (front: boolean, px: number, py: number, deg: number) => edgePin(...arrowDir(front, px, py, W, H, deg), W, H, inset);
-  // straight behind (the verify run's -178 deg): bottom centre, pointing down (it used to pin top-centre, pointing up)
-  const b = pin(false, 0, 0, -178);
-  near(b.y, H - inset); assert.ok(Math.abs(b.x - W / 2) < 20, `x ${b.x}`); assert.ok(Math.abs(b.rot) > 170, `rot ${b.rot}`);
-  // the bottom row sits above the corner group under it (BL plates 28 + 150, BR tabs + ammo 28 + 166
-  // authored), right into the corners, and stays under a nudge (bottom 28 + 212): 720p and 1080p
-  for (const [w, h, s] of [[1280, 720, 0.72], [1920, 1080, 1]] as const) {
-    for (let deg = -178; deg <= 178; deg += 2) {
-      const [dx, dy] = arrowDir(false, 0, 0, w, h, deg);
-      const ins = arrowInsets(s, dx);
-      const p = edgePin(dx, dy, w, h, ins.edge, ins.bottom);
-      const bottom = p.y + 20 * s, top = p.y - 20 * s;
-      const under = p.x - 20 * s < (28 + STRIP_W) * s ? BL_H : p.x + 20 * s > w - (28 + 330) * s ? BR_H : 0;
-      if (under) assert.ok(bottom <= h - (28 + under) * s, `${w}x${h} ${deg}: arrow bottom ${bottom} vs plates ${h - (28 + under) * s}`);
-      const onBottom = Math.abs(p.y - (h - ins.bottom)) < 0.5;
-      if (onBottom && under === BL_H) assert.ok(top >= h - (28 + 212) * s, `${w}x${h} ${deg}: arrow top ${top} vs nudge ${h - 240 * s}`);
+test("edge arrows: full size, on the ring round the top and the sides, never the bottom edge or the plates", () => {
+  near(arrowPx(0.72), 36); near(arrowPx(1), 40); near(arrowPx(1.25), 50);
+  for (const [W, H, s] of [[1280, 720, 0.72], [1920, 1080, 1], [2560, 1440, 1.25]] as const) {
+    const a = arrowPx(s), half = a / 2;
+    const ring = arrowRing(W, H, s);
+    const pin = (deg: number, prev: -1 | 0 | 1 = 0) => ringPin(...arrowDir(false, 0, 0, W, H, deg), W, H, ring, prev);
+    let last: { x: number; y: number } | null = null;
+    for (let deg = -179.5; deg <= 179.5; deg += 0.5) {
+      const p = pin(deg);
+      const tag = `${W}x${H} ${deg}: (${p.x.toFixed(1)}, ${p.y.toFixed(1)})`;
+      // on the ring: a side edge, the top edge, or the step round the top-left group
+      const onSide = Math.abs(p.x - ring.left) < 1e-6 || Math.abs(p.x - ring.right) < 1e-6;
+      const onTop = Math.abs(p.y - ring.top) < 1e-6 || Math.abs(p.y - ring.ny) < 1e-6 || Math.abs(p.x - ring.nx) < 1e-6;
+      assert.ok(onSide || onTop, `off the ring ${tag}`);
+      // inside the screen, clear of the corner plates under it and the top-left group
+      assert.ok(p.x - half >= 0 && p.x + half <= W && p.y - half >= 0, tag);
+      const plates = p.x < W / 2 ? BL_H : BR_H;
+      assert.ok(p.y + half <= H - (28 + plates) * s + 1e-6, `on the plates ${tag}`);
+      assert.ok(!(p.x - half < (28 + TL_W) * s && p.y - half < (28 + TL_H) * s), `on the tally ${tag}`);
+      // never the bottom-centre block where the Radbro stands (and the crosswalk under him)
+      assert.ok(!(p.x > W * 0.2 && p.x < W * 0.8 && p.y > H * 0.4), `on the Radbro ${tag}`);
+      // it points along the bearing
+      near(((p.rot - deg + 540) % 360) - 180, 0, 1e-6);
+      // and slides without jumps (except over the seam straight behind)
+      if (last && Math.abs(deg) < 170) assert.ok(Math.hypot(p.x - last.x, p.y - last.y) < 20 * s + 4, `jump ${tag}`);
+      last = p;
     }
-    const ins = arrowInsets(s);
-    near(edgePin(0, -1, w, h, ins.edge, ins.bottom).y, ins.edge);
+    // straight behind: low on a side edge, just above the plates, pointing down
+    const b = pin(178), bl = pin(-178);
+    near(b.x, ring.right); near(b.y, ring.lowR); assert.ok(Math.abs(b.rot) > 170);
+    near(bl.x, ring.left); near(bl.y, ring.lowL);
+    // level with you: mid height on that side; straight ahead: top centre
+    near(pin(90).y, H / 2); near(pin(-90).x, ring.left); near(pin(0).x, W / 2); near(pin(0).y, ring.top);
   }
-  // no jump sweeping past straight behind
-  for (let deg = 170; deg <= 190; deg += 0.5) {
-    const at = (d: number) => { const [dx, dy] = arrowDir(false, 0, 0, W, H, d); const ins = arrowInsets(0.72, dx); return edgePin(dx, dy, W, H, ins.edge, ins.bottom); };
-    const a = at(deg), b = at(deg + 0.5);
-    assert.ok(Math.hypot(a.x - b.x, a.y - b.y) < 6, `${deg}: (${a.x}, ${a.y}) -> (${b.x}, ${b.y})`);
-  }
-  // behind-right (107..160 deg): the bottom-right, never the top half, and the arrow leans down-right
-  for (const deg of [107, 120, 135, 160]) {
-    const p = pin(false, 0, 0, deg);
-    assert.ok(p.y > H / 2 && p.x > W / 2, `${deg}: (${p.x}, ${p.y})`);
-    assert.ok(p.rot > 90 && p.rot < 180, `${deg}: rot ${p.rot}`);
-  }
+  // the seam straight behind: an arrow keeps its side for 15 degrees past it (no flicker)
+  const W = 1280, H = 720, ring = arrowRing(W, H, 0.72);
+  const at = (deg: number, prev: -1 | 0 | 1) => ringPin(...arrowDir(false, 0, 0, W, H, deg), W, H, ring, prev);
+  assert.equal(at(-175, 1).side, 1);
+  near(at(-175, 1).x, ring.right);
+  assert.equal(at(-160, 1).side, -1);
+  assert.equal(at(175, -1).side, -1);
+  // a nudge caption on the left lifts the left edge's lowest point above it
+  const withNudge = arrowRing(W, H, 0.72, { nudgeTop: H - 240 * 0.72 - 40 });
+  assert.ok(withNudge.lowL + arrowPx(0.72) / 2 <= H - 240 * 0.72 - 40);
+  // a measured top-left group (an objective caption under the tally) pushes the step down
+  const tall = arrowRing(W, H, 0.72, { tl: { right: 420, bottom: 150 } });
+  const up = ringPin(-1, -0.45, W, H, tall);
+  assert.ok(!(up.x - 18 < 420 && up.y - 18 < 150), `(${up.x}, ${up.y})`);
   // the projection wins in front of the lens (off the right edge, a little high)
-  const f = edgePin(...arrowDir(true, W + 400, H / 2 - 50, W, H, 60, 55), W, H, inset);
-  near(f.x, W - inset); assert.ok(f.y < H / 2);
+  const f = ringPin(...arrowDir(true, W + 400, H / 2 - 50, W, H, 60, 55), W, H, ring);
+  near(f.x, ring.right); assert.ok(f.y < H / 2);
   // ... and hands over to the bearing toward the camera plane: no jump when she crosses behind
-  const at = (front: boolean, off: number) => edgePin(...arrowDir(front, W + 4000, H / 2 - 900, W, H, 100, off), W, H, inset);
-  const before = at(true, 89.9), after = at(false, 90.1);
+  const cross = (front: boolean, off: number) => ringPin(...arrowDir(front, W + 4000, H / 2 - 900, W, H, 100, off), W, H, ring);
+  const before = cross(true, 89.9), after = cross(false, 90.1);
   assert.ok(Math.hypot(before.x - after.x, before.y - after.y) < 3, `(${before.x}, ${before.y}) vs (${after.x}, ${after.y})`);
-  assert.ok(at(true, 70).y > at(true, 55).y);
+  // off the bottom edge in front of the lens (below you): the side edge, not the bottom
+  const low = ringPin(...arrowDir(true, W * 0.7, H + 300, W, H, 170, 40), W, H, ring);
+  near(low.x, ring.right); assert.ok(low.y <= ring.lowR);
   // and the arrow agrees with the damage slash for the same shooter
   const deg = damageAngle(0, 0, 6, 8, 0, -1); // behind-right of a player facing -Z
-  const p = pin(false, 0, 0, deg);
+  const p = at(deg, 0);
   assert.ok(deg > 90 && p.y > H / 2 && p.x > W / 2);
+});
+
+test("head markers fade on the Radbro's silhouette and next to the reticle", () => {
+  const W = 1280, H = 720;
+  near(reticleFadePx(0.72), 30); near(reticleFadePx(1.25), 37.5);
+  near(segDist(5, 5, 0, 0, 10, 0), 5); near(segDist(-3, 4, 0, 0, 10, 0), 5); near(segDist(1, 1, 2, 2, 2, 2), Math.SQRT2);
+  // on the crosshair
+  assert.equal(markerFades(W / 2 + 12, H / 2 - 20, W, H, [], 30), true);
+  assert.equal(markerFades(W / 2 + 40, H / 2 - 20, W, H, [], 30), false);
+  // on him: his torso on screen (a capsule from the hips to the neck, 60 px round)
+  const him = [{ ax: 500, ay: 600, bx: 500, by: 420, r: 60 }];
+  assert.equal(markerFades(540, 470, W, H, him, 30), true);
+  assert.equal(markerFades(500, 365, W, H, him, 30), true);
+  assert.equal(markerFades(580, 470, W, H, him, 30), false);
+  assert.equal(markerFades(500, 330, W, H, him, 30), false);
 });
 
 test("head markers: never under 20 px across; 1080p keeps the distance scale", () => {

@@ -159,14 +159,15 @@
 .rp-xh-ammo .rp-key { outline: 2px solid var(--red); }
 
 /* world-anchored layers (positioned from JS every frame) */
-.rp-threats { position: fixed; inset: 0; z-index: 8; overflow: hidden; }
+.rp-threats { position: fixed; inset: 0; z-index: 8; overflow: hidden; pointer-events: none; }
 .rp-threats .m { position: absolute; left: 0; top: 0; display: none; will-change: transform; }
+.rp-threats .m:not(.arrow) { transition: opacity 120ms linear; }
 .rp-threats .m svg { display: block; overflow: visible; }
 .rp-threats .m path.o { stroke: var(--ink); }
 .rp-threats .m.fire path.o { stroke: #fff; }
 .rp-threats .door { position: absolute; left: 50%; top: 100%; transform: translate(-50%, 6px); font-size: 19px; border-left-color: var(--paper); }
-.rp-damage { position: fixed; inset: 0; z-index: 9; overflow: visible; }
-.rp-rims { position: fixed; inset: 0; z-index: 5; }
+.rp-damage { position: fixed; inset: 0; z-index: 9; overflow: visible; pointer-events: none; }
+.rp-rims { position: fixed; inset: 0; z-index: 5; pointer-events: none; }
 .rp-rims div { position: absolute; inset: 0; display: none; }
 
 /* canvas-layer overlays (z 5) */
