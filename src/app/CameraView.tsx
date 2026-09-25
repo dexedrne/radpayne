@@ -13,6 +13,7 @@ import { usePrefab } from "react-three-game";
 import { Matrix4, PerspectiveCamera, Vector3 } from "three";
 import { World } from "../sim/world.ts";
 import type { Session } from "./session.ts";
+import { shoulderRight } from "../sim/player.ts";
 import { SHOULDER, aimDir } from "../sim/aim.ts";
 import { FRAME } from "./frame.ts";
 import type { V3 } from "../sim/types.ts";
@@ -162,7 +163,8 @@ export function CameraView({ s }: { s: Session }) {
       tmp.eye.set(tmp.piv.x - d.x * tmp.arm, tmp.piv.y - d.y * tmp.arm, tmp.piv.z - d.z * tmp.arm);
       // look at the point on the sim's aim ray at the aim point's distance: the same view as along the
       // ray when the shoulder is free; with the pivot slid in, the crosshair still sits on the aim point
-      const sx0 = r.x + c * SHOULDER.right, sz0 = r.z - sn * SHOULDER.right;
+      const simRight = shoulderRight(g.world, p); // the sim's pivot, pulled in by a wall like this one
+      const sx0 = r.x + c * simRight, sz0 = r.z - sn * simRight;
       const ap = g.aimPoint;
       const aimWant = Math.min(80, Math.max(3, Math.hypot(ap.x - sx0, ap.y - by, ap.z - sz0)));
       tmp.aimT += (aimWant - tmp.aimT) * Math.min(1, 10 * dt);

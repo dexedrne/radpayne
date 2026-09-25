@@ -36,6 +36,8 @@ export class Bot {
   private demoDodge = false;
   private swapCd = 0;
   private fired = false;
+  /** Seconds without a target (bullet time goes off only after a moment: no on / off every step). */
+  private lost = 0;
   constructor(turnRate = 3.5, settle = 0.3, demo = false) {
     this.turnRate = turnRate;
     this.settle = settle;
@@ -64,7 +66,7 @@ export class Bot {
     if (p.mode === "dead") return f;
     this.dodgeCd -= 1 / 120;
     this.swapCd -= 1 / 120;
-    const piv = pivotOf(p, this.piv);
+    const piv = pivotOf(p, this.piv, g.world);
 
     // target: nearest visible live hostile
     let best = -1, bd = Infinity;
@@ -78,6 +80,7 @@ export class Bot {
     let shooting = 0;
     for (const e of g.enemies) if (e.state === "peek" || e.state === "engage" || (e.state === "move" && e.sees)) shooting++;
 
+    this.lost = best >= 0 ? 0 : this.lost + 1 / 120;
     if (best >= 0) {
       const e = g.enemies[best];
       // the shotgun spreads: aim at the chest with it
@@ -102,7 +105,7 @@ export class Bot {
         if (!this.demoDodge && g.stats.kills >= 1 && p.mode === "normal" && p.grounded) { f.dodge = true; f.moveX = this.strafe; this.demoDodge = true; this.dodgeCd = 4; }
       }
     } else {
-      if (g.bulletTime) f.bt = true; // off again
+      if (g.bulletTime && this.lost > 0.6) f.bt = true; // off again (not the moment a target blinks out of sight)
       // walk toward the nearest live goon (or the exit once clear)
       let tx = NaN, tz = NaN, key = -1;
       if (g.phase === "clear") {

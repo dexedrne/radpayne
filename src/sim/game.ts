@@ -276,7 +276,8 @@ export class Game {
           const got = this.takeWeaponPickup(k.item, k.amount);
           if (got < 0) continue; // full: leave it lying there
           k.taken = true;
-          this.emit({ type: "pickup", item: k.item, amount: got, id: k.id });
+          // the event names what it gave: the weapon ("shotgun") or ammo for it ("shotgun_ammo")
+          this.emit({ type: "pickup", item: this.lastPickupWeapon ? k.item.replace(/_ammo$/, "") : `${PICKUPS[k.item].ammo}_ammo`, amount: got, id: k.id });
         }
       }
       for (const t of this.triggers) {
@@ -344,10 +345,12 @@ export class Game {
 
   /** A weapon / ammo pickup: the weapon the first time, then ammo into its reserve. Returns the rounds
    *  added (the weapon's reserve the first time), or -1 when there is no room for it. */
+  private lastPickupWeapon = false;
   private takeWeaponPickup(item: string, amount: number): number {
     const d = PICKUPS[item];
     const p = this.player;
-    if (d.weapon && this.giveWeapon(d.weapon)) return p.arsenal[d.weapon]!.reserve;
+    this.lastPickupWeapon = false;
+    if (d.weapon && this.giveWeapon(d.weapon)) { this.lastPickupWeapon = true; return p.arsenal[d.weapon]!.reserve; }
     const w = p.arsenal[d.ammo];
     if (!w) return -1; // ammo for a gun he does not have yet
     const room = WEAPONS[d.ammo].reserveMax - w.reserve;
@@ -392,7 +395,7 @@ export class Game {
   /** The crosshair ray from the shoulder pivot: what it is on and where it lands. */
   private updateAim(): void {
     const p = this.player;
-    const piv = pivotOf(p, this.v);
+    const piv = pivotOf(p, this.v, this.world);
     const d = aimDir(p.yaw, p.pitch, this.v2);
     const h = trace(this.world, this.actors, 0, piv.x, piv.y, piv.z, d.x, d.y, d.z, MAX_RANGE, this.th2);
     this.aimEnemy = h.kind === HIT_ACTOR ? h.actor - 1 : -1;

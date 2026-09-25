@@ -138,7 +138,7 @@ solid.push(boxMM("vest-ceiling", [-20, 3.2, -5], [-15.25, 3.4, 5], "ceiling"));
 decor.push(boxMM("curtain-n", [-15.12, 0, -2.3], [-14.88, 3.2, -1.5], "curtain"), boxMM("curtain-s", [-15.12, 0, 1.5], [-14.88, 3.2, 2.3], "curtain"));
 decor.push(boxMM("curtain-valance", [-15.12, 2.9, -2.3], [-14.85, 3.25, 2.3], "curtain"));
 decor.push(boxMM("street-door", [-19.99, 0, -1], [-19.94, 2.3, 1], "doorMetal"));
-decor.push(boxMM("vest-light", [-17.7, 3.1, -0.3], [-17.3, 3.18, 0.3], "warmLamp"));
+decor.push(boxMM("vest-light", [-17.6, 3.14, -0.2], [-17.4, 3.19, 0.2], "vestLamp"));
 // coat check (low cover) just inside
 solid.push(boxMM("coat-counter", [-14.4, 0, 6], [-13.6, 1.1, 10], "barFront"));
 decor.push(boxMM("coat-top", [-14.5, 1.1, 5.9], [-13.5, 1.15, 10.1], "barTop"));
@@ -149,7 +149,8 @@ decor.push(boxMM("led-floor", [-8, 0, -7], [8, 0.02, 7], "ledFloor"));
 decor.push(boxMM("led-rim-n", [-8.05, 0, -7.05], [8.05, 0.03, -6.98], "neonCyanSoft"), boxMM("led-rim-s", [-8.05, 0, 6.98], [8.05, 0.03, 7.05], "neonCyanSoft"));
 for (const [id, a, b] of [["n", [-8.2, 6.35, -7.2], [8.2, 6.65, -6.9]], ["s", [-8.2, 6.35, 6.9], [8.2, 6.65, 7.2]], ["w", [-8.2, 6.35, -6.9], [-7.9, 6.65, 6.9]], ["e", [7.9, 6.35, -6.9], [8.2, 6.65, 6.9]]] as Array<[string, V3, V3]>) decor.push(boxMM(`truss-${id}`, a, b, "truss"));
 for (const [x, z] of [[-8, -7], [8, -7], [-8, 7], [8, 7]]) decor.push(boxMM(`truss-rod-${x}${z}`, [x - 0.03, 6.65, z - 0.03], [x + 0.03, 8, z + 0.03], "metalDark"));
-decor.push(prim("mirror-ball", "sphere", [0, 6, 0], [0.45, 24, 16], "mirrorBall"), boxMM("mirror-rod", [-0.02, 6.4, -0.02], [0.02, 8, 0.02], "metalDark"));
+// the mirror ball itself is the look's (it turns): an fx marker below
+decor.push(boxMM("mirror-rod", [-0.02, 6.4, -0.02], [0.02, 8, 0.02], "metalDark"));
 // laser heads on the truss and on top of the LED wall
 const lasers: Node[] = [];
 [[-6, -7.05], [-2, -7.05], [2, -7.05], [6, -7.05], [-6, 7.05], [-2, 7.05], [2, 7.05], [6, 7.05]].forEach(([x, z], i) => {
@@ -241,16 +242,15 @@ decor.push(...neonX("heart-stage-n", 19.25, heart(-10.5, 5.5, 0.7), "neonCyan", 
 decor.push(box("poster-1", [-14.99, 1.7, -3.4], [0.02, 0.9, 0.6], "poster1"), box("poster-2", [-14.99, 1.7, 3.4], [0.02, 0.9, 0.6], "poster2"));
 decor.push(box("poster-3", [9.2, 1.7, -13.99], [0.6, 0.9, 0.02], "poster3"), box("poster-4", [-17.5, 1.6, 4.99], [0.6, 0.9, 0.02], "poster1"));
 
-// work lights (off in the party, up in the fight): ceiling fixtures; the look adds the light itself
-const workLights: Node[] = [];
-[[-12, -6], [-12, 6], [-3, -9], [-3, 9], [5, -9], [5, 9], [0, 0]].forEach(([x, z], i) => {
-  decor.push(boxMM(`work-fix-${i}`, [x - 0.7, 7.85, z - 0.25], [x + 0.7, 7.98, z + 0.25], "workLight"));
-  workLights.push(marker(`work-${i}`, "fx", [x, 7.6, z], { fx: "worklight" }));
+// work lights (off in the party, up in the fight): ceiling fixtures; the look lights the 5 marked
+// ones (4 soft overheads over the hall + one over the stage), the rest are fixtures only
+const workLights: Node[] = [marker("mirror-ball", "fx", [0, 6, 0], { fx: "mirrorball", r: 0.45 })];
+[[-11, 0, true], [-3, -8, true], [-3, 8, true], [5.5, 0, true], [-11, -9, false], [-11, 9, false], [5.5, -9, false], [5.5, 9, false]].forEach(([x, z, lit], i) => {
+  decor.push(boxMM(`work-fix-${i}`, [(x as number) - 0.7, 7.85, (z as number) - 0.25], [(x as number) + 0.7, 7.98, (z as number) + 0.25], "workLight"));
+  if (lit) workLights.push(marker(`work-${i}`, "fx", [x as number, 7.5, z as number], { fx: "worklight" }));
 });
-[[14, -4], [14, 4]].forEach(([x, z], i) => {
-  decor.push(boxMM(`work-fix-st${i}`, [x - 0.7, 11.35, z - 0.25], [x + 0.7, 11.48, z + 0.25], "workLight"));
-  workLights.push(marker(`work-st${i}`, "fx", [x, 11.1, z], { fx: "worklight" }));
-});
+decor.push(boxMM("work-fix-st", [14.8, 11.35, -0.7], [15.3, 11.48, 0.7], "workLight"));
+workLights.push(marker("work-st", "fx", [15, 10.8, 0], { fx: "worklight", intensity: 1.6 }));
 
 // ---------------------------------------------------------------- markers
 const markers: Node[] = [
@@ -367,7 +367,6 @@ const materials: Record<string, Record<string, unknown>> = {
   ledFloor: { materialType: "basic", color: "#ffffff", texture: `${T}dancefloor_led.webp`, repeat: true, repeatCount: [0.5, 0.5], toneMapped: false, name: "ledfloor 0.5" },
   ledWall: { materialType: "basic", color: "#ffffff", texture: `${T}ledwall_atlas.webp`, toneMapped: false, name: "ledwall 0.6" },
   officeWindow: { materialType: "basic", color: "#ffffff", texture: `${T}office_window_lit.webp`, toneMapped: false, name: "glow 0.5" },
-  mirrorBall: { color: "#ffffff", texture: `${T}mirrorball_tiles.webp`, repeat: true, repeatCount: [2, 2], roughness: 0.12, metalness: 0.85 },
   truss: { color: "#ffffff", texture: `${T}truss_alpha.webp`, repeat: true, repeatCount: [1, 1], transparent: false, alphaTest: 0.5, side: "DoubleSide", roughness: 0.4, metalness: 0.7 },
   table: { color: "#141016", roughness: 0.25, metalness: 0.2 },
   pillar: { color: "#121016", roughness: 0.3, metalness: 0.35 },
@@ -383,6 +382,7 @@ const materials: Record<string, Record<string, unknown>> = {
   laserHead: { color: "#1a1a20", roughness: 0.5, metalness: 0.5 },
   // unlit / glowing (the club look keeps these under the bloom's reach: bloom is <= 0.35 indoors)
   warmLamp: glow("#ffc98a", 1.6),
+  vestLamp: glow("#ffc98a", 0.8),
   exitRed: glow("#ff2a1a", 2.2),
   neonCyan: glow("#2ff0ff", 1.8, "pulse"),
   neonPink: glow("#ff2f9e", 1.8, "pulse"),
@@ -400,7 +400,14 @@ const prefab = {
     components: {
       data: {
         type: "Data",
-        properties: { data: { room: { name: "The Rave", next: "room3", cutsceneAfter: "c2", music: "rave", look: "club", footsteps: "hard", alertOnShot: true, alertAll: true } } },
+        properties: {
+          data: {
+            room: {
+              name: "The Rave", next: "room3", cutsceneAfter: "c2", music: "rave", look: "club", footsteps: "hard", alertOnShot: true, alertAll: true,
+              enterLine: "r2_enter", clearLine: "r2_clear", tutorial: false, prompt: "the bag went up. the staff door, behind the stage.",
+            },
+          },
+        },
       },
     },
     children: [

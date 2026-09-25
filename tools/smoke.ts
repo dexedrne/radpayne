@@ -5,7 +5,8 @@
 //   RADPAYNE_CHROME_PROFILE=<throwaway dir> node tools/smoke.ts [url] [outDir]
 //   RADPAYNE_GPU=1       use the machine's GPU through ANGLE/GL (add &webgl2 to the url); default SwiftShader
 //   RADPAYNE_CUTSCENE=1  first play the title -> cutscene path and shoot a panel
-//   RADPAYNE_WIDE=<cam>  finally hold the camera on a level camera marker and shoot the street
+//   RADPAYNE_WIDE=<cam>[|query][,...]  finally hold the camera on level camera markers and shoot them (the
+//                        url's room carries over; e.g. "cam-floor|still,cam-dj|look=fight&still")
 // With &cutscene in the url the bot run itself starts with cutscene 1, and with ?bot=demo (or &ending)
 // the ending cutscene plays after the clear: every panel of both is shot ("c-<id>-<panel>") and the
 // voice lines that played are printed at the end.
@@ -96,6 +97,7 @@ try {
       if (last.t > 0.5) await shot("1-start");
       if (last.kills >= 1 && !fightAt) fightAt = Date.now();
       if (fightAt && Date.now() - fightAt > 1500) await shot("2-fight");
+      if (fightAt && Date.now() - fightAt > 7000) await shot("2b-fight-late");
       if (last.ts < 0.99 && last.phase === "play" && last.proj >= 1 && slowShots < 3) { const n = `3-slowmo-${slowShots + 1}`; if (!shots.has(n)) { await shot(n); slowShots++; await sleep(700); } }
       if (last.mode === "dive") await shot("3-dive");
       if (last.phase === "killcam" && !shots.has("4-killcam")) { await sleep(150); await shot("4-killcam"); await sleep(750); await shot("4-killcam-2"); }
@@ -109,12 +111,15 @@ try {
   const voices = (await page.evaluate(() => (window as unknown as { __rp?: { voices?: string[] } }).__rp?.voices ?? [])) as string[];
   log.push(`VOICES ${voices.length}: ${voices.join(", ")}`);
 
+  // RADPAYNE_WIDE="cam-a,cam-b|look=fight": one page per camera marker, each with its own extra query
   const wide = process.env.RADPAYNE_WIDE;
-  if (wide) {
+  for (const item of wide ? wide.split(",") : []) {
+    const [cam, q = ""] = item.split("|");
     const u = new URL(url);
-    await page.goto(`${u.origin}/?skip&seed=1&cam=${wide}${u.searchParams.has("webgl2") ? "&webgl2" : ""}`, { waitUntil: "load" });
-    await sleep(12_000);
-    await shot(`6-wide-${wide}`);
+    const keep = ["room"].filter(k => u.searchParams.has(k)).map(k => `&${k}=${u.searchParams.get(k)}`).join("") + (q ? `&${q}` : "");
+    await page.goto(`${u.origin}/?skip&seed=1&cam=${cam}${keep}${u.searchParams.has("webgl2") ? "&webgl2" : ""}`, { waitUntil: "load" });
+    await sleep(14_000);
+    await shot(`6-wide-${cam}${q.includes("fight") ? "-fight" : ""}`);
   }
 } finally {
   await browser.close();

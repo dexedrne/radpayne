@@ -129,14 +129,6 @@
    "toneMapped": false,
    "name": "glow 0.5"
   },
-  "mirrorBall": {
-   "color": "#ffffff",
-   "texture": "/textures/club/mirrorball_tiles.webp",
-   "repeat": true,
-   "repeatCount": [2, 2],
-   "roughness": 0.12,
-   "metalness": 0.85
-  },
   "truss": {
    "color": "#ffffff",
    "texture": "/textures/club/truss_alpha.webp",
@@ -213,6 +205,12 @@
    "toneMapped": false,
    "name": "glow 1.6"
   },
+  "vestLamp": {
+   "materialType": "basic",
+   "color": "#ffc98a",
+   "toneMapped": false,
+   "name": "glow 0.8"
+  },
   "exitRed": {
    "materialType": "basic",
    "color": "#ff2a1a",
@@ -265,7 +263,11 @@
        "look": "club",
        "footsteps": "hard",
        "alertOnShot": true,
-       "alertAll": true
+       "alertAll": true,
+       "enterLine": "r2_enter",
+       "clearLine": "r2_clear",
+       "tutorial": false,
+       "prompt": "the bag went up. the staff door, behind the stage."
       }
      }
     }
@@ -2400,8 +2402,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-17.5, 3.14, 0],
-         "scale": [0.4, 0.08, 0.6]
+         "position": [-17.5, 3.165, 0],
+         "scale": [0.2, 0.05, 0.4]
         }
        },
        "geometry": {
@@ -2414,7 +2416,7 @@
        "material": {
         "type": "Material",
         "properties": {
-         "materialId": "warmLamp"
+         "materialId": "vestLamp"
         }
        },
        "mesh": {
@@ -2959,37 +2961,6 @@
         "type": "Material",
         "properties": {
          "materialId": "metalDark"
-        }
-       },
-       "mesh": {
-        "type": "Mesh",
-        "properties": {
-         "castShadow": false,
-         "receiveShadow": false
-        }
-       }
-      }
-     },
-     {
-      "id": "mirror-ball",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [0, 6, 0]
-        }
-       },
-       "geometry": {
-        "type": "Geometry",
-        "properties": {
-         "geometryType": "sphere",
-         "args": [0.45, 24, 16]
-        }
-       },
-       "material": {
-        "type": "Material",
-        "properties": {
-         "materialId": "mirrorBall"
         }
        },
        "mesh": {
@@ -8322,7 +8293,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-12, 7.915, -6],
+         "position": [-11, 7.915, 0],
          "scale": [1.4, 0.13, 0.5]
         }
        },
@@ -8354,7 +8325,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-12, 7.915, 6],
+         "position": [-3, 7.915, -8],
          "scale": [1.4, 0.13, 0.5]
         }
        },
@@ -8386,7 +8357,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-3, 7.915, -9],
+         "position": [-3, 7.915, 8],
          "scale": [1.4, 0.13, 0.5]
         }
        },
@@ -8418,7 +8389,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-3, 7.915, 9],
+         "position": [5.5, 7.915, 0],
          "scale": [1.4, 0.13, 0.5]
         }
        },
@@ -8450,7 +8421,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [5, 7.915, -9],
+         "position": [-11, 7.915, -9],
          "scale": [1.4, 0.13, 0.5]
         }
        },
@@ -8482,7 +8453,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [5, 7.915, 9],
+         "position": [-11, 7.915, 9],
          "scale": [1.4, 0.13, 0.5]
         }
        },
@@ -8514,7 +8485,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [0, 7.915, 0],
+         "position": [5.5, 7.915, -9],
          "scale": [1.4, 0.13, 0.5]
         }
        },
@@ -8541,12 +8512,12 @@
       }
      },
      {
-      "id": "work-fix-st0",
+      "id": "work-fix-7",
       "components": {
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [14, 11.415, -4],
+         "position": [5.5, 7.915, 9],
          "scale": [1.4, 0.13, 0.5]
         }
        },
@@ -8573,13 +8544,13 @@
       }
      },
      {
-      "id": "work-fix-st1",
+      "id": "work-fix-st",
       "components": {
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [14, 11.415, 4],
-         "scale": [1.4, 0.13, 0.5]
+         "position": [15.05, 11.415, 0],
+         "scale": [0.5, 0.13, 1.4]
         }
        },
        "geometry": {
@@ -11045,12 +11016,33 @@
       }
      },
      {
+      "id": "mirror-ball",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 6, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "fx",
+          "fx": "mirrorball",
+          "r": 0.45
+         }
+        }
+       }
+      }
+     },
+     {
       "id": "work-0",
       "components": {
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-12, 7.6, -6]
+         "position": [-11, 7.5, 0]
         }
        },
        "data": {
@@ -11070,7 +11062,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-12, 7.6, 6]
+         "position": [-3, 7.5, -8]
         }
        },
        "data": {
@@ -11090,7 +11082,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-3, 7.6, -9]
+         "position": [-3, 7.5, 8]
         }
        },
        "data": {
@@ -11110,7 +11102,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-3, 7.6, 9]
+         "position": [5.5, 7.5, 0]
         }
        },
        "data": {
@@ -11125,12 +11117,12 @@
       }
      },
      {
-      "id": "work-4",
+      "id": "work-st",
       "components": {
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [5, 7.6, -9]
+         "position": [15, 10.8, 0]
         }
        },
        "data": {
@@ -11138,87 +11130,8 @@
         "properties": {
          "data": {
           "marker": "fx",
-          "fx": "worklight"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "work-5",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [5, 7.6, 9]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "fx",
-          "fx": "worklight"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "work-6",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [0, 7.6, 0]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "fx",
-          "fx": "worklight"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "work-st0",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [14, 11.1, -4]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "fx",
-          "fx": "worklight"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "work-st1",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [14, 11.1, 4]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "fx",
-          "fx": "worklight"
+          "fx": "worklight",
+          "intensity": 1.6
          }
         }
        }

@@ -125,7 +125,7 @@ test("pickups: the weapon the first time, then ammo; slots and the wheel switch;
   const picked: string[] = [];
   for (let i = 0; i < 120 * 4; i++) { g.step(inp); for (const e of g.drain()) if (e.type === "pickup") picked.push(`${e.item}:${e.amount}`); }
   // the smgs_ammo before the SMGs stays on the floor (no gun for it yet)
-  assert.deepEqual(picked, ["shotgun:24", "shotgun:6", "smgs:180", "smgs_ammo:30"]);
+  assert.deepEqual(picked, ["shotgun:24", "shotgun_ammo:6", "smgs:180", "smgs_ammo:30"]);
   const p = g.player;
   assert.deepEqual(p.owned, ["pistols", "shotgun", "smgs"]);
   assert.equal(p.arsenal.shotgun!.reserve, 30);
