@@ -20,6 +20,7 @@ import { HudFrame } from "../ui/hud/HudFrame.tsx";
 
 const FORCE_WEBGL = new URLSearchParams(location.search).has("webgl2");
 
+
 /** Pending asset loads -> the UI store. */
 function LoadBridge() {
   const pending = useScenePendingLoads();
@@ -56,6 +57,7 @@ export function Scene({ s, onPhase, lowQuality, bootRef }: { s: Session; onPhase
         const be = (st.gl as unknown as { backend?: { isWebGPUBackend?: boolean; isWebGLBackend?: boolean } }).backend;
         const name = be?.isWebGPUBackend ? "WebGPU" : be?.isWebGLBackend ? "WebGL2" : "unknown";
         useUi.setState({ backend: name });
+        if (import.meta.env.MODE !== "production") Object.assign(window, { __gl: st.gl, __scene: st.scene }); // dev probe
         console.info("[radpayne] renderer:", name);
         if (!booted.current) { booted.current = true; bootRef?.(true); }
       }}

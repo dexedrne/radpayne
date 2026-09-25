@@ -27,6 +27,7 @@ import { enemyMuzzles } from "./EnemiesView.tsx";
 import { FRAME } from "./frame.ts";
 import { HEAVY_SCALE } from "../sim/tuning.ts";
 import { wrapAngle } from "../sim/aim.ts";
+import { breathe } from "./warmup.ts";
 
 const UP = new Vector3(0, 1, 0);
 /** Additive lift on every heavy material (linear): mid grey, so the charcoal reads on a dark wall. */
@@ -154,7 +155,12 @@ export function HeavyView({ s }: { s: Session }) {
         const [src, pack, gun, r2] = await Promise.all([load(rivalPath(e.model)), load(clipsPath(base)), load(gunClipsPath(base)), load(r2ClipsPath(base))]);
         if (!live) return;
         if (!src) { console.info(`[heavy] ${e.id}: no model ${e.model}`); continue; }
+        await breathe();
+        if (!live) return;
         const rig = makeHeavy(e, src, pack, gun, r2);
+        // posed before he is shown (never a frame of bind pose): the aimed idle, applied now
+        const idle = pick(rig.player, ["Shotgun_Aim_Idle", "Aim_Idle", "Idle"]);
+        if (idle) { rig.player.force(idle, 0); rig.player.update(0); }
         rigs.current[i] = rig;
         group.add(rig.root, rig.laser);
         console.info(`[heavy] ${e.id}: ${e.model} ready (${rig.player.clips.size} clips)`);

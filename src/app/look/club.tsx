@@ -30,7 +30,7 @@ import {
 import { bloom } from "three/examples/jsm/tsl/display/BloomNode.js";
 import type { LevelData } from "../../world/level.ts";
 import type { Session } from "../session.ts";
-import { FRAME } from "../frame.ts";
+import { FRAME, renderGate } from "../frame.ts";
 import { clubPulse } from "../../audio/sfx.ts";
 import { useUi } from "../../ui/store.ts";
 import { MarkerLights } from "./lights.tsx";
@@ -359,6 +359,7 @@ function ClubPost({ low }: { low: boolean }) {
   useFrame(st => {
     p.scenePass.camera = st.camera;
     p.maskPass.camera = st.camera;
+    if (renderGate.skip) return; // a card hides the canvas: the last frame stays
     p.pipeline.render();
   }, 1);
   return null;

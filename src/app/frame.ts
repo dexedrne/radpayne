@@ -8,3 +8,8 @@ export const FRAME = {
   camera: -2, // CameraView
   fx: -1, // FxView (reads bones / final transforms)
 } as const;
+
+/** The room's render pass stands down while a full-screen card hides the canvas (a cutscene, the loading
+ *  card): the last frame stays on the canvas and the frame's time goes to the room warm-up instead.
+ *  PlayPage sets it; each room look's render callback reads it. */
+export const renderGate = { skip: false };

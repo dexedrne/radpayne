@@ -40,7 +40,7 @@ import {
 import { bloom } from "three/examples/jsm/tsl/display/BloomNode.js";
 import type { LevelData, Marker } from "../../world/level.ts";
 import type { Session } from "../session.ts";
-import { FRAME } from "../frame.ts";
+import { FRAME, renderGate } from "../frame.ts";
 import { clubPulse } from "../../audio/sfx.ts";
 import { MarkerLights } from "./lights.tsx";
 import { useFx } from "./fx.ts";
@@ -453,6 +453,7 @@ function StreetPost({ low, clean }: { low: boolean; clean: boolean }) {
   useFrame(st => {
     p.scenePass.camera = st.camera;
     p.maskPass.camera = st.camera;
+    if (renderGate.skip) return; // a card hides the canvas: the last frame stays
     p.pipeline.render();
   }, 1); // a positive priority: this frame callback renders instead of R3F
   return null;

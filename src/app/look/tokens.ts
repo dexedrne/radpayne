@@ -14,7 +14,7 @@
 import { Fragment, createElement, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { DirectionalLight, Vector3, type Object3D } from "three";
-import { abs, dot, float, materialColor, normalView, normalWorld, positionViewDirection, positionWorld, pow, replaceDefaultUV, saturate, select, sign, uniform, vec2, vec3 } from "three/tsl";
+import { abs, dot, float, materialColor, materialReference, normalView, normalWorld, positionViewDirection, positionWorld, pow, replaceDefaultUV, saturate, select, sign, vec2, vec3 } from "three/tsl";
 import type { MeshStandardNodeMaterial } from "three/webgpu";
 import { FRAME } from "../frame.ts";
 
@@ -67,9 +67,9 @@ export function CameraKey({ color, intensity }: { color: string; intensity: numb
 /** Sets the hostile rim strength (0..1) on every material under `o` that has one. */
 export function setHostileRim(o: Object3D, k: number): void {
   o.traverse(c => {
-    const mm = (c as { material?: unknown }).material as { userData?: { rpRimK?: { value: number } } } | Array<{ userData?: { rpRimK?: { value: number } } }> | undefined;
+    const mm = (c as { material?: unknown }).material as { userData?: { rpRimK?: number } } | Array<{ userData?: { rpRimK?: number } }> | undefined;
     if (!mm) return;
-    for (const m of Array.isArray(mm) ? mm : [mm]) if (m.userData?.rpRimK) m.userData.rpRimK.value = k;
+    for (const m of Array.isArray(mm) ? mm : [mm]) if (typeof m.userData?.rpRimK === "number") m.userData.rpRimK = k;
   });
 }
 
@@ -84,12 +84,29 @@ export const HOSTILE_RIM = { color: [1.0, 0.075, 0.15] as const, strength: 0.35,
 export function hostileEmissive(m: MeshStandardNodeMaterial, lift: number, flat = 0): void {
   if (m.userData.rpRim === `${lift}|${flat}`) return;
   m.userData.rpRim = `${lift}|${flat}`;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const k: any = (m.userData.rpRimK ??= uniform(1));
-  const fres = pow(float(1).sub(saturate(abs(dot(normalView, positionViewDirection)))), HOSTILE_RIM.power);
-  const rim = vec3(...HOSTILE_RIM.color).mul(fres.mul(HOSTILE_RIM.strength * 2.2)).mul(k);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const own: any = flat > 0 ? vec3(flat, flat, flat * 1.08) : (materialColor as N).rgb.mul(lift);
-  m.emissiveNode = own.add(rim);
+  if (typeof m.userData.rpRimK !== "number") m.userData.rpRimK = 1;
+  m.emissiveNode = hostileGraph(lift, flat);
   m.needsUpdate = true;
+}
+
+// One node graph per (lift, flat), shared by every hostile material: the renderer builds (and compiles)
+// a shader per distinct graph, so a graph per material cost each girl her own shaders (seconds of
+// compiles on entering a room). The per-material rim strength comes in through a material reference.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let rimNode: any = null;
+const hostileGraphs = new Map<string, N>();
+function hostileGraph(lift: number, flat: number): N {
+  const key = `${lift}|${flat}`;
+  let g = hostileGraphs.get(key);
+  if (!g) {
+    if (!rimNode) {
+      const fres = pow(float(1).sub(saturate(abs(dot(normalView, positionViewDirection)))), HOSTILE_RIM.power);
+      rimNode = vec3(...HOSTILE_RIM.color).mul(fres.mul(HOSTILE_RIM.strength * 2.2)).mul(materialReference("userData.rpRimK", "float") as N);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const own: any = flat > 0 ? vec3(flat, flat, flat * 1.08) : (materialColor as N).rgb.mul(lift);
+    g = own.add(rimNode);
+    hostileGraphs.set(key, g);
+  }
+  return g;
 }

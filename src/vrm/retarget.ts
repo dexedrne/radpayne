@@ -91,22 +91,66 @@ export type RetargetOptions = {
 
 type Bound = { node: Object3D; path: "quaternion" | "position" | "scale"; interp: Interpolant };
 
+/** One posable clone of each source rig (cloning per clip was most of a retarget's cost) with its
+ *  rest transforms, restored before every clip. */
+const sourceClones = new WeakMap<Object3D, { root: Object3D; rest: Array<[Object3D, Vector3, Quaternion, Vector3]> }>();
+function sourceAtRest(sourceRoot: Object3D): Object3D {
+  let c = sourceClones.get(sourceRoot);
+  if (!c) {
+    const root = cloneSkeleton(sourceRoot);
+    root.position.set(0, 0, 0);
+    root.quaternion.identity();
+    root.scale.set(1, 1, 1);
+    const rest: Array<[Object3D, Vector3, Quaternion, Vector3]> = [];
+    root.traverse(o => rest.push([o, o.position.clone(), o.quaternion.clone(), o.scale.clone()]));
+    c = { root, rest };
+    sourceClones.set(sourceRoot, c);
+  }
+  for (const [o, p, q, sc] of c.rest) { o.position.copy(p); o.quaternion.copy(q); o.scale.copy(sc); }
+  c.root.updateMatrixWorld(true);
+  return c.root;
+}
+
+/** What a retargeted clip depends on in the target: VRM0 or not, and each normalized bone's node name
+ *  and rest offset. Pockit models that share a rig (most of them) share their retargeted clips. */
+export function rigSignature(vrm: VRM): string {
+  const rest = vrm.humanoid.normalizedRestPose;
+  const parts: string[] = [vrm.meta?.metaVersion === "0" ? "v0" : "v1"];
+  for (const bone of Object.keys(rest).sort() as VRMHumanBoneName[]) {
+    const p = rest[bone]?.position ?? [0, 0, 0];
+    parts.push(`${bone}:${vrm.humanoid.getNormalizedBoneNode(bone)?.name ?? ""}:${p.map(v => Math.round(v * 1e4)).join(",")}`);
+  }
+  return parts.join("|");
+}
+
+const clipIds = new WeakMap<object, number>();
+let nextClipId = 0;
+const idOf = (o: object) => { let id = clipIds.get(o); if (id === undefined) { id = ++nextClipId; clipIds.set(o, id); } return id; };
+/** Retargeted clips by (clip, source, options, target rig signature): shared, never mutated by callers
+ *  (the players clone a clip before they change it). */
+const retargeted = new Map<string, AnimationClip>();
+
 /**
  * Bake `clip` (authored on `sourceRoot`, a glTF scene whose default node transforms are the rest pose)
  * into a clip that drives `vrm`'s normalized humanoid bones. Play it with an AnimationMixer on vrm.scene
  * and call vrm.update(delta) every frame.
  */
-export function retargetClip(clip: AnimationClip, sourceRoot: Object3D, vrm: VRM, rig: RigMap, options: RetargetOptions = {}): AnimationClip {
+export function retargetClip(clip: AnimationClip, sourceRoot: Object3D, vrm: VRM, rig: RigMap, options: RetargetOptions = {}, signature?: string): AnimationClip {
   const { inPlace = false, fps = 30, alignRestPose = true } = options;
+  const key = `${idOf(clip)}/${idOf(sourceRoot)}/${idOf(rig)}/${inPlace}/${fps}/${alignRestPose}/${signature ?? rigSignature(vrm)}`;
+  const hit = retargeted.get(key);
+  if (hit) return hit;
+  const out = retargetOnce(clip, sourceRoot, vrm, rig, inPlace, fps, alignRestPose);
+  retargeted.set(key, out);
+  return out;
+}
+
+function retargetOnce(clip: AnimationClip, sourceRoot: Object3D, vrm: VRM, rig: RigMap, inPlace: boolean, fps: number, alignRestPose: boolean): AnimationClip {
   const humanoid = vrm.humanoid;
   const isVRM0 = vrm.meta?.metaVersion === "0";
 
-  // --- source: private clone at rest ---------------------------------------------------------
-  const src = cloneSkeleton(sourceRoot);
-  src.position.set(0, 0, 0);
-  src.quaternion.identity();
-  src.scale.set(1, 1, 1);
-  src.updateMatrixWorld(true);
+  // --- source: the rig's clone, back at rest ---------------------------------------------------
+  const src = sourceAtRest(sourceRoot);
 
   // target bone -> source node (only bones present on both sides)
   const pairs: Array<{ bone: VRMHumanBoneName; srcNode: Object3D; tgtNode: Object3D }> = [];

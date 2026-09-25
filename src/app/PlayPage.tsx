@@ -25,6 +25,9 @@ import { setMuted, unlockAudio } from "../audio/engine.ts";
 import { loadSamples, samplesReady, setFootsteps, setHeartbeat, setMusic, stopNarration, stopRoomAudio } from "../audio/sfx.ts";
 import { Bot } from "../sim/bot.ts";
 import type { WeaponId } from "../combat/weapons.ts";
+import { awaitRoom, frames, roomWarm, warmRoom } from "./warmup.ts";
+import { renderGate } from "./frame.ts";
+import { roomText } from "../ui/rooms.ts";
 
 const DEV = import.meta.env.MODE !== "production";
 const params = new URLSearchParams(location.search);
@@ -47,11 +50,16 @@ const LOADOUT = (DEV ? params.get("loadout") ?? "" : "").split(",").filter((w): 
 /** ?q=low: low quality for this page load only (headless smoke runs). */
 if (params.get("q") === "low") useUi.setState({ quality: "low" });
 const SEED = params.has("seed") ? Number(params.get("seed")) >>> 0 : (Math.random() * 2 ** 31) >>> 0;
+/** The longest a room's start waits for its models (then it goes on: a model still missing is a stand-in girl). */
+const HOLD_CAP_MS = 20_000;
+/** The room renders behind the loading card for its last frames (the new materials compile there). */
+let compiling = false;
+const gate = (screen: string) => { renderGate.skip = screen === "cutscene" || (screen === "loading" && !compiling); };
 
 const canvasEl = () => document.querySelector("canvas");
 
 /** A room's session (`exact`: null when its level file does not exist). */
-async function loadRoom(id: string, exact = false): Promise<Session> {
+async function loadRoom(id: string, exact = false, current = true): Promise<Session> {
   const { id: got, prefab } = await fetchRoom(id, exact);
   const level = readLevel(prefab as Parameters<typeof readLevel>[0]);
   for (const w of level.warnings) console.info(`[level] ${w}`);
@@ -62,7 +70,7 @@ async function loadRoom(id: string, exact = false): Promise<Session> {
   }
   const s = new Session(level, prefab, got, { seed: SEED, difficulty: useUi.getState().difficulty, ...(LOADOUT.length ? { loadout: LOADOUT } : {}) });
   console.info(`[radpayne] room ${got} ("${level.room.name}"): ${level.boxes.length} colliders, ${level.markers.length} markers, seed ${SEED}`);
-  (window as unknown as { __session?: Session }).__session = s;
+  if (current) (window as unknown as { __session?: Session }).__session = s;
   return s;
 }
 
@@ -98,6 +106,10 @@ export default function PlayPage() {
   const invertY = useUi(s => s.invertY);
   const locked = useUi(s => s.locked);
   const filterRef = useRef<HTMLDivElement>(null);
+  /** Sessions whose room has been on screen (their materials compiled behind the loading card). */
+  const shown = useRef(new WeakSet<Session>());
+  /** The next room, loaded and warming up while this one finishes (from its clear). */
+  const nextRoom = useRef<{ from: Session; ready: Promise<Session | null> } | null>(null);
   /** Playing on a gamepad without the pointer lock (started from the prompt with A / Start). */
   const [padFight, setPadFightState] = useState(false);
   const padFightRef = useRef(false);
@@ -173,8 +185,9 @@ export default function PlayPage() {
     session.paused = false;
   }
 
-  const startPlay = useCallback(() => {
+  const startPlay = useCallback(async () => {
     if (!session) return;
+    await holdRoom(session);
     useUi.setState({ screen: "play" });
     setPadFight(false);
     session.input.flush();
@@ -183,6 +196,32 @@ export default function PlayPage() {
     session.paused = !BOT && !document.pointerLockElement;
     lock();
   }, [session]);
+
+  /** A room's start waits behind the loading card for its models (built ahead by the warm-up, usually
+   *  already done), then a few frames render behind the card so the new materials compile there. */
+  async function holdRoom(s: Session): Promise<void> {
+    if (roomWarm(s) && shown.current.has(s)) return;
+    const t0 = performance.now();
+    const label = roomText(s.roomId, s.level.room).label.toLowerCase();
+    if (!roomWarm(s)) {
+      useUi.setState({ screen: "loading", load: { progress: 0, label, error: null } });
+      await awaitRoom(s, HOLD_CAP_MS, f => useUi.setState({ load: { progress: f, label, error: null } }));
+    }
+    if (!shown.current.has(s)) {
+      shown.current.add(s);
+      if (useUi.getState().screen !== "loading") useUi.setState({ screen: "loading", load: { progress: 1, label, error: null } });
+      // the models mount and pose (a few frames), then the room renders a few frames behind the card:
+      // its shaders compile there, not in the fight
+      await frames(3);
+      const tf = performance.now();
+      compiling = true;
+      gate("loading");
+      await frames(8);
+      compiling = false;
+      console.info(`[radpayne] ${s.roomId}: first frames ${Math.round(performance.now() - tf)} ms`);
+    }
+    console.info(`[radpayne] ${s.roomId}: held ${Math.round(performance.now() - t0)} ms for its models`);
+  }
 
   function pause() {
     if (!session) return;
@@ -205,9 +244,9 @@ export default function PlayPage() {
     if (!seenCutscene.current && (!SKIP || CUTSCENE)) {
       seenCutscene.current = true;
       const c = await loadCutscene("c1");
-      if (c) { setCut({ data: c, then: startPlay }); useUi.setState({ screen: "cutscene" }); void loadSamples().then(() => setMusic("calm")); return; }
+      if (c) { setCut({ data: c, then: () => void startPlay() }); useUi.setState({ screen: "cutscene" }); void loadSamples().then(() => setMusic("calm")); return; }
     }
-    startPlay();
+    void startPlay();
   }, [session, modelsReady, startPlay]);
 
   // ?skip / ?bot: straight in once the models are there
@@ -217,10 +256,13 @@ export default function PlayPage() {
   }, [modelsReady, session, play]);
 
   /** The next room's session takes over the canvas and play goes straight on (the bot too). */
-  const enterRoom = useCallback((ns: Session) => {
+  const enterRoom = useCallback(async (ns: Session) => {
     stopRoomAudio(false);
     ns.bot = BOT ? new Bot(3.5, 0.3, BOT_DEMO) : null;
+    ns.paused = true;
+    (window as unknown as { __session?: Session }).__session = ns;
     setSession(ns);
+    await holdRoom(ns);
     useUi.setState({ screen: "play" });
     ns.input.flush();
     ns.stepper.reset();
@@ -229,8 +271,19 @@ export default function PlayPage() {
     if (!BOT) void (canvasEl()?.requestPointerLock() as unknown as Promise<void> | undefined)?.catch?.(() => undefined);
   }, []);
 
+  /** Load the next room's level and start warming its models (once per room, from its clear). */
+  const prepareNext = useCallback((from: Session) => {
+    if (nextRoom.current?.from === from) return nextRoom.current.ready;
+    const next = typeof from.level.room.next === "string" ? from.level.room.next : "";
+    const ready = next ? loadRoom(next, true, false).then(ns => { warmRoom(ns); return ns; }, () => null) : Promise.resolve(null);
+    nextRoom.current = { from, ready };
+    return ready;
+  }, []);
+
   const onPhase = useCallback((phase: string) => {
     if (!session) return;
+    // the room is clear: the next room's models build during the walk to the door and the panels after it
+    if (phase === "clear" || phase === "done") void prepareNext(session);
     if (phase === "done" || phase === "dead") {
       session.paused = true;
       if (document.pointerLockElement) document.exitPointerLock();
@@ -247,7 +300,11 @@ export default function PlayPage() {
       const next = typeof room.next === "string" ? room.next : "";
       const goOn = () => {
         if (!next) { show(); return; }
-        void loadRoom(next, true).then(enterRoom, () => { console.info(`[radpayne] ${next} is not built yet`); show(); });
+        void prepareNext(session).then(ns => {
+          nextRoom.current = null;
+          if (ns) void enterRoom(ns);
+          else { console.info(`[radpayne] ${next} is not built yet`); show(); }
+        });
       };
       // the cutscene after the room: its own (c2), or room 1's ending panels (captions only), once per page load
       const after = typeof room.cutsceneAfter === "string" ? room.cutsceneAfter : session.roomId === "room1" ? "e1" : "";
@@ -264,7 +321,10 @@ export default function PlayPage() {
       }
       goOn();
     }
-  }, [session, enterRoom]);
+  }, [session, enterRoom, prepareNext]);
+
+  // the room stops rendering while a cutscene or the loading card hides it (the warm-up gets the time)
+  useEffect(() => useUi.subscribe(st => gate(st.screen)), []);
 
   // the canvas layer's filter (15 Hz via the HUD store): bullet-time grade, low-health
   // desaturation, pause blur, results dim, death greyout. The HUD is never filtered.
@@ -281,12 +341,13 @@ export default function PlayPage() {
     // from the room's last checkpoint when it has one (room 3: after the security office)
     session.restart({ difficulty: useUi.getState().difficulty, resume: session.game.saved ?? undefined });
     session.bot = BOT ? new Bot(3.5, 0.3, BOT_DEMO) : null;
-    startPlay();
+    void startPlay();
   };
   const toTitle = () => {
     if (!session) return;
     session.paused = true;
     setPadFight(false);
+    nextRoom.current = null;
     stopNarration();
     stopRoomAudio(true);
     useUi.setState({ screen: "title" });

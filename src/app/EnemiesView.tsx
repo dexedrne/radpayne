@@ -12,21 +12,23 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useAssetRuntime } from "react-three-game";
-import { CapsuleGeometry, Group, LoopOnce, Mesh, MeshStandardMaterial, Quaternion, SphereGeometry, Vector3, type AnimationAction, type Object3D } from "three";
+import { Group, LoopOnce, Quaternion, Vector3, type AnimationAction } from "three";
 import type { Session } from "./session.ts";
 import type { Enemy } from "../sim/actors.ts";
 import { AnimPlayer } from "../anim/animPlayer.ts";
 import { CLIPS, aimLimb, deathFor, pick, rotateBoneWorld } from "../anim/rig.ts";
 import { MILADY_GRIP } from "../anim/grips.ts";
 import { MILADY_GAIT, RUN_FROM, clipSpeed, legsFor } from "../anim/gait.ts";
-import { buildGoon, fetchPockit, type LoadedGoon } from "../vrm/pockit.ts";
-import { MILADY_CLIPS, MILADY_R2, RETARGET_SOURCE, clipsPath, modelPath } from "./characters.ts";
+import type { LoadedGoon } from "../vrm/pockit.ts";
+import { RETARGET_SOURCE, clipsPath, modelPath } from "./characters.ts";
+import { goonModel } from "./warmup.ts";
 import { aimGun, attachGun, makePistol, makeSmg, muzzleWorld } from "./guns.ts";
 import { FRAME } from "./frame.ts";
 import { useUi } from "../ui/store.ts";
 import { wrapAngle } from "../sim/aim.ts";
 import { goonTalk } from "./director.ts";
 import { setHostileRim } from "./look/tokens.ts";
+import { GOON_LOOK, animateStandIn, makeStandIn, type StandIn } from "./standIn.ts";
 
 const UP = new Vector3(0, 1, 0);
 const params = new URLSearchParams(location.search);
@@ -40,6 +42,8 @@ type GoonView = {
   n: number;
   root: Group;
   standIn: Group;
+  /** The stand-in girl's rig (she strides, crouches and lies down like the sim says). */
+  si: StandIn;
   gun: Group;
   gunInHand: boolean;
   model: LoadedGoon | null;
@@ -72,41 +76,25 @@ type GoonView = {
   rim: number;
   /** Her clip before the alert ("" = the relaxed set). */
   idleClip: string;
+  /** Her model has been posed by a clip (until then it stays hidden behind the stand-in). */
+  posed: boolean;
+  /** Frames an alive, posed goon has spent with both upper arms at the bind pose (a T-pose). */
+  tposeFrames: number;
 };
 
 const DEATHS = ["Death_Back", "Death_Back_2", "Death_Fwd", "Death_Fwd_2", "Falling_Down"];
 const LIMBS = ["hips", "leftUpperArm", "rightUpperArm", "leftUpperLeg", "rightUpperLeg"] as const;
+const ARMS = ["leftUpperArm", "rightUpperArm"] as const;
 const AX = new Vector3(1, 0, 0), AZ = new Vector3(0, 0, 1);
-
-const coat = new MeshStandardMaterial({ color: "#1c1a24", roughness: 0.8 });
-const skin = new MeshStandardMaterial({ color: "#f3d9cc", roughness: 0.7 });
-const hair = new MeshStandardMaterial({ color: "#ff5fae", roughness: 0.6 });
-const capBody = new CapsuleGeometry(0.2, 0.45, 4, 10);
-const capLeg = new CapsuleGeometry(0.09, 0.7, 4, 8);
-const headGeo = new SphereGeometry(0.17, 16, 12);
-const hairGeo = new SphereGeometry(0.19, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.62);
-
-/** A Milady-shaped stand-in matching the sim's hit skeleton. */
-function makeStandIn(): Group {
-  const g = new Group();
-  const body = new Mesh(capBody, coat);
-  body.position.y = 1.22;
-  const l = new Mesh(capLeg, coat); l.position.set(0.1, 0.52, 0);
-  const r = new Mesh(capLeg, coat); r.position.set(-0.1, 0.52, 0);
-  const head = new Mesh(headGeo, skin); head.position.y = 1.74; head.name = "head";
-  const h = new Mesh(hairGeo, hair); h.position.y = 1.76; h.rotation.x = -0.25;
-  g.add(body, l, r, head, h);
-  g.traverse(o => { o.frustumCulled = false; });
-  return g;
-}
 
 function makeView(e: Enemy, idleClip: string): GoonView {
   const root = new Group();
   root.name = e.kind === "heavy" ? `skip-${e.idx}` : `goon-${e.idx}`;
-  const standIn = makeStandIn();
+  const si = makeStandIn(GOON_LOOK);
+  const standIn = si.root;
   root.add(standIn);
   const gun = e.weapon === "smg" ? makeSmg() : makePistol();
-  return { idx: e.idx, n: e.milady, root, standIn, gun, gunInHand: false, model: null, player: null, hit: null, clip: "", yaw: e.facing, legYaw: e.facing, back: false, flinch: 0, pain: 0, blinkT: -1, blinkAt: 1 + Math.random() * 3, deadShown: false, deathPlayed: false, deathTried: new Set(), deathFrames: 0, deathFallback: false, fallYaw: 0, loading: false, skip: e.kind === "heavy", rim: 1, idleClip };
+  return { idx: e.idx, n: e.milady, root, standIn, si, gun, gunInHand: false, model: null, player: null, hit: null, clip: "", yaw: e.facing, legYaw: e.facing, back: false, flinch: 0, pain: 0, blinkT: -1, blinkAt: 1 + Math.random() * 3, deadShown: false, deathPlayed: false, deathTried: new Set(), deathFrames: 0, deathFallback: false, fallYaw: 0, loading: false, skip: e.kind === "heavy", rim: 1, idleClip, posed: false, tposeFrames: 0 };
 }
 
 /** Deterministic 0..1 per goon and attempt (death variant picks). */
@@ -125,20 +113,22 @@ export function EnemiesView({ s }: { s: Session }) {
     for (const v of views) if (!v.skip) group.add(v.root, v.gun);
     enemyMuzzles.length = 0;
     for (let i = 0; i < views.length; i++) enemyMuzzles.push(new Vector3());
-    // start every download now; build one at a time (parse + retarget are main-thread work), in the
-    // order the downloads finish, so one slow model never holds up the rest. A failed or stuck goon
-    // is logged and tried once more at the end; until then (or for good) she keeps her stand-in.
+    // the models come from the room's warm-up (warmup.ts: one build at a time, sliced across frames,
+    // usually done before the room starts); a goon mounts hers as soon as it is built. A failed or stuck
+    // goon is logged and asked for once more at the end; until then (or for good) she keeps her stand-in.
     let cancelled = false;
     if (!NO_MILADY && sourcesReady) {
-      const sources = [assets.getModel(MILADY_CLIPS), assets.getModel(modelPath(RETARGET_SOURCE)), assets.getModel(clipsPath(RETARGET_SOURCE)), assets.getModel(MILADY_R2)].filter(Boolean) as Object3D[];
       const mount = (v: GoonView, m: LoadedGoon) => {
         if (cancelled || v.model) return;
         v.model = m;
         v.player = new AnimPlayer(m.vrm.scene, [m.clips], { fade: 0.2 });
         if (m.hit) { v.hit = v.player.mixer.clipAction(m.hit); v.hit.setLoop(LoopOnce, 1); }
-        v.root.add(m.body);
-        v.standIn.visible = false;
+        // shown only once a clip has posed her (the bones pass checks): never a frame of bind pose
         v.clip = "";
+        v.posed = false;
+        v.tposeFrames = 0;
+        m.body.visible = false;
+        v.root.add(m.body);
         // the pistol into her right hand (VRM grip, scaled to her forearm; VRM0 is turned 180 deg)
         const hand = m.vrm.humanoid.getNormalizedBoneNode("rightHand");
         if (hand) {
@@ -151,32 +141,18 @@ export function EnemiesView({ s }: { s: Session }) {
         }
         console.info(`[milady] goon ${v.idx}: #${v.n} ready (${m.clips.length} clips, scale ${m.scale.toFixed(2)}, blink ${m.blink ? "yes" : "no"}, talk ${m.talk ?? "no"})`);
       };
-      const wait = (ms: number) => new Promise<null>(r => setTimeout(() => r(null), ms));
-      /** Build + mount one goon; false when it failed or is still stuck after 40 s (a late model still mounts). */
-      const build = async (v: GoonView): Promise<boolean> => {
-        v.loading = true;
-        const job = buildGoon(v.n, sources, v.idleClip ? [v.idleClip] : []).then(
-          m => { if (m) mount(v, m); else console.info(`[milady] goon ${v.idx}: #${v.n} failed (no model data)`); return !!m; },
-          e => { console.info(`[milady] goon ${v.idx}: #${v.n} failed: ${String(e)}`); return false; },
-        ).finally(() => { v.loading = false; });
-        const ok = await Promise.race([job, wait(40_000)]);
-        if (ok === null) console.info(`[milady] goon ${v.idx}: #${v.n} still loading after 40 s, moving on`);
-        return ok === true;
-      };
       void (async () => {
-        const pending = new Map(views.filter(v => !v.skip).map(v => [v, fetchPockit(v.n).then(() => v)]));
-        const retry: GoonView[] = [];
-        while (pending.size && !cancelled) {
-          const v = await Promise.race(pending.values());
-          pending.delete(v);
-          if (cancelled) return;
-          if (!(await build(v))) retry.push(v);
-          await wait(30);
-        }
-        for (const v of retry) {
-          if (cancelled || v.model) continue;
+        const mine = views.filter(v => !v.skip && !v.model);
+        const got = await Promise.all(mine.map(v => {
+          v.loading = true;
+          return (goonModel(s, v.idx) ?? Promise.resolve(null)).then(m => { v.loading = false; if (m) mount(v, m); return !!m; });
+        }));
+        for (let k = 0; k < mine.length; k++) {
+          const v = mine[k];
+          if (got[k] || cancelled || v.model) continue;
           console.info(`[milady] goon ${v.idx}: retrying #${v.n}`);
-          await build(v);
+          const m = await (goonModel(s, v.idx) ?? Promise.resolve(null));
+          if (m) mount(v, m);
         }
       })();
     }
@@ -261,6 +237,10 @@ export function EnemiesView({ s }: { s: Session }) {
       if (v.standIn.visible) {
         if (e.state === "dead" && v.deadShown) { v.standIn.rotation.x += (-Math.PI / 2 - v.standIn.rotation.x) * Math.min(1, 6 * dt * Math.max(g.timeScale, 0.1) * 4); v.standIn.position.y = 0.15; }
         else { v.standIn.rotation.x = 0; v.standIn.position.y = 0; }
+        // she walks where the sim moves her (the legs keep pace: never a slide)
+        const sp = Math.sqrt(e.vx * e.vx + e.vz * e.vz);
+        v.standIn.rotation.y = e.state !== "dead" && sp > 0.2 ? wrapAngle(Math.atan2(e.vx, e.vz) - v.yaw) : 0;
+        animateStandIn(v.si, e.state === "dead" ? "dead" : sp > 0.2 ? "walk" : "idle", dt * (s.paused ? 0 : g.timeScale), sp);
       }
       // a body is not a threat: the pink-red rim fades once she is down (kept while the kill cam holds her)
       const rimWant = e.state === "dead" && !e.deathHold ? 0 : 1;
@@ -327,6 +307,19 @@ export function EnemiesView({ s }: { s: Session }) {
       if (m) {
         const h = m.vrm.humanoid;
         const nb = (n: Parameters<typeof h.getNormalizedBoneNode>[0]) => h.getNormalizedBoneNode(n) ?? undefined;
+        // the clip's pose is on her bones now (before the aim / lean): both upper arms at the bind pose
+        // is a T-pose. A fresh model stays hidden until a clip poses her; a posed one that falls into it
+        // is re-posed (her clip again, then the idle).
+        const bind = ARMS.every(n => { const b = nb(n); return !b || Math.abs(b.quaternion.w) > 0.9994; });
+        if (!v.posed) {
+          if (!bind || v.deathFallback) { v.posed = true; m.body.visible = true; v.standIn.visible = false; }
+        } else if (alive && bind && v.player) {
+          if (++v.tposeFrames === 3) {
+            const idle = pick(v.player, e.state === "idle" ? CLIPS.relaxed : CLIPS.idle);
+            console.info(`[milady] goon ${v.idx}: bind pose while alive (clip "${v.clip}"), re-posing with ${idle || "nothing"}`);
+            if (idle) { v.player.force(idle, 0); v.player.update(0); v.clip = idle; }
+          }
+        } else v.tposeFrames = 0;
         v.root.updateMatrixWorld(true);
         if (alive) {
           // the chest back onto the aim when the legs run another way

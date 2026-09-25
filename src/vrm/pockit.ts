@@ -6,7 +6,7 @@ import { AnimationClip, AnimationUtils, Group, Vector3, type Material, type Mesh
 import { MeshStandardNodeMaterial } from "three/webgpu";
 import type { VRM } from "@pixiv/three-vrm";
 import { parseVrm } from "./loadVrm.ts";
-import { RADBRO_RIG, retargetClip } from "./retarget.ts";
+import { RADBRO_RIG, retargetClip, rigSignature } from "./retarget.ts";
 import { MILADY_HEAD_BONE } from "../combat/hitboxes.ts";
 
 /** prnthh/Pockit main at the time of writing (same pin as RadRun); bump deliberately. */
@@ -138,11 +138,37 @@ function lit(vrm: VRM): Material[] {
   return out;
 }
 
-/** Parse + light + scale + retarget one goon's model. `sources` = Radbro GLB roots carrying clips. */
-export async function buildGoon(n: number, sources: Object3D[], extra: readonly string[] = []): Promise<LoadedGoon | null> {
+const noBreath = () => Promise.resolve();
+
+/**
+ * Drop the morph targets of every mesh outside the meshes bound by `keepExpressions`. The renderer
+ * builds a shader per geometry that carries morph targets, so every Pockit face cost its own (seconds of
+ * compiles on entering a room); from across a fight a blink does not read, so nobody keeps one.
+ */
+export function stripMorphs(vrm: VRM, keepExpressions: readonly string[] = []): void {
+  const keep = new Set<Object3D>();
+  const em = vrm.expressionManager;
+  for (const name of keepExpressions) {
+    for (const b of em?.getExpression(name)?.binds ?? []) for (const m of (b as unknown as { primitives?: Object3D[] }).primitives ?? []) keep.add(m);
+  }
+  vrm.scene.traverse(o => {
+    const mesh = o as Mesh;
+    if (!mesh.isMesh || keep.has(mesh) || !Object.keys(mesh.geometry.morphAttributes).length) return;
+    mesh.geometry.morphAttributes = {};
+    mesh.morphTargetInfluences = undefined;
+    mesh.morphTargetDictionary = undefined;
+  });
+}
+
+/** Parse + light + scale + retarget one goon's model. `sources` = Radbro GLB roots carrying clips.
+ *  `breathe` is awaited between the steps (the warm-up's frame slicing). */
+export async function buildGoon(n: number, sources: Object3D[], extra: readonly string[] = [], breathe: () => Promise<void> = noBreath): Promise<LoadedGoon | null> {
   const got = await fetchPockit(n);
   if (!got) return null;
+  await breathe();
   const { vrm } = await parseVrm(got.buf.slice(0), got.url);
+  stripMorphs(vrm);
+  await breathe();
   const materials = lit(vrm);
   vrm.scene.updateMatrixWorld(true);
   const lower = vrm.humanoid?.getNormalizedBoneNode("rightLowerArm");
@@ -161,20 +187,23 @@ export async function buildGoon(n: number, sources: Object3D[], extra: readonly 
   body.add(vrm.scene);
   const clips: AnimationClip[] = [];
   const seen = new Set<string>();
+  const sig = rigSignature(vrm);
   for (const src of sources) {
     const list = ((src as unknown as { animations?: AnimationClip[] }).animations ?? []) as AnimationClip[];
     for (const c of list) {
       if ((!GOON_CLIPS.includes(c.name) && !extra.includes(c.name)) || seen.has(c.name)) continue;
       seen.add(c.name);
+      await breathe();
       try {
-        clips.push(retargetClip(c, src, vrm, RADBRO_RIG, { inPlace: !TRAVEL.test(c.name), alignRestPose: true }));
+        clips.push(retargetClip(c, src, vrm, RADBRO_RIG, { inPlace: !TRAVEL.test(c.name), alignRestPose: true }, sig));
       } catch (e) {
         console.info(`[milady] retarget ${c.name} failed on #${n}: ${String(e)}`);
       }
     }
   }
   const em = vrm.expressionManager;
-  const bound = (name: string) => (em?.getExpression(name)?.binds.length ?? 0) > 0;
+  // an expression counts only while one of its meshes still has its morph targets
+  const bound = (name: string) => (em?.getExpression(name)?.binds ?? []).some(b => ((b as unknown as { primitives?: Mesh[] }).primitives ?? []).some(p => !!p.morphTargetInfluences));
   const pain = ["sorrow", "sad", "angry", "surprised"].find(bound) ?? null;
   const talk = ["aa", "a", "oh", "ou"].find(bound) ?? null;
   let hit: AnimationClip | null = null;
