@@ -507,8 +507,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-17.625, 4, -9.5],
-         "scale": [4.75, 8, 9]
+         "position": [-17.6, 4, -9.6],
+         "scale": [5.2, 8, 9.2]
         }
        },
        "geometry": {
@@ -539,8 +539,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-17.625, 4, 9.5],
-         "scale": [4.75, 8, 9]
+         "position": [-17.6, 4, 9.6],
+         "scale": [5.2, 8, 9.2]
         }
        },
        "geometry": {
@@ -571,8 +571,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-15.125, 4, -3.25],
-         "scale": [0.25, 8, 3.5]
+         "position": [-15.125, 4, -3.35],
+         "scale": [0.25, 8, 3.7]
         }
        },
        "geometry": {
@@ -603,8 +603,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-15.125, 4, 3.25],
-         "scale": [0.25, 8, 3.5]
+         "position": [-15.125, 4, 3.35],
+         "scale": [0.25, 8, 3.7]
         }
        },
        "geometry": {

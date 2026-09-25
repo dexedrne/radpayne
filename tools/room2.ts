@@ -129,10 +129,11 @@ solid.push(boxMM("ceiling-high", [10, 11.5, -14], [20, 11.8, 14], "ceiling"));
 decor.push(boxMM("soffit", [9.8, 8.3, -14], [10, 11.5, 14], "padded"));
 
 // entrance vestibule and the curtain
-solid.push(boxMM("vest-fill-n", [-20, 0, -14], [-15.25, 8, -5], "padded"));
-solid.push(boxMM("vest-fill-s", [-20, 0, 5], [-15.25, 8, 14], "padded"));
-solid.push(boxMM("part-n", [-15.25, 0, -5], [-15, 8, -1.5], "padded"));
-solid.push(boxMM("part-s", [-15.25, 0, 1.5], [-15, 8, 5], "padded"));
+// (the blocks overlap at their corners: a ray along a shared edge must never find a crack)
+solid.push(boxMM("vest-fill-n", [-20.2, 0, -14.2], [-15, 8, -5], "padded"));
+solid.push(boxMM("vest-fill-s", [-20.2, 0, 5], [-15, 8, 14.2], "padded"));
+solid.push(boxMM("part-n", [-15.25, 0, -5.2], [-15, 8, -1.5], "padded"));
+solid.push(boxMM("part-s", [-15.25, 0, 1.5], [-15, 8, 5.2], "padded"));
 solid.push(boxMM("part-lintel", [-15.25, 3.2, -1.5], [-15, 8, 1.5], "padded"));
 solid.push(boxMM("vest-ceiling", [-20, 3.2, -5], [-15.25, 3.4, 5], "ceiling"));
 decor.push(boxMM("curtain-n", [-15.12, 0, -2.3], [-14.88, 3.2, -1.5], "curtain"), boxMM("curtain-s", [-15.12, 0, 1.5], [-14.88, 3.2, 2.3], "curtain"));

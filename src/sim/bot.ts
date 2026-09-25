@@ -136,7 +136,14 @@ export class Bot {
       if (!Number.isNaN(tx)) {
         this.repath -= 1 / 120;
         if (key !== this.pathFor || this.repath <= 0) {
-          this.path = g.graph.path(p.x, p.y, p.z, tx, 0, tz) ?? [{ x: tx, z: tz }];
+          // a goon walled into her spot (a booth) has no path: go to the waypoint nearest to her instead
+          let path = g.graph.path(p.x, p.y, p.z, tx, 0, tz);
+          if (!path) {
+            const n = g.graph.nearest(tx, 0, tz, false);
+            const w = n >= 0 ? g.graph.nodes[n] : null;
+            path = w ? g.graph.path(p.x, p.y, p.z, w.x, w.y, w.z) : null;
+          }
+          this.path = path ?? [{ x: tx, z: tz }];
           this.pathFor = key;
           this.repath = 1;
         }

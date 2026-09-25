@@ -39,6 +39,8 @@ const SMG_SCALE = 1.2;
 const SWAP_AT = 0.23;
 /** The shotgun's upper-body turn onto the crosshair is clamped to this (radians). */
 const SHOTGUN_AIM_MAX = 0.7;
+/** The shotgun carried out to his right of the crosshair line (radians), so the shoulder camera sees it past his hair. */
+const SHOTGUN_CARRY = 0.3;
 /** Arms spread apart (radians off the aim line; right, left): the akimbo stance puts the right gun out
  *  past his big head and hair, where the shoulder camera sees it; the guns swing back onto the
  *  crosshair (aimGun). The left one is behind him from that camera whatever it does. */
@@ -391,9 +393,9 @@ export function PlayerView({ s }: { s: Session }) {
     const armK = r.armW * (1 - r.swapW);
     const held = handGuns(rig, r.shown);
     if (r.shown === "shotgun") {
-      // two hands on one gun: turn the upper body (arms, gun and all) so the barrel meets the
+      // two hands on one gun: turn the upper body (arms, gun and all) most of the way onto the
       // crosshair point, clamped; the fire / reload layers already rack the pump with the left hand
-      const w = armK * (1 - 0.8 * r.reloadW);
+      const w = armK * (1 - 0.8 * r.reloadW) * 0.6;
       for (let k = 0; k < 2 && w > 0.01 && alive; k++) {
         rig.shotgun.updateMatrixWorld(true);
         const mz = muzzleWorld(rig.shotgun, tmp.a);
@@ -405,6 +407,17 @@ export function PlayerView({ s }: { s: Session }) {
         SG_AXIS.crossVectors(dir, want);
         if (SG_AXIS.lengthSq() < 1e-10) break;
         rotateBoneWorld(B.spine, SG_AXIS.normalize(), ang);
+      }
+      // shouldered under his big head the gun is hidden from the shoulder camera: carry it out to the
+      // right (low ready, like the pistols' akimbo arm), the left hand after the pump, and the barrel
+      // swung back onto the crosshair in the grip (aimGun below)
+      if (alive && armK > 0.01) {
+        const reach = B.rArm ? B.rArm.getWorldPosition(tmp.a).distanceTo(tmp.aim) : 10;
+        const out = SG_WANT.copy(tmp.side).multiplyScalar(0.12 + Math.tan(SHOTGUN_CARRY) * reach).add(tmp.aim);
+        out.y -= 0.12 * reach * 0.1;
+        aimLimb(B.rArm, B.rHand, out, armK * (1 - 0.7 * r.reloadW));
+        rig.shotgun.updateMatrixWorld(true);
+        aimLimb(B.lArm, B.lHand, rig.shotgun.localToWorld(SG_DIR.copy(SHOTGUN_PUMP)), armK * (1 - r.reloadW) * (1 - r.fireW * 0.5));
       }
     } else {
       // each arm aims a little outside the crosshair point (akimbo), scaled with the distance
@@ -427,6 +440,7 @@ export function PlayerView({ s }: { s: Session }) {
     if (r.shown !== "shotgun") {
       held.forEach((gun, h) => aimGun(gun, alive ? tmp.aim : null, armK * (1 - (h === 1 ? 0.9 : 0.5) * r.reloadW), 0.75));
     } else {
+      aimGun(rig.shotgun, alive ? tmp.aim : null, armK * (1 - 0.8 * r.reloadW), 0.6);
       // rack the pump: back and forward at the clip's pumpBack (fire 0.30 s, reload 1.60 s)
       const pump = rig.shotgun.userData.pump as Object3D;
       const f = rig.sgFire && r.fireW > 0.05 ? rackAt(rig.sgFire.time, 0.3) : 0;

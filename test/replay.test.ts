@@ -48,9 +48,9 @@ test("smoke: the bot clears room 1 (greybox and the street) and walks out (norma
 
 test("smoke: the bot clears room 2 (the rave: goons, the rusher backup, the crowd) and walks out (normal)", () => {
   const lv = room2();
-  for (const seed of [1, 2, 3]) {
+  for (const [seed, demo] of [[1, false], [2, false], [3, false], [1, true]] as const) {
     const g = new Game(lv, { seed, difficulty: "normal" });
-    const bot = new Bot();
+    const bot = new Bot(3.5, 0.3, demo);
     let killcam = false, crowdHit = false;
     for (let i = 0; i < 120 * 150 && g.phase !== "done" && g.phase !== "dead"; i++) {
       g.step(bot.next(g));
