@@ -118,6 +118,10 @@ export function Pause({ onResume, onRestart, onQuit }: { onResume: () => void; o
 
 const fmt = (t: number) => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, "0")}`;
 
+/** What comes after a cleared room (while the next room is not built, the results say so). */
+const NEXT_TITLE: Record<string, string> = { room1: "THE RAVE", room2: "THE BACK OF THE HOUSE", room3: "THE ELEVATOR" };
+const CLEAR_LINE: Record<string, string> = { room2: "a brass key on a pink lanyard. somewhere past the staff door, an elevator." };
+
 export function ResultsScreen({ onRetry, onTitle }: { onRetry: () => void; onTitle: () => void }) {
   const r = useUi(s => s.results);
   if (!r) return null;
@@ -131,9 +135,9 @@ export function ResultsScreen({ onRetry, onTitle }: { onRetry: () => void; onTit
     <div style={{ ...layer, background: "rgba(5,6,12,0.85)" }} data-testid="results">
       <div style={{ width: "min(460px, 92vw)" }}>
         <div style={{ font: `400 56px/1 ${display}`, letterSpacing: 3, color: r.cleared ? INK : "#ff4a5a" }}>{r.cleared ? "ROOM CLEAR" : "RUGGED"}</div>
-        {r.cleared && <div style={{ font: `400 26px/1.1 ${display}`, letterSpacing: 3, color: "#ff3fa8", textShadow: "0 0 14px rgba(255,63,168,0.55)", margin: "4px 0 8px" }}>TO BE CONTINUED: THE RAVE</div>}
+        {r.cleared && <div style={{ font: `400 26px/1.1 ${display}`, letterSpacing: 3, color: "#ff3fa8", textShadow: "0 0 14px rgba(255,63,168,0.55)", margin: "4px 0 8px" }}>TO BE CONTINUED: {NEXT_TITLE[r.room] ?? "THE RAVE"}</div>}
         <div style={{ opacity: 0.75, marginBottom: 16, fontStyle: "italic", fontFamily: "Georgia, serif", fontSize: 15 }}>
-          {r.cleared ? "the door was open. the bass was louder. my bag was in there somewhere." : "they said wagmi. they lied. get up and try again."}
+          {r.cleared ? (CLEAR_LINE[r.room] ?? "the door was open. the bass was louder. my bag was in there somewhere.") : "they said wagmi. they lied. get up and try again."}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "4px 20px", marginBottom: 20 }}>
           {rows.map(([k, v]) => (

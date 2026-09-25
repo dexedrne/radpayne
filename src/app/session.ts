@@ -12,6 +12,10 @@ export type Listener = (e: GameEvent, s: Session) => void;
 
 type Snap = { x: number; y: number; z: number };
 
+/** Run ids are unique across sessions: the canvas and its views stay mounted when the next room's
+ *  session replaces this one, and they must see a new run. */
+let runIds = 0;
+
 export class Session {
   readonly level: LevelData;
   /** The raw prefab (the scene mounts it; the sim read the same object). */
@@ -22,8 +26,8 @@ export class Session {
   readonly input = new InputLatch();
   readonly stepper = new FixedStepper();
   paused = true;
-  /** Bumped on restart (views reset their per-run state). */
-  run = 0;
+  /** A new id on every restart and for every new room's session (views reset their per-run state). */
+  run = ++runIds;
   bot: Bot | null = null;
   record: InputFrame[] | null = null;
   private readonly listeners = new Set<Listener>();
@@ -62,7 +66,7 @@ export class Session {
     this.input.pitch = 0;
     this.input.flush();
     this.stepper.reset();
-    this.run++;
+    this.run = ++runIds;
     this.snapAll();
   }
 

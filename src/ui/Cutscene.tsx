@@ -5,12 +5,14 @@
 // Enter goes to the next panel, Esc skips the rest. A panel without an image paints a placeholder.
 // A panel's `dur` is how long it holds (seconds); a line without audio (or muted) is read for a time
 // that fits its length. Used for cutscene 1 (c1) and the room 1 ending (e1, captions only).
+// A line with a `speaker` is someone else's (c2: the bouncer, goon_b): voices/<speaker>/<audio>, set
+// upright (the narrator's captions are italic). `music` names the room music under the panels.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { narrate, sampleDuration, samplesReady, stopNarration } from "../audio/sfx.ts";
 
-export type Line = { audio?: string; text: string };
+export type Line = { audio?: string; text: string; speaker?: string };
 export type Panel = { image?: string; tone?: string; box?: [number, number, number, number]; lines: Line[]; dur?: number };
-export type CutsceneData = { id: string; title?: string; panels: Panel[] };
+export type CutsceneData = { id: string; title?: string; panels: Panel[]; music?: string };
 
 const font = "ui-monospace, SFMono-Regular, Menlo, monospace";
 const serif = "Georgia, 'Times New Roman', serif";
@@ -60,9 +62,9 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
     lines.forEach((ln, k) => {
       timers.current.push(window.setTimeout(() => {
         setShown(k + 1);
-        if (ln.audio) narrate(ln.audio);
+        if (ln.audio) narrate(ln.audio, ln.speaker ?? "narrator");
       }, t * 1000));
-      const d = ln.audio ? audioLen(ln.audio) : 0;
+      const d = ln.audio ? audioLen(ln.audio, ln.speaker) : 0;
       t += (d > 0 ? d : readTime(ln.text)) + 0.35;
     });
     // dur = how long the panel holds (the clip + ~1 s); never shorter than its lines
@@ -95,7 +97,7 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
           background: "#f4e7b8", color: "#141210", padding: "0.55em 0.8em", border: "2px solid #141210", boxShadow: "3px 3px 0 rgba(0,0,0,0.55)",
           font: `italic 700 clamp(12px, 1.55vw, 21px)/1.3 ${serif}`, display: "flex", flexDirection: "column", gap: "0.35em",
         }}>
-          {lines.map((ln, k) => <div key={k} style={{ animation: "rp-line 0.4s ease-out" }}>{ln.text}</div>)}
+          {lines.map((ln, k) => <div key={k} style={{ animation: "rp-line 0.4s ease-out", ...(ln.speaker ? { fontStyle: "normal" } : {}) }}>{ln.text}</div>)}
         </div>
         </div>
       </div>
@@ -113,7 +115,7 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
   );
 }
 
-const audioLen = (line: string) => sampleDuration(`voices/narrator/${line}`);
+const audioLen = (line: string, speaker = "narrator") => sampleDuration(`voices/${speaker}/${line}`);
 
 export async function loadCutscene(id: string): Promise<CutsceneData | null> {
   try {
