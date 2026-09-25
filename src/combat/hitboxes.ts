@@ -52,6 +52,8 @@ export type Pose = {
   lean: number;
   /** Lying poses: body axis height above y. */
   lieH: number;
+  /** Body size over the skeleton's (a heavy is a Radbro x 1.12); 1 when absent. */
+  scale?: number;
 };
 
 export type Capsule = { ax: number; ay: number; az: number; bx: number; by: number; bz: number; r: number };
@@ -67,19 +69,20 @@ export function poseHitboxes(body: BodyType, p: Pose, out: Capsule[]): boolean {
   const lying = p.stance === "dive" || p.stance === "prone";
   const segs = lying ? sk.lying : p.stance === "crouch" ? sk.crouch : sk.stand;
   const c = Math.cos(p.yaw), s = Math.sin(p.yaw);
+  const k = p.scale ?? 1;
   for (let i = 0; i < HB_COUNT; i++) {
     const g = segs[i], o = out[i];
-    let ax = g.a[0], ay = g.a[1], az = g.a[2], bx = g.b[0], by = g.b[1], bz = g.b[2];
+    let ax = g.a[0] * k, ay = g.a[1] * k, az = g.a[2] * k, bx = g.b[0] * k, by = g.b[1] * k, bz = g.b[2] * k;
     if (lying) { ay += p.lieH; by += p.lieH; }
     else if (p.lean !== 0) {
       // lean the upper body sideways: the head fully, the torso top by 70 %
-      const k = p.lean * 0.34;
-      if (i === HB_HEAD) { ax += k; bx += k; }
-      else if (i === HB_TORSO) bx += k * 0.7;
+      const kl = p.lean * 0.34 * k;
+      if (i === HB_HEAD) { ax += kl; bx += kl; }
+      else if (i === HB_TORSO) bx += kl * 0.7;
     }
     o.ax = p.x + ax * c + az * s; o.ay = p.y + ay; o.az = p.z - ax * s + az * c;
     o.bx = p.x + bx * c + bz * s; o.by = p.y + by; o.bz = p.z - bx * s + bz * c;
-    o.r = g.r;
+    o.r = g.r * k;
   }
   return true;
 }

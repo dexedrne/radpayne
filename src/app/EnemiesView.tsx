@@ -6,6 +6,9 @@
 //   arm onto the player when shooting, an additive flinch + pain face on hits, blinks, the mouth moving
 //   while she barks; the pistol in the right hand with the clip set's VRM grip. Bodies stay down (the
 //   kill cam holds the victim until the replayed bullet lands).
+// Round 2: rushers are goons with an SMG; a goon's marker can name her idle clip before the alert
+// (idleClip: the DJ's DJ_Idle, a dance for the girl hidden among the dancers). Heavies are drawn by
+// HeavyView (a rival Radbro, not a Milady).
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useAssetRuntime } from "react-three-game";
@@ -17,12 +20,13 @@ import { CLIPS, aimLimb, deathFor, pick, rotateBoneWorld } from "../anim/rig.ts"
 import { MILADY_GRIP } from "../anim/grips.ts";
 import { MILADY_GAIT, RUN_FROM, clipSpeed, legsFor } from "../anim/gait.ts";
 import { buildGoon, fetchPockit, type LoadedGoon } from "../vrm/pockit.ts";
-import { MILADY_CLIPS, RETARGET_SOURCE, clipsPath, modelPath } from "./characters.ts";
-import { aimGun, attachGun, makePistol, muzzleWorld } from "./guns.ts";
+import { MILADY_CLIPS, MILADY_R2, RETARGET_SOURCE, clipsPath, modelPath } from "./characters.ts";
+import { aimGun, attachGun, makePistol, makeSmg, muzzleWorld } from "./guns.ts";
 import { FRAME } from "./frame.ts";
 import { useUi } from "../ui/store.ts";
 import { wrapAngle } from "../sim/aim.ts";
 import { goonTalk } from "./director.ts";
+import { setHostileRim } from "./look/tokens.ts";
 
 const UP = new Vector3(0, 1, 0);
 const params = new URLSearchParams(location.search);
@@ -62,6 +66,12 @@ type GoonView = {
   deathFallback: boolean;
   fallYaw: number;
   loading: boolean;
+  /** Not a Milady (a heavy: HeavyView draws him). */
+  skip: boolean;
+  /** Her hostile rim now (1 alive, fading to 0 once she is down). */
+  rim: number;
+  /** Her clip before the alert ("" = the relaxed set). */
+  idleClip: string;
 };
 
 const DEATHS = ["Death_Back", "Death_Back_2", "Death_Fwd", "Death_Fwd_2", "Falling_Down"];
@@ -90,13 +100,13 @@ function makeStandIn(): Group {
   return g;
 }
 
-function makeView(e: Enemy): GoonView {
+function makeView(e: Enemy, idleClip: string): GoonView {
   const root = new Group();
-  root.name = `goon-${e.idx}`;
+  root.name = e.kind === "heavy" ? `skip-${e.idx}` : `goon-${e.idx}`;
   const standIn = makeStandIn();
   root.add(standIn);
-  const gun = makePistol();
-  return { idx: e.idx, n: e.milady, root, standIn, gun, gunInHand: false, model: null, player: null, hit: null, clip: "", yaw: e.facing, legYaw: e.facing, back: false, flinch: 0, pain: 0, blinkT: -1, blinkAt: 1 + Math.random() * 3, deadShown: false, deathPlayed: false, deathTried: new Set(), deathFrames: 0, deathFallback: false, fallYaw: 0, loading: false };
+  const gun = e.weapon === "smg" ? makeSmg() : makePistol();
+  return { idx: e.idx, n: e.milady, root, standIn, gun, gunInHand: false, model: null, player: null, hit: null, clip: "", yaw: e.facing, legYaw: e.facing, back: false, flinch: 0, pain: 0, blinkT: -1, blinkAt: 1 + Math.random() * 3, deadShown: false, deathPlayed: false, deathTried: new Set(), deathFrames: 0, deathFallback: false, fallYaw: 0, loading: false, skip: e.kind === "heavy", rim: 1, idleClip };
 }
 
 /** Deterministic 0..1 per goon and attempt (death variant picks). */
@@ -104,7 +114,7 @@ const k01 = (i: number, run: number) => { const x = Math.sin(i * 12.9898 + run *
 
 export function EnemiesView({ s }: { s: Session }) {
   const assets = useAssetRuntime();
-  const views = useMemo(() => s.game.enemies.map(makeView), [s]);
+  const views = useMemo(() => s.game.enemies.map(e => makeView(e, String(s.level.markers.find(m => m.kind === "enemy" && m.id === e.id)?.data.idleClip ?? ""))), [s]);
   const version = useUi(st => st.assetsVersion); // re-render when models load
   const sourcesReady = version > 0 && !!assets.getModel(modelPath(RETARGET_SOURCE)) && !!assets.getModel(clipsPath(RETARGET_SOURCE));
   const group = useMemo(() => new Group(), []);
@@ -112,7 +122,7 @@ export function EnemiesView({ s }: { s: Session }) {
   const tmp = useMemo(() => ({ q: new Quaternion(), a: new Vector3(), b: new Vector3(), side: new Vector3(), hand: new Vector3(), fwd: new Vector3() }), []);
 
   useEffect(() => {
-    for (const v of views) group.add(v.root, v.gun);
+    for (const v of views) if (!v.skip) group.add(v.root, v.gun);
     enemyMuzzles.length = 0;
     for (let i = 0; i < views.length; i++) enemyMuzzles.push(new Vector3());
     // start every download now; build one at a time (parse + retarget are main-thread work), in the
@@ -120,7 +130,7 @@ export function EnemiesView({ s }: { s: Session }) {
     // is logged and tried once more at the end; until then (or for good) she keeps her stand-in.
     let cancelled = false;
     if (!NO_MILADY && sourcesReady) {
-      const sources = [assets.getModel(MILADY_CLIPS), assets.getModel(modelPath(RETARGET_SOURCE)), assets.getModel(clipsPath(RETARGET_SOURCE))].filter(Boolean) as Object3D[];
+      const sources = [assets.getModel(MILADY_CLIPS), assets.getModel(modelPath(RETARGET_SOURCE)), assets.getModel(clipsPath(RETARGET_SOURCE)), assets.getModel(MILADY_R2)].filter(Boolean) as Object3D[];
       const mount = (v: GoonView, m: LoadedGoon) => {
         if (cancelled || v.model) return;
         v.model = m;
@@ -145,7 +155,7 @@ export function EnemiesView({ s }: { s: Session }) {
       /** Build + mount one goon; false when it failed or is still stuck after 40 s (a late model still mounts). */
       const build = async (v: GoonView): Promise<boolean> => {
         v.loading = true;
-        const job = buildGoon(v.n, sources).then(
+        const job = buildGoon(v.n, sources, v.idleClip ? [v.idleClip] : []).then(
           m => { if (m) mount(v, m); else console.info(`[milady] goon ${v.idx}: #${v.n} failed (no model data)`); return !!m; },
           e => { console.info(`[milady] goon ${v.idx}: #${v.n} failed: ${String(e)}`); return false; },
         ).finally(() => { v.loading = false; });
@@ -154,7 +164,7 @@ export function EnemiesView({ s }: { s: Session }) {
         return ok === true;
       };
       void (async () => {
-        const pending = new Map(views.map(v => [v, fetchPockit(v.n).then(() => v)]));
+        const pending = new Map(views.filter(v => !v.skip).map(v => [v, fetchPockit(v.n).then(() => v)]));
         const retry: GoonView[] = [];
         while (pending.size && !cancelled) {
           const v = await Promise.race(pending.values());
@@ -201,6 +211,7 @@ export function EnemiesView({ s }: { s: Session }) {
       for (const v of views) {
         v.deadShown = false; v.deathPlayed = false; v.clip = ""; v.flinch = 0; v.pain = 0; v.yaw = g.enemies[v.idx]?.facing ?? 0; v.legYaw = v.yaw; v.back = false;
         v.deathTried.clear(); v.deathFrames = 0;
+        v.rim = 1; setHostileRim(v.root, 1);
         if (v.deathFallback && v.model) { v.model.body.rotation.x = 0; v.model.body.position.y = 0; }
         v.deathFallback = false;
         v.hit?.stop();
@@ -209,7 +220,7 @@ export function EnemiesView({ s }: { s: Session }) {
     }
     for (const v of views) {
       const e = g.enemies[v.idx];
-      if (!e) { v.root.visible = false; v.gun.visible = false; continue; }
+      if (!e || v.skip) { v.root.visible = false; v.gun.visible = false; continue; }
       const p = s.renderE[v.idx] ?? e;
       v.root.visible = e.state !== "inactive";
       v.gun.visible = v.root.visible;
@@ -251,6 +262,10 @@ export function EnemiesView({ s }: { s: Session }) {
         if (e.state === "dead" && v.deadShown) { v.standIn.rotation.x += (-Math.PI / 2 - v.standIn.rotation.x) * Math.min(1, 6 * dt * Math.max(g.timeScale, 0.1) * 4); v.standIn.position.y = 0.15; }
         else { v.standIn.rotation.x = 0; v.standIn.position.y = 0; }
       }
+      // a body is not a threat: the pink-red rim fades once she is down (kept while the kill cam holds her)
+      const rimWant = e.state === "dead" && !e.deathHold ? 0 : 1;
+      if (v.rim !== rimWant) { v.rim = rimWant > v.rim ? 1 : Math.max(0, v.rim - dt / 0.6); setHostileRim(v.root, v.rim); }
+      else if (rimWant === 0 && (g.stepN + v.idx) % 30 === 0) setHostileRim(v.root, 0); // a late-mounted model
       const pl = v.player;
       if (!pl || e.state === "dead") continue;
       const speed = Math.sqrt(e.vx * e.vx + e.vz * e.vz);
@@ -268,7 +283,7 @@ export function EnemiesView({ s }: { s: Session }) {
         const running = speed > RUN_FROM * m.legScale;
         want = pick(pl, fighting ? (running ? CLIPS.run : CLIPS.walk) : running ? ["Run_02", "Aim_Run"] : CLIPS.stroll);
         rate = (legs.back ? -1 : 1) * speed / (clipSpeed(MILADY_GAIT, want) * m.legScale);
-      } else want = pick(pl, fighting ? CLIPS.idle : CLIPS.relaxed);
+      } else want = fighting ? pick(pl, CLIPS.idle) : v.idleClip && pl.has(v.idleClip) ? v.idleClip : pick(pl, CLIPS.relaxed);
       v.legYaw += wrapAngle(legWant - v.legYaw) * Math.min(1, 12 * dt);
       if (!want && e.crouch && pl.has("Big_Land") && m.crouchAt >= 0) want = "Big_Land";
       if (want !== v.clip) {

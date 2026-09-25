@@ -1,6 +1,8 @@
 // Per-room HUD text: the room tag, Radbro's objective captions, the kill-cam and results lines.
 // A level can override any of these from its Data {room: {...}} settings (label, objective,
-// objectiveClear, killcamLine, clearLine, number); unknown rooms fall back to the level's name.
+// objectiveClear, killcamLine, clearText, pauseLine, chapter, number); its `prompt` is the
+// objective once the room is clear. (`clearLine` in the level data is the narrator's voice line id,
+// so the results line is `clearText` there.) Unknown rooms fall back to the level's name.
 
 export type RoomText = {
   /** Room number in the chapter (the tag reads "ROOM n · LABEL"). */
@@ -18,8 +20,10 @@ export type RoomText = {
   pauseLine: string;
   /** "chapter 1: rugged". */
   chapter: string;
-  /** Rooms in the chapter so far ("room 1 of 1"). */
+  /** Rooms in the chapter so far ("room 1 of 3"). */
   of: number;
+  /** "TO BE CONTINUED: <next>" on the results. */
+  next: string;
 };
 
 export const RUGGED_LINE = "the street took this one. get up. the bag is still in there.";
@@ -33,6 +37,27 @@ const ROOMS: Record<string, Partial<RoomText>> = {
     killcamLine: "last one. the street went quiet. the rain didn't.",
     clearLine: "the door was open. the bass was louder. my bag was in there somewhere.",
     pauseLine: "chapter 1: rugged. the street outside club milady. the rain didn't stop for me either.",
+    next: "THE RAVE",
+  },
+  room2: {
+    number: 2,
+    label: "THE RAVE",
+    objective: "clear the floor. the bag went up.",
+    objectiveClear: "the bag went up. the staff door, behind the stage.",
+    killcamLine: "last one. the floor was empty.",
+    clearLine: "a brass key on a pink lanyard. somewhere past the staff door, an elevator.",
+    pauseLine: "chapter 1: rugged. the rave. the bag went up the back stairs.",
+    next: "THE BACK OF THE HOUSE",
+  },
+  room3: {
+    number: 3,
+    label: "THE BACK OF THE HOUSE",
+    objective: "the back of the house. the elevator is past the offices.",
+    objectiveClear: "the service elevator. the key.",
+    killcamLine: "last one. the house went quiet.",
+    clearLine: "the doors closed. the car went up, the way my bag had.",
+    pauseLine: "chapter 1: rugged. the back of the house. an elevator, and my bag above it.",
+    next: "THE ELEVATOR",
   },
 };
 
@@ -45,17 +70,20 @@ const DEFAULTS: RoomText = {
   clearLine: "the door was open. the bass was louder. my bag was in there somewhere.",
   pauseLine: "chapter 1: rugged. the rain didn't stop for me either.",
   chapter: "chapter 1: rugged",
-  of: 1,
+  of: 3,
+  next: "THE NEXT ROOM",
 };
 
 /** The HUD text for a room id, with the level's own room settings (Data {room}) on top. */
 export function roomText(id: string, settings?: { name?: string; [k: string]: unknown }): RoomText {
   const fromLevel: Partial<RoomText> = {};
   if (settings) {
-    for (const k of ["label", "objective", "objectiveClear", "killcamLine", "clearLine", "pauseLine", "chapter"] as const) {
+    for (const k of ["label", "objective", "objectiveClear", "killcamLine", "pauseLine", "chapter"] as const) {
       const v = settings[k];
       if (typeof v === "string" && v) fromLevel[k] = v;
     }
+    if (typeof settings.clearText === "string" && settings.clearText) fromLevel.clearLine = settings.clearText;
+    if (typeof settings.prompt === "string" && settings.prompt && typeof settings.objectiveClear !== "string") fromLevel.objectiveClear = settings.prompt;
     if (typeof settings.number === "number") fromLevel.number = settings.number;
   }
   const t: RoomText = { ...DEFAULTS, ...ROOMS[id], ...fromLevel };

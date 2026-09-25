@@ -47,6 +47,8 @@ export type Hud = {
   /** Rounds in reserve (Infinity for the pistols). */
   reserve: number;
   hands: 1 | 2;
+  /** Rounds left (magazines + reserve) in each owned gun; 0 = dry (Infinity for the pistols). */
+  ammo: Partial<Record<WeaponId, number>>;
   /** Last bullet-time refill from a kill (+1.5 / +2.5), stamped at performance.now(). */
   refill: { amount: number; at: number } | null;
   /** Bullet time asked for with too little meter (performance.now()). */
@@ -131,7 +133,7 @@ const pct = (k: string, d: number): number => {
 export const HUD_INITIAL: Hud = {
   health: 100, copium: 0, healing: false, meter: 10, bt: false, timeScale: 1, mags: [12, 12], magSize: 12, reloading: 0, weapon: "Dual pistols",
   alive: 0, total: 0, phase: "play", onTarget: false, mode: "normal", fps: 60, hurtAgo: 99, killcam: false,
-  roomLabel: "", objective: "", objectiveAt: 0, weaponId: "pistols", owned: ["pistols"], reserve: Infinity, hands: 2,
+  roomLabel: "", objective: "", objectiveAt: 0, weaponId: "pistols", owned: ["pistols"], reserve: Infinity, hands: 2, ammo: { pistols: Infinity },
   refill: null, btRefusedAt: 0, killcamProgress: 0, awake: false, run: 0,
 };
 

@@ -1,10 +1,13 @@
 // Room looks. The level's Data {room: {look}} picks one: "street" is room 1's rainy Manhattan night
-// (street.tsx: puddle reflections, bloom, rain, neon); GreyboxLook is the plain stand-in (night fog, a
+// (street.tsx: puddle reflections, bloom, rain, neon), "club" the rave inside (club.tsx), "backrooms" the
+// back of the house (backrooms.tsx: fluorescent tubes, exit lights, desk lamps); GreyboxLook is the plain stand-in (night fog, a
 // cool moon, sodium street lamps and the level's "light" markers).
 import type { LevelData } from "../../world/level.ts";
 import type { Session } from "../session.ts";
 import { MarkerLights } from "./lights.tsx";
 import { StreetLook } from "./street.tsx";
+import { ClubLook } from "./club.tsx";
+import { BackroomsLook } from "./backrooms.tsx";
 
 export const FOG = "#0b0f1c";
 
@@ -30,6 +33,8 @@ export function GreyboxLook({ level }: LookProps) {
 export const LOOKS: Record<string, (p: LookProps) => React.ReactNode> = {
   greybox: GreyboxLook,
   street: StreetLook,
+  club: ClubLook,
+  backrooms: BackroomsLook,
 };
 
 export function RoomLook(p: LookProps) {

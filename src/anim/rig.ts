@@ -83,6 +83,20 @@ export const CLIPS = {
   kneel: ["Kneel_Aim", "Aim_Idle"],
 } as const;
 
+/** The same states holding the shotgun (the round-2 long-gun set, radbro<id>.r2.glb), then the pistol ones. */
+export const SHOTGUN_CLIPS: { [K in keyof typeof CLIPS]: readonly string[] } = {
+  ...CLIPS,
+  idle: ["Shotgun_Aim_Idle", ...CLIPS.idle],
+  run: ["Shotgun_Run", ...CLIPS.run],
+  walk: ["Shotgun_Walk_Fwd", ...CLIPS.walk],
+  back: ["Shotgun_Walk_Back", ...CLIPS.back],
+  strafeL: ["Shotgun_Strafe_L", ...CLIPS.strafeL],
+  strafeR: ["Shotgun_Strafe_R", ...CLIPS.strafeR],
+  dive: ["Shotgun_Shootdodge", ...CLIPS.dive],
+  prone: ["Shotgun_Prone_Idle", ...CLIPS.prone],
+  getUp: ["Shotgun_Prone_GetUp", ...CLIPS.getUp],
+};
+
 /** Bones the upper-body layers (reload) drive. */
 export const UPPER_BODY = /^(Spine|Spine01|Spine02|neck|Head|LeftShoulder|LeftArm|LeftForeArm|LeftHand|RightShoulder|RightArm|RightForeArm|RightHand)\./;
 

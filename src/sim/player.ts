@@ -200,23 +200,36 @@ function integrate(world: World, p: Player, dt: number, height: number, gravity:
   }
 }
 
-/** Shoulder pivot (the aim ray and the camera start here): above the feet, to the camera's right. */
-export function pivotOf(p: Player, out: { x: number; y: number; z: number }): { x: number; y: number; z: number } {
+/** How far the shoulder pivot sits to his right: SHOULDER.right, less when a wall is closer (the aim
+ *  ray must never start on the far side of a thin wall: the club's curtain partition is 0.25 m). */
+export function shoulderRight(world: World | null, p: Player): number {
+  if (!world) return SHOULDER.right;
   const c = Math.cos(p.yaw), s = Math.sin(p.yaw);
+  const h = world.raycast(p.x, p.y + p.pivotUp, p.z, c, 0, -s, SHOULDER.right + 0.3, false);
+  return h ? Math.max(0, Math.min(SHOULDER.right, h.t - 0.3)) : SHOULDER.right;
+}
+
+/** Shoulder pivot (the aim ray and the camera start here): above the feet, to the camera's right
+ *  (`world`: pulled in by a wall at his right, as the camera is). */
+export function pivotOf(p: Player, out: { x: number; y: number; z: number }, world: World | null = null): { x: number; y: number; z: number } {
+  const c = Math.cos(p.yaw), s = Math.sin(p.yaw);
+  const right = shoulderRight(world, p);
   // camera right for yaw (looking down -Z at 0) = (cos yaw, 0, -sin yaw)
-  out.x = p.x + c * SHOULDER.right;
+  out.x = p.x + c * right;
   out.y = p.y + p.pivotUp;
-  out.z = p.z - s * SHOULDER.right;
+  out.z = p.z - s * right;
   return out;
 }
 
 /** Muzzle of hand 0 (right) / 1 (left) for the current stance. */
 export function muzzleOf(p: Player, hand: number, out: { x: number; y: number; z: number }): { x: number; y: number; z: number } {
   const c = Math.cos(p.yaw), s = Math.sin(p.yaw);
-  const side = hand === 0 ? 0.22 : -0.22;
+  // the shotgun is shouldered on the right: one muzzle, farther out
+  const long = p.weapon.id === "shotgun";
+  const side = long ? 0.14 : hand === 0 ? 0.22 : -0.22;
   const lying = p.mode === "dive" || p.mode === "prone";
-  const up = lying ? (p.mode === "dive" ? 0.7 : 0.5) : p.mode === "roll" || p.mode === "getup" ? 0.9 : 1.22;
-  const fwd = lying ? 0.35 : 0.55;
+  const up = lying ? (p.mode === "dive" ? 0.7 : 0.5) : p.mode === "roll" || p.mode === "getup" ? 0.9 : long ? 1.3 : 1.22;
+  const fwd = (lying ? 0.35 : 0.55) + (long ? 0.2 : 0);
   out.x = p.x + c * side - s * fwd;
   out.y = p.y + up;
   out.z = p.z - s * side - c * fwd;

@@ -2,11 +2,12 @@
 //   idle -> alert (reaction delay) -> move to cover -> cover <-> peek & shoot -> reposition (move)
 //   no usable cover -> engage (stand, strafe, shoot). Hits flinch (no firing for a moment).
 // Runs on world time, so bullet time stretches every reaction and burst by 1 / 0.3.
+// Shared helpers (facing, paths, cover, bursts with the shooter slots) are exported for the rusher and
+// the heavy (ai/rusher.ts, ai/heavy.ts); ai/enemies.ts picks the brain per kind.
 import type { Enemy } from "../sim/actors.ts";
 import type { Game } from "../sim/game.ts";
-import { AI, ENEMY } from "../sim/tuning.ts";
+import { AI, ENEMY, RUSHER } from "../sim/tuning.ts";
 
-const G = ENEMY.goon;
 
 export function setState(e: Enemy, s: Enemy["state"]): void {
   e.state = s;
@@ -24,7 +25,7 @@ export function alertGoon(g: Game, e: Enemy, extraDelay = 0): void {
   g.emit({ type: "alert", enemy: e.idx });
 }
 
-const within = (lo: number, hi: number, r: number) => lo + (hi - lo) * r;
+export const within = (lo: number, hi: number, r: number) => lo + (hi - lo) * r;
 
 /** Pick the best free cover point that protects from the player and has a path; -1 if none. */
 export function pickCover(g: Game, e: Enemy): number {
@@ -47,14 +48,14 @@ export function pickCover(g: Game, e: Enemy): number {
   return best;
 }
 
-function releaseCover(g: Game, e: Enemy): void {
+export function releaseCover(g: Game, e: Enemy): void {
   if (e.cover >= 0 && g.graph.covers[e.cover].claimed === e.idx) g.graph.covers[e.cover].claimed = -1;
   e.lastCover = e.cover;
   e.cover = -1;
 }
 
 /** Head for a cover point (claims it) or fall back to engaging in the open. */
-function goToCover(g: Game, e: Enemy): void {
+export function goToCover(g: Game, e: Enemy): void {
   releaseCover(g, e);
   if (e.perch) { // fire escape / balcony: shoot from where it stands
     setState(e, "engage");
@@ -79,7 +80,7 @@ function goToCover(g: Game, e: Enemy): void {
 }
 
 /** Cover no longer protects (the player walked around it). */
-function flanked(g: Game, e: Enemy): boolean {
+export function flanked(g: Game, e: Enemy): boolean {
   if (e.cover < 0) return true;
   const c = g.graph.covers[e.cover];
   const px = g.player.x - c.x, pz = g.player.z - c.z;
@@ -87,7 +88,7 @@ function flanked(g: Game, e: Enemy): boolean {
   return (c.fx * px + c.fz * pz) / pd < 0.1 || pd < 2.5;
 }
 
-function faceToward(e: Enemy, x: number, z: number, rate: number, dt: number): void {
+export function faceToward(e: Enemy, x: number, z: number, rate: number, dt: number): void {
   const want = Math.atan2(x - e.x, z - e.z);
   let d = want - e.facing;
   while (d > Math.PI) d -= 2 * Math.PI;
@@ -97,7 +98,7 @@ function faceToward(e: Enemy, x: number, z: number, rate: number, dt: number): v
 }
 
 /** Walk the current path; returns true on arrival. */
-function followPath(g: Game, e: Enemy, speed: number, dt: number): boolean {
+export function followPath(g: Game, e: Enemy, speed: number, dt: number): boolean {
   if (e.pathI >= e.path.length) { e.vx = e.vz = 0; return true; }
   const t = e.path[e.pathI];
   const dx = t.x - e.x, dz = t.z - e.z;
@@ -112,18 +113,22 @@ function followPath(g: Game, e: Enemy, speed: number, dt: number): boolean {
   return false;
 }
 
+/** Perception: staggered line-of-sight checks (every AI.losEvery steps per enemy). */
+export function perceive(g: Game, e: Enemy): void {
+  if ((g.stepN + e.idx) % AI.losEvery !== 0) return;
+  const p = g.player;
+  e.sees = p.mode !== "dead" && g.canSee(e);
+  if (e.sees) { e.lastSeenX = p.x; e.lastSeenZ = p.z; }
+}
+
 /** One AI step for a goon on world time `dt`. */
 export function stepGoon(g: Game, e: Enemy, dt: number): void {
   const p = g.player;
+  const G = ENEMY[e.kind];
   e.stateT += dt;
   if (e.flinch > 0) e.flinch -= dt;
   const playerAlive = p.mode !== "dead";
-
-  // perception (staggered line-of-sight checks)
-  if ((g.stepN + e.idx) % AI.losEvery === 0) {
-    e.sees = playerAlive && g.canSee(e);
-    if (e.sees) { e.lastSeenX = p.x; e.lastSeenZ = p.z; }
-  }
+  perceive(g, e);
 
   e.vx = 0;
   e.vz = 0;
@@ -173,7 +178,7 @@ export function stepGoon(g: Game, e: Enemy, dt: number): void {
       if (e.timer <= 0 && playerAlive) {
         setState(e, "peek");
         e.timer = within(AI.peekTime[0], AI.peekTime[1], g.rng.next());
-        e.burstLeft = G.burst;
+        e.burstLeft = ENEMY[e.kind].burst;
         e.fireT = 0.25 + 0.2 * g.rng.next(); // aim before the first shot
       }
       break;
@@ -226,24 +231,28 @@ export function stepGoon(g: Game, e: Enemy, dt: number): void {
   e.crouch = wantCrouch;
 }
 
-/** Bursts: `burst` shots at the fire interval, then a pause. */
-function tryFire(g: Game, e: Enemy, dt: number, moving: boolean): void {
+/** A free shooter slot (difficulty: at most N of the gang shooting at once); mid-burst shooters keep theirs. */
+export function slotFree(g: Game, e: Enemy): boolean {
+  if (g.time - e.lastShotT <= AI.shooterHold) return true;
+  let busy = 0;
+  for (const o of g.enemies) if (o !== e && o.state !== "dead" && g.time - o.lastShotT <= AI.shooterHold) busy++;
+  return busy < g.diff.shooters;
+}
+
+/** Bursts: `burst` shots at the fire interval, then a pause (goons ~1-1.5 s, rushers RUSHER.burstPause). */
+export function tryFire(g: Game, e: Enemy, dt: number, moving: boolean): void {
+  const T = ENEMY[e.kind];
   e.fireT -= dt;
   if (e.fireT > 0) return;
   if (!g.canShoot(e)) { e.fireT = 0.15; return; }
-  // a new burst needs a free shooter slot (mid-burst goons keep theirs)
-  if (g.time - e.lastShotT > AI.shooterHold) {
-    let busy = 0;
-    for (const o of g.enemies) if (o !== e && o.state !== "dead" && g.time - o.lastShotT <= AI.shooterHold) busy++;
-    if (busy >= g.diff.shooters) { e.fireT = 0.2 + 0.3 * g.rng.next(); return; }
-  }
+  if (!slotFree(g, e)) { e.fireT = 0.2 + 0.3 * g.rng.next(); return; }
   e.lastShotT = g.time;
   g.enemyFire(e, moving);
   e.burstLeft--;
   if (e.burstLeft <= 0) {
-    e.burstLeft = G.burst;
-    e.fireT = G.fireInterval * (2.2 + 1.5 * g.rng.next());
-  } else e.fireT = G.fireInterval * (0.85 + 0.3 * g.rng.next());
+    e.burstLeft = T.burst;
+    e.fireT = e.kind === "rusher" ? within(RUSHER.burstPause[0], RUSHER.burstPause[1], g.rng.next()) : T.fireInterval * (2.2 + 1.5 * g.rng.next());
+  } else e.fireT = T.fireInterval * (0.85 + 0.3 * g.rng.next());
 }
 
 /** Kill cleanup: release cover. */

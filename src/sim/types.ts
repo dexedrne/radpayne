@@ -35,12 +35,15 @@ export type V3 = { x: number; y: number; z: number };
 export const PLAYER_ID = -1;
 
 export type GameEvent =
-  | { type: "shot"; shooter: number; hand: number; ox: number; oy: number; oz: number; ex: number; ey: number; ez: number; projectile: boolean; id: number }
+  /** weapon: "pistols" | "shotgun" | "smgs" (the player's) or "pistol" | "smg" | "shotgun" (the gang's);
+   *  pellet: 0 for the first projectile of a trigger pull (flash + sound), 1.. for the rest of a shotgun's. */
+  | { type: "shot"; shooter: number; hand: number; ox: number; oy: number; oz: number; ex: number; ey: number; ez: number; projectile: boolean; id: number; weapon: string; pellet: number }
   | { type: "impact"; x: number; y: number; z: number; nx: number; ny: number; nz: number; surface: string; shooter: number }
   | { type: "blood"; x: number; y: number; z: number; dx: number; dy: number; dz: number; target: number; part: number }
   | { type: "decal"; x: number; y: number; z: number; nx: number; ny: number; nz: number; blood: boolean }
   | { type: "hurt"; target: number; amount: number; part: number; hp: number; shooter?: number; fromX?: number; fromZ?: number }
-  | { type: "kill"; target: number; headshot: boolean; final: boolean }
+  /** blast: a point-blank shotgun kill by the player (the body is blown back). */
+  | { type: "kill"; target: number; headshot: boolean; final: boolean; blast?: boolean }
   | { type: "projectileEnd"; id: number }
   | { type: "alert"; enemy: number }
   | { type: "dodge" }
@@ -52,6 +55,15 @@ export type GameEvent =
   | { type: "reloaded" }
   | { type: "dryfire" }
   | { type: "pickup"; item: string; amount: number; id: string }
+  /** A weapon switch (the new weapon's id); a pickup that dropped at a body; the first shot in the room
+   *  (the crowd scatters, the club's lights change); a heavy staggered by a big hit. */
+  | { type: "swap"; weapon: string }
+  | { type: "drop"; id: string; item: string; x: number; y: number; z: number }
+  | { type: "firstShot"; x: number; z: number }
+  | { type: "stagger"; enemy: number }
+  /** A door taken out of the world: `kick` = kicked open from inside (the fallback), else the player's
+   *  dive went through it; (dx, dz) = the way the door flies. */
+  | { type: "breach"; id: string; kick: boolean; dx: number; dz: number }
   | { type: "copium" }
   | { type: "playerDead" }
   | { type: "roomClear" }

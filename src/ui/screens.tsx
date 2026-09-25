@@ -398,7 +398,7 @@ export function ResultsScreen({ onRetry, onTitle }: { onRetry: () => void; onTit
         <div className="rp-head">
           <div className={`rp-splash${r.cleared ? "" : " rugged"}`}>
             {r.cleared ? <div className="big">ROOM<br />CLEAR</div> : <div className="big">RUGGED</div>}
-            {r.cleared && <div className="rp-tbc">TO BE CONTINUED: THE RAVE</div>}
+            {r.cleared && <div className="rp-tbc">TO BE CONTINUED: {text.next}</div>}
             {r.cleared && photo && photoOk && (
               <div className="rp-photo" data-testid="evidence">
                 <div className="clip" />

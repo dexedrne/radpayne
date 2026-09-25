@@ -247,6 +247,19 @@ test("room text: the room tag, objectives, level overrides", () => {
   assert.equal(roomLabel(roomText("room1", { name: "x", number: 2 })), "ROOM 2 · OUTSIDE CLUB MILADY");
 });
 
+test("room text: rooms 2 and 3 (the level's clearLine is a voice id, its prompt the clear objective)", () => {
+  const r2 = roomText("room2", { name: "The Rave", clearLine: "r2_clear", next: "room3", prompt: "the bag went up. the staff door, behind the stage." });
+  assert.equal(roomLabel(r2), "ROOM 2 · THE RAVE");
+  assert.notEqual(r2.clearLine, "r2_clear");
+  assert.equal(r2.next, "THE BACK OF THE HOUSE");
+  assert.equal(r2.objectiveClear, "the bag went up. the staff door, behind the stage.");
+  const r3 = roomText("room3", { name: "The Back of the House", clearLine: "r3_clear", next: "room4" });
+  assert.equal(r3.next, "THE ELEVATOR");
+  assert.equal(r3.number, 3);
+  assert.equal(roomText("room1").next, "THE RAVE");
+  assert.equal(roomText("room3", { name: "x", clearText: "the car went up." }).clearLine, "the car went up.");
+});
+
 test("sim: bullet time refused with too little meter emits btRefused; hits carry the shooter's position", () => {
   const lv = level([markerNode("spawn", "spawn", [0, 0, 0], {}, Math.PI), markerNode("e1", "enemy", [3, 0, -12])]);
   const g = new Game(lv, { ai: false });

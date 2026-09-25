@@ -6,7 +6,8 @@
 //    Thin up close, thicker from ~12 m out. It is told apart from the neon tubes by its FORM, not its
 //    colour: a dark keyline hugs the bright edge (a neon tube only glows), and from range the body is a
 //    solid warm silhouette that breathes slowly (the club's neon pulses on the beat, twice as fast).
-//    It also shows through the player's own body, so the Radbro never hides who is behind him.
+//    The player's own body occludes it like a wall: the outline never draws over the Radbro (the
+//    rave's dancers do not: bullets pass through them, so an armed girl behind one still shows).
 //  - Neon near a goon dims (neonDim: the "glow" materials within a few body widths of a live goon on
 //    screen), and everything past the far edge of the fight (~46 m) is dimmer: the far signs, lit
 //    windows and steam stop competing with the girls at 23-46 m.
@@ -69,8 +70,8 @@ export const COMBAT = {
   beyond: { from: 46, to: 74, glow: 0.55, lit: 0.4 },
 };
 
-/** Goons the neon dim looks at (the room has 8). */
-const MAX_GOONS = 8;
+/** Hostiles the neon dim looks at (room 1 has 8, the rave 11). */
+const MAX_GOONS = 12;
 
 /** Layer the enemy mask pass renders (goons + level occluders also stay on layer 0). */
 export const MASK_LAYER = 7;
@@ -99,26 +100,31 @@ const isLevelMat = (m: Material): boolean =>
  *  finished loading is outlined at once. */
 const goonRoots = new Set<Object3D>();
 
-/** Tags goon meshes (their per-goon mask vector) and opaque level meshes (occluders) for the mask pass. */
-function tag(o: Object3D, goon: Vector4 | null, actor: boolean): void {
-  let g = goon, a = actor;
+/** Tags goon meshes (their per-goon mask vector), the player's body and opaque level meshes
+ *  (occluders) for the mask pass. */
+function tag(o: Object3D, goon: Vector4 | null, actor: boolean, player = false): void {
+  let g = goon, a = actor, me = player;
   if (o.name.startsWith("goon-")) {
     const i = Number(o.name.slice(5));
     g = readFx.masks[i] ??= new Vector4();
     goonRoots.add(o);
-  } else if (o.name.startsWith("radbro-")) a = true;
+  } else if (o.name.startsWith("radbro-")) { a = true; me = true; }
+  else if (o.name.startsWith("crowd-")) a = true;
   const mesh = o as Mesh & { isSkinnedMesh?: boolean };
   if (mesh.isMesh) {
     if (g) {
       o.layers.enable(MASK_LAYER);
       o.userData.rpMask = g;
+    } else if (me) { // his body and guns: an occluder, skinned or not
+      o.layers.enable(MASK_LAYER);
+      o.userData.rpMask = OCCLUDER;
     } else if (!a && !mesh.isSkinnedMesh) { // level boxes are batched into InstancedMeshes by the engine
       const mm = mesh.material;
       const ok = Array.isArray(mm) ? mm.every(isLevelMat) : !!mm && isLevelMat(mm);
       if (ok) { o.layers.enable(MASK_LAYER); o.userData.rpMask = OCCLUDER; }
     }
   }
-  for (const c of o.children) tag(c, g, a);
+  for (const c of o.children) tag(c, g, a, me);
 }
 
 /** The enemy mask pass: r = goon coverage (+ hit flash), g = firing flash, b = distance (m). */
@@ -153,8 +159,9 @@ export function enemyMaskPass(scene: Scene, camera: Camera, gl: WebGPURenderer):
   return p;
 }
 
-/** Composites the goon outline / fill / flashes onto the HDR image (before tone mapping). */
-export function enemyOutline(hdr: N, maskPass: PassNode): N {
+/** Composites the goon outline / fill / flashes onto the HDR image (before tone mapping). `edge` swaps
+ *  the outline colour (the club's pink-red rim instead of the street's coral), `silhouette` the far fill. */
+export function enemyOutline(hdr: N, maskPass: PassNode, edgeColour: readonly [number, number, number] = COMBAT.edge, silhouette: number = COMBAT.silhouette, fill: number = COMBAT.fill): N {
   const tex: N = (maskPass as N).getTextureNode("output");
   const at = uv();
   const c: N = tex.sample(at);
@@ -176,18 +183,18 @@ export function enemyOutline(hdr: N, maskPass: PassNode): N {
   const key = saturate(in2.sub(max(in1, cov)));
   const S: N = readFx.strength;
   const a = edge.mul(mix(0.45, 1.0, far)).mul(S);
-  const E = vec3(...COMBAT.edge);
+  const E = vec3(...edgeColour);
   const R = vec3(...COMBAT.enemy);
   const edgeCol = mix(E.mul(1.6), R.mul(2.4), saturate(fire));
   // the dark keyline first (a solid ring, the thing a neon tube never has), then the bright edge over it
   let out: N = hdr.mul(float(1).sub(key.mul(mix(COMBAT.keyline[0], COMBAT.keyline[1], far)).mul(S)));
   out = mix(out, edgeCol, saturate(a).mul(0.92));
   // fill: a far goon's own colours lifted plus a warm floor; firing = red glow, hit = white flash
-  const lift = hdr.mul(far.mul(COMBAT.fill)).add(E.mul(far.mul(COMBAT.floor))).add(R.mul(c.g.mul(0.6)));
+  const lift = hdr.mul(far.mul(fill)).add(E.mul(far.mul(COMBAT.floor))).add(R.mul(c.g.mul(0.6)));
   out = out.add(lift.mul(cov).mul(S));
   // from range the body is a solid, slowly breathing silhouette in the edge colour (a figure, not a line)
   const breath = sin(readFx.time.mul(Math.PI * 2 * COMBAT.breathHz)).mul(0.5).add(0.5);
-  const sil = cov.mul(far).mul(COMBAT.silhouette).mul(mix(0.7, 1.0, breath)).mul(S);
+  const sil = cov.mul(far).mul(silhouette).mul(mix(0.7, 1.0, breath)).mul(S);
   out = mix(out, mix(E.mul(0.9), R.mul(1.6), saturate(fire)), saturate(sil));
   out = mix(out, vec3(1.3, 1.2, 1.15), hit.mul(0.6).mul(S));
   return out;
@@ -294,14 +301,16 @@ export function CombatRead({ s }: { s: Session }) {
           const me = e.shooter === -1;
           const mz = me ? playerMuzzles[e.hand] : enemyMuzzles[e.shooter];
           const from = mz && mz.lengthSq() > 0 ? mz.clone() : new Vector3(e.ox, e.oy, e.oz);
-          if (!me) {
+          if (!me && e.pellet === 0) {
             readFx.fire[e.shooter] = 1;
             push({ kind: "glow", a: from.clone(), b: from, max: 0.14, world: true, col: scaled(COMBAT.enemy, 3.6), px: 26, minD: 6, enemy: true });
           }
           if (!e.projectile) {
             const to = new Vector3(e.ex, e.ey, e.ez);
             if (to.distanceTo(from) > 60) to.sub(from).setLength(60).add(from);
-            push({ kind: "tracer", a: from, b: to, max: me ? 0.14 : 0.2, world: false, col: me ? scaled(COMBAT.player, 1.8) : scaled(COMBAT.enemy, 2.4), px: me ? 1.5 : 2.2, minD: 0, enemy: !me });
+            // shotgun pellets: hairline tracers at half the strength (8 at once must not cover the screen)
+            const k = e.weapon === "shotgun" ? 0.45 : 1;
+            push({ kind: "tracer", a: from, b: to, max: me ? 0.14 : 0.2, world: false, col: scaled(me ? COMBAT.player : COMBAT.enemy, (me ? 1.8 : 2.4) * k), px: (me ? 1.5 : 2.2) * (k < 1 ? 0.6 : 1), minD: 0, enemy: !me });
           }
           break;
         }

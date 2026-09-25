@@ -1,11 +1,23 @@
-// Low-poly pistols built from primitives (spec section 8 "Guns"). Gun frame (matches the clip set's
-// grip offsets): origin = middle of the grip, +Z = barrel, +Y = top of the slide; the muzzle sits at
-// MUZZLE. A gun under a hand bone takes its grip transform; aimGun() then swings it (clamped) so the
-// barrel meets the crosshair point.
+// Low-poly guns built from primitives (spec section 8 "Guns", round-2 plan section 4). Gun frame
+// (matches the clip sets' grip offsets): origin = middle of the grip, +Z = barrel, +Y = top of the
+// slide; each gun's muzzle is gun.userData.muzzle (MUZZLE for the pistols). A gun under a hand bone
+// takes its grip transform; aimGun() then swings it (clamped) so the barrel meets the crosshair point.
+//   makeShotgun(): the pump gun (about 1.0 m at scale 1). The clips hold it at 0.64-0.72 of that (the
+//     reach of the chibi Radbros), which makes it a toy stick from across the room, so it is attached
+//     with a NON-uniform scale: length x the grip scale, cross-sections a little over true size
+//     (SHOTGUN_THICK): the grip, the pump point and the muzzle are all along z and stay put.
+//   makeSmg(): a compact machine pistol with the magazine in the grip; the pistol grips fit it as is.
 import { BoxGeometry, CylinderGeometry, Group, Mesh, MeshStandardMaterial, Quaternion, Vector3, type Object3D } from "three";
 import type { Grip } from "../anim/grips.ts";
 
 export const MUZZLE = new Vector3(0, 0.052, 0.2);
+export const SHOTGUN_MUZZLE = new Vector3(0, 0.07, 0.67);
+/** The pump's centre in gun space (the left hand's grip); it racks back SHOTGUN_RACK. */
+export const SHOTGUN_PUMP = new Vector3(0, 0.035, 0.4);
+export const SHOTGUN_RACK = 0.08;
+export const SMG_MUZZLE = new Vector3(0, 0.06, 0.25);
+/** Shotgun cross-sections over true size (x / y); the length follows the character's grip scale. */
+export const SHOTGUN_THICK = 1.3;
 
 const slideGeo = new BoxGeometry(0.034, 0.036, 0.2);
 const frameGeo = new BoxGeometry(0.03, 0.022, 0.16);
@@ -17,6 +29,73 @@ const guardGeo = new BoxGeometry(0.008, 0.028, 0.05);
 const metal = new MeshStandardMaterial({ color: "#7d838e", roughness: 0.38, metalness: 0.35, emissive: "#2a2d33" });
 const grip = new MeshStandardMaterial({ color: "#4a3a30", roughness: 0.75, metalness: 0.05, emissive: "#140e0b" });
 const chrome = new MeshStandardMaterial({ color: "#c3c8d0", roughness: 0.25, metalness: 0.45, emissive: "#34373d" });
+
+// the shotgun: a lighter gunmetal and a dark walnut stock, so it reads against a dark hoodie
+const gunmetal = new MeshStandardMaterial({ color: "#8f96a2", roughness: 0.36, metalness: 0.3, emissive: "#40454e" });
+const walnut = new MeshStandardMaterial({ color: "#5a3b26", roughness: 0.6, metalness: 0.05, emissive: "#1c120b" });
+const polymer = new MeshStandardMaterial({ color: "#2d3036", roughness: 0.55, metalness: 0.1, emissive: "#16181c" });
+// the section-4 sizes, chunkier across (REVIEW F5: at the clips' attach scale the true-size gun was
+// a 1-3 px stick at 10 m); lengths and the points the clips use (grip, pump, muzzle) are unchanged
+const sgGrip = new BoxGeometry(0.034, 0.1, 0.05);
+const sgReceiver = new BoxGeometry(0.06, 0.082, 0.22);
+const sgBarrel = new CylinderGeometry(0.017, 0.017, 0.46, 10);
+const sgTube = new CylinderGeometry(0.015, 0.015, 0.4, 10);
+const sgPump = new CylinderGeometry(0.027, 0.027, 0.16, 12);
+const sgStock = new BoxGeometry(0.046, 0.09, 0.3);
+const sgGuard = new BoxGeometry(0.01, 0.03, 0.06);
+
+/** The pump shotgun (plan section 4). The pump is gun.userData.pump (rack it by moving it along -z). */
+export function makeShotgun(): Group {
+  const g = new Group();
+  const grip = new Mesh(sgGrip, walnut);
+  grip.rotation.x = 0.22;
+  const receiver = new Mesh(sgReceiver, gunmetal);
+  receiver.position.set(0, 0.05, 0.1);
+  const barrel = new Mesh(sgBarrel, gunmetal);
+  barrel.rotation.x = Math.PI / 2;
+  barrel.position.set(0, 0.07, 0.43);
+  const tube = new Mesh(sgTube, gunmetal);
+  tube.rotation.x = Math.PI / 2;
+  tube.position.set(0, 0.035, 0.4);
+  const pump = new Mesh(sgPump, walnut);
+  pump.rotation.x = Math.PI / 2;
+  pump.position.copy(SHOTGUN_PUMP);
+  const stock = new Mesh(sgStock, walnut);
+  stock.position.set(0, 0.035, -0.17);
+  const guard = new Mesh(sgGuard, gunmetal);
+  guard.position.set(0, 0.0, 0.05);
+  g.add(grip, receiver, barrel, tube, pump, stock, guard);
+  g.userData.rpGun = true;
+  g.userData.muzzle = SHOTGUN_MUZZLE;
+  g.userData.pump = pump;
+  g.traverse(o => { o.frustumCulled = false; });
+  return g;
+}
+
+const smgBody = new BoxGeometry(0.045, 0.06, 0.24);
+const smgBarrel = new CylinderGeometry(0.009, 0.009, 0.03, 8);
+const smgMag = new BoxGeometry(0.022, 0.16, 0.035);
+const smgGrip = new BoxGeometry(0.03, 0.11, 0.045);
+
+/** A compact machine pistol: the grip where the pistol's is, the magazine through it. */
+export function makeSmg(): Group {
+  const g = new Group();
+  const body = new Mesh(smgBody, polymer);
+  body.position.set(0, 0.05, 0.06);
+  const barrel = new Mesh(smgBarrel, metal);
+  barrel.rotation.x = Math.PI / 2;
+  barrel.position.set(0, 0.06, 0.195);
+  const grip = new Mesh(smgGrip, polymer);
+  grip.rotation.x = 0.22;
+  const mag = new Mesh(smgMag, metal);
+  mag.rotation.x = 0.22;
+  mag.position.set(0, -0.075, -0.018);
+  g.add(body, barrel, grip, mag);
+  g.userData.rpGun = true;
+  g.userData.muzzle = SMG_MUZZLE;
+  g.traverse(o => { o.frustumCulled = false; });
+  return g;
+}
 
 export function makePistol(shiny = false): Group {
   const g = new Group();
@@ -37,12 +116,14 @@ export function makePistol(shiny = false): Group {
   return g;
 }
 
-/** Put a gun under a hand with its grip transform (`scale` for scaled parents, `k` for grip size). */
-export function attachGun(gun: Object3D, hand: Object3D, g: Grip, k = 1, scale = 1): void {
+/** Put a gun under a hand with its grip transform (`scale` for scaled parents, or [x, y, z] for the
+ *  shotgun's non-uniform size; `k` for grip size). */
+export function attachGun(gun: Object3D, hand: Object3D, g: Grip, k = 1, scale: number | [number, number, number] = 1): void {
   hand.add(gun);
   gun.position.set(g.p[0] * k, g.p[1] * k, g.p[2] * k);
   gun.quaternion.set(g.q[0], g.q[1], g.q[2], g.q[3]).normalize();
-  gun.scale.setScalar(scale);
+  if (typeof scale === "number") gun.scale.setScalar(scale);
+  else gun.scale.set(scale[0], scale[1], scale[2]);
   gun.userData.grip = gun.quaternion.clone();
 }
 
@@ -62,7 +143,7 @@ export function aimGun(gun: Object3D, target: Vector3 | null, weight: number, ma
   if (gq) gun.quaternion.copy(gq);
   gun.updateMatrixWorld(true);
   if (!target || weight <= 0.001 || !gun.parent) return;
-  const muzzle = gun.localToWorld(va.copy(MUZZLE));
+  const muzzle = gun.localToWorld(va.copy((gun.userData.muzzle as Vector3 | undefined) ?? MUZZLE));
   const cur = vb.set(0, 0, 1).applyQuaternion(gun.getWorldQuaternion(qb));
   const want = vc.copy(target).sub(muzzle).normalize();
   qa.setFromUnitVectors(cur, want);
@@ -78,5 +159,5 @@ export function aimGun(gun: Object3D, target: Vector3 | null, weight: number, ma
 
 /** Muzzle world position of a gun (after its matrix is up to date). */
 export function muzzleWorld(gun: Object3D, out: Vector3): Vector3 {
-  return gun.localToWorld(out.copy(MUZZLE));
+  return gun.localToWorld(out.copy((gun.userData.muzzle as Vector3 | undefined) ?? MUZZLE));
 }

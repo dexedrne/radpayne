@@ -69,7 +69,7 @@ export function Hud({ s: sProp, paused = false }: { s?: Session | null; paused?:
         {cap.nudge && <Nudge {...cap.nudge} />}
         {cap.subtitle && <Subtitle {...cap.subtitle} now={now} />}
         <div className="rp-br rp-z">
-          <WeaponTabs current={h.weaponId} owned={h.owned} dry={total === 0 && h.reserve <= 0} />
+          <WeaponTabs current={h.weaponId} owned={h.owned} dry={total === 0 && h.reserve <= 0} ammo={h.ammo} />
           <AmmoPanel mags={h.mags} magSize={h.magSize} hands={h.hands} reloading={h.reloading} weapon={h.weapon} weaponId={h.weaponId} reserve={h.reserve} />
         </div>
         {!kc && !dead && <Crosshair now={now} />}

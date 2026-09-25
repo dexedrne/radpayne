@@ -5,10 +5,15 @@ a Milady gang's rave in bullet time: dual pistols, slow motion, shootdodges, and
 
 > they took everything I had. I went back for it.
 
-**Status:** chapter 1, first round. The opening plays start to finish: title, the comic-panel
+**Status:** chapter 1, second round. The opening plays start to finish: title, the comic-panel
 cutscene with the narrator, then room 1, the rainy Manhattan street outside CLUB MILADY (puddle
 reflections, neon bloom, rain that slows in bullet time). Clear the Milady goons, watch the last bullet
-land, walk to the club door, and the ending panels show what waits inside. To be continued: the rave.
+land, walk to the club door, and the ending panels take you inside: room 2, the rave. The dance floor is
+full, and only some of the girls are armed. The first shot kills the music, the crowd runs, the work
+lights come up, and the backup charges in with SMGs. Cutscene 2 follows, then room 3, the back of the
+house: a service corridor where the first rival Radbro comes round the corner with a pump shotgun, a
+storage room, a locked office door you go through with a shootdodge, the security office with the dual
+SMGs, the manager's office behind glass and the service elevator. To be continued: the elevator.
 
 ## Play
 
@@ -28,7 +33,7 @@ Pick a Radbro and a difficulty, then press **PLAY**. Click the game to lock the 
 | Space | jump (clears low cover) |
 | R | reload |
 | H | copium (+35 HP over 1 s, carry up to 8) |
-| 1-3 / wheel | weapon |
+| 1-3 / wheel | weapon: dual pistols, the shotgun (8 pellets, pump action), dual SMGs |
 | Esc | pause |
 
 A gamepad also works: left stick to move, right stick to aim, RT to fire, LT for bullet time, B to dive,
@@ -40,15 +45,19 @@ After you land from a dive you lie prone and can keep shooting. Press a move key
 you hold a move key as you land, you roll straight into a run. Kill the whole room, watch the last
 bullet land, then walk to the club door.
 
+In the back of the house, a locked door does not open: shootdodge through it. The room behind it runs
+in slow motion for a moment and wakes late. Wait too long in front of it and the heavy inside kicks it
+open himself. Clearing the security office is a checkpoint: dying after it retries from there.
+
 ## Develop
 
 ```bash
-npm test           # node --test: time scale, weapons, hitboxes, projectiles vs hitscan, AI, replay, smoke bot
+npm test           # node --test: time scale, weapons, hitboxes, projectiles vs hitscan, AI, the breach, checkpoints, replay, smoke bots, kill-cam framing
 npm run typecheck
 npm run build      # production build in dist/
 npm run greybox    # regenerate public/levels/greybox.json
 npm run check-level [room]   # parse a level like the game does and list its markers and issues
-node tools/room1.ts      # regenerate public/levels/room1.json (overwrites hand edits made in the editor)
+node tools/room1.ts      # regenerate public/levels/room1.json (overwrites hand edits made in the editor; room2.ts / room3.ts likewise)
 node tools/textures.ts   # re-bake the procedural tiling textures in public/textures (needs ImageMagick)
 ```
 
@@ -59,10 +68,23 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
   - Nodes with a Data `marker` field are gameplay markers: `spawn`, `enemy`, `cover`, `waypoint`,
     `pickup`, `trigger`, `checkpoint`, `exit`, `light`, `fx` (steam / drips) and `camera`.
     `src/world/level.ts` lists the fields each one takes. An enemy with `perch: true` holds its spot
-    (fire escapes).
+    (fire escapes, VIP booths). Enemy kinds: `goon` (pistol, cover and peek), `rusher` (SMG, charges
+    and strafes) and `heavy` (a rival Radbro with a pump shotgun, a red laser-sight tell, staggers).
+    Room 2 adds `crowd` (non-hostile dancers in an area: they flee at the first shot) and `crowdExit`.
+    Room 3 adds `deaf: true` (behind a closed door: gunshots and shouts do not wake her), `hold: true`
+    (a heavy that never walks), the trigger action `breach` (`{door, group}`: a dive into that door
+    inside the trigger takes it out; the group behind it wakes) and the trigger conditions
+    `afterKills: N` / `whenClear: <group>`. A group waits unseen only when a `spawn` trigger names it.
+    A `checkpoint` trigger (`at`: a checkpoint marker) saves the room; a retry resumes from it.
   - Room 1's look (`src/app/look/street.tsx`) reads material names: `wet <k>` for reflective ground,
     `lit <gain>` for facades whose lit windows glow, and `glow <gain>` for neon, with `pulse` (the
     club's bass), `flicker` or `blink` added. Change the gain in the editor to retune a sign.
+  - Room 2 (`node tools/room2.ts`) is the rave; its look (`src/app/look/club.tsx`) adds `party`,
+    `worklight`, `ledfloor` and `ledwall` to the shared tokens (`src/app/look/tokens.ts`).
+  - Room 3 (`node tools/room3.ts`) is the back of the house; its look (`src/app/look/backrooms.tsx`)
+    uses `glow` (+ `flicker`) under cool fluorescent light. The breach door, the glass wall and the
+    elevator doors are drawn and moved by `src/app/PropsView.tsx`; the sim keeps their colliders
+    (invisible boxes with Data `{camera: true}`, so the camera still stops at them).
 - **Readability comes before the effects.** The fight is 23-46 m out, so room 1 keeps it legible
   (`READ` in `src/app/look/street.tsx`, `COMBAT` in `src/app/look/read.tsx`):
   - Goons: a bright edge with a dark keyline, and from range a solid, slowly breathing silhouette.
@@ -70,6 +92,14 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
   - Gunfire has one colour code: gold / white is yours (flashes, bullets, where your shots land),
     red is theirs (muzzle flashes, tracers, bullets). Their misses kick up only dull grit.
   - Rain, bloom and puddle reflections stay subtle; the pause menu's Effects: Clean turns them off.
+  - The rave has no rain and no reflections, a thin haze and a gentle bloom. The lasers fade out
+    around the crosshair and switch off with the first shot, when the LED floor and wall dim and
+    warm work lights come up. Armed girls get a thin pink-red rim; the crowd is desaturated, holds
+    cyan glow sticks and is never a target (bullets pass through them).
+  - The back rooms have almost no haze and mid-dark walls under flat white light; every hostile keeps
+    the pink-red rim and outline. The outline never draws over the player's own body.
+  - The final-kill cam keeps posts, pillars and steam away from its lens; when the bullet's path runs
+    through steam it skips the chase and holds on the victim.
 - **Dev URL flags:**
   - `?room=<id>` loads a level file.
   - `?skip` skips the title and the cutscenes (`&cutscene` plays cutscene 1 anyway, `&ending` the
@@ -82,7 +112,12 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
   - `?milady=0` uses stand-ins instead of the Pockit models.
   - `?webgl2` forces the WebGL2 renderer.
   - `?q=low` switches to low quality.
-  - `?cam=<camera marker>` holds the camera on a shot (room 1: `cam-wide`, `cam-club`, `cam-canyon`).
+  - `?cam=<camera marker>` holds the camera on a shot (room 1: `cam-wide`, `cam-club`, `cam-canyon`;
+    room 2: `cam-floor`, `cam-dj`; room 3: `cam-hall`, `cam-store`, `cam-door`, `cam-office`,
+    `cam-manager`, `cam-lobby`).
+  - `?loadout=shotgun,smgs` starts with those weapons (the last one in hand).
+  - `?look=fight` holds the club in its fight lighting; `?extra=heavy` adds a heavy by the staff door
+    (`?cam=cam-heavy`); `?still` hides the click-to-fight veil (for screenshots without the bot).
   - `?fx=clean` starts with Effects on Clean (also in the pause menu): no rain near the camera, no
     bloom, a plain wet sheen instead of the puddle reflections. Works in production builds too.
 
@@ -101,12 +136,18 @@ input log. Bullet time is a time scale on it.
     tutorial lines.
   - `public/cutscenes/c1.json` + `c1/panel_*.webp`: cutscene 1's comic panels, each with its caption
     box position, narrator line and hold time. `e1.json` + `e1/panel_e*.webp`: the room 1 ending (the
-    first clear, after the walk to the door; captions only).
+    first clear, after the walk to the door; captions only). `c2.json`: cutscene 2 after the rave; a
+    line with a `speaker` plays that voice instead of the narrator's.
+  - Round 2: `radbro<id>.r2.glb` (the shotgun set, the heavy's stagger, the weapon swap),
+    `milady.r2.glb` (the crowd's dances, flee and cower, the DJ), `rival652.glb` / `rival723.glb`
+    (the heavies), `textures/club/`, `textures/backrooms/`, and the music, crowd, PA and heavy voices.
 - **Headless check:** with the dev server up,
   `RADPAYNE_CHROME_PROFILE=<throwaway dir> RADPAYNE_GPU=1 RADPAYNE_CUTSCENE=1 node tools/smoke.ts
   "http://localhost:4880/?bot=demo&seed=1&webgl2" .local/shots/run` plays title -> cutscene, then the
   bot clears the room, and saves screenshots. `?bot=demo&cutscene&seed=1&webgl2` does it in one go:
   cutscene 1, the fight, the ending, the results, with every panel shot and the voice lines listed.
+  From room 1 the chain runs on through room 2, cutscene 2 and room 3 to the results
+  (`RADPAYNE_MAX_S=620` gives it the time).
   `RADPAYNE_GPU=1` uses the machine's GPU (WebGL2); without it Chromium falls back to SwiftShader
   (very slow).
 

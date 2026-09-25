@@ -70,10 +70,88 @@ export const DODGE = {
 } as const;
 export const DODGE_GRAVITY = (2 * DODGE.up) / DODGE.airTime;
 
-/** Enemy kinds (spec section 5). Only the goon is built this round. */
-export const ENEMY = {
+/** A heavy is a rival Radbro this much bigger than the player's (model + hit skeleton). */
+export const HEAVY_SCALE = 1.12;
+
+/** Enemy kinds (spec section 5, round-2 plan section 4). */
+export type EnemyTuning = {
+  hp: number; radius: number; walk: number; run: number; fireInterval: number; burst: number; damage: number; sight: number; idleSight: number; fov: number;
+  /** Pellets per shot and the cone (radians) for the heavy's shotgun; 1 / 0 for the others. */
+  pellets: number; spread: number;
+  /** Muzzle height when standing (m above the feet). */
+  muzzleUp: number;
+};
+export const ENEMY: Record<"goon" | "rusher" | "heavy", EnemyTuning> = {
   // idleSight: how far an idle goon (chatting in the rain, before the alert trigger) notices the player
-  goon: { hp: 60, radius: 0.35, walk: 2.2, run: 4.2, fireInterval: 0.42, burst: 3, damage: 9, sight: 34, idleSight: 18, fov: 0.35 },
+  goon: { hp: 60, radius: 0.35, walk: 2.2, run: 4.2, fireInterval: 0.42, burst: 3, damage: 9, sight: 34, idleSight: 18, fov: 0.35, pellets: 1, spread: 0, muzzleUp: 1.35 },
+  // SMG in the right hand: charges to 5-9 m, then strafes and fires bursts of 6
+  rusher: { hp: 50, radius: 0.35, walk: 2.6, run: 4.6, fireInterval: 0.1, burst: 6, damage: 4, sight: 30, idleSight: 16, fov: 0.35, pellets: 1, spread: 0, muzzleUp: 1.35 },
+  // pump shotgun: 8 pellets x 3.5, full damage within 6 m, 30 % at 16 m
+  heavy: { hp: 140, radius: 0.45, walk: 1.5, run: 2.2, fireInterval: 1.1, burst: 1, damage: 3.5, sight: 26, idleSight: 14, fov: 0.35, pellets: 8, spread: (3 * Math.PI) / 180, muzzleUp: 1.4 * HEAVY_SCALE },
+};
+
+/** Rusher behaviour (world seconds / metres). */
+export const RUSHER = {
+  /** She stops charging somewhere in this band (seeded per rusher). */
+  engage: [5, 9] as const,
+  /** Strafe direction flips every this many seconds. */
+  strafeEvery: 1.2,
+  /** Pause between bursts (world seconds). */
+  burstPause: [0.9, 1.5] as const,
+  /** Below this HP she takes cover once. */
+  coverBelow: 25,
+  /** Repath the charge this often. */
+  repath: 0.5,
+} as const;
+
+/** Heavy behaviour (world seconds / metres). */
+export const HEAVY = {
+  /** Fires whenever he is this close with a line of sight. */
+  range: 12,
+  /** The laser-sight tell before each shot. */
+  tell: 0.35,
+  /** A single hit of at least this much damage staggers him for `stagger` s (it cancels a shot). */
+  staggerAt: 40,
+  stagger: 0.6,
+  /** Stops walking in when this close. */
+  holdAt: 4.5,
+  /** Shells before a reload, and the reload time. */
+  shells: 6,
+  reload: 1.6,
+  /** Pellet damage falloff: full within near, x far.k at far and beyond. */
+  near: 6,
+  far: 16,
+  farK: 0.3,
+  repath: 0.6,
+} as const;
+
+/** Room 3's breach door (round-2 plan section 3): a shootdodge through the locked office door. */
+export const BREACH = {
+  /** World speed for `real` seconds of real time after the door gives (no meter cost). */
+  slowScale: 0.2,
+  slowReal: 1.0,
+  /** The office wakes this much later than a normal alert: the reward for going in fast. */
+  react: 0.5,
+  /** Real seconds in front of the door without a dive before the heavy inside kicks it open. */
+  kickAfter: 25,
+} as const;
+
+/** A checkpoint restores at least this much health (the fight after it starts fair). */
+export const CHECKPOINT_MIN_HEALTH = 60;
+
+/** The rave crowd (not part of the fight: never hit, never in the trace, never blocks the player). */
+export const CROWD = {
+  /** Flee speed (m/s): the flee clips' planted-foot speed on a Pockit, so the feet do not skate. */
+  flee: 3.0,
+  /** Startle delay after the first shot: up to this many seconds, later the farther she is. */
+  startle: 0.6,
+  /** Startle clip length before she runs (world s). */
+  startleTime: 0.5,
+  /** Within this distance of her exit she fades out behind the door (s). */
+  exitRadius: 0.8,
+  fade: 0.3,
+  /** Minimum spacing when the dancers are placed. */
+  spacing: 0.85,
 } as const;
 
 export type Difficulty = "easy" | "normal" | "hard";

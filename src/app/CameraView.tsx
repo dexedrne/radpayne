@@ -4,20 +4,18 @@
 // the pivot in toward his head (the view then turns onto the sim's aim point, so the crosshair still
 // lands where the shot goes) instead of pushing the lens into the facade.
 // The final-kill cam follows the replayed bullet from behind, then swings around the target while it
-// drops. Both shots are planned once when it starts: the chase takes the side of the bullet with a
-// clear view of her, the swing an angle with a clear line to her, no wall at the lens and no hot light
-// (headlights, lamps, neon) right in front of it.
+// drops, as planned by killcam.ts (clear lines, no wall, hot light, post or steam at the lens).
 import { useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { usePrefab } from "react-three-game";
 import { Matrix4, PerspectiveCamera, Vector3 } from "three";
 import { World } from "../sim/world.ts";
 import type { Session } from "./session.ts";
+import { shoulderRight } from "../sim/player.ts";
 import { SHOULDER, aimDir } from "../sim/aim.ts";
 import { FRAME } from "./frame.ts";
 import type { V3 } from "../sim/types.ts";
-import type { KillCam } from "../sim/game.ts";
-import type { LevelData } from "../world/level.ts";
+import { KC, planKillcam, type KcPlan } from "./killcam.ts";
 
 export const CAMERA_NODE = "rp-camera";
 /** Dev builds: ?cam=<id of a "camera" marker> holds the camera on that shot (data.at = look-at point). */
@@ -26,68 +24,6 @@ export const FOV = 68;
 /** The current camera arm (the player fades out when a wall pulls the camera into his head). */
 export const camView = { arm: SHOULDER.arm as number, right: SHOULDER.right as number };
 const FOV_BT = 60;
-/** Kill-cam swing: radius (m), eye height and look-at height over her feet, turn rate (rad / real s). */
-const KC = { radius: 3.0, eyeY: 1.45, atY: 0.8, turn: 0.9, fov: 55, chaseFov: 50 } as const;
-
-type KcPlan = { kc: KillCam; side: number; lift: number; a0: number; dir: number; ex: number; ey: number; ez: number; kx: number; kz: number };
-
-/** Plans the two kill-cam shots (see the header) against the camera's collision world. */
-function planKillcam(k: KillCam, e: { x: number; y: number; z: number; killDX: number; killDZ: number }, w: World, level: LevelData): KcPlan {
-  let dx = k.to.x - k.from.x, dy = k.to.y - k.from.y, dz = k.to.z - k.from.z;
-  const l = Math.hypot(dx, dy, dz) || 1;
-  dx /= l; dy /= l; dz /= l;
-  const hl = Math.hypot(dx, dz) || 1;
-  const hx = dx / hl, hz = dz / hl; // horizontal shot direction
-  const sx = hz, sz = -hx; // its side
-  const clear = (ax: number, ay: number, az: number, bx: number, by: number, bz: number, pad = 0.15) => {
-    const vx = bx - ax, vy = by - ay, vz = bz - az;
-    const d = Math.hypot(vx, vy, vz);
-    return d < 1e-3 || w.raycast(ax, ay, az, vx / d, vy / d, vz / d, Math.max(0, d - pad), false) === null;
-  };
-  const chest = [e.x, e.y + 1.1, e.z] as const, head = [e.x, e.y + 1.6, e.z] as const;
-  // chase: which side of the bullet (and how high) sees her body, not the cover she was behind
-  let side = 0.25, lift = 0.18, best = -1;
-  for (const [sd, up] of [[0.25, 0.18], [-0.25, 0.18], [0.5, 0.35], [-0.5, 0.35], [0.2, 0.6], [-0.2, 0.6]]) {
-    let sc = 0;
-    for (const f of [0.55, 1]) {
-      const bx = k.from.x + (k.to.x - k.from.x) * f, by = k.from.y + (k.to.y - k.from.y) * f, bz = k.from.z + (k.to.z - k.from.z) * f;
-      const ex = bx - dx * 0.9 + sx * sd, ey = by - dy * 0.9 + up, ez = bz - dz * 0.9 + sz * sd;
-      if (!clear(bx, by, bz, ex, ey, ez, 0)) continue; // the lens would sit inside a wall
-      sc += (clear(ex, ey, ez, ...chest) ? 2 : 0) + (clear(ex, ey, ez, ...head) ? 1 : 0);
-    }
-    if (sc > best) { best = sc; side = sd; lift = up; }
-  }
-  // swing: angle 0 = on the shooter's side, looking at her; she falls away along the shot
-  const kx = e.x + e.killDX * 0.5, kz = e.z + e.killDZ * 0.5;
-  const fy = e.y + KC.atY;
-  let a0 = 0, dir = 1, score = -Infinity;
-  const eyeAt = (a: number) => [kx + (-hx * Math.cos(a) + sx * Math.sin(a)) * KC.radius, e.y + KC.eyeY, kz + (-hz * Math.cos(a) + sz * Math.sin(a)) * KC.radius] as const;
-  for (let i = 0; i < 16; i++) {
-    const a = ((i % 2 ? -1 : 1) * Math.ceil(i / 2) * Math.PI) / 8;
-    for (const d of [1, -1]) {
-      let sc = -Math.abs(a) * 0.8;
-      for (const t of [0, 0.5]) {
-        const [ex, ey, ez] = eyeAt(a + d * t);
-        const vx = ex - kx, vy = ey - fy, vz = ez - kz, len = Math.hypot(vx, vy, vz);
-        if (w.raycast(kx, fy, kz, vx / len, vy / len, vz / len, len + 0.45, false) === null) sc += 6; // no wall at / behind the lens
-        if (clear(ex, ey, ez, e.x, e.y + 1.6, e.z)) sc += 3;
-        if (clear(ex, ey, ez, e.x, e.y + 0.4, e.z)) sc += 2;
-        // hot lights within 9 m of the lens and inside ~30 deg of the view blow the frame out
-        const fx = -vx / len, fyv = -vy / len, fz = -vz / len;
-        for (const gp of level.glare) {
-          const gx = gp.x - ex, gy = gp.y - ey, gz = gp.z - ez, gd = Math.hypot(gx, gy, gz);
-          if (gd > 9 || gd < 1e-3) continue;
-          const cos = (gx * fx + gy * fyv + gz * fz) / gd;
-          if (cos > 0.86) sc -= 4 * (1 - gd / 9) * Math.min(1, (cos - 0.86) / 0.1);
-        }
-      }
-      if (sc > score) { score = sc; a0 = a; dir = d; }
-    }
-  }
-  const [ex, ey, ez] = eyeAt(a0);
-  return { kc: k, side, lift, a0, dir, ex, ey, ez, kx, kz };
-}
-
 export function CameraView({ s }: { s: Session }) {
   const prefab = usePrefab();
   const tmp = useMemo(() => ({
@@ -98,6 +34,9 @@ export function CameraView({ s }: { s: Session }) {
   // what the camera collides with: every visible box, decor included (a tall decor box must not sit
   // between the camera and the shoulder), not the invisible play-area walls
   const camWorld = useMemo(() => new World(s.level.camBoxes.map((b, i) => ({ ...b, id: i }))), [s]);
+  const viewWorld = useMemo(() => new World(s.level.viewBoxes.map((b, i) => ({ ...b, id: i }))), [s]);
+  // doors the sim took out (the breach) are gone for the lens too; a new run puts them back
+  const doorSync = useMemo(() => ({ n: -1, run: -1 }), [s]);
   useEffect(() => s.on(e => {
     if (e.type === "hurt" && e.target === -1) tmp.kick = 1;
   }), [s, tmp]);
@@ -105,6 +44,12 @@ export function CameraView({ s }: { s: Session }) {
   useFrame((state, rawDelta) => {
     const dt = Math.min(rawDelta, 0.1);
     const g = s.game;
+    if (doorSync.run !== s.run || doorSync.n !== g.world.off.size) {
+      for (const id of [...camWorld.off]) if (!g.world.off.has(id)) camWorld.setEnabled(id, true);
+      for (const id of g.world.off) camWorld.setEnabled(id, false);
+      doorSync.run = s.run;
+      doorSync.n = g.world.off.size;
+    }
     const p = g.player;
     const k = g.killcam;
     let fovWant = g.timeScale < 0.99 ? FOV_BT : FOV;
@@ -117,7 +62,7 @@ export function CameraView({ s }: { s: Session }) {
       camView.arm = SHOULDER.arm;
     } else if (k) {
       const e = g.enemies[k.enemy];
-      if (!tmp.plan || tmp.plan.kc !== k) tmp.plan = planKillcam(k, e ?? { x: k.to.x, y: 0, z: k.to.z, killDX: 0, killDZ: 1 }, camWorld, s.level);
+      if (!tmp.plan || tmp.plan.kc !== k) tmp.plan = planKillcam(k, e ?? { x: k.to.x, y: 0, z: k.to.z, killDX: 0, killDZ: 1 }, camWorld, s.level, viewWorld);
       const pl = tmp.plan;
       // bullet position along the replayed shot
       const f = Math.min(1, k.t / k.flight);
@@ -127,13 +72,13 @@ export function CameraView({ s }: { s: Session }) {
       dx /= l; dy /= l; dz /= l;
       const hl = Math.hypot(dx, dz) || 1;
       const hx = dx / hl, hz = dz / hl, sx = hz, sz = -hx; // horizontal shot direction and its side
-      if (f < 1) {
+      if (f < 1 && pl.chase) {
         tmp.eye.set(bx - dx * 0.9 + sx * pl.side, by - dy * 0.9 + pl.lift, bz - dz * 0.9 + sz * pl.side);
         tmp.at.set(bx + dx * 2, by + dy * 2, bz + dz * 2);
         tmp.orbit = 0;
         fovWant = KC.chaseFov;
       } else {
-        tmp.orbit += dt * KC.turn;
+        if (f >= 1) tmp.orbit += dt * KC.turn; // no chase: hold the opening angle while the bullet flies in
         const a = pl.a0 + pl.dir * tmp.orbit;
         const ey = (e?.y ?? 0);
         tmp.eye.set(pl.kx + (-hx * Math.cos(a) + sx * Math.sin(a)) * KC.radius, ey + KC.eyeY, pl.kz + (-hz * Math.cos(a) + sz * Math.sin(a)) * KC.radius);
@@ -162,7 +107,8 @@ export function CameraView({ s }: { s: Session }) {
       tmp.eye.set(tmp.piv.x - d.x * tmp.arm, tmp.piv.y - d.y * tmp.arm, tmp.piv.z - d.z * tmp.arm);
       // look at the point on the sim's aim ray at the aim point's distance: the same view as along the
       // ray when the shoulder is free; with the pivot slid in, the crosshair still sits on the aim point
-      const sx0 = r.x + c * SHOULDER.right, sz0 = r.z - sn * SHOULDER.right;
+      const simRight = shoulderRight(g.world, p); // the sim's pivot, pulled in by a wall like this one
+      const sx0 = r.x + c * simRight, sz0 = r.z - sn * simRight;
       const ap = g.aimPoint;
       const aimWant = Math.min(80, Math.max(3, Math.hypot(ap.x - sx0, ap.y - by, ap.z - sz0)));
       tmp.aimT += (aimWant - tmp.aimT) * Math.min(1, 10 * dt);

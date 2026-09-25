@@ -32,7 +32,8 @@ export function useNudge(h: Hud, now: number): Nudge | null {
   const total = h.mags[0] + (h.hands === 2 ? h.mags[1] : 0);
   const empty = alive && total === 0 && h.reserve <= 0;
   if (empty && !s.empty) {
-    const other = h.owned.find(w => w !== h.weaponId);
+    // the next owned gun that still has rounds (the pistols never run dry)
+    const other = h.owned.find(w => w !== h.weaponId && (h.ammo?.[w] ?? 1) > 0);
     fire("empty", other ? `dry. switch to ${NAMES[other]}. [${SLOT_ORDER.indexOf(other) + 1}]` : "dry. nothing left to shoot.");
   }
   s.empty = empty;

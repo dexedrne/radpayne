@@ -13,11 +13,13 @@ import { makeBox, type Box } from "../sim/world.ts";
 
 export type MarkerKind =
   | "spawn" // player start (facing = yaw)
-  | "enemy" // an enemy: { kind?: "goon", group?: string (spawned by a trigger), patrol?: string[] waypoint ids, milady?: number }
+  | "enemy" // an enemy: { kind?: "goon" | "rusher" | "heavy", group?: string (spawned by a trigger), patrol?: string[] waypoint ids, milady?: number, perch?: boolean, model?: "rival652" | "rival723" (heavies), drop?: string | false, deaf?: boolean (gunshots and shouts do not wake her), hold?: boolean (a heavy that never walks) }
   | "cover" // a cover point: { height?: "low" | "high" (default low), side?: "left" | "right" (high cover lean side) }; facing = the direction it protects toward
   | "waypoint" // an AI path node: { links?: string[] } (else auto-linked to waypoints in line of sight within 14 m)
-  | "pickup" // { item: "copium", amount?: number }
-  | "trigger" // volume = the node's scale: { action: "alert" | "spawn" | "exit" | "checkpoint" | "cutscene", group?: string, once?: boolean }
+  | "pickup" // { item: "copium" | "shotgun" | "smgs" | "shotgun_ammo" | "smgs_ammo", amount?: number }
+  | "trigger" // volume = the node's scale: { action: "alert" | "spawn" | "exit" | "checkpoint" | "cutscene" | "breach", group?: string, once?: boolean, afterKills?: number (fires once this many hostiles are down, wherever he is), whenClear?: string (fires once every hostile of that group is down), door?: string (breach: the door box's node id), at?: string (checkpoint: a checkpoint marker's id) }
+  | "crowd" // non-hostile dancers in an area (the node's scale): { count, clips: string[], milady?: number, role?: string, flee?: crowdExit id }
+  | "crowdExit" // where the crowd runs to and vanishes (the entrance, the staff door, the fire exit)
   | "checkpoint" // respawn point (facing = yaw)
   | "exit" // room exit point (the door the player walks through after the room is clear)
   | "light" // a light the look pass can use (the sim ignores it)
@@ -38,12 +40,21 @@ export type Marker = {
   data: Record<string, unknown>;
 };
 
-export type RoomSettings = { name: string; next?: string; music?: string; [k: string]: unknown };
+/** Room settings (Data {room: {...}}): name, the next room, its music and look, the cutscene played
+ *  after it is cleared, the footstep surface, and how the gang wakes (alertOnShot: the first shot
+ *  anywhere alerts every idle hostile; alertAll: one alert wakes them all, one after another). */
+export type RoomSettings = {
+  name: string; next?: string; music?: string; look?: string; cutsceneAfter?: string; footsteps?: string;
+  alertOnShot?: boolean; alertAll?: boolean; drops?: Record<string, string>; [k: string]: unknown;
+};
 
 export type LevelData = {
   boxes: Box[];
   /** What the camera collides with: every visible box (decor too, except thin trim under 0.2 m). */
   camBoxes: Box[];
+  /** Every visible box of some size, thin poles and trim included: the kill cam keeps them away
+   *  from its lens (a lamp post a hand's width from the lens fills the frame). */
+  viewBoxes: Box[];
   markers: Marker[];
   room: RoomSettings;
   warnings: string[];
@@ -68,11 +79,12 @@ function comp(node: Node, type: string): Record<string, unknown> | null {
   return null;
 }
 
-const MARKERS = new Set<string>(["spawn", "enemy", "cover", "waypoint", "pickup", "trigger", "checkpoint", "exit", "light", "fx", "camera"]);
+const MARKERS = new Set<string>(["spawn", "enemy", "cover", "waypoint", "pickup", "trigger", "checkpoint", "exit", "light", "fx", "camera", "crowd", "crowdExit"]);
 
 export function readLevel(prefab: Prefabish): LevelData {
   const boxes: Box[] = [];
   const camBoxes: Box[] = [];
+  const viewBoxes: Box[] = [];
   const markers: Marker[] = [];
   const warnings: string[] = [];
   const glare: LevelData["glare"] = [];
@@ -121,8 +133,12 @@ export function readLevel(prefab: Prefabish): LevelData {
         }
         if (hot(comp(node, "Material")?.materialId)) glare.push({ x: xf.x, y: xf.y, z: xf.z });
         const thick = Math.min(Math.abs(sx), Math.abs(sy), Math.abs(sz)) >= 0.2;
-        if (mesh.visible !== false && data.camera !== false && (collider || thick)) {
+        // an invisible collider drawn by a view (the breach door, a glass pane) opts in with {camera: true}
+        if ((mesh.visible !== false || data.camera === true) && data.camera !== false && (collider || thick)) {
           camBoxes.push(makeBox(camBoxes.length, node.id, xf.x, xf.y, xf.z, sx, sy, sz, xf.yaw, surface));
+        }
+        if (mesh.visible !== false && Math.max(Math.abs(sx), Math.abs(sy), Math.abs(sz)) >= 0.3 && xf.y + Math.abs(sy) / 2 > 0.3) {
+          viewBoxes.push(makeBox(viewBoxes.length, node.id, xf.x, xf.y, xf.z, sx, sy, sz, xf.yaw, surface));
         }
       }
     }
@@ -130,5 +146,5 @@ export function readLevel(prefab: Prefabish): LevelData {
   };
   walk(prefab.root as Node, { x: 0, y: 0, z: 0, yaw: 0, sx: 1, sy: 1, sz: 1 }, false);
   if (!markers.some(m => m.kind === "spawn")) warnings.push("no spawn marker: the player starts at the origin");
-  return { boxes, camBoxes, markers, room, warnings, glare };
+  return { boxes, camBoxes, viewBoxes, markers, room, warnings, glare };
 }

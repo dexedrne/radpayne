@@ -72,6 +72,16 @@ export class World {
     }
   }
 
+  /** Node ids of boxes taken out of the world (the breached office door): no collision, no rays. */
+  readonly off = new Set<string>();
+
+  /** Take a box (by its prefab node id) out of the world or put it back; true when something changed. */
+  setEnabled(node: string, on: boolean): boolean {
+    if (on ? !this.off.has(node) : this.off.has(node)) return false;
+    if (on) this.off.delete(node); else this.off.add(node);
+    return true;
+  }
+
   /** Boxes whose AABB overlaps the xz rectangle (each once). */
   near(x0: number, z0: number, x1: number, z1: number, out: Box[]): Box[] {
     out.length = 0;
@@ -85,6 +95,7 @@ export class World {
           this.seen[id] = s;
           const b = this.boxes[id];
           if (b.x1 < x0 || b.x0 > x1 || b.z1 < z0 || b.z0 > z1) continue;
+          if (this.off.size && this.off.has(b.node)) continue;
           out.push(b);
         }
       }
