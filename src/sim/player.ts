@@ -213,10 +213,12 @@ export function pivotOf(p: Player, out: { x: number; y: number; z: number }): { 
 /** Muzzle of hand 0 (right) / 1 (left) for the current stance. */
 export function muzzleOf(p: Player, hand: number, out: { x: number; y: number; z: number }): { x: number; y: number; z: number } {
   const c = Math.cos(p.yaw), s = Math.sin(p.yaw);
-  const side = hand === 0 ? 0.22 : -0.22;
+  // the shotgun is shouldered on the right: one muzzle, farther out
+  const long = p.weapon.id === "shotgun";
+  const side = long ? 0.14 : hand === 0 ? 0.22 : -0.22;
   const lying = p.mode === "dive" || p.mode === "prone";
-  const up = lying ? (p.mode === "dive" ? 0.7 : 0.5) : p.mode === "roll" || p.mode === "getup" ? 0.9 : 1.22;
-  const fwd = lying ? 0.35 : 0.55;
+  const up = lying ? (p.mode === "dive" ? 0.7 : 0.5) : p.mode === "roll" || p.mode === "getup" ? 0.9 : long ? 1.3 : 1.22;
+  const fwd = (lying ? 0.35 : 0.55) + (long ? 0.2 : 0);
   out.x = p.x + c * side - s * fwd;
   out.y = p.y + up;
   out.z = p.z - s * side - c * fwd;

@@ -13,11 +13,13 @@ import { makeBox, type Box } from "../sim/world.ts";
 
 export type MarkerKind =
   | "spawn" // player start (facing = yaw)
-  | "enemy" // an enemy: { kind?: "goon", group?: string (spawned by a trigger), patrol?: string[] waypoint ids, milady?: number }
+  | "enemy" // an enemy: { kind?: "goon" | "rusher" | "heavy", group?: string (spawned by a trigger), patrol?: string[] waypoint ids, milady?: number, perch?: boolean, model?: "rival652" | "rival723" (heavies), drop?: string | false }
   | "cover" // a cover point: { height?: "low" | "high" (default low), side?: "left" | "right" (high cover lean side) }; facing = the direction it protects toward
   | "waypoint" // an AI path node: { links?: string[] } (else auto-linked to waypoints in line of sight within 14 m)
-  | "pickup" // { item: "copium", amount?: number }
-  | "trigger" // volume = the node's scale: { action: "alert" | "spawn" | "exit" | "checkpoint" | "cutscene", group?: string, once?: boolean }
+  | "pickup" // { item: "copium" | "shotgun" | "smgs" | "shotgun_ammo" | "smgs_ammo", amount?: number }
+  | "trigger" // volume = the node's scale: { action: "alert" | "spawn" | "exit" | "checkpoint" | "cutscene", group?: string, once?: boolean, afterKills?: number (also fires once this many hostiles are down) }
+  | "crowd" // non-hostile dancers in an area (the node's scale): { count, clips: string[], milady?: number, role?: string, flee?: crowdExit id }
+  | "crowdExit" // where the crowd runs to and vanishes (the entrance, the staff door, the fire exit)
   | "checkpoint" // respawn point (facing = yaw)
   | "exit" // room exit point (the door the player walks through after the room is clear)
   | "light" // a light the look pass can use (the sim ignores it)
@@ -38,7 +40,13 @@ export type Marker = {
   data: Record<string, unknown>;
 };
 
-export type RoomSettings = { name: string; next?: string; music?: string; [k: string]: unknown };
+/** Room settings (Data {room: {...}}): name, the next room, its music and look, the cutscene played
+ *  after it is cleared, the footstep surface, and how the gang wakes (alertOnShot: the first shot
+ *  anywhere alerts every idle hostile; alertAll: one alert wakes them all, one after another). */
+export type RoomSettings = {
+  name: string; next?: string; music?: string; look?: string; cutsceneAfter?: string; footsteps?: string;
+  alertOnShot?: boolean; alertAll?: boolean; drops?: Record<string, string>; [k: string]: unknown;
+};
 
 export type LevelData = {
   boxes: Box[];
@@ -68,7 +76,7 @@ function comp(node: Node, type: string): Record<string, unknown> | null {
   return null;
 }
 
-const MARKERS = new Set<string>(["spawn", "enemy", "cover", "waypoint", "pickup", "trigger", "checkpoint", "exit", "light", "fx", "camera"]);
+const MARKERS = new Set<string>(["spawn", "enemy", "cover", "waypoint", "pickup", "trigger", "checkpoint", "exit", "light", "fx", "camera", "crowd", "crowdExit"]);
 
 export function readLevel(prefab: Prefabish): LevelData {
   const boxes: Box[] = [];

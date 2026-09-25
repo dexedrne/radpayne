@@ -1,8 +1,11 @@
-// A simple test bot that plays a room: aims at the nearest goon it can see (torso, head when close),
+// A simple test bot that plays a room: aims at the nearest hostile it can see (torso, head when close),
 // fires, walks toward the next one along the waypoint graph, pops bullet time when two or more are
 // shooting, dives when hurt, uses copium below half health, walks to the exit once the room is clear.
+// It never shoots the crowd (they are not hostiles), picks up the weapons it walks past (and goes for
+// one lying within 20 m when nothing is in sight), and takes the shotgun up close, the SMGs at range.
 // Used by the Node smoke test and the browser's ?bot mode (same input frames -> same result).
 import { HB_HEAD, HB_TORSO, aimPoint, makeCapsules } from "../combat/hitboxes.ts";
+import { PICKUPS, SLOT_ORDER, WEAPONS, ammoLeft, type WeaponId } from "../combat/weapons.ts";
 import type { Game } from "./game.ts";
 import { pivotOf } from "./player.ts";
 import { emptyInput, type InputFrame } from "./types.ts";
@@ -31,6 +34,8 @@ export class Bot {
   readonly demo: boolean;
   private demoBt = false;
   private demoDodge = false;
+  private swapCd = 0;
+  private fired = false;
   constructor(turnRate = 3.5, settle = 0.3, demo = false) {
     this.turnRate = turnRate;
     this.settle = settle;
@@ -58,14 +63,15 @@ export class Bot {
     if (g.phase === "killcam") { f.skip = !this.demo && g.killcam !== null && g.killcam.t > 0.6; return f; }
     if (p.mode === "dead") return f;
     this.dodgeCd -= 1 / 120;
+    this.swapCd -= 1 / 120;
     const piv = pivotOf(p, this.piv);
 
-    // target: nearest visible live goon
+    // target: nearest visible live hostile
     let best = -1, bd = Infinity;
     for (const e of g.enemies) {
       if (e.state === "dead" || e.state === "inactive") continue;
       const part = HB_TORSO;
-      if (!aimPoint("milady", e.hit.pose, part, this.v, this.caps)) continue;
+      if (!aimPoint(e.hit.body, e.hit.pose, part, this.v, this.caps)) continue;
       const d = (this.v.x - piv.x) ** 2 + (this.v.z - piv.z) ** 2;
       if (d < bd && g.world.clear(piv.x, piv.y, piv.z, this.v.x, this.v.y, this.v.z, true)) { bd = d; best = e.idx; }
     }
@@ -74,13 +80,17 @@ export class Bot {
 
     if (best >= 0) {
       const e = g.enemies[best];
-      const part = bd < 14 * 14 ? HB_HEAD : HB_TORSO;
-      aimPoint("milady", e.hit.pose, part, this.v, this.caps);
+      // the shotgun spreads: aim at the chest with it
+      const part = bd < 14 * 14 && p.weapon.id !== "shotgun" ? HB_HEAD : HB_TORSO;
+      aimPoint(e.hit.body, e.hit.pose, part, this.v, this.caps);
       const dx = this.v.x - piv.x, dy = this.v.y - piv.y, dz = this.v.z - piv.z;
       const l = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
       this.turn(f, Math.atan2(-dx, -dz), Math.asin(dy / l));
       this.onTarget = g.aimEnemy === best ? this.onTarget + 1 / 120 : 0;
       f.fire = this.onTarget >= this.settle;
+      // semi-auto: a fresh press per shot
+      if (!WEAPONS[p.weapon.id].auto) { f.fire = f.fire && !this.fired; this.fired = f.fire; }
+      this.pickWeapon(g, f, Math.sqrt(bd));
       // strafe while shooting
       this.strafeT -= 1 / 120;
       if (this.strafeT <= 0) { this.strafe = -this.strafe; this.strafeT = 1.2; }
@@ -105,9 +115,18 @@ export class Bot {
           const d = (e.x - p.x) ** 2 + (e.z - p.z) ** 2;
           if (d < nd) { nd = d; tx = e.x; tz = e.z; key = e.idx; }
         }
+        // a weapon or ammo lying within 20 m that it can use: fetch it first
+        let kd = 20 * 20;
+        for (let i = 0; i < g.pickups.length; i++) {
+          const k = g.pickups[i];
+          const d = PICKUPS[k.item];
+          if (k.taken || !d || (!d.weapon && !p.owned.includes(d.ammo))) continue;
+          const dd = (k.x - p.x) ** 2 + (k.z - p.z) ** 2;
+          if (dd < kd) { kd = dd; tx = k.x; tz = k.z; key = 700 + i; }
+        }
         if (key < 0) {
-          // nothing alive and awake: walk to the next trigger we have not fired
-          const t = g.triggers.find(tr => !tr.fired && tr.data.action !== "exit");
+          // nothing alive and awake: walk to the next trigger we have not fired (not the fallbacks)
+          const t = g.triggers.find(tr => !tr.fired && tr.data.action !== "exit" && typeof tr.data.afterKills !== "number");
           if (t) { tx = t.x; tz = t.z; key = 500; }
         }
       }
@@ -133,5 +152,14 @@ export class Bot {
     if (p.health < 50 && p.copium > 0 && p.healLeft <= 0) f.copium = true;
     if (p.mode === "prone") f.moveY = 1;
     return f;
+  }
+
+  /** The shotgun within 9 m, the SMGs past it, the pistols when the others are dry. */
+  private pickWeapon(g: Game, f: InputFrame, dist: number): void {
+    const p = g.player;
+    if (this.swapCd > 0 || p.owned.length < 2 || p.weapon.reloadT > 0 && ammoLeft(p.weapon) > 0) return;
+    const has = (id: WeaponId) => p.owned.includes(id) && ammoLeft(p.arsenal[id]!) > 0;
+    const want: WeaponId = dist < 9 && has("shotgun") ? "shotgun" : has("smgs") ? "smgs" : has("shotgun") && dist < 14 ? "shotgun" : "pistols";
+    if (want !== p.weapon.id) { f.slot = SLOT_ORDER.indexOf(want) + 1; this.swapCd = 1.5; }
   }
 }

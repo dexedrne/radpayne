@@ -1,7 +1,7 @@
 // Player and enemy state (plain data; the systems live in sim/player.ts, ai/goon.ts and sim/game.ts).
 import { makeHitActor, type HitActor } from "../combat/trace.ts";
 import { makeWeapon, type WeaponId, type WeaponState } from "../combat/weapons.ts";
-import { PLAYER } from "./tuning.ts";
+import { HEAVY_SCALE, PLAYER } from "./tuning.ts";
 
 export type PlayerMode = "normal" | "dive" | "prone" | "getup" | "roll" | "dead";
 
@@ -30,8 +30,11 @@ export type Player = {
   copium: number;
   /** HP still to add from the current copium (over PLAYER.copiumTime). */
   healLeft: number;
+  /** The weapon in the hands (the same object as arsenal[weapon.id]). */
   weapon: WeaponState;
   owned: WeaponId[];
+  /** One state per owned weapon: ammo and magazines survive a switch. */
+  arsenal: Partial<Record<WeaponId, WeaponState>>;
   /** Smoothed shoulder-pivot height above the feet (the camera and the aim ray start there). */
   pivotUp: number;
   /** Planar speed this step (m/s, AI accuracy reads it). */
@@ -44,22 +47,33 @@ export type Player = {
 
 export function makePlayer(x: number, y: number, z: number, facing: number): Player {
   const yaw = facing - Math.PI;
+  const pistols = makeWeapon("pistols");
   return {
     x, y, z, vx: 0, vy: 0, vz: 0, grounded: true, mode: "normal", modeT: 0, dirX: 0, dirZ: 1, rollOnLand: false, dodgeCooldown: 0,
     yaw, pitch: 0, facing, health: PLAYER.maxHealth, copium: PLAYER.startCopium, healLeft: 0,
-    weapon: makeWeapon("pistols"), owned: ["pistols"], pivotUp: 1.55, speed: 0,
+    weapon: pistols, owned: ["pistols"], arsenal: { pistols }, pivotUp: 1.55, speed: 0,
     hit: makeHitActor("radbro", 0), moveWX: 0, moveWZ: 0,
   };
 }
 
-export type EnemyState = "inactive" | "idle" | "alert" | "move" | "cover" | "peek" | "engage" | "dead";
+// rush: a rusher's charge straight at the player; advance: a heavy's slow walk toward him
+export type EnemyState = "inactive" | "idle" | "alert" | "move" | "cover" | "peek" | "engage" | "rush" | "advance" | "dead";
+
+/** goon: pistol, cover and peek (room 1). rusher: SMG, charges and strafes, cover once when hurt.
+ *  heavy: a rival Radbro with a pump shotgun, slow advance, a laser-sight tell, staggers, no cover. */
+export type EnemyKind = "goon" | "rusher" | "heavy";
+export type EnemyWeapon = "pistol" | "smg" | "shotgun";
+export const KIND_WEAPON: Record<EnemyKind, EnemyWeapon> = { goon: "pistol", rusher: "smg", heavy: "shotgun" };
 
 export type Enemy = {
   idx: number;
   id: string;
-  kind: "goon";
-  /** Pockit model number (seeded per spawn unless the marker names one). */
+  kind: EnemyKind;
+  weapon: EnemyWeapon;
+  /** Pockit model number (seeded per spawn unless the marker names one); heavies: 0. */
   milady: number;
+  /** Heavies: the rival Radbro model ("rival652" | "rival723"). */
+  model: string;
   group: string;
   x: number;
   y: number;
@@ -108,13 +122,30 @@ export type Enemy = {
   lastShotT: number;
   /** Perched (fire escape / balcony, marker data {perch: true}): holds position, never paths to cover. */
   perch: boolean;
+  /** Heavy: world seconds left of the laser-sight tell before the shot (0 = not aiming). */
+  tell: number;
+  /** Heavy: world seconds left of a stagger (a big hit; no moving, no shooting). */
+  stagger: number;
+  /** Heavy: shells before the next reload; seconds of reload left. */
+  shells: number;
+  reloadT: number;
+  /** Rusher: took her one trip to cover (below half health). */
+  coverUsed: boolean;
+  /** Rusher: the distance she stops her charge at (5-9 m, seeded). */
+  engageAt: number;
+  /** Seconds until the next repath while charging / advancing. */
+  repath: number;
+  /** Item dropped at the body on death ("" = none). */
+  drop: string;
 };
 
-export function makeEnemy(idx: number, id: string, x: number, y: number, z: number, facing: number, hp: number, milady: number, group: string): Enemy {
+export function makeEnemy(idx: number, id: string, x: number, y: number, z: number, facing: number, hp: number, milady: number, group: string, kind: EnemyKind = "goon"): Enemy {
+  const hit = makeHitActor(kind === "heavy" ? "radbro" : "milady", 1);
+  if (kind === "heavy") hit.pose.scale = HEAVY_SCALE;
   return {
-    idx, id, kind: "goon", milady, group, x, y, z, vx: 0, vz: 0, facing, hp, state: group ? "inactive" : "idle", stateT: 0, react: 0, timer: 0,
+    idx, id, kind, weapon: KIND_WEAPON[kind], milady, model: "", group, x, y, z, vx: 0, vz: 0, facing, hp, state: group ? "inactive" : "idle", stateT: 0, react: 0, timer: 0,
     cover: -1, lastCover: -1, path: [], pathI: 0, peeks: 0, peeksMax: 2, burstLeft: 0, fireT: 0, flinch: 0, sees: false, lastSeenX: x, lastSeenZ: z,
-    lean: 0, leanTarget: 0, crouch: false, deadT: 0, deathHold: false, killDX: 0, killDZ: 1, headshot: false, strafe: 1, hit: makeHitActor("milady", 1), patrol: [], shots: 0,
-    lastShotT: -1e9, perch: false,
+    lean: 0, leanTarget: 0, crouch: false, deadT: 0, deathHold: false, killDX: 0, killDZ: 1, headshot: false, strafe: 1, hit, patrol: [], shots: 0,
+    lastShotT: -1e9, perch: false, tell: 0, stagger: 0, shells: 6, reloadT: 0, coverUsed: false, engageAt: 7, repath: 0, drop: "",
   };
 }

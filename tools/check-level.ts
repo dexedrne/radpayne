@@ -25,6 +25,14 @@ for (const f of files) {
   dup(doc.root);
   graph.nodes.forEach(n => { if (!n.links.length) issues.push(`waypoint ${n.id} has no links`); });
   for (const c of graph.covers) if (graph.nearest(c.x, c.y, c.z) < 0) issues.push(`cover ${c.id}: no waypoint in walkable line of sight`);
+  // the crowd: every crowd area and exit must reach the waypoint graph (a dancer with no way out cowers)
+  for (const m of level.markers) {
+    if ((m.kind === "crowd" || m.kind === "crowdExit") && graph.nearest(m.x, m.y, m.z) < 0) issues.push(`${m.kind} ${m.id}: no waypoint in walkable line of sight`);
+    if (m.kind === "crowd" && typeof m.data.flee === "string" && !level.markers.some(x => x.kind === "crowdExit" && x.id === m.data.flee)) issues.push(`crowd ${m.id}: flee exit ${m.data.flee} does not exist`);
+    if (m.kind === "enemy" && m.data.kind && !["goon", "rusher", "heavy"].includes(String(m.data.kind))) issues.push(`enemy ${m.id}: unknown kind ${String(m.data.kind)}`);
+    if (m.kind === "pickup" && !["copium", "shotgun", "smgs", "shotgun_ammo", "smgs_ammo"].includes(String(m.data.item ?? "copium"))) issues.push(`pickup ${m.id}: unknown item ${String(m.data.item)}`);
+  }
+  if (level.markers.some(m => m.kind === "crowd") && !level.markers.some(m => m.kind === "crowdExit")) issues.push("crowd without a crowdExit: they all cower");
   for (const m of level.markers) {
     if (m.kind !== "enemy" && m.kind !== "pickup" && m.kind !== "spawn" && m.kind !== "cover") continue;
     for (const b of level.boxes) {
@@ -34,7 +42,9 @@ for (const f of files) {
     }
   }
   if (!count("exit") && !level.markers.some(m => m.kind === "trigger" && m.data.action === "exit")) issues.push("no exit: the room ends 2.5 s after it is cleared");
-  console.log(`${f}: "${level.room.name}" ${level.boxes.length} colliders, spawn ${count("spawn")}, enemies ${count("enemy")}, covers ${count("cover")}, waypoints ${count("waypoint")} (${graph.nodes.reduce((s, n) => s + n.links.length, 0) / 2} links), pickups ${count("pickup")}, triggers ${count("trigger")}`);
+  const kinds = ["goon", "rusher", "heavy"].map(k => `${k} ${level.markers.filter(m => m.kind === "enemy" && (m.data.kind ?? "goon") === k).length}`).join(" / ");
+  const crowd = level.markers.filter(m => m.kind === "crowd").reduce((n, m) => n + Number(m.data.count ?? 1), 0);
+  console.log(`${f}: "${level.room.name}" ${level.boxes.length} colliders, spawn ${count("spawn")}, enemies ${count("enemy")} (${kinds}), covers ${count("cover")}, waypoints ${count("waypoint")} (${graph.nodes.reduce((s, n) => s + n.links.length, 0) / 2} links), pickups ${count("pickup")}, triggers ${count("trigger")}${crowd ? `, crowd ${crowd} (${count("crowdExit")} exits)` : ""}`);
   for (const i of issues) console.log(`  ! ${i}`);
   bad += issues.length;
 }

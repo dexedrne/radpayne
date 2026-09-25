@@ -1,5 +1,8 @@
 // Weapons (spec section 4). Dual weapons alternate hands, each hand has its own magazine; an empty
 // pair reloads by itself. Timers run on the owner's clock (the player's is 0.5x in bullet time).
+// The player keeps one state per owned weapon (ammo survives a switch); a switch costs SWAP_TIME
+// before the new gun fires and cancels a reload in progress. Pickups: a weapon the first time (a full
+// magazine + its reserve), then ammo (see PICKUPS).
 
 export type WeaponId = "pistols" | "shotgun" | "smgs";
 
@@ -13,23 +16,36 @@ export type WeaponDef = {
   pellets: number;
   /** Seconds between shots (alternating hands for dual weapons). */
   interval: number;
-  /** Cone half-angle in radians. */
+  /** Cone half-angle in radians (the pellets / rounds scatter as a gaussian with sigma = half of it). */
   spread: number;
   reload: number;
   /** Rounds in reserve at pickup (Infinity = never runs dry). */
   reserve: number;
   /** Holding the trigger keeps firing. */
   auto: boolean;
-  /** Stub weapons are defined but not handed out yet. */
-  stub?: boolean;
+  /** Most rounds the reserve holds. */
+  reserveMax: number;
 };
 
 const DEG = Math.PI / 180;
 
 export const WEAPONS: Record<WeaponId, WeaponDef> = {
-  pistols: { id: "pistols", name: "Dual pistols", mag: 12, hands: 2, damage: 34, pellets: 1, interval: 0.12, spread: 0.35 * DEG, reload: 1.3, reserve: Infinity, auto: true },
-  shotgun: { id: "shotgun", name: "Shotgun", mag: 6, hands: 1, damage: 14, pellets: 8, interval: 0.8, spread: 6 * DEG, reload: 2, reserve: 24, auto: false, stub: true },
-  smgs: { id: "smgs", name: "Dual SMGs", mag: 30, hands: 2, damage: 14, pellets: 1, interval: 0.06, spread: 3 * DEG, reload: 1.8, reserve: 180, auto: true, stub: true },
+  pistols: { id: "pistols", name: "Dual pistols", mag: 12, hands: 2, damage: 34, pellets: 1, interval: 0.12, spread: 0.35 * DEG, reload: 1.3, reserve: Infinity, auto: true, reserveMax: Infinity },
+  // semi-auto: the pump is the animation (Shotgun_Fire racks it inside the 0.8 s). The plan's 6 deg
+  // and 3 deg are the full cones: one blast kills a goon at 6 m, a handful of pellets land at 12 m
+  shotgun: { id: "shotgun", name: "Shotgun", mag: 6, hands: 1, damage: 14, pellets: 8, interval: 0.8, spread: 3 * DEG, reload: 2, reserve: 24, auto: false, reserveMax: 48 },
+  smgs: { id: "smgs", name: "Dual SMGs", mag: 30, hands: 2, damage: 14, pellets: 1, interval: 0.06, spread: 1.5 * DEG, reload: 1.8, reserve: 180, auto: true, reserveMax: 360 },
+};
+
+/** Seconds (the player's clock) a weapon switch takes before the new gun can fire (Weapon_Swap: the guns change hands at 0.23 s). */
+export const SWAP_TIME = 0.35;
+
+/** What a pickup item gives: the weapon it hands out (the first time) and the ammo it adds after that. */
+export const PICKUPS: Record<string, { weapon?: WeaponId; ammo: WeaponId; amount: number }> = {
+  shotgun: { weapon: "shotgun", ammo: "shotgun", amount: 6 },
+  smgs: { weapon: "smgs", ammo: "smgs", amount: 60 },
+  shotgun_ammo: { ammo: "shotgun", amount: 6 },
+  smgs_ammo: { ammo: "smgs", amount: 30 },
 };
 
 export const SLOT_ORDER: WeaponId[] = ["pistols", "shotgun", "smgs"];
@@ -54,6 +70,9 @@ export function makeWeapon(id: WeaponId): WeaponState {
   const d = WEAPONS[id];
   return { id, mags: [d.mag, d.hands === 2 ? d.mag : 0], hand: 0, cooldown: 0, reloadT: 0, reserve: d.reserve, wasDown: false, shots: 0 };
 }
+
+/** Rounds left in the magazines and the reserve (Infinity for the pistols). */
+export const ammoLeft = (w: WeaponState): number => w.mags[0] + w.mags[1] + w.reserve;
 
 export const ammoIn = (w: WeaponState): number => w.mags[0] + (WEAPONS[w.id].hands === 2 ? w.mags[1] : 0);
 export const magSize = (w: WeaponState): number => WEAPONS[w.id].mag * WEAPONS[w.id].hands;

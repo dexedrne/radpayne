@@ -4,16 +4,18 @@
 // final-kill cam = 0.1), the player's movement and weapon clock by max(timeScale, 0.5), the aim is
 // always real time. The React views only read this object (and drain `events`).
 import { Graph } from "../ai/graph.ts";
-import { alertGoon, onGoonDeath, setState, stepGoon } from "../ai/goon.ts";
+import { alertGoon, onGoonDeath, setState } from "../ai/goon.ts";
+import { stepEnemy } from "../ai/enemies.ts";
 import { HB_HEAD, HB_MULT, HB_TORSO, aimPoint, makeCapsules } from "../combat/hitboxes.ts";
 import { HIT_ACTOR, HIT_NONE, HIT_WORLD, makeTraceHit, trace, type HitActor, type TraceHit } from "../combat/trace.ts";
-import { SLOT_ORDER, WEAPONS, makeWeapon, startReload, stepWeapon, triggerWeapon } from "../combat/weapons.ts";
+import { PICKUPS, SLOT_ORDER, SWAP_TIME, WEAPONS, makeWeapon, startReload, stepWeapon, triggerWeapon, type WeaponId } from "../combat/weapons.ts";
 import type { LevelData, Marker } from "../world/level.ts";
-import { makeEnemy, makePlayer, type Enemy, type Player } from "./actors.ts";
+import { makeEnemy, makePlayer, type Enemy, type EnemyKind, type Player } from "./actors.ts";
 import { aimDir } from "./aim.ts";
+import { Crowd } from "./crowd.ts";
 import { Fnv1a, Rand, hash01 } from "./math.ts";
 import { PM_DIVE, PM_GETUP, PM_JUMP, PM_LAND, PM_PRONE, muzzleOf, pivotOf, stepPlayer } from "./player.ts";
-import { AI, DIFFICULTY, DT, ENEMY, KILLCAM, MAX_RANGE, METER, PLAYER, PROJECTILE_SPEED, TIME, type Difficulty } from "./tuning.ts";
+import { AI, DIFFICULTY, DT, ENEMY, HEAVY, HEAVY_SCALE, KILLCAM, MAX_RANGE, METER, PLAYER, PROJECTILE_SPEED, RUSHER, TIME, type Difficulty } from "./tuning.ts";
 import { PLAYER_ID, type GameEvent, type InputFrame, type V3 } from "./types.ts";
 import { World } from "./world.ts";
 
@@ -39,6 +41,8 @@ export type Projectile = {
   sx: number;
   sy: number;
   sz: number;
+  /** The shot event's weapon (the view draws pellets thinner). */
+  weapon: string;
 };
 
 export type KillCam = {
@@ -53,12 +57,13 @@ export type KillCam = {
   headshot: boolean;
 };
 
-export type GameOptions = { seed?: number; difficulty?: Difficulty; ai?: boolean };
+/** loadout: extra weapons owned from the start (tests, dev ?loadout=); the pistols are always owned. */
+export type GameOptions = { seed?: number; difficulty?: Difficulty; ai?: boolean; loadout?: WeaponId[] };
 
 export type Stats = { kills: number; headshots: number; shots: number; hits: number; damageTaken: number; copiumUsed: number; time: number; btTime: number; dodges: number };
 
 type Trigger = Marker & { fired: boolean };
-type Pickup = { id: string; item: string; amount: number; x: number; y: number; z: number; taken: boolean };
+export type Pickup = { id: string; item: string; amount: number; x: number; y: number; z: number; taken: boolean };
 
 export class Game {
   readonly level: LevelData;
@@ -75,6 +80,12 @@ export class Game {
   readonly triggers: Trigger[] = [];
   readonly actors: HitActor[];
   readonly aiOn: boolean;
+  /** The rave crowd (not in the fight, not in hash()). */
+  readonly crowd: Crowd;
+  /** World time of the first shot anyone fired in the room (-1 = none yet): the crowd scatters, the club's lights change. */
+  firstShotAt = -1;
+  /** One alert woke the whole room (room.alertAll). */
+  private alarmed = false;
   /** Events since the views last drained them. */
   events: GameEvent[] = [];
   stepN = 0;
@@ -121,25 +132,35 @@ export class Game {
     this.player = makePlayer(sx, Number.isFinite(sy) ? sy : 0, sz, spawn?.yaw ?? 0);
     this.checkpoint = { x: sx, y: this.player.y, z: sz, facing: spawn?.yaw ?? 0 };
     let n = 0;
+    const drops = (level.room.drops ?? {}) as Record<string, string>;
     for (const m of level.markers) {
       if (m.kind === "enemy") {
-        const kind = (m.data.kind as string | undefined) ?? "goon";
-        if (kind !== "goon") continue; // other kinds come in later rounds
-        const pick = typeof m.data.milady === "number" ? (m.data.milady as number) : 1 + Math.floor(hash01(this.seed, n, 0x6d, 0) * POCKIT_COUNT);
+        const kindName = (m.data.kind as string | undefined) ?? "goon";
+        if (kindName !== "goon" && kindName !== "rusher" && kindName !== "heavy") continue; // later kinds (the boss)
+        const kind = kindName as EnemyKind;
+        const pick = kind === "heavy" ? 0 : typeof m.data.milady === "number" ? (m.data.milady as number) : 1 + Math.floor(hash01(this.seed, n, 0x6d, 0) * POCKIT_COUNT);
         const gy = this.world.groundBelow(m.x, m.z, 0.3, m.y + 1);
-        const e = makeEnemy(n, m.id, m.x, Number.isFinite(gy) ? gy : m.y, m.z, m.yaw, ENEMY.goon.hp, pick, typeof m.data.group === "string" ? m.data.group : "");
+        const e = makeEnemy(n, m.id, m.x, Number.isFinite(gy) ? gy : m.y, m.z, m.yaw, ENEMY[kind].hp, pick, typeof m.data.group === "string" ? m.data.group : "", kind);
         e.perch = m.data.perch === true;
+        if (kind === "heavy") e.model = m.data.model === "rival723" || (m.data.model === undefined && n % 2 === 1) ? "rival723" : "rival652";
+        if (kind === "rusher") e.engageAt = RUSHER.engage[0] + (RUSHER.engage[1] - RUSHER.engage[0]) * hash01(this.seed, n, 0x72, 1);
+        // the drop at the body: the marker's, else the room's per kind, else a heavy's shotgun
+        e.drop = m.data.drop === false ? "" : typeof m.data.drop === "string" ? m.data.drop : drops[kind] ?? (kind === "heavy" ? "shotgun" : "");
         const patrol = m.data.patrol;
         if (Array.isArray(patrol)) e.patrol = patrol.map(id => this.graph.nodes.findIndex(w => w.id === id)).filter(i => i >= 0);
         this.enemies.push(e);
         n++;
       } else if (m.kind === "pickup") {
-        const base = typeof m.data.amount === "number" ? (m.data.amount as number) : 1;
-        this.pickups.push({ id: m.id, item: (m.data.item as string) ?? "copium", amount: Math.max(1, Math.floor(base * this.diff.copium)), x: m.x, y: m.y, z: m.z, taken: false });
+        const item = (m.data.item as string) ?? "copium";
+        const base = typeof m.data.amount === "number" ? (m.data.amount as number) : item === "copium" ? 1 : PICKUPS[item]?.amount ?? 1;
+        // copium scales with the difficulty; weapons and ammo do not
+        this.pickups.push({ id: m.id, item, amount: item === "copium" ? Math.max(1, Math.floor(base * this.diff.copium)) : base, x: m.x, y: m.y, z: m.z, taken: false });
       } else if (m.kind === "trigger") this.triggers.push({ ...m, fired: false });
     }
     this.actors = [this.player.hit, ...this.enemies.map(e => e.hit)];
     for (const e of this.enemies) this.syncEnemyPose(e);
+    this.crowd = new Crowd(level.markers, this.world, this.graph, { seed: this.seed, pockitCount: POCKIT_COUNT });
+    for (const w of opts.loadout ?? []) this.giveWeapon(w);
     // First aim state so the camera and crosshair are valid before the first step.
     this.player.yaw = this.player.facing - Math.PI;
     this.updateAim();
@@ -227,8 +248,14 @@ export class Game {
     else if (canFire && inp.fire && !w.wasDown && w.reloadT > 0) this.emit({ type: "dryfire" });
 
     // enemies
-    if (this.aiOn) for (const e of this.enemies) if (e.state !== "dead" && e.state !== "inactive") stepGoon(this, e, wdt);
+    if (this.aiOn) for (const e of this.enemies) if (e.state !== "dead" && e.state !== "inactive") stepEnemy(this, e, wdt);
     for (const e of this.enemies) this.moveEnemy(e, wdt);
+    // one alert wakes the whole room (the club: the DJ calls it)
+    if (this.level.room.alertAll && !this.alarmed && this.enemies.some(e => e.state !== "idle" && e.state !== "inactive")) {
+      this.alarmed = true;
+      for (const e of this.enemies) alertGoon(this, e, 0.3);
+    }
+    this.crowd.step(wdt);
 
     // projectiles
     this.stepProjectiles(wdt);
@@ -245,6 +272,11 @@ export class Game {
           p.copium += got;
           k.taken = true;
           this.emit({ type: "pickup", item: k.item, amount: got, id: k.id });
+        } else if (PICKUPS[k.item]) {
+          const got = this.takeWeaponPickup(k.item, k.amount);
+          if (got < 0) continue; // full: leave it lying there
+          k.taken = true;
+          this.emit({ type: "pickup", item: k.item, amount: got, id: k.id });
         }
       }
       for (const t of this.triggers) {
@@ -252,6 +284,15 @@ export class Game {
         if (!insideTrigger(t, p.x, p.y + 0.9, p.z)) continue;
         this.fireTrigger(t);
       }
+    }
+
+    // fallback triggers: {afterKills: N} fires once N hostiles are down, wherever the player is
+    for (const t of this.triggers) {
+      const after = t.data.afterKills;
+      if (t.fired || typeof after !== "number" || this.phase !== "play") continue;
+      let down = 0;
+      for (const e of this.enemies) if (e.state === "dead") down++;
+      if (down >= after) this.fireTrigger(t);
     }
 
     // phases
@@ -280,7 +321,40 @@ export class Game {
     }
     const id = SLOT_ORDER[slot - 1];
     if (!id || !p.owned.includes(id) || p.weapon.id === id) return;
-    p.weapon = makeWeapon(id);
+    const w = p.arsenal[id] ?? (p.arsenal[id] = makeWeapon(id));
+    // the clock resets: a reload in progress is dropped, the new gun comes up after SWAP_TIME
+    p.weapon.reloadT = 0;
+    p.weapon.wasDown = true;
+    w.reloadT = 0;
+    w.cooldown = Math.max(w.cooldown, SWAP_TIME);
+    w.wasDown = true; // a held trigger does not fire the new gun until it is pressed again
+    p.weapon = w;
+    this.emit({ type: "swap", weapon: id });
+  }
+
+  /** Own a weapon (a full magazine + its reserve); false when already owned. */
+  giveWeapon(id: WeaponId): boolean {
+    const p = this.player;
+    if (p.owned.includes(id)) return false;
+    p.owned.push(id);
+    p.owned.sort((a, b) => SLOT_ORDER.indexOf(a) - SLOT_ORDER.indexOf(b));
+    p.arsenal[id] = makeWeapon(id);
+    return true;
+  }
+
+  /** A weapon / ammo pickup: the weapon the first time, then ammo into its reserve. Returns the rounds
+   *  added (the weapon's reserve the first time), or -1 when there is no room for it. */
+  private takeWeaponPickup(item: string, amount: number): number {
+    const d = PICKUPS[item];
+    const p = this.player;
+    if (d.weapon && this.giveWeapon(d.weapon)) return p.arsenal[d.weapon]!.reserve;
+    const w = p.arsenal[d.ammo];
+    if (!w) return -1; // ammo for a gun he does not have yet
+    const room = WEAPONS[d.ammo].reserveMax - w.reserve;
+    if (room <= 0) return -1;
+    const got = Math.min(room, d.weapon ? d.amount : amount);
+    w.reserve += got;
+    return got;
   }
 
   private useCopium(): void {
@@ -343,16 +417,18 @@ export class Game {
     }
     for (let k = 0; k < def.pellets; k++) {
       const s = this.spread(dx, dy, dz, def.spread);
-      this.shoot(0, PLAYER_ID, hand, m.x, m.y, m.z, s.x, s.y, s.z, def.damage);
+      this.shoot(0, PLAYER_ID, hand, m.x, m.y, m.z, s.x, s.y, s.z, def.damage, def.id, k);
     }
   }
 
   /** Enemy fires at the player (accuracy falls off with distance and the player's speed). */
   enemyFire(e: Enemy, moving: boolean): void {
     const p = this.player;
+    const T = ENEMY[e.kind];
     const c = Math.cos(e.facing), s = Math.sin(e.facing);
-    const up = e.crouch && e.state !== "peek" ? 0.95 : 1.35;
-    const mx = e.x + s * 0.45 - c * 0.18, my = e.y + up, mz = e.z + c * 0.45 + s * 0.18;
+    const up = e.crouch && e.state !== "peek" ? 0.95 : T.muzzleUp;
+    const reach = e.kind === "heavy" ? 0.75 * HEAVY_SCALE : 0.45, side = e.kind === "heavy" ? 0.12 : 0.18;
+    const mx = e.x + s * reach - c * side, my = e.y + up, mz = e.z + c * reach + s * side;
     const tgt = this.v;
     if (!aimPoint("radbro", p.hit.pose, p.hit.pose.stance === "dive" || p.hit.pose.stance === "prone" ? HB_TORSO : HB_TORSO, tgt, this.scratchCaps)) return;
     let dx = tgt.x - mx, dy = tgt.y - my, dz = tgt.z - mz;
@@ -376,13 +452,23 @@ export class Game {
     dx += ox; dy += oy; dz += oz;
     const l = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
     e.shots++;
-    this.shoot(1, e.idx, 0, mx, my, mz, dx / l, dy / l, dz / l, ENEMY.goon.damage * this.diff.damage);
+    if (T.pellets > 1) {
+      // the heavy's pump gun: 8 pellets in a 6 deg cone, full damage within 6 m, 30 % from 16 m out
+      const fall = dist <= HEAVY.near ? 1 : dist >= HEAVY.far ? HEAVY.farK : 1 - ((1 - HEAVY.farK) * (dist - HEAVY.near)) / (HEAVY.far - HEAVY.near);
+      const bx = dx / l, by = dy / l, bz = dz / l;
+      for (let k = 0; k < T.pellets; k++) {
+        const q = this.spread(bx, by, bz, T.spread);
+        this.shoot(1, e.idx, 0, mx, my, mz, q.x, q.y, q.z, T.damage * fall * this.diff.damage, e.weapon, k);
+      }
+      return;
+    }
+    this.shoot(1, e.idx, 0, mx, my, mz, dx / l, dy / l, dz / l, T.damage * this.diff.damage, e.weapon, 0);
   }
 
   /** Can the enemy's gun see the player (no wall between muzzle height and the body)? */
   canShoot(e: Enemy): boolean {
     const p = this.player;
-    return this.world.clear(e.x, e.y + 1.35, e.z, p.x, p.y + p.pivotUp * 0.75, p.z, true);
+    return this.world.clear(e.x, e.y + ENEMY[e.kind].muzzleUp, e.z, p.x, p.y + p.pivotUp * 0.75, p.z, true);
   }
 
   /** Line of sight + view cone (unless already alerted) + range. */
@@ -390,7 +476,7 @@ export class Game {
     const p = this.player;
     const dx = p.x - e.x, dz = p.z - e.z;
     const d2 = dx * dx + dz * dz;
-    const G = ENEMY.goon;
+    const G = ENEMY[e.kind];
     if (d2 > G.sight * G.sight) return false;
     if (e.state === "idle") {
       // not yet alerted: only a close player is noticed (the room's alert trigger wakes the rest)
@@ -399,7 +485,7 @@ export class Game {
       const fx = Math.sin(e.facing), fz = Math.cos(e.facing);
       if ((fx * dx + fz * dz) / d < G.fov) return false;
     }
-    const eyeY = e.y + (e.crouch ? 1.1 : 1.65);
+    const eyeY = e.y + (e.crouch ? 1.1 : e.kind === "heavy" ? 1.45 * HEAVY_SCALE : 1.65);
     return this.world.clear(e.x, eyeY, e.z, p.x, p.y + Math.max(0.5, p.pivotUp - 0.2), p.z, true);
   }
 
@@ -429,17 +515,24 @@ export class Game {
   }
 
   /** Normal speed: hitscan now. Bullet time: a visible projectile at PROJECTILE_SPEED (world m/s). */
-  shoot(team: 0 | 1, shooter: number, hand: number, ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, damage: number): void {
+  shoot(team: 0 | 1, shooter: number, hand: number, ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, damage: number, weapon = "pistols", pellet = 0): void {
+    if (this.firstShotAt < 0) {
+      // the first shot in the room: the crowd scatters; in the club it also wakes every armed girl
+      this.firstShotAt = this.time;
+      this.crowd.scatter(this.time, ox, oz, this.player.x, this.player.z);
+      this.emit({ type: "firstShot", x: ox, z: oz });
+      if (this.level.room.alertOnShot) for (const e of this.enemies) alertGoon(this, e, 0.2);
+    }
     const projectile = this.timeScale < 0.999;
     const id = this.nextProjectile++;
     if (projectile) {
-      this.projectiles.push({ id, team, shooter, x: ox, y: oy, z: oz, dx, dy, dz, left: MAX_RANGE, damage, alive: true, sx: ox, sy: oy, sz: oz });
-      this.emit({ type: "shot", shooter, hand, ox, oy, oz, ex: ox + dx * MAX_RANGE, ey: oy + dy * MAX_RANGE, ez: oz + dz * MAX_RANGE, projectile: true, id });
+      this.projectiles.push({ id, team, shooter, x: ox, y: oy, z: oz, dx, dy, dz, left: MAX_RANGE, damage, alive: true, sx: ox, sy: oy, sz: oz, weapon });
+      this.emit({ type: "shot", shooter, hand, ox, oy, oz, ex: ox + dx * MAX_RANGE, ey: oy + dy * MAX_RANGE, ez: oz + dz * MAX_RANGE, projectile: true, id, weapon, pellet });
       return;
     }
     const h = trace(this.world, this.actors, team, ox, oy, oz, dx, dy, dz, MAX_RANGE, this.th);
-    this.emit({ type: "shot", shooter, hand, ox, oy, oz, ex: h.x, ey: h.y, ez: h.z, projectile: false, id });
-    this.resolveHit(h, ox, oy, oz, dx, dy, dz, damage, team, shooter);
+    this.emit({ type: "shot", shooter, hand, ox, oy, oz, ex: h.x, ey: h.y, ez: h.z, projectile: false, id, weapon, pellet });
+    this.resolveHit(h, ox, oy, oz, dx, dy, dz, damage, team, shooter, weapon);
   }
 
   private stepProjectiles(wdt: number): void {
@@ -451,7 +544,7 @@ export class Game {
       if (h.kind !== HIT_NONE) {
         b.x = h.x; b.y = h.y; b.z = h.z;
         b.alive = false;
-        this.resolveHit(h, b.sx, b.sy, b.sz, b.dx, b.dy, b.dz, b.damage, b.team, b.shooter);
+        this.resolveHit(h, b.sx, b.sy, b.sz, b.dx, b.dy, b.dz, b.damage, b.team, b.shooter, b.weapon);
       } else {
         b.x += b.dx * len; b.y += b.dy * len; b.z += b.dz * len;
         b.left -= len;
@@ -465,7 +558,7 @@ export class Game {
   }
 
   /** Damage, blood, decals, kills. `o` is where the shot came from (the kill cam replays it). */
-  private resolveHit(h: TraceHit, ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, damage: number, team: number, shooter: number): void {
+  private resolveHit(h: TraceHit, ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, damage: number, team: number, shooter: number, weapon = "pistols"): void {
     if (h.kind === HIT_WORLD) {
       this.emit({ type: "impact", x: h.x, y: h.y, z: h.z, nx: h.nx, ny: h.ny, nz: h.nz, surface: h.surface, shooter });
       this.emit({ type: "decal", x: h.x, y: h.y, z: h.z, nx: h.nx, ny: h.ny, nz: h.nz, blood: false });
@@ -489,10 +582,28 @@ export class Game {
     e.flinch = AI.flinch;
     this.emit({ type: "hurt", target, amount, part: h.part, hp: Math.max(0, e.hp) });
     if (e.state === "idle") alertGoon(this, e, 0);
-    if (e.hp <= 0) this.killEnemy(e, h.part === HB_HEAD, dx, dz, team === 0 ? { ox, oy, oz, x: h.x, y: h.y, z: h.z } : null);
+    if (e.kind === "heavy" && e.hp > 0) {
+      // a stagger needs 40+ in one hit: a shotgun blast's pellets land within a few steps of each other
+      if (this.time - (this.heavyHitT[e.idx] ?? -1e9) > 0.08) { this.heavyHitT[e.idx] = this.time; this.heavyHit[e.idx] = 0; }
+      this.heavyHit[e.idx] += amount;
+      if (this.heavyHit[e.idx] >= HEAVY.staggerAt && e.stagger <= 0) {
+        e.stagger = HEAVY.stagger;
+        e.tell = 0;
+        this.heavyHit[e.idx] = -1e9; // once per blast
+        this.emit({ type: "stagger", enemy: e.idx });
+      }
+    }
+    if (e.hp <= 0) {
+      const blast = team === 0 && weapon === "shotgun" && (e.x - ox) ** 2 + (e.z - oz) ** 2 < 4 * 4;
+      this.killEnemy(e, h.part === HB_HEAD, dx, dz, team === 0 ? { ox, oy, oz, x: h.x, y: h.y, z: h.z } : null, blast);
+    }
   }
 
-  private killEnemy(e: Enemy, headshot: boolean, dx: number, dz: number, shot: { ox: number; oy: number; oz: number; x: number; y: number; z: number } | null): void {
+  /** Heavy stagger accounting: damage summed over one blast (per enemy) and when it started. */
+  private readonly heavyHit: number[] = [];
+  private readonly heavyHitT: number[] = [];
+
+  private killEnemy(e: Enemy, headshot: boolean, dx: number, dz: number, shot: { ox: number; oy: number; oz: number; x: number; y: number; z: number } | null, blast = false): void {
     setState(e, "dead");
     e.hit.hittable = false;
     e.hit.pose.stance = "dead";
@@ -501,6 +612,14 @@ export class Game {
     e.killDX = dx / l;
     e.killDZ = dz / l;
     onGoonDeath(this, e);
+    e.tell = 0;
+    e.stagger = 0;
+    if (e.drop && PICKUPS[e.drop]) {
+      // the gun (or ammo) lands at the body
+      const k: Pickup = { id: `drop-${e.id}`, item: e.drop, amount: PICKUPS[e.drop].amount, x: e.x, y: e.y, z: e.z, taken: false };
+      this.pickups.push(k);
+      this.emit({ type: "drop", id: k.id, item: k.item, x: k.x, y: k.y, z: k.z });
+    }
     const final = this.alive === 0;
     if (shot) {
       this.stats.kills++;
@@ -508,7 +627,7 @@ export class Game {
       this.meter = Math.min(METER.max, this.meter + (headshot ? METER.headshotRefill : METER.killRefill));
       this.lastPlayerKill = { from: { x: shot.ox, y: shot.oy, z: shot.oz }, to: { x: shot.x, y: shot.y, z: shot.z }, enemy: e.idx, headshot };
     }
-    this.emit({ type: "kill", target: e.idx, headshot, final });
+    this.emit({ type: "kill", target: e.idx, headshot, final, ...(blast ? { blast } : {}) });
     if (final && this.phase === "play") {
       this.emit({ type: "roomClear" });
       if (shot && this.lastPlayerKill) this.startKillcam(this.lastPlayerKill);
@@ -567,7 +686,7 @@ export class Game {
       return;
     }
     if (e.state === "inactive") { e.hit.hittable = false; return; }
-    const r = ENEMY.goon.radius;
+    const r = ENEMY[e.kind].radius;
     if (e.vx || e.vz) {
       let nx = e.x + e.vx * dt, nz = e.z + e.vz * dt;
       // separation from other goons
@@ -601,9 +720,9 @@ export class Game {
     const h = new Fnv1a();
     const p = this.player;
     h.f64(p.x).f64(p.y).f64(p.z).f64(p.vx).f64(p.vy).f64(p.vz).f64(p.health).i32(p.copium).str(p.mode).f64(p.modeT);
-    h.i32(p.weapon.mags[0]).i32(p.weapon.mags[1]).f64(p.weapon.cooldown).f64(p.weapon.reloadT);
+    h.str(p.weapon.id).i32(p.weapon.mags[0]).i32(p.weapon.mags[1]).f64(p.weapon.cooldown).f64(p.weapon.reloadT).f64(p.weapon.reserve);
     h.f64(this.meter).f64(this.timeScale).f64(this.time).i32(this.rng.s).str(this.phase);
-    for (const e of this.enemies) h.f64(e.x).f64(e.z).f64(e.facing).f64(e.hp).str(e.state).f64(e.timer).i32(e.cover);
+    for (const e of this.enemies) h.f64(e.x).f64(e.z).f64(e.facing).f64(e.hp).str(e.state).f64(e.timer).i32(e.cover).f64(e.tell).f64(e.stagger);
     h.i32(this.projectiles.length);
     for (const b of this.projectiles) h.f64(b.x).f64(b.y).f64(b.z);
     return h.hex();
