@@ -2,13 +2,18 @@
 // { image, box, lines: [{ audio, text }] }. One panel at a time fills the page (a slow push-in), the
 // narrator reads its lines and they appear in the caption box drawn over the panel's painted one
 // (box = [x, y, w, h] as fractions of the image); the strip below shows where you are. Click / Space /
-// Enter goes to the next panel, Esc skips the rest. A panel without an image paints a placeholder.
+// Enter / gamepad A goes to the next panel, Esc / gamepad B or Start skips the rest. A panel without an
+// image paints a placeholder.
 // A panel's `dur` is how long it holds (seconds); a line without audio (or muted) is read for a time
 // that fits its length. Used for cutscene 1 (c1) and the room 1 ending (e1, captions only).
 import { useCallback, useEffect, useRef, useState } from "react";
 import { narrate, sampleDuration, samplesReady, stopNarration } from "../audio/sfx.ts";
 import { Keycap } from "./hud/Keycap.tsx";
+import { usePadConnected, usePadInput, type MenuAction } from "./menu.ts";
 import "./hud/tokens.css";
+
+/** Gamepad: A next, B or Start skip (the standard mapping). */
+const PAD: ReadonlyArray<readonly [number, MenuAction]> = [[0, "enter"], [1, "back"], [9, "back"]];
 
 export type Line = { audio?: string; text: string };
 export type Panel = { image?: string; tone?: string; box?: [number, number, number, number]; lines: Line[]; dur?: number };
@@ -81,6 +86,11 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
     addEventListener("keydown", kd);
     return () => removeEventListener("keydown", kd);
   }, [next, finish]);
+  usePadInput(a => {
+    if (a === "enter") { stopNarration(); next(); }
+    else if (a === "back") finish();
+  }, { buttons: PAD, stick: false });
+  const pad = usePadConnected();
 
   const p = data.panels[i];
   const box = p.box ?? [0.02, 0.03, 0.2, 0.1];
@@ -109,7 +119,7 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
         ))}
       </div>
       <div className="rp-z" style={{ color: "rgba(243,234,216,0.72)", font: "700 17px/1 'Courier Prime', 'Courier New', monospace", display: "flex", alignItems: "center", gap: 8 }}>
-        {data.title ? `${data.title.toUpperCase()} · ` : ""}<Keycap k="CLICK" /> / <Keycap k="SPACE" /> next <span style={{ opacity: 0.5, margin: "0 4px" }}>·</span> <Keycap k="ESC" /> skip
+        {data.title ? `${data.title.toUpperCase()} · ` : ""}<Keycap k="CLICK" /> / <Keycap k="SPACE" />{pad && <> / <Keycap k="A" /></>} next <span style={{ opacity: 0.5, margin: "0 4px" }}>·</span> <Keycap k="ESC" />{pad && <> / <Keycap k="B" /></>} skip
       </div>
     </div>
   );

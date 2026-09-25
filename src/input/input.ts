@@ -20,7 +20,7 @@ export class InputLatch {
   /** Aim-assist slowdown multiplier the game sets while the crosshair is on a target (gamepad only). */
   assist = 1;
   private edges = { bt: false, dodge: false, jump: false, reload: false, copium: false, skip: false, slot: 0 };
-  private pad = { lx: 0, ly: 0, fire: false, active: false, start: false, prev: [] as boolean[] };
+  private pad = { lx: 0, ly: 0, fire: false, active: false, start: false, a: false, prev: [] as boolean[] };
   readonly frame: InputFrame = emptyInput();
   /** Any key / button this frame (skips cutscenes and the kill cam). */
   anyPress = false;
@@ -75,7 +75,7 @@ export class InputLatch {
     const pads = typeof navigator !== "undefined" && navigator.getGamepads ? navigator.getGamepads() : [];
     const gp = Array.from(pads ?? []).find(p => p && p.connected) ?? null;
     const pd = this.pad;
-    if (!gp) { pd.active = false; pd.lx = pd.ly = 0; pd.fire = false; pd.start = false; return; }
+    if (!gp) { pd.active = false; pd.lx = pd.ly = 0; pd.fire = false; pd.start = false; pd.a = false; return; }
     const dz = (v: number) => (Math.abs(v) < 0.18 ? 0 : (v - Math.sign(v) * 0.18) / 0.82);
     pd.lx = dz(gp.axes[0] ?? 0);
     pd.ly = dz(gp.axes[1] ?? 0);
@@ -97,6 +97,7 @@ export class InputLatch {
     if (hit(3)) this.edges.copium = true;
     if (hit(4)) this.edges.slot = 9;
     pd.start = hit(9);
+    pd.a = hit(0);
     if ([0, 1, 2, 3, 7, 9].some(hit)) { this.anyPress = true; this.edges.skip = true; }
     pd.prev = now;
   }
@@ -107,6 +108,10 @@ export class InputLatch {
   /** Start pressed this frame (pause). */
   get padStart(): boolean {
     return this.pad.start;
+  }
+  /** A pressed this frame (the "click to fight" prompt takes it). */
+  get padA(): boolean {
+    return this.pad.a;
   }
 
   /** Fill the frame for one fixed step and consume the edges. */

@@ -13,7 +13,7 @@ import { Caption } from "./hud/Caption.tsx";
 import { Seg, stepOption } from "./hud/Seg.tsx";
 import { Slider } from "./hud/Slider.tsx";
 import { fmtTime, recordBest } from "./hud/logic.ts";
-import { useMenuInput, type MenuAction } from "./menu.ts";
+import { useMenuInput, usePadConnected, type MenuAction } from "./menu.ts";
 import { RUGGED_LINE, roomText } from "./rooms.ts";
 import { hudSession } from "./hud/HudFrame.tsx";
 import { TopLeft } from "./Hud.tsx";
@@ -151,6 +151,38 @@ export function Loading() {
         <div className="t">LOADING</div>
         <div className="bar"><i style={{ width: `${Math.round(load.progress * 100)}%` }} /></div>
         <div className="l">{load.error ? `failed: ${load.error}` : load.label}</div>
+      </div>
+    </div>
+  );
+}
+
+// ---- click to fight ------------------------------------------------------------------------------
+
+/**
+ * The prompt over the room before the fight (and after the pointer lock is lost): a click, Enter or
+ * Space takes the lock (`onLock`, from the user's gesture); gamepad A / Start are the page's (the
+ * session's pad poll), so they are only named here when a pad is plugged in.
+ */
+export function FightPrompt({ onLock }: { onLock: () => void }) {
+  const pad = usePadConnected();
+  useEffect(() => {
+    const kd = (e: KeyboardEvent) => {
+      if (e.repeat || !["Enter", "NumpadEnter", "Space"].includes(e.code)) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      onLock();
+    };
+    addEventListener("keydown", kd, true);
+    return () => removeEventListener("keydown", kd, true);
+  }, [onLock]);
+  return (
+    <div className="rp-layer" style={{ background: "rgba(5,6,12,0.35)", cursor: "pointer" }} onClick={onLock} data-testid="click-to-fight">
+      <div className="rp-z" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+        <div className="rp-mbtn primary rp-click">CLICK TO FIGHT</div>
+        <div className="rp-hint">
+          <Keycap k="CLICK" /> / <Keycap k="ENTER" /> / <Keycap k="SPACE" />
+          {pad && <><span className="sep">·</span><Keycap k="A" /> / <Keycap k="START" /></>}
+        </div>
       </div>
     </div>
   );

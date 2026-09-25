@@ -36,8 +36,11 @@ export class Session {
   renderE: Snap[] = [];
   /** Steps run in the last frame (0 while paused). */
   stepsLast = 0;
-  /** Gamepad Start pressed (the page pauses). */
+  /** Gamepad Start pressed (the page pauses, or starts the fight from its prompt). */
   onPadStart: (() => void) | null = null;
+  /** Gamepad A pressed (the page starts the fight from its prompt). Called after the poll and
+   *  before this frame's steps, so a flush here drops the press before it becomes a jump. */
+  onPadA: (() => void) | null = null;
 
   constructor(level: LevelData, prefab: unknown, roomId: string, opts: GameOptions) {
     this.level = level;
@@ -81,6 +84,7 @@ export class Session {
   frame(delta: number): void {
     this.input.poll(Math.min(delta, 0.1));
     if (this.input.padStart) this.onPadStart?.();
+    if (this.input.padA) this.onPadA?.();
     const g = this.game;
     this.stepsLast = 0;
     if (!this.paused) {

@@ -1,7 +1,9 @@
 // The game page: TITLE (the room idles behind it) -> LOADING (the picked Radbro) -> CUTSCENE 1 (first
 // play only) -> PLAY -> the ENDING cutscene (e1: the first time the room is cleared, after the kill cam
 // and the walk to the club door) -> RESULTS (room clear or rugged) -> retry / title. One canvas, mounted once;
-// retries swap the Game inside the session. Pointer lock lost = pause.
+// retries swap the Game inside the session. Pointer lock lost = pause. The fight starts from the
+// "click to fight" prompt: a click, Enter or Space takes the pointer lock (mouse play); gamepad A or
+// Start plays without it (the right stick aims), and a later click on the game switches to the mouse.
 // Dev / test builds: ?bot plays the room by itself (smoke test), ?room=<id> picks a level file,
 // ?seed=N fixes the seed, ?skip skips the title and the cutscene.
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -12,7 +14,7 @@ import { readLevel } from "../world/level.ts";
 import { useUi } from "../ui/store.ts";
 import { Hud, canvasFx } from "../ui/Hud.tsx";
 import { UiEffects } from "../ui/hud/UiEffects.tsx";
-import { Loading, Pause, ResultsScreen, Title, btn, layer } from "../ui/screens.tsx";
+import { FightPrompt, Loading, Pause, ResultsScreen, Title, layer } from "../ui/screens.tsx";
 import { Cutscene, loadCutscene, type CutsceneData } from "../ui/Cutscene.tsx";
 import { attachDom } from "../input/input.ts";
 import { setMuted, unlockAudio } from "../audio/engine.ts";
@@ -66,6 +68,12 @@ export default function PlayPage() {
   const invertY = useUi(s => s.invertY);
   const locked = useUi(s => s.locked);
   const filterRef = useRef<HTMLDivElement>(null);
+  /** Playing on a gamepad without the pointer lock (started from the prompt with A / Start). */
+  const [padFight, setPadFightState] = useState(false);
+  const padFightRef = useRef(false);
+  const setPadFight = (on: boolean) => { padFightRef.current = on; setPadFightState(on); };
+  /** The "click to fight" prompt is up: playing, no pointer lock, not on the pad. */
+  const awaitingFight = () => useUi.getState().screen === "play" && !useUi.getState().locked && !padFightRef.current && !BOT;
 
   // boot: the room
   useEffect(() => {
@@ -106,7 +114,7 @@ export default function PlayPage() {
     return attachDom(session.input, () => canvasEl(), l => {
       useUi.setState({ locked: l });
       if (useUi.getState().screen !== "play" || BOT) return;
-      if (l) { session.input.flush(); session.paused = false; }
+      if (l) { setPadFight(false); session.input.flush(); session.paused = false; }
       else pause();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -120,18 +128,32 @@ export default function PlayPage() {
       if (sc === "play") pause();
     };
     addEventListener("keydown", kd);
-    if (session) session.onPadStart = () => { if (useUi.getState().screen === "play") pause(); };
+    if (session) {
+      // on the prompt, Start and A start the fight on the pad; Start pauses once it is on
+      session.onPadStart = () => { if (awaitingFight()) fightOnPad(); else if (useUi.getState().screen === "play") pause(); };
+      session.onPadA = () => { if (awaitingFight()) fightOnPad(); };
+    }
     return () => {
       removeEventListener("keydown", kd);
-      if (session) session.onPadStart = null;
+      if (session) { session.onPadStart = null; session.onPadA = null; }
     };
   });
 
   const lock = () => { if (!BOT) void (canvasEl()?.requestPointerLock() as unknown as Promise<void> | undefined)?.catch?.(() => undefined); };
 
+  /** Gamepad A / Start on the prompt: play without the pointer lock. Runs inside the session's
+   *  frame, after the pad poll and before the steps, so the flush drops the press. */
+  function fightOnPad() {
+    if (!session) return;
+    setPadFight(true);
+    session.input.flush();
+    session.paused = false;
+  }
+
   const startPlay = useCallback(() => {
     if (!session) return;
     useUi.setState({ screen: "play" });
+    setPadFight(false);
     session.input.flush();
     session.stepper.reset();
     // the sim runs once the pointer is locked (the lock handler unpauses); the bot needs no lock
@@ -213,6 +235,7 @@ export default function PlayPage() {
   const toTitle = () => {
     if (!session) return;
     session.paused = true;
+    setPadFight(false);
     session.restart();
     stopNarration();
     stopRoomAudio(true);
@@ -221,19 +244,15 @@ export default function PlayPage() {
 
   return (
     <>
-      <div ref={filterRef} style={{ position: "fixed", inset: 0, transition: "filter 0.15s" }}>
+      <div ref={filterRef} style={{ position: "fixed", inset: 0, transition: "filter 0.15s" }} onMouseDown={() => { if (padFight && screen === "play" && !locked) lock(); }}>
         {session && <Scene s={session} onPhase={onPhase} lowQuality={quality === "low"} bootRef={setCanvasReady} />}
       </div>
       {screen === "title" && <Title onPlay={() => void play()} ready={!!session && modelsReady} />}
       {screen === "loading" && <Loading />}
       {screen === "cutscene" && cut && <Cutscene key={cut.data.id} data={cut.data} onDone={() => { const then = cut.then; setCut(null); then(); }} />}
       {screen === "play" && <Hud />}
-      {screen === "play" && !locked && !BOT && (
-        <div style={{ ...layer, background: "rgba(5,6,12,0.35)", cursor: "pointer" }} onClick={() => { session?.input.flush(); lock(); }}>
-          <div style={btn(true)}>CLICK TO FIGHT</div>
-        </div>
-      )}
-      {screen === "paused" && <Pause onResume={() => { useUi.setState({ screen: "play" }); if (session) { session.input.flush(); session.paused = !BOT && !document.pointerLockElement; } lock(); }} onRestart={retry} onQuit={toTitle} />}
+      {screen === "play" && !locked && !padFight && !BOT && <FightPrompt onLock={() => { session?.input.flush(); lock(); }} />}
+      {screen === "paused" && <Pause onResume={() => { useUi.setState({ screen: "play" }); if (session) { session.input.flush(); session.paused = !BOT && !document.pointerLockElement && !padFightRef.current; } lock(); }} onRestart={retry} onQuit={toTitle} />}
       {screen === "results" && <ResultsScreen onRetry={retry} onTitle={toTitle} />}
       {!session && <div style={{ ...layer, background: "#05060c" }}>{useUi.getState().load.error ?? "loading…"}</div>}
       <UiEffects />
