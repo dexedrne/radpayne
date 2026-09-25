@@ -587,8 +587,10 @@ export type HeavyLine = "alert_1" | "spotted_1" | "spotted_2" | "advance_1" | "t
 export function heavyBark(line: HeavyLine, dist: number, pan: number): number {
   const e = voiceOn();
   if (!e) return 0;
-  const src = play(e, `voices/heavy/${line}`, { gain: 1.0 * att(dist * 0.6), pan: pan * 0.85, dest: vbus(e), rate });
-  return src ? (src.buffer?.duration ?? 0) / rate : 0;
+  // bullet time slows him only a little: his register stays well clear of the narrator's
+  const r = Math.max(0.9, rate);
+  const src = play(e, `voices/heavy/${line}`, { gain: 1.0 * att(dist * 0.6), pan: pan * 0.85, dest: vbus(e), rate: r });
+  return src ? (src.buffer?.duration ?? 0) / r : 0;
 }
 
 /** The DJ on the PA (the filter is baked in): not positional (the room's speakers), not pitched. */

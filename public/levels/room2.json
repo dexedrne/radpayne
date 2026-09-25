@@ -266,6 +266,7 @@
        "alertAll": true,
        "enterLine": "r2_enter",
        "clearLine": "r2_clear",
+       "rusherLine": "r2_rusher",
        "tutorial": false,
        "prompt": "the bag went up. the staff door, behind the stage."
       }

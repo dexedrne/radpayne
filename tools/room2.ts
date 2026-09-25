@@ -405,7 +405,7 @@ const prefab = {
           data: {
             room: {
               name: "The Rave", next: "room3", cutsceneAfter: "c2", music: "rave", look: "club", footsteps: "hard", alertOnShot: true, alertAll: true,
-              enterLine: "r2_enter", clearLine: "r2_clear", tutorial: false, prompt: "the bag went up. the staff door, behind the stage.",
+              enterLine: "r2_enter", clearLine: "r2_clear", rusherLine: "r2_rusher", tutorial: false, prompt: "the bag went up. the staff door, behind the stage.",
             },
           },
         },
