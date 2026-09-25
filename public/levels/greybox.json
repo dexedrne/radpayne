@@ -1,0 +1,2514 @@
+{
+ "id": "greybox",
+ "name": "Room 1 greybox: outside the Milady rave",
+ "materials": {
+  "asphalt": {
+   "color": "#1b1d24",
+   "roughness": 0.35
+  },
+  "sidewalk": {
+   "color": "#4a4c55",
+   "roughness": 0.8
+  },
+  "brick": {
+   "color": "#5a2f2a",
+   "roughness": 0.9
+  },
+  "brownstone": {
+   "color": "#4a3328",
+   "roughness": 0.9
+  },
+  "door": {
+   "color": "#101014",
+   "roughness": 0.4,
+   "metalness": 0.6
+  },
+  "construction": {
+   "color": "#b8622a",
+   "roughness": 0.8
+  },
+  "cab": {
+   "color": "#e2b21c",
+   "roughness": 0.35,
+   "metalness": 0.3
+  },
+  "barrier": {
+   "color": "#8d8f96",
+   "roughness": 0.9
+  },
+  "velvet": {
+   "color": "#7a1030",
+   "roughness": 0.8
+  },
+  "planter": {
+   "color": "#3d4a34",
+   "roughness": 0.9
+  },
+  "mailbox": {
+   "color": "#1f3f8a",
+   "roughness": 0.5,
+   "metalness": 0.4
+  },
+  "dumpster": {
+   "color": "#2d5a3a",
+   "roughness": 0.6,
+   "metalness": 0.3
+  },
+  "kiosk": {
+   "color": "#6b6f78",
+   "roughness": 0.5,
+   "metalness": 0.5
+  },
+  "neonPink": {
+   "materialType": "basic",
+   "color": "#ff3fa8",
+   "toneMapped": false
+  },
+  "neonCyan": {
+   "materialType": "basic",
+   "color": "#3ff0ff",
+   "toneMapped": false
+  }
+ },
+ "root": {
+  "id": "room",
+  "components": {
+   "data": {
+    "type": "Data",
+    "properties": {
+     "data": {
+      "room": {
+       "name": "Outside the Milady rave",
+       "next": "room2",
+       "music": "street"
+      }
+     }
+    }
+   }
+  },
+  "children": [
+   {
+    "id": "geometry",
+    "children": [
+     {
+      "id": "floor",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          0,
+          -0.5,
+          0
+         ],
+         "scale": [
+          70,
+          1,
+          34
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "asphalt"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "sidewalk-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          0,
+          0.075,
+          -9.5
+         ],
+         "scale": [
+          56,
+          0.15,
+          5
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "sidewalk"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "sidewalk-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          0,
+          0.075,
+          9.5
+         ],
+         "scale": [
+          56,
+          0.15,
+          5
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "sidewalk"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "facade-n-west",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -7,
+          6,
+          -13
+         ],
+         "scale": [
+          42,
+          12,
+          2
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brick"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "facade-n-east",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          21.2,
+          6,
+          -13
+         ],
+         "scale": [
+          9.6,
+          12,
+          2
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brick"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "facade-n-lintel",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          15.2,
+          8.5,
+          -13
+         ],
+         "scale": [
+          2.4,
+          7,
+          2
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brick"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "club-door",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          15.2,
+          1.5,
+          -13.6
+         ],
+         "scale": [
+          2.4,
+          3,
+          0.4
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "door"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "facade-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          0,
+          6,
+          13
+         ],
+         "scale": [
+          56,
+          12,
+          2
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brownstone"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "end-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -27,
+          3,
+          0
+         ],
+         "scale": [
+          2,
+          6,
+          24
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "construction"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "end-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          27,
+          3,
+          0
+         ],
+         "scale": [
+          2,
+          6,
+          24
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "construction"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "cab-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -14,
+          0.75,
+          6.4
+         ],
+         "scale": [
+          4.6,
+          1.5,
+          1.9
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "cab"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cab-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          2.5,
+          0.75,
+          6.4
+         ],
+         "scale": [
+          4.6,
+          1.5,
+          1.9
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "cab"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cab-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          10.5,
+          0.75,
+          0.2
+         ],
+         "rotation": [
+          0,
+          0.35,
+          0
+         ],
+         "scale": [
+          4.6,
+          1.5,
+          1.9
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "cab"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "barrier-a",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -4,
+          0.5,
+          1.5
+         ],
+         "scale": [
+          0.6,
+          1,
+          3.2
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "barrier"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "barrier-b",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          5,
+          0.5,
+          -2.5
+         ],
+         "scale": [
+          0.6,
+          1,
+          3.2
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "barrier"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "queue-line",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          9,
+          0.55,
+          -6.6
+         ],
+         "scale": [
+          4.4,
+          1,
+          0.25
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "velvet"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "queue-line-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          12,
+          0.55,
+          -5.2
+         ],
+         "scale": [
+          0.25,
+          1,
+          3
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "velvet"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "planter",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          18.5,
+          0.45,
+          -7.4
+         ],
+         "scale": [
+          1.8,
+          0.9,
+          1.2
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "planter"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "mailbox",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -10,
+          0.65,
+          -7.4
+         ],
+         "scale": [
+          0.7,
+          1.3,
+          0.7
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "mailbox"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "dumpster",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -6,
+          0.75,
+          -10.2
+         ],
+         "scale": [
+          2.4,
+          1.5,
+          1.3
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "dumpster"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "kiosk",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -18,
+          1.2,
+          -8.2
+         ],
+         "scale": [
+          2.6,
+          2.4,
+          1.8
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "kiosk"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "pillar-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          21,
+          1.6,
+          7.6
+         ],
+         "scale": [
+          1.2,
+          3.2,
+          1.2
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brick"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "neon-club",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          15.2,
+          4.6,
+          -11.85
+         ],
+         "scale": [
+          6.5,
+          1.1,
+          0.15
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "neonPink"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "collider": false
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "neon-bar",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          15.2,
+          3.75,
+          -11.85
+         ],
+         "scale": [
+          5.5,
+          0.12,
+          0.12
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "neonCyan"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "collider": false
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "neon-bar-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -12,
+          3.4,
+          -11.9
+         ],
+         "scale": [
+          3,
+          0.5,
+          0.1
+         ]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [
+          1,
+          1,
+          1
+         ]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "neonCyan"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "collider": false
+         }
+        }
+       }
+      }
+     }
+    ]
+   },
+   {
+    "id": "markers",
+    "children": [
+     {
+      "id": "spawn",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -22,
+          0,
+          3
+         ],
+         "rotation": [
+          0,
+          1.5707963267948966,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "spawn"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "checkpoint-0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -22,
+          0,
+          3
+         ],
+         "rotation": [
+          0,
+          1.5707963267948966,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "checkpoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "goon-queue",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          8,
+          0.15,
+          -8.2
+         ],
+         "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "goon-door",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          13.4,
+          0.15,
+          -9.6
+         ],
+         "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "goon-cab",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          5.4,
+          0,
+          4.8
+         ],
+         "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "goon-street",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          14.5,
+          0,
+          2.5
+         ],
+         "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "goon-late-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          15.2,
+          0.15,
+          -11.2
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "door"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "goon-late-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          22,
+          0,
+          5.2
+         ],
+         "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "door"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cover-cab1-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -11.3,
+          0,
+          6.4
+         ],
+         "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cover-cab2-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          5.2,
+          0,
+          6.4
+         ],
+         "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cover-cab2-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -0.2,
+          0,
+          6.4
+         ],
+         "rotation": [
+          0,
+          1.5707963267948966,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cover-cab3-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          13.2,
+          0,
+          1.2
+         ],
+         "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cover-cab3-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          10.2,
+          0,
+          -1.4
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cover-barrier-a-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -3.3,
+          0,
+          1.5
+         ],
+         "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cover-barrier-a-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -4.7,
+          0,
+          1.5
+         ],
+         "rotation": [
+          0,
+          1.5707963267948966,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cover-barrier-b-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          5.7,
+          0,
+          -2.5
+         ],
+         "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cover-queue",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          9,
+          0.15,
+          -7.3
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cover-queue-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          12.7,
+          0.15,
+          -5.2
+         ],
+         "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cover-planter",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          19.8,
+          0.15,
+          -7.4
+         ],
+         "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cover-mailbox",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -9.2,
+          0.15,
+          -7.4
+         ],
+         "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cover-dumpster",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -4.4,
+          0.15,
+          -10.2
+         ],
+         "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cover-kiosk",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -16.3,
+          0.15,
+          -8.6
+         ],
+         "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cover-pillar",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          22,
+          0.15,
+          7.4
+         ],
+         "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -20,
+          0,
+          -5.5
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -12,
+          0,
+          -5.5
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -2,
+          0,
+          -6
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          6,
+          0,
+          -5.2
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          14.5,
+          0,
+          -8.6
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          20,
+          0,
+          -5
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-6",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -20,
+          0,
+          1
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-7",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -10,
+          0,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-8",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          0,
+          0,
+          -0.5
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-9",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          7.5,
+          0,
+          2.8
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-10",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          16,
+          0,
+          -1.5
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-11",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          22.5,
+          0,
+          1
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-12",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -20,
+          0,
+          9.6
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-13",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -8,
+          0,
+          9.6
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-14",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          2.5,
+          0,
+          9.4
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-15",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          12,
+          0,
+          7
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-16",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          19,
+          0,
+          9.4
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "copium-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -8,
+          0.15,
+          9.8
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium",
+          "amount": 1
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "copium-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          4,
+          0.15,
+          -9.8
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium",
+          "amount": 1
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "trigger-alert",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          -12,
+          1,
+          0
+         ],
+         "scale": [
+          2,
+          3,
+          24
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "trigger",
+          "action": "alert"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "trigger-door",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          3,
+          1,
+          0
+         ],
+         "scale": [
+          2,
+          3,
+          24
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "trigger",
+          "action": "spawn",
+          "group": "door"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "exit-door",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          15.2,
+          0.15,
+          -11.4
+         ],
+         "rotation": [
+          0,
+          3.141592653589793,
+          0
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "exit"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "trigger-exit",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [
+          15.2,
+          1,
+          -11.2
+         ],
+         "scale": [
+          2.6,
+          3,
+          2
+         ]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "trigger",
+          "action": "exit"
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  ]
+ }
+}
