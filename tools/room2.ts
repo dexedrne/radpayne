@@ -383,7 +383,7 @@ const materials: Record<string, Record<string, unknown>> = {
   laserHead: { color: "#1a1a20", roughness: 0.5, metalness: 0.5 },
   // unlit / glowing (the club look keeps these under the bloom's reach: bloom is <= 0.35 indoors)
   warmLamp: glow("#ffc98a", 1.6),
-  vestLamp: glow("#ffc98a", 0.8),
+  vestLamp: glow("#ffc98a", 0.45),
   exitRed: glow("#ff2a1a", 2.2),
   neonCyan: glow("#2ff0ff", 1.8, "pulse"),
   neonPink: glow("#ff2f9e", 1.8, "pulse"),

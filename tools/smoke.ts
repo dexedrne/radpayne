@@ -38,7 +38,7 @@ const browser = await puppeteer.launch({
 });
 const log: string[] = [];
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
-type State = { phase: string; t: number; hp: number; kills: number; alive: number; ts: number; mode: string; fps: number; screen: string; proj: number; dodges: number; bt: number; cut: string } | null;
+type State = { phase: string; t: number; hp: number; kills: number; alive: number; ts: number; mode: string; fps: number; screen: string; proj: number; dodges: number; bt: number; cut: string; room: string } | null;
 let code = 1;
 try {
   const page = await browser.newPage();
@@ -47,7 +47,10 @@ try {
   page.on("response", r => { if (r.status() >= 400) log.push(`http ${r.status()}: ${r.url()}`); });
   const t0 = Date.now();
   const shots = new Set<string>();
-  const shot = async (name: string) => {
+  // after the room chain moves on (room 1 -> room 2), shots carry the room's id
+  let firstRoom = "", curRoom = "";
+  const shot = async (base: string) => {
+    const name = curRoom && firstRoom && curRoom !== firstRoom && !base.startsWith("c-") ? `${curRoom}-${base}` : base;
     if (shots.has(name)) return;
     shots.add(name);
     await page.screenshot({ path: path.join(outDir, `${name}.png`) });
@@ -81,13 +84,20 @@ try {
   while (Date.now() - t0 < 300_000) {
     last = (await page.evaluate(() => {
       type G = { phase: string; realTime: number; player: { health: number; mode: string }; stats: { kills: number; dodges: number; btTime: number }; alive: number; timeScale: number; projectiles: unknown[] };
-      const rp = (window as unknown as { __rp?: { session: { game: G }; fps: number } }).__rp;
+      const rp = (window as unknown as { __rp?: { session: { game: G; roomId: string }; fps: number } }).__rp;
       const g = rp?.session.game;
       const scr = document.querySelector("[data-testid=results]") ? "results" : "";
       const c = document.querySelector("[data-testid=cutscene]") as HTMLElement | null;
       const cut = c ? `${c.dataset.cut}-${Number(c.dataset.panel) + 1}` : "";
-      return g ? { phase: g.phase, t: g.realTime, hp: g.player.health, kills: g.stats.kills, alive: g.alive, ts: g.timeScale, mode: g.player.mode, fps: rp!.fps, screen: scr, proj: g.projectiles.length, dodges: g.stats.dodges, bt: g.stats.btTime, cut } : null;
+      return g ? { phase: g.phase, t: g.realTime, hp: g.player.health, kills: g.stats.kills, alive: g.alive, ts: g.timeScale, mode: g.player.mode, fps: rp!.fps, screen: scr, proj: g.projectiles.length, dodges: g.stats.dodges, bt: g.stats.btTime, cut, room: rp!.session.roomId } : null;
     })) as State;
+    if (last) {
+      if (!firstRoom) firstRoom = last.room;
+      if (last.room !== curRoom) {
+        if (curRoom) { log.push(`ROOM ${last.room}`); fightAt = 0; slowShots = 0; }
+        curRoom = last.room;
+      }
+    }
     if (last && Date.now() - lastLog > 10_000) { lastLog = Date.now(); console.log(`  ${((Date.now() - t0) / 1000).toFixed(0)} s: ${JSON.stringify(last)}`); }
     if (last?.cut) {
       // a cutscene panel: shoot it once its caption is in

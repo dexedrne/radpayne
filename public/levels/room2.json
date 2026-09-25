@@ -209,7 +209,7 @@
    "materialType": "basic",
    "color": "#ffc98a",
    "toneMapped": false,
-   "name": "glow 0.8"
+   "name": "glow 0.45"
   },
   "exitRed": {
    "materialType": "basic",
