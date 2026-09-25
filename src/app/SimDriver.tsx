@@ -11,6 +11,11 @@ import { setAmbience, setClubBass, setFootsteps, setHeartbeat, setMusic, setNeon
 import { audioState } from "../audio/engine.ts";
 import { Director } from "./director.ts";
 import { PLAYER, TIME } from "../sim/tuning.ts";
+// the HUD's data: hits on the player, refills, objectives, weapons owned
+import { pushHurt } from "../ui/store.ts";
+import { roomLabel, roomText } from "../ui/rooms.ts";
+import { SLOT_ORDER } from "../combat/weapons.ts";
+import { METER } from "../sim/tuning.ts";
 
 declare global {
   interface Window {
@@ -24,6 +29,11 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
   const frames = useRef(0);
   const lastPhase = useRef("");
   const director = useMemo(() => new Director(s), [s]);
+  // HUD bookkeeping: the attempt, the meter last frame (refill chips), the objective's text + stamp
+  const hudRun = useRef(-1);
+  const meterSeen = useRef<number>(METER.max);
+  const objective = useRef({ text: "", at: 0 });
+  const room = useMemo(() => roomText(s.roomId, s.level.room), [s]);
 
   useEffect(() => s.on((e, ss) => {
     const g = ss.game, p = g.player;
@@ -53,8 +63,24 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
       }
       case "impact": { const w = where(e.x, e.z); sfx.impact(e.surface, w.dist, w.pan); break; }
       case "blood": if (e.target >= 0) { const w = where(e.x, e.z); sfx.flesh(w.dist, w.pan); } break;
-      case "hurt": if (e.target === -1) sfx.hurt(); break;
-      case "kill": sfx.kill(e.headshot); break;
+      case "hurt":
+        if (e.target === -1) {
+          sfx.hurt();
+          // the HUD's damage-direction slash (NaN = no shooter: rim only)
+          pushHurt({ sx: e.fromX ?? NaN, sz: e.fromZ ?? NaN, at: performance.now(), amount: e.amount, shooter: e.shooter ?? -1 });
+        }
+        break;
+      case "kill": {
+        sfx.kill(e.headshot);
+        // the hourglass refill chip (+1.5 / +2.5), unless the meter was already full
+        if (meterSeen.current < METER.max - 1e-6) {
+          const hud = useUi.getState().hud;
+          useUi.setState({ hud: { ...hud, refill: { amount: e.headshot ? METER.headshotRefill : METER.killRefill, at: performance.now() } } });
+        }
+        break;
+      }
+      case "btRefused": useUi.setState(u => ({ hud: { ...u.hud, btRefusedAt: performance.now() } })); break;
+      case "killcam": if (e.on) useUi.setState({ lastKillPhoto: null }); break;
       case "reload": sfx.reload(WEAPONS[p.weapon.id].reload / Math.max(g.timeScale, TIME.playerInBulletTime)); break;
       case "dryfire": sfx.dry(); break;
       case "bt": sfx.bullettime(e.on); setHeartbeat(e.on); break;
@@ -63,11 +89,18 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
       case "copium": sfx.copium(); break;
       case "pickup": sfx.pickup(); break;
       case "roomClear": setHeartbeat(false); break;
-      case "playerDead": setHeartbeat(false); break;
+      case "playerDead": setHeartbeat(false); useUi.setState({ deadAt: performance.now() }); break;
     }
   }), [s, director]);
 
   useFrame((_, delta) => {
+    if (hudRun.current !== s.run) {
+      // a new attempt: clear the per-attempt HUD state
+      hudRun.current = s.run;
+      objective.current = { text: "", at: 0 };
+      useUi.setState(u => ({ deadAt: 0, hurts: [], hud: { ...u.hud, refill: null, btRefusedAt: 0, objective: "", objectiveAt: 0, run: s.run } }));
+    }
+    meterSeen.current = s.game.meter;
     s.frame(delta);
     const g = s.game;
     frames.current++;
@@ -101,15 +134,23 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
     acc.current = 0;
     const p = g.player, w = p.weapon;
     const hasExit = g.triggers.some(t => t.data.action === "exit");
-    useUi.setState({
+    // Radbro's objective: shown once the fight starts (the sim has run), again when it changes
+    const want = g.realTime <= 0 ? "" : g.phase === "clear" && hasExit ? room.objectiveClear : g.phase === "play" ? room.objective : objective.current.text;
+    if (want !== objective.current.text) objective.current = { text: want, at: want ? performance.now() : 0 };
+    const def = WEAPONS[w.id];
+    useUi.setState(u => ({
       hud: {
+        ...u.hud,
         health: p.health, copium: p.copium, healing: p.healLeft > 0, meter: g.meter, bt: g.bulletTime, timeScale: g.timeScale,
-        mags: [w.mags[0], w.mags[1]], magSize: WEAPONS[w.id].mag, reloading: w.reloadT > 0 ? 1 - w.reloadT / WEAPONS[w.id].reload : 0,
-        weapon: WEAPONS[w.id].name, alive: g.alive, total: g.enemies.length, phase: g.phase, onTarget: g.aimEnemy >= 0, mode: p.mode,
+        mags: [w.mags[0], w.mags[1]], magSize: def.mag, reloading: w.reloadT > 0 ? 1 - w.reloadT / def.reload : 0,
+        weapon: def.name, alive: g.alive, total: g.enemies.length, phase: g.phase, onTarget: g.aimEnemy >= 0, mode: p.mode,
         fps: fps.current, hurtAgo: g.realTime - g.hurtAt, killcam: g.phase === "killcam",
-        prompt: g.phase === "clear" && hasExit ? "the bag is inside. get to the door." : "",
+        roomLabel: roomLabel(room), objective: objective.current.text, objectiveAt: objective.current.at,
+        weaponId: w.id, owned: SLOT_ORDER.filter(id => p.owned.includes(id)), reserve: w.reserve, hands: def.hands,
+        killcamProgress: g.killcam ? Math.min(1, g.killcam.t / g.killcam.dur) : 0,
+        awake: g.enemies.some(e => e.state !== "idle" && e.state !== "inactive" && e.state !== "dead"), run: s.run,
       },
-    });
+    }));
   }, FRAME.sim);
   return null;
 }

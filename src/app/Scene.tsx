@@ -13,6 +13,7 @@ import { FxView } from "./FxView.tsx";
 import { AssetsBridge } from "./characters.ts";
 import { RoomLook } from "./look/index.tsx";
 import { DebugView } from "./DebugView.tsx";
+import { HudFrame } from "../ui/hud/HudFrame.tsx";
 
 const FORCE_WEBGL = new URLSearchParams(location.search).has("webgl2");
 
@@ -66,6 +67,7 @@ export function Scene({ s, onPhase, lowQuality, bootRef }: { s: Session; onPhase
         <FxView s={s} />
         <CameraView s={s} />
         <DebugView s={s} />
+        <HudFrame s={s} />
       </PrefabRoot>
     </GameCanvas>
   );

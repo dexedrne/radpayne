@@ -5,13 +5,15 @@
 // Enter goes to the next panel, Esc skips the rest. A panel without an image paints a placeholder.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { narrate, sampleDuration, samplesReady, stopNarration } from "../audio/sfx.ts";
+import { Keycap } from "./hud/Keycap.tsx";
+import "./hud/tokens.css";
 
 export type Line = { audio?: string; text: string };
 export type Panel = { image?: string; tone?: string; box?: [number, number, number, number]; lines: Line[]; dur?: number };
 export type CutsceneData = { id: string; title?: string; panels: Panel[] };
 
-const font = "ui-monospace, SFMono-Regular, Menlo, monospace";
-const serif = "Georgia, 'Times New Roman', serif";
+// the story voice is one font everywhere: Courier Prime italic (the HUD captions use it too)
+const serif = "'Courier Prime', 'Courier New', monospace";
 
 const TONES: Record<string, string> = {
   street: "radial-gradient(ellipse at 70% 20%, rgba(255,63,168,0.35), transparent 55%), radial-gradient(ellipse at 20% 80%, rgba(255,174,82,0.3), transparent 50%), linear-gradient(180deg, #0c1224 0%, #141a2e 60%, #07080d 100%)",
@@ -102,8 +104,8 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
           </div>
         ))}
       </div>
-      <div style={{ color: "#8a8478", font: `600 11px ${font}`, letterSpacing: 2 }}>
-        {data.title ? `${data.title.toUpperCase()} · ` : ""}CLICK / SPACE: NEXT · ESC: SKIP
+      <div className="rp-z" style={{ color: "rgba(243,234,216,0.72)", font: "700 17px/1 'Courier Prime', 'Courier New', monospace", display: "flex", alignItems: "center", gap: 8 }}>
+        {data.title ? `${data.title.toUpperCase()} · ` : ""}<Keycap k="CLICK" /> / <Keycap k="SPACE" /> next <span style={{ opacity: 0.5, margin: "0 4px" }}>·</span> <Keycap k="ESC" /> skip
       </div>
     </div>
   );

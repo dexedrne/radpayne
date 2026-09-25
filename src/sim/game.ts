@@ -175,6 +175,7 @@ export class Game {
     if (inp.bt && this.phase === "play" && p.mode !== "dead") {
       if (this.bulletTime) this.setBulletTime(false);
       else if (this.meter >= METER.minToStart) this.setBulletTime(true);
+      else this.emit({ type: "btRefused" }); // the HUD flashes the hourglass
     }
     if (this.bulletTime) {
       this.meter -= DT;
@@ -542,13 +543,15 @@ export class Game {
     }
   }
 
-  hurtPlayer(amount: number, _shooter: number): void {
+  hurtPlayer(amount: number, shooter: number): void {
     const p = this.player;
     if (p.mode === "dead") return;
     p.health -= amount;
     this.stats.damageTaken += Math.min(amount, Math.max(0, p.health + amount));
     this.hurtAt = this.realTime;
-    this.emit({ type: "hurt", target: PLAYER_ID, amount, part: HB_TORSO, hp: Math.max(0, p.health) });
+    // the shooter's position rides along (the HUD's damage-direction slash); falls have none
+    const from = shooter >= 0 ? this.enemies[shooter] : undefined;
+    this.emit({ type: "hurt", target: PLAYER_ID, amount, part: HB_TORSO, hp: Math.max(0, p.health), ...(from ? { shooter, fromX: from.x, fromZ: from.z } : {}) });
     if (p.health <= 0) {
       p.health = 0;
       p.mode = "dead";
