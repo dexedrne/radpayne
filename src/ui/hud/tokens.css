@@ -225,7 +225,7 @@
 .rp-foot-hint { display: flex; gap: 18px; justify-content: flex-end; margin-top: 12px; font: 700 17px/1 var(--type); color: rgba(243, 234, 216, 0.7); align-items: center; flex-wrap: wrap; }
 .rp-keys { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px; margin: 6px 0 4px; }
 .rp-keys div { display: flex; align-items: center; gap: 10px; font: 700 17px/1.2 var(--type); color: rgba(243, 234, 216, 0.85); }
-.rp-keys .ks { display: flex; gap: 4px; min-width: 120px; flex-wrap: wrap; }
+.rp-keys .ks { display: flex; gap: 6px; min-width: 120px; flex-wrap: wrap; }
 
 /* results */
 .rp-page { position: relative; width: 1260px; display: grid; grid-template-columns: 300px 1fr; gap: 14px; }
@@ -280,6 +280,8 @@
 .rp-title-hint { justify-content: flex-start; margin: -10px 0 18px; }
 .rp-controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 22px; margin-bottom: 20px; }
 .rp-controls div { display: flex; align-items: center; gap: 10px; font: 700 17px/1.2 var(--type); color: rgba(243, 234, 216, 0.8); }
+/* a key group's caps sit apart (W A S D read as four keys) and the labels line up in each column */
+.rp-controls .ks { display: inline-flex; gap: 6px; min-width: 104px; flex-wrap: nowrap; }
 .rp-credits { opacity: 0.55; font: 700 17px/1.4 var(--type); }
 .rp-credits a { color: var(--paper); }
 .rp-loading { width: 380px; text-align: center; }
