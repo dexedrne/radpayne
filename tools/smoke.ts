@@ -119,7 +119,7 @@ try {
     const keep = ["room"].filter(k => u.searchParams.has(k)).map(k => `&${k}=${u.searchParams.get(k)}`).join("") + (q ? `&${q}` : "");
     await page.goto(`${u.origin}/?skip&seed=1&cam=${cam}${keep}${u.searchParams.has("webgl2") ? "&webgl2" : ""}`, { waitUntil: "load" });
     await sleep(14_000);
-    await shot(`6-wide-${cam}${q.includes("fight") ? "-fight" : ""}`);
+    await shot(`6-wide-${cam}${q ? `-${q.replace(/still|&/g, " ").trim().replace(/[^a-z0-9]+/gi, "-")}` : ""}`.replace(/-$/, ""));
   }
 } finally {
   await browser.close();

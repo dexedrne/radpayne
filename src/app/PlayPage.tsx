@@ -21,6 +21,7 @@ import { attachDom } from "../input/input.ts";
 import { setMuted, unlockAudio } from "../audio/engine.ts";
 import { loadSamples, samplesReady, setFootsteps, setHeartbeat, setMusic, stopNarration, stopRoomAudio } from "../audio/sfx.ts";
 import { Bot } from "../sim/bot.ts";
+import type { WeaponId } from "../combat/weapons.ts";
 
 const DEV = import.meta.env.MODE !== "production";
 const params = new URLSearchParams(location.search);
@@ -38,6 +39,8 @@ const ROOM = params.get("room") ?? "room1";
 const EXTRA = DEV ? params.get("extra") ?? "" : "";
 /** Dev: ?still hides the "click to fight" veil (camera-marker screenshots without the bot). */
 const STILL = DEV && params.has("still");
+/** Dev: ?loadout=shotgun,smgs owns those weapons from the start (the last one in hand). */
+const LOADOUT = (DEV ? params.get("loadout") ?? "" : "").split(",").filter((w): w is WeaponId => w === "shotgun" || w === "smgs");
 /** ?q=low: low quality for this page load only (headless smoke runs). */
 if (params.get("q") === "low") useUi.setState({ quality: "low" });
 const SEED = params.has("seed") ? Number(params.get("seed")) >>> 0 : (Math.random() * 2 ** 31) >>> 0;
@@ -54,7 +57,7 @@ async function loadRoom(id: string, exact = false): Promise<Session> {
     level.markers.push({ kind: "enemy", id: "dev-heavy", x: 12, y: 0, z: -12.6, yaw: 0, ...m, data: { kind: "heavy", model: EXTRA.includes("723") ? "rival723" : "rival652" } });
     level.markers.push({ kind: "camera", id: "cam-heavy", x: 11.2, y: 1.7, z: -6.2, yaw: 0, ...m, data: { at: [12, 1.1, -12.6] } });
   }
-  const s = new Session(level, prefab, got, { seed: SEED, difficulty: useUi.getState().difficulty });
+  const s = new Session(level, prefab, got, { seed: SEED, difficulty: useUi.getState().difficulty, ...(LOADOUT.length ? { loadout: LOADOUT } : {}) });
   console.info(`[radpayne] room ${got} ("${level.room.name}"): ${level.boxes.length} colliders, ${level.markers.length} markers, seed ${SEED}`);
   (window as unknown as { __session?: Session }).__session = s;
   return s;

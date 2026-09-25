@@ -161,6 +161,9 @@ export class Game {
     for (const e of this.enemies) this.syncEnemyPose(e);
     this.crowd = new Crowd(level.markers, this.world, this.graph, { seed: this.seed, pockitCount: POCKIT_COUNT });
     for (const w of opts.loadout ?? []) this.giveWeapon(w);
+    // a loadout starts with its last weapon in hand
+    const last = opts.loadout?.[opts.loadout.length - 1];
+    if (last && this.player.arsenal[last]) this.player.weapon = this.player.arsenal[last]!;
     // First aim state so the camera and crosshair are valid before the first step.
     this.player.yaw = this.player.facing - Math.PI;
     this.updateAim();
