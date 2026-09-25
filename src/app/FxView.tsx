@@ -17,6 +17,7 @@ import { playerMuzzles } from "./PlayerView.tsx";
 import { enemyMuzzles } from "./EnemiesView.tsx";
 import { FRAME } from "./frame.ts";
 import { useUi } from "../ui/store.ts";
+import { lookOwns } from "./look/fx.ts";
 
 const Z = new Vector3(0, 0, 1);
 const HIDE = new Matrix4().makeScale(0, 0, 0);
@@ -159,13 +160,14 @@ function segment(mesh: InstancedMesh, i: number, a: Vector3, b: Vector3, w: numb
 export function FxView({ s }: { s: Session }) {
   const fx = useMemo(() => {
     const unit = new BoxGeometry(1, 1, 1);
-    const glow = (color: string, additive = false, opacity = 1) =>
-      new MeshBasicMaterial({ color, toneMapped: false, transparent: additive || opacity < 1, opacity, blending: additive ? AdditiveBlending : NormalBlending, depthWrite: !additive });
+    // hdr > 1: gunfire is the brightest thing on screen and the only thing besides neon that blooms
+    const glow = (color: string, additive = false, opacity = 1, hdr = 1) =>
+      new MeshBasicMaterial({ color: new Color(color).multiplyScalar(hdr), toneMapped: false, transparent: additive || opacity < 1, opacity, blending: additive ? AdditiveBlending : NormalBlending, depthWrite: !additive });
     const group = new Group();
-    const tracers = new Pool(unit, glow("#ffe7a8", true, 0.9), 48);
-    const bullets = new Pool(unit, glow("#fff6d8"), 64);
-    const trails = new Pool(unit, glow("#ffb070", true, 0.6), 64);
-    const flashMat = new MeshBasicMaterial({ map: flashTexture(), color: "#ffffff", toneMapped: false, transparent: true, blending: AdditiveBlending, depthWrite: false });
+    const tracers = new Pool(unit, glow("#ffe7a8", true, 0.9, 3), 48);
+    const bullets = new Pool(unit, glow("#fff6d8", false, 1, 3), 64);
+    const trails = new Pool(unit, glow("#ffb070", true, 0.6, 2.5), 64);
+    const flashMat = new MeshBasicMaterial({ map: flashTexture(), color: new Color(2.5, 2.5, 2.5), toneMapped: false, transparent: true, blending: AdditiveBlending, depthWrite: false });
     const flashes = new Pool(new PlaneGeometry(1, 1), flashMat, 16);
     const heads = new Pool(new PlaneGeometry(1, 1), new MeshBasicMaterial({ map: glowTexture(), color: "#ffffff", toneMapped: false, transparent: true, blending: AdditiveBlending, depthWrite: false }), 64);
     // blood: a red spray of small droplets (fading, stretched along their flight) + a soft mist that
@@ -230,7 +232,7 @@ export function FxView({ s }: { s: Session }) {
           const li = e.shooter === -1 ? 0 : 1;
           fx.lights[li].position.copy(from);
           fx.lightT[li] = 0.06;
-          if (!e.projectile) {
+          if (!e.projectile && (e.shooter === -1 || !lookOwns.enemyTracers)) {
             const t = fx.tracers.spawn(0.07);
             t.a.copy(from);
             t.b.set(e.ex, e.ey, e.ez);
@@ -316,7 +318,7 @@ export function FxView({ s }: { s: Session }) {
         vd.subVectors(t.b, t.a).normalize();
         const head = Math.min(len, len * k);
         const tail = Math.max(0, head - Math.min(4, len));
-        segment(P.mesh, i, vs.copy(t.a).addScaledVector(vd, tail).clone(), vs.copy(t.a).addScaledVector(vd, head).clone(), 0.018);
+        segment(P.mesh, i, vs.copy(t.a).addScaledVector(vd, tail).clone(), vs.copy(t.a).addScaledVector(vd, head).clone(), 0.026);
       });
       P.mesh.instanceMatrix.needsUpdate = true;
     }
