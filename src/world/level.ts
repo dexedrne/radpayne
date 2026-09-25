@@ -52,6 +52,9 @@ export type LevelData = {
   boxes: Box[];
   /** What the camera collides with: every visible box (decor too, except thin trim under 0.2 m). */
   camBoxes: Box[];
+  /** Every visible box of some size, thin poles and trim included: the kill cam keeps them away
+   *  from its lens (a lamp post a hand's width from the lens fills the frame). */
+  viewBoxes: Box[];
   markers: Marker[];
   room: RoomSettings;
   warnings: string[];
@@ -81,6 +84,7 @@ const MARKERS = new Set<string>(["spawn", "enemy", "cover", "waypoint", "pickup"
 export function readLevel(prefab: Prefabish): LevelData {
   const boxes: Box[] = [];
   const camBoxes: Box[] = [];
+  const viewBoxes: Box[] = [];
   const markers: Marker[] = [];
   const warnings: string[] = [];
   const glare: LevelData["glare"] = [];
@@ -133,11 +137,14 @@ export function readLevel(prefab: Prefabish): LevelData {
         if ((mesh.visible !== false || data.camera === true) && data.camera !== false && (collider || thick)) {
           camBoxes.push(makeBox(camBoxes.length, node.id, xf.x, xf.y, xf.z, sx, sy, sz, xf.yaw, surface));
         }
+        if (mesh.visible !== false && Math.max(Math.abs(sx), Math.abs(sy), Math.abs(sz)) >= 0.3 && xf.y + Math.abs(sy) / 2 > 0.3) {
+          viewBoxes.push(makeBox(viewBoxes.length, node.id, xf.x, xf.y, xf.z, sx, sy, sz, xf.yaw, surface));
+        }
       }
     }
     for (const ch of node.children ?? []) walk(ch, xf, decor || data.collider === false);
   };
   walk(prefab.root as Node, { x: 0, y: 0, z: 0, yaw: 0, sx: 1, sy: 1, sz: 1 }, false);
   if (!markers.some(m => m.kind === "spawn")) warnings.push("no spawn marker: the player starts at the origin");
-  return { boxes, camBoxes, markers, room, warnings, glare };
+  return { boxes, camBoxes, viewBoxes, markers, room, warnings, glare };
 }

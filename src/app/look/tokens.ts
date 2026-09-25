@@ -14,7 +14,7 @@
 import { Fragment, createElement, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { DirectionalLight, Vector3, type Object3D } from "three";
-import { abs, dot, float, materialColor, normalView, normalWorld, positionViewDirection, positionWorld, pow, replaceDefaultUV, saturate, select, sign, vec2, vec3 } from "three/tsl";
+import { abs, dot, float, materialColor, normalView, normalWorld, positionViewDirection, positionWorld, pow, replaceDefaultUV, saturate, select, sign, uniform, vec2, vec3 } from "three/tsl";
 import type { MeshStandardNodeMaterial } from "three/webgpu";
 import { FRAME } from "../frame.ts";
 
@@ -64,17 +64,30 @@ export function CameraKey({ color, intensity }: { color: string; intensity: numb
   return createElement(Fragment, null, createElement("primitive", { object: key }), createElement("primitive", { object: key.target }));
 }
 
+/** Sets the hostile rim strength (0..1) on every material under `o` that has one. */
+export function setHostileRim(o: Object3D, k: number): void {
+  o.traverse(c => {
+    const mm = (c as { material?: unknown }).material as { userData?: { rpRimK?: { value: number } } } | Array<{ userData?: { rpRimK?: { value: number } } }> | undefined;
+    if (!mm) return;
+    for (const m of Array.isArray(mm) ? mm : [mm]) if (m.userData?.rpRimK) m.userData.rpRimK.value = k;
+  });
+}
+
 /** The hostile rim (round-2 plan section 8): pink-red #ff4d6d, strength 0.35, as a thin fresnel. */
 export const HOSTILE_RIM = { color: [1.0, 0.075, 0.15] as const, strength: 0.35, power: 3 };
 
 /** A hostile's emissive: her own colour lifted by `lift` (the Miladys: texture x lift) or a flat
  *  `flat` lift (the heavies: their near-black texture would add nothing), plus the pink-red rim.
- *  Applied once per material (userData.rpRim). */
+ *  Applied once per material (userData.rpRim). The rim reads the facing both ways (double-sided hair
+ *  seen from behind is not a solid pink cap), and its strength is the material's userData.rpRimK
+ *  uniform: the views take it to 0 when she is down (a body is not a threat: no rim). */
 export function hostileEmissive(m: MeshStandardNodeMaterial, lift: number, flat = 0): void {
   if (m.userData.rpRim === `${lift}|${flat}`) return;
   m.userData.rpRim = `${lift}|${flat}`;
-  const fres = pow(float(1).sub(saturate(dot(normalView, positionViewDirection))), HOSTILE_RIM.power);
-  const rim = vec3(...HOSTILE_RIM.color).mul(fres.mul(HOSTILE_RIM.strength * 2.2));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const k: any = (m.userData.rpRimK ??= uniform(1));
+  const fres = pow(float(1).sub(saturate(abs(dot(normalView, positionViewDirection)))), HOSTILE_RIM.power);
+  const rim = vec3(...HOSTILE_RIM.color).mul(fres.mul(HOSTILE_RIM.strength * 2.2)).mul(k);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const own: any = flat > 0 ? vec3(flat, flat, flat * 1.08) : (materialColor as N).rgb.mul(lift);
   m.emissiveNode = own.add(rim);

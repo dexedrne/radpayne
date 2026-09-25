@@ -26,6 +26,7 @@ import { FRAME } from "./frame.ts";
 import { useUi } from "../ui/store.ts";
 import { wrapAngle } from "../sim/aim.ts";
 import { goonTalk } from "./director.ts";
+import { setHostileRim } from "./look/tokens.ts";
 
 const UP = new Vector3(0, 1, 0);
 const params = new URLSearchParams(location.search);
@@ -67,6 +68,8 @@ type GoonView = {
   loading: boolean;
   /** Not a Milady (a heavy: HeavyView draws him). */
   skip: boolean;
+  /** Her hostile rim now (1 alive, fading to 0 once she is down). */
+  rim: number;
   /** Her clip before the alert ("" = the relaxed set). */
   idleClip: string;
 };
@@ -103,7 +106,7 @@ function makeView(e: Enemy, idleClip: string): GoonView {
   const standIn = makeStandIn();
   root.add(standIn);
   const gun = e.weapon === "smg" ? makeSmg() : makePistol();
-  return { idx: e.idx, n: e.milady, root, standIn, gun, gunInHand: false, model: null, player: null, hit: null, clip: "", yaw: e.facing, legYaw: e.facing, back: false, flinch: 0, pain: 0, blinkT: -1, blinkAt: 1 + Math.random() * 3, deadShown: false, deathPlayed: false, deathTried: new Set(), deathFrames: 0, deathFallback: false, fallYaw: 0, loading: false, skip: e.kind === "heavy", idleClip };
+  return { idx: e.idx, n: e.milady, root, standIn, gun, gunInHand: false, model: null, player: null, hit: null, clip: "", yaw: e.facing, legYaw: e.facing, back: false, flinch: 0, pain: 0, blinkT: -1, blinkAt: 1 + Math.random() * 3, deadShown: false, deathPlayed: false, deathTried: new Set(), deathFrames: 0, deathFallback: false, fallYaw: 0, loading: false, skip: e.kind === "heavy", rim: 1, idleClip };
 }
 
 /** Deterministic 0..1 per goon and attempt (death variant picks). */
@@ -208,6 +211,7 @@ export function EnemiesView({ s }: { s: Session }) {
       for (const v of views) {
         v.deadShown = false; v.deathPlayed = false; v.clip = ""; v.flinch = 0; v.pain = 0; v.yaw = g.enemies[v.idx]?.facing ?? 0; v.legYaw = v.yaw; v.back = false;
         v.deathTried.clear(); v.deathFrames = 0;
+        v.rim = 1; setHostileRim(v.root, 1);
         if (v.deathFallback && v.model) { v.model.body.rotation.x = 0; v.model.body.position.y = 0; }
         v.deathFallback = false;
         v.hit?.stop();
@@ -258,6 +262,10 @@ export function EnemiesView({ s }: { s: Session }) {
         if (e.state === "dead" && v.deadShown) { v.standIn.rotation.x += (-Math.PI / 2 - v.standIn.rotation.x) * Math.min(1, 6 * dt * Math.max(g.timeScale, 0.1) * 4); v.standIn.position.y = 0.15; }
         else { v.standIn.rotation.x = 0; v.standIn.position.y = 0; }
       }
+      // a body is not a threat: the pink-red rim fades once she is down (kept while the kill cam holds her)
+      const rimWant = e.state === "dead" && !e.deathHold ? 0 : 1;
+      if (v.rim !== rimWant) { v.rim = rimWant > v.rim ? 1 : Math.max(0, v.rim - dt / 0.6); setHostileRim(v.root, v.rim); }
+      else if (rimWant === 0 && (g.stepN + v.idx) % 30 === 0) setHostileRim(v.root, 0); // a late-mounted model
       const pl = v.player;
       if (!pl || e.state === "dead") continue;
       const speed = Math.sqrt(e.vx * e.vx + e.vz * e.vz);

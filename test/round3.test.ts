@@ -255,3 +255,33 @@ test("replay: room 3 replays bit-exactly (the breach included)", () => {
     if (r.hash() !== hashes[i]) assert.fail(`diverged at step ${i}`);
   }
 });
+
+test("kill cam: the planned swing never has a post, a pillar or steam at the lens; a chase through steam is skipped (rooms 1-3)", async () => {
+  const { World } = await import("../src/sim/world.ts");
+  const { KC, planKillcam, spoil, steamOf } = await import("../src/app/killcam.ts");
+  const { room1, room2 } = await import("./helpers.ts");
+  let skipped = 0;
+  for (const [name, lv] of [["room1", room1()], ["room2", room2()], ["room3", room3()]] as const) {
+    const cam = new World(lv.camBoxes.map((b, i) => ({ ...b, id: i })));
+    const view = new World(lv.viewBoxes.map((b, i) => ({ ...b, id: i })));
+    const steam = steamOf(lv);
+    for (const seed of [1, 2, 3]) {
+      const g = new Game(lv, { seed });
+      const bot = new Bot(3.5, 0.3, true);
+      for (let i = 0; i < 120 * 200 && !g.killcam && g.phase === "play"; i++) { g.step(bot.next(g)); g.drain(); }
+      const k = g.killcam;
+      assert.ok(k, `${name} seed ${seed}: a kill cam`);
+      const e = g.enemies[k.enemy];
+      const pl = planKillcam(k, e, cam, lv, view);
+      const hl = Math.hypot(k.to.x - k.from.x, k.to.z - k.from.z) || 1;
+      const hx = (k.to.x - k.from.x) / hl, hz = (k.to.z - k.from.z) / hl;
+      for (const t of [0, 0.25, 0.5]) {
+        const a = pl.a0 + pl.dir * t;
+        const ex = pl.kx + (-hx * Math.cos(a) + hz * Math.sin(a)) * KC.radius, ez = pl.kz + (-hz * Math.cos(a) - hx * Math.sin(a)) * KC.radius;
+        assert.equal(spoil(ex, e.y + KC.eyeY, ez, pl.kx, e.y + KC.atY, pl.kz, view, steam, []), 0, `${name} seed ${seed}: swing at ${t} rad`);
+      }
+      if (!pl.chase) skipped++;
+    }
+  }
+  assert.ok(skipped >= 1, "room 1's last bullet through the manhole steam: no chase");
+});

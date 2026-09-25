@@ -6,7 +6,8 @@
 //    Thin up close, thicker from ~12 m out. It is told apart from the neon tubes by its FORM, not its
 //    colour: a dark keyline hugs the bright edge (a neon tube only glows), and from range the body is a
 //    solid warm silhouette that breathes slowly (the club's neon pulses on the beat, twice as fast).
-//    It also shows through the player's own body, so the Radbro never hides who is behind him.
+//    The player's own body occludes it like a wall: the outline never draws over the Radbro (the
+//    rave's dancers do not: bullets pass through them, so an armed girl behind one still shows).
 //  - Neon near a goon dims (neonDim: the "glow" materials within a few body widths of a live goon on
 //    screen), and everything past the far edge of the fight (~46 m) is dimmer: the far signs, lit
 //    windows and steam stop competing with the girls at 23-46 m.
@@ -99,26 +100,31 @@ const isLevelMat = (m: Material): boolean =>
  *  finished loading is outlined at once. */
 const goonRoots = new Set<Object3D>();
 
-/** Tags goon meshes (their per-goon mask vector) and opaque level meshes (occluders) for the mask pass. */
-function tag(o: Object3D, goon: Vector4 | null, actor: boolean): void {
-  let g = goon, a = actor;
+/** Tags goon meshes (their per-goon mask vector), the player's body and opaque level meshes
+ *  (occluders) for the mask pass. */
+function tag(o: Object3D, goon: Vector4 | null, actor: boolean, player = false): void {
+  let g = goon, a = actor, me = player;
   if (o.name.startsWith("goon-")) {
     const i = Number(o.name.slice(5));
     g = readFx.masks[i] ??= new Vector4();
     goonRoots.add(o);
-  } else if (o.name.startsWith("radbro-") || o.name.startsWith("crowd-")) a = true;
+  } else if (o.name.startsWith("radbro-")) { a = true; me = true; }
+  else if (o.name.startsWith("crowd-")) a = true;
   const mesh = o as Mesh & { isSkinnedMesh?: boolean };
   if (mesh.isMesh) {
     if (g) {
       o.layers.enable(MASK_LAYER);
       o.userData.rpMask = g;
+    } else if (me) { // his body and guns: an occluder, skinned or not
+      o.layers.enable(MASK_LAYER);
+      o.userData.rpMask = OCCLUDER;
     } else if (!a && !mesh.isSkinnedMesh) { // level boxes are batched into InstancedMeshes by the engine
       const mm = mesh.material;
       const ok = Array.isArray(mm) ? mm.every(isLevelMat) : !!mm && isLevelMat(mm);
       if (ok) { o.layers.enable(MASK_LAYER); o.userData.rpMask = OCCLUDER; }
     }
   }
-  for (const c of o.children) tag(c, g, a);
+  for (const c of o.children) tag(c, g, a, me);
 }
 
 /** The enemy mask pass: r = goon coverage (+ hit flash), g = firing flash, b = distance (m). */

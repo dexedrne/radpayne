@@ -402,11 +402,18 @@ function clearSteam(mesh: Mesh, s: Session, camera: Object3D, dt: number): void 
         block = Math.max(block, 1 - smooth(r * 0.7, r + 2.2, segDist(P0, P1, Q0, Q1)));
       }
     }
+    // the final-kill cam: the lens to the falling girl (the planner keeps the lens out of the plumes;
+    // this clears one it still looks through)
+    const kc = s.game.killcam;
+    if (kc) {
+      Q1.set(kc.to.x, kc.to.y, kc.to.z);
+      block = Math.max(block, 1 - smooth(r * 0.7, r + 2.2, segDist(P0, P1, Q0, Q1)));
+    }
     // and plumes past the far edge of the fight thin out (they sit behind the girls, not in front)
     const far = smooth(COMBAT.beyond.from - 10, COMBAT.beyond.to - 14, Math.hypot(m.x - Q0.x, m.z - Q0.z));
     const want = (1 - READ.steamClear * block) * (1 - 0.75 * far);
     const arr = st.fade.array as number[];
-    arr[i] += (want - arr[i]) * Math.min(1, dt * 5);
+    arr[i] += (want - arr[i]) * Math.min(1, dt * (s.game.killcam ? 14 : 5)); // the kill cam cuts: clear at once
   });
 }
 const smooth = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };

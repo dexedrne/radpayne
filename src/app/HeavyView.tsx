@@ -21,7 +21,7 @@ import { RADBRO_GRIPS, SHOTGUN_SCALE } from "../anim/grips.ts";
 import { RADBRO_GAIT } from "../anim/gait.ts";
 import { clipsPath, gunClipsPath, lightUp, r2ClipsPath, rivalBase, rivalPath } from "./characters.ts";
 import { SHOTGUN_PUMP, SHOTGUN_RACK, SHOTGUN_THICK, attachGun, makeShotgun, muzzleWorld } from "./guns.ts";
-import { hostileEmissive } from "./look/tokens.ts";
+import { hostileEmissive, setHostileRim } from "./look/tokens.ts";
 import { MeshStandardNodeMaterial } from "three/webgpu";
 import { enemyMuzzles } from "./EnemiesView.tsx";
 import { FRAME } from "./frame.ts";
@@ -52,6 +52,8 @@ type HeavyRig = {
   blast: boolean;
   fireW: number;
   reloadW: number;
+  /** The hostile rim now (fades to 0 once he is down). */
+  rim: number;
 };
 
 const clipsOf = (o: Object3D | null) => ((o as unknown as { animations?: AnimationClip[] } | null)?.animations ?? []) as AnimationClip[];
@@ -126,7 +128,7 @@ function makeHeavy(e: Enemy, src: Object3D, pack: Object3D | null, gunPack: Obje
   return {
     idx: e.idx, root, model, player, materials, shotgun, spine: findBone(model, "Spine"), hit,
     fire: layer(player, r2, "Shotgun_Fire"), reload: layer(player, r2, "Shotgun_Reload"), laser,
-    clip: "", yaw: e.facing, deadShown: false, blast: false, fireW: 0, reloadW: 0,
+    clip: "", yaw: e.facing, deadShown: false, blast: false, fireW: 0, reloadW: 0, rim: 1,
   };
 }
 
@@ -187,7 +189,7 @@ export function HeavyView({ s }: { s: Session }) {
     const dt = Math.min(raw, 0.1);
     if (run.current !== s.run) {
       run.current = s.run;
-      for (const r of rigs.current) if (r) { r.deadShown = false; r.blast = false; r.clip = ""; r.yaw = g.enemies[r.idx]?.facing ?? 0; r.fire?.stop(); r.reload?.stop(); r.hit?.stop(); }
+      for (const r of rigs.current) if (r) { r.deadShown = false; r.blast = false; r.clip = ""; r.yaw = g.enemies[r.idx]?.facing ?? 0; r.fire?.stop(); r.reload?.stop(); r.hit?.stop(); r.rim = 1; setHostileRim(r.root, 1); }
     }
     rigs.current.forEach(r => {
       if (!r) return;
@@ -196,6 +198,8 @@ export function HeavyView({ s }: { s: Session }) {
       r.root.visible = e.state !== "inactive";
       if (!r.root.visible) return;
       r.root.position.set(p.x, p.y, p.z);
+      const rimWant = e.state === "dead" && !e.deathHold ? 0 : 1;
+      if (r.rim !== rimWant) { r.rim = rimWant > r.rim ? 1 : Math.max(0, r.rim - dt / 0.6); setHostileRim(r.root, r.rim); }
       const pl = r.player;
       if (e.state === "dead") {
         if (!r.deadShown && !e.deathHold) {
