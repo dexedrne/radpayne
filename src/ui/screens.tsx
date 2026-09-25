@@ -2,6 +2,7 @@
 // DOM over the canvas.
 import { RADBROS, store, useUi, type RadbroId } from "./store.ts";
 import { DIFFICULTY, type Difficulty } from "../sim/tuning.ts";
+import { setEffects, useFx } from "../app/look/fx.ts";
 
 const font = "ui-monospace, SFMono-Regular, Menlo, monospace";
 const display = "'Bebas Neue', Impact, 'Arial Narrow', sans-serif";
@@ -83,6 +84,7 @@ export function Pause({ onResume, onRestart, onQuit }: { onResume: () => void; o
   const inv = useUi(s => s.invertY);
   const quality = useUi(s => s.quality);
   const muted = useUi(s => s.muted);
+  const effects = useFx(s => s.effects);
   return (
     <div style={{ ...layer, background: "rgba(5,6,12,0.72)" }}>
       <div style={{ width: 340, display: "flex", flexDirection: "column", gap: 10 }}>
@@ -99,6 +101,12 @@ export function Pause({ onResume, onRestart, onQuit }: { onResume: () => void; o
           quality
           {(["high", "low"] as const).map(q => (
             <button key={q} style={{ ...btn(), padding: "4px 10px", borderColor: quality === q ? "#ff3fa8" : undefined }} onClick={() => { useUi.setState({ quality: q }); store("quality", q); }}>{q}</button>
+          ))}
+        </label>
+        <label style={{ display: "flex", gap: 8, alignItems: "center" }} title="clean: no rain near the camera, no bloom, no puddle reflections">
+          effects
+          {(["full", "clean"] as const).map(e => (
+            <button key={e} style={{ ...btn(), padding: "4px 10px", borderColor: effects === e ? "#ff3fa8" : undefined }} onClick={() => setEffects(e)}>{e}</button>
           ))}
         </label>
         <button style={btn()} onClick={onQuit}>Quit to title</button>

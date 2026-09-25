@@ -13,14 +13,23 @@
 //    of it runs on a world clock that follows the sim's timeScale: bullet time slows the rain too.
 //  - Quality Low: reflector at an eighth resolution, bloom at quarter res and weaker, less than half
 //    the rain, no MSAA.
+//  - Readability first (READ below): the fight must read through the mood. Characters get a camera
+//    key light and a small self-lift so they never sink into the dark; the rain clears out near the
+//    camera and thins in the middle of the screen; bloom only takes the HDR neon / lamps; puddle
+//    reflections are soft-clipped and kept dimmer than the characters; the big shop windows are
+//    toned down; vignette and blue grade are light. Effects "clean" (fx.ts) goes further: no rain
+//    near the camera, no bloom, a plain wet sheen instead of reflections.
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { AdditiveBlending, BufferAttribute, BufferGeometry, DoubleSide, Mesh, RepeatWrapping, Sphere, TextureLoader, Vector3, type Material, type Texture } from "three";
+import {
+  AdditiveBlending, BufferAttribute, BufferGeometry, DirectionalLight, DoubleSide, Mesh, MeshStandardMaterial, RepeatWrapping, Sphere, TextureLoader, Vector3,
+  type Material, type Object3D, type Texture,
+} from "three";
 import { MeshBasicNodeMaterial, MeshStandardNodeMaterial, RenderPipeline, type WebGPURenderer } from "three/webgpu";
 import {
   Fn, abs, attribute, cameraPosition, clamp, color, cross, densityFogFactor, dot, float, floor, fog, fract, hash, length, luminance,
   materialColor, materialRoughness, max, mix, mx_noise_float, neutralToneMapping, normalView, normalWorld, normalize, pass,
-  positionLocal, positionViewDirection, positionWorld, pow, reflector, replaceDefaultUV, saturate, select, sign, sin, smoothstep,
+  positionLocal, positionViewDirection, positionWorld, pow, reflector, replaceDefaultUV, saturate, screenUV, select, sign, sin, smoothstep,
   texture, uniform, uv, varying, vec2, vec3, vec4,
 } from "three/tsl";
 import { bloom } from "three/examples/jsm/tsl/display/BloomNode.js";
@@ -29,6 +38,7 @@ import type { Session } from "../session.ts";
 import { FRAME } from "../frame.ts";
 import { clubPulse } from "../../audio/sfx.ts";
 import { MarkerLights } from "./lights.tsx";
+import { useFx } from "./fx.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type N = any; // TSL node graphs: the three typings are too narrow for chained swizzles / mixes
@@ -36,8 +46,31 @@ type N = any; // TSL node graphs: the three typings are too narrow for chained s
 /** Sky + fog (sRGB). The fog is close to the horizon so the far blocks melt into the rain haze. */
 const SKY = { horizon: "#2f2638", mid: "#151829", zenith: "#05060b" };
 const FOG_COLOR = "#211e2e";
-const FOG_DENSITY = 0.0072;
+const FOG_DENSITY = 0.0046; // light: the whole street stays clear, only the far blocks and skyline haze
 const RAIN_HIGH = 2600, RAIN_LOW = 1000;
+
+/** Readability tuning: the one place to trade mood for a clear view of the fight. */
+const READ = {
+  exposure: 1.4,
+  hemi: { sky: "#5b6fae", ground: "#2a2130", intensity: 1.25 },
+  moon: 0.5,
+  /** Directional key from just above the camera along the view: lights whatever faces the camera
+   *  (the player's back, goons, cover) at any distance, while the facades along the street stay dark. */
+  key: { color: "#dfe4ff", intensity: 1.1 },
+  /** Characters' albedo added back as emissive: a floor so a goon in a dark doorway still reads. */
+  actorLift: 0.15,
+  /** Big low-gain emitters are dimmed so they stop pulling the eye: the shop windows (gain ~1) a lot,
+   *  the skyline's windows (1.5) a little; neon and lamps (2.2+) keep their full gain. */
+  softGlow: [[1.2, 0.45], [2, 0.75]],
+  bloom: { strength: 0.2, radius: 0.3, threshold: 1.05 },
+  /** Reflection gain in the puddles and on the damp street, after a soft clip (no hot lamp blobs). */
+  refl: { puddle: 0.34, damp: 0.1, clip: 0.9 },
+  /** Rain: fully clear within near.x m of the camera, full from near.y; thinner in the screen centre. */
+  rainNear: { full: [4, 7], clean: [10, 15] },
+  rainCentre: 0.3,
+  vignette: 0.2,
+  steam: 0.12,
+} as const;
 
 /** Shared clocks / hooks (one street scene at a time). time = world seconds (x timeScale). */
 export const streetFx = {
@@ -46,6 +79,9 @@ export const streetFx = {
   pulse: uniform(0),
   flicker: uniform(1),
   blink: uniform(1),
+  /** Rain fades in between these distances from the camera (m). */
+  rainNear0: uniform(READ.rainNear.full[0] as number),
+  rainNear1: uniform(READ.rainNear.full[1] as number),
 };
 
 // ------------------------------------------------------------------ level material rules
@@ -65,7 +101,8 @@ function tokens(name: string): Tokens {
   return { kind, k: Number(t[1]) || 1, pulse: t.includes("pulse"), flicker: t.includes("flicker"), blink: t.includes("blink") };
 }
 function gain(t: Tokens): N {
-  let g: N = float(t.k);
+  const soft = READ.softGlow.find(([below]) => t.k < below);
+  let g: N = float(soft ? t.k * soft[1] : t.k);
   if (t.pulse) g = g.mul(mix(0.72, 1.45, streetFx.pulse));
   if (t.flicker) g = g.mul(streetFx.flicker);
   if (t.blink) g = g.mul(streetFx.blink);
@@ -91,10 +128,29 @@ const ripples = Fn(([p, t]: N[]) => {
   return acc;
 });
 
-export type Ground = { refl: N; color: N; roughness: N; emissive: N; mats: Set<Material> };
+export type Ground = { id: number; refl: N | null; color: N; roughness: N; emissive: N; mats: Set<Material> };
+let groundIds = 0;
 
-/** The wet street: one planar reflector (y = 0) shared by every "wet" material, masked by puddles. */
-function makeGround(puddles: Texture): Ground {
+/** The wet street: one planar reflector (y = 0) shared by every "wet" material, masked by puddles.
+ *  clean: no reflector, a plain cool sheen at grazing angles instead. */
+function makeGround(puddles: Texture, clean = false): Ground {
+  const wp = positionWorld.xz;
+  const raw = texture(puddles, wp.div(18)).r;
+  const onStreet = smoothstep(0.1, 0.03, positionWorld.y); // the street (y 0) vs the sidewalks (0.15)
+  const up = smoothstep(0.7, 0.95, normalWorld.y);
+  const puddle = smoothstep(0.5, 0.57, raw).mul(mix(0.4, 1.0, onStreet)).mul(up);
+  const damp = smoothstep(0.28, 0.5, raw);
+  const rip: N = ripples(wp, streetFx.time);
+  const ndv = saturate(dot(normalView, positionViewDirection));
+  const fres = mix(0.28, 1.0, pow(float(1).sub(ndv), 3));
+  const col = materialColor.rgb.mul(mix(mix(0.62, 0.45, damp), 0.1, puddle));
+  const roughness = materialRoughness.mul(mix(1.0, 0.45, puddle)); // glossy, but no pin-sharp lamp / flash hotspots
+  const ripple = vec3(0.45, 0.5, 0.6).mul(rip.z.mul(puddle).mul(0.018));
+  if (clean) {
+    // the night sky's cool sheen on the wet street, strongest in the puddles and at grazing angles
+    const sheen = vec3(0.02, 0.023, 0.034).mul(mix(0.35, 1.0, puddle)).mul(fres).mul(up);
+    return { id: ++groundIds, refl: null, color: vec4(col, 1), roughness, emissive: sheen.add(ripple), mats: new Set() };
+  }
   const refl: N = reflector({ resolutionScale: 0.25, generateMipmaps: true, bounces: false });
   // Every "wet" material samples the reflection, so all of them (not only the one that triggered the
   // update) must stay out of the mirrored render, or the pass reads the texture it is writing.
@@ -108,20 +164,13 @@ function makeGround(puddles: Texture): Ground {
   };
   refl.target.rotateX(-Math.PI / 2);
   refl.target.position.y = 0.003; // just above the street so curb / paint undersides never reflect
-  const wp = positionWorld.xz;
-  const raw = texture(puddles, wp.div(18)).r;
-  const onStreet = smoothstep(0.1, 0.03, positionWorld.y); // the street (y 0) vs the sidewalks (0.15)
-  const up = smoothstep(0.7, 0.95, normalWorld.y);
-  const puddle = smoothstep(0.5, 0.57, raw).mul(mix(0.4, 1.0, onStreet)).mul(up);
-  const damp = smoothstep(0.28, 0.5, raw);
-  const rip: N = ripples(wp, streetFx.time);
   refl.uvNode = refl.uvNode.add(rip.xy.mul(0.022).mul(puddle.add(0.15)));
   refl.levelNode = mix(float(5.2), float(2.2), puddle); // soft even in the puddles: wet, not a mirror
-  const ndv = saturate(dot(normalView, positionViewDirection));
-  const fres = mix(0.28, 1.0, pow(float(1).sub(ndv), 3));
-  const emissive = refl.rgb.mul(mix(0.2, 0.62, puddle)).mul(fres).mul(up).add(vec3(0.45, 0.5, 0.6).mul(rip.z.mul(puddle).mul(0.018)));
-  const col = materialColor.rgb.mul(mix(mix(0.62, 0.45, damp), 0.1, puddle));
-  return { refl, color: vec4(col, 1), roughness: materialRoughness.mul(mix(1.0, 0.3, puddle)), emissive, mats };
+  // soft clip: lamps and neon reflect as coloured smears, never as hot blobs brighter than a goon
+  const r: N = refl.rgb;
+  const clipped = r.div(luminance(r).div(READ.refl.clip).add(1));
+  const emissive = clipped.mul(mix(READ.refl.damp, READ.refl.puddle, puddle)).mul(fres).mul(up).add(ripple);
+  return { id: ++groundIds, refl, color: vec4(col, 1), roughness, emissive, mats };
 }
 
 function isLevelMaterial(m: Material): m is MeshStandardNodeMaterial | MeshBasicNodeMaterial {
@@ -134,7 +183,7 @@ function applyRules(m: Material, ground: Ground | null): void {
   const repeat = !!map && map.wrapS === RepeatWrapping;
   const t = tokens(m.name ?? "");
   if (!repeat && !t.kind && m.userData.rpLook === undefined) return; // not ours (views' own node materials)
-  const sig = `${m.name}|${map ? map.uuid : ""}|${ground ? 1 : 0}`;
+  const sig = `${m.name}|${map ? map.uuid : ""}|${ground ? ground.id : 0}`;
   if (m.userData.rpLook === sig) return;
   m.userData.rpLook = sig;
   m.contextNode = repeat ? WORLD_UV : null;
@@ -155,19 +204,44 @@ function applyRules(m: Material, ground: Ground | null): void {
   m.needsUpdate = true;
 }
 
+/** Characters: the albedo comes back as a little emissive, so a goon never sinks into the dark. */
+function liftActor(m: Material, lift: number): void {
+  const std = m as MeshStandardMaterial;
+  if (!std.isMeshStandardMaterial || m.userData.rpLift === lift) return;
+  if (m.userData.rpLift === undefined && std.emissive.getHex() !== 0) return; // has its own glow
+  m.userData.rpLift = lift;
+  std.emissive.copy(std.color).multiplyScalar(lift); // emissive x emissiveMap = lift x albedo
+  std.emissiveMap = lift > 0 ? std.map : null;
+  m.needsUpdate = true;
+}
+
+/** Characters (skinned rigs, the Milady models) are not level geometry: their textures keep their
+ *  own UVs (the repeat rule would re-map them to world space) and they get the actor lift instead. */
+const isActor = (o: Object3D) => (o as { isSkinnedMesh?: boolean }).isSkinnedMesh === true || o.name.startsWith("milady-");
+
+function walk(o: Object3D, ground: Ground | null, lift: number, actor: boolean): void {
+  const a = actor || isActor(o);
+  const mm = (o as Mesh).material;
+  if (mm) {
+    for (const m of Array.isArray(mm) ? mm : [mm]) {
+      if (a) { if (lift >= 0) liftActor(m, lift); } else applyRules(m, ground);
+    }
+  }
+  for (const c of o.children) walk(c, ground, lift, a);
+}
+
 /** Applies the name-token rules to every level material (re-checked every 10 frames, so editor edits
- *  and late texture loads are picked up). Without a ground (the editor) "wet" stays plain. */
-export function LevelMaterials({ ground = null }: { ground?: Ground | null }) {
+ *  and late texture loads are picked up, and at once when the ground changes). Without a ground (the
+ *  editor) "wet" stays plain. actorLift < 0 leaves the characters alone. */
+export function LevelMaterials({ ground = null, actorLift = -1 }: { ground?: Ground | null; actorLift?: number }) {
   const scene = useThree(s => s.scene);
   const n = useRef(0);
+  const last = useRef<Ground | null>(null);
   useFrame(() => {
-    if (n.current++ % 10) return;
-    scene.traverse(o => {
-      const mm = (o as Mesh).material;
-      if (!mm) return;
-      if (Array.isArray(mm)) mm.forEach(x => applyRules(x, ground));
-      else applyRules(mm, ground);
-    });
+    const now = last.current !== ground;
+    last.current = ground;
+    if (n.current++ % 10 && !now) return;
+    walk(scene, ground, actorLift, false);
   });
   return null;
 }
@@ -226,9 +300,12 @@ function makeRain(): Mesh {
   const width = dist.mul(0.0009).add(0.0035);
   m.positionNode = base.sub(dir.mul(streetFx.streak.mul(corner.y))).add(side.mul(corner.x.mul(width)));
   const edge = max(abs(rel.x).div(28), abs(rel.z).div(28));
-  const a: N = varying(smoothstep(1.0, 3.2, dist).mul(float(1).sub(smoothstep(0.34, 0.5, edge))));
+  // nothing right in front of the lens: streaks fade in from rainNear0 to rainNear1 metres
+  const a: N = varying(smoothstep(streetFx.rainNear0, streetFx.rainNear1, dist).mul(float(1).sub(smoothstep(0.34, 0.5, edge))));
+  // thinner where the fight is (the middle of the screen), full at the edges
+  const centre = mix(float(READ.rainCentre), float(1), smoothstep(0.1, 0.42, length(screenUV.sub(0.5).mul(vec2(1.5, 1)))));
   m.colorNode = vec4(0.62, 0.68, 0.82, 1);
-  m.opacityNode = a.mul(float(1).sub(abs(corner.x))).mul(0.13).mul(float(1).sub(corner.y.mul(0.7))); // faint head, fading tail
+  m.opacityNode = a.mul(centre).mul(float(1).sub(abs(corner.x))).mul(0.13).mul(float(1).sub(corner.y.mul(0.7))); // faint head, fading tail
   return particleMesh(g, m, 5);
 }
 
@@ -290,12 +367,12 @@ function makeSteam(ms: Marker[]): Mesh | null {
   const soft = smoothstep(1.0, 0.15, length(q));
   const n = mx_noise_float(vec3(q.mul(1.4).add(seedV), streetFx.time.mul(0.3))).mul(0.5).add(0.5);
   m.colorNode = vec4(0.58, 0.6, 0.68, 1);
-  m.opacityNode = soft.mul(n).mul(sin(lifeV.mul(Math.PI))).mul(0.2);
+  m.opacityNode = soft.mul(n).mul(sin(lifeV.mul(Math.PI))).mul(READ.steam);
   return particleMesh(g, m, 4);
 }
 
 // ------------------------------------------------------------------ render pipeline
-function StreetPost({ low }: { low: boolean }) {
+function StreetPost({ low, clean }: { low: boolean; clean: boolean }) {
   const gl = useThree(s => s.gl) as unknown as WebGPURenderer;
   const scene = useThree(s => s.scene);
   const camera = useThree(s => s.camera);
@@ -303,21 +380,26 @@ function StreetPost({ low }: { low: boolean }) {
     const pipeline = new RenderPipeline(gl);
     const scenePass: N = pass(scene, camera, { samples: low ? 0 : 4 });
     const col: N = scenePass.getTextureNode("output");
-    const b: N = bloom(col, low ? 0.22 : 0.32, 0.4, 0.82);
-    b.setResolutionScale(low ? 0.25 : 0.5);
-    const hdr: N = col.rgb.add(b.rgb);
-    // cool blue shadows and mids, the bright neon / lamps keep their own colour
+    let hdr: N = col.rgb;
+    if (!clean) {
+      // high threshold: only the HDR neon / lamps / tracers bloom, never a lit character or a wall
+      const B = READ.bloom;
+      const b: N = bloom(col, low ? B.strength * 0.7 : B.strength, B.radius, B.threshold);
+      b.setResolutionScale(low ? 0.25 : 0.5);
+      hdr = hdr.add(b.rgb);
+    }
+    // a light cool tint on the shadows and mids; the bright neon / lamps keep their own colour
     const l = luminance(hdr);
-    let c: N = mix(hdr.mul(vec3(0.8, 0.92, 1.24)), hdr, smoothstep(0.05, 0.55, l));
-    c = c.add(vec3(0.003, 0.005, 0.011));
-    c = neutralToneMapping(c, float(1.12));
-    const v = smoothstep(0.3, 0.95, length(uv().sub(0.5).mul(vec2(1.0, 0.8))));
-    c = c.mul(float(1).sub(v.mul(0.5)));
+    let c: N = mix(hdr.mul(vec3(0.92, 0.97, 1.1)), hdr, smoothstep(0.05, 0.55, l));
+    c = c.add(vec3(0.004, 0.005, 0.008));
+    c = neutralToneMapping(c, float(READ.exposure));
+    const v = smoothstep(0.45, 1.05, length(uv().sub(0.5).mul(vec2(1.0, 0.8))));
+    c = c.mul(float(1).sub(v.mul(READ.vignette)));
     pipeline.outputNode = vec4(c, 1);
     return { pipeline, scenePass };
-    // the pass camera is re-read every frame; rebuild only for the renderer / quality
+    // the pass camera is re-read every frame; rebuild only for the renderer / quality / effects
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gl, scene, low]);
+  }, [gl, scene, low, clean]);
   useEffect(() => () => p.pipeline.dispose(), [p]);
   useFrame(st => {
     p.scenePass.camera = st.camera;
@@ -326,20 +408,56 @@ function StreetPost({ low }: { low: boolean }) {
   return null;
 }
 
+// ------------------------------------------------------------------ camera key light
+const KEY_FWD = new Vector3(), KEY_POS = new Vector3(), KEY_UP = new Vector3(0, 1, 0);
+
+/** A directional key that rides with the camera: from just above and behind the lens, down the view.
+ *  Whatever faces the camera (the player's back, the goons, their cover) is lit at any distance;
+ *  the facades running along the street catch it at a grazing angle and stay dark. */
+function CameraKey() {
+  const key = useMemo(() => new DirectionalLight(READ.key.color, READ.key.intensity), []);
+  useFrame(({ camera }) => {
+    camera.updateWorldMatrix(true, false);
+    camera.getWorldPosition(KEY_POS);
+    camera.getWorldDirection(KEY_FWD);
+    key.position.copy(KEY_POS).addScaledVector(KEY_UP, 3).addScaledVector(KEY_FWD, -4);
+    key.target.position.copy(KEY_POS).addScaledVector(KEY_FWD, 12);
+    key.target.updateMatrixWorld();
+  }, FRAME.fx);
+  return (
+    <>
+      <primitive object={key} />
+      <primitive object={key.target} />
+    </>
+  );
+}
+
 // ------------------------------------------------------------------ the look
 export function StreetLook({ level, s, lowQuality }: { level: LevelData; s?: Session; lowQuality?: boolean }) {
   const scene = useThree(st => st.scene);
+  const clean = useFx(st => st.effects) === "clean";
   const puddles = useMemo(() => {
     const t = new TextureLoader().load("/textures/puddles.webp");
     t.wrapS = t.wrapT = RepeatWrapping;
     return t;
   }, []);
-  const ground = useMemo(() => makeGround(puddles), [puddles]);
+  const ground = useMemo(() => makeGround(puddles, clean), [puddles, clean]);
   useEffect(() => {
-    scene.add(ground.refl.target);
-    return () => { scene.remove(ground.refl.target); };
+    const refl = ground.refl;
+    if (!refl) return;
+    scene.add(refl.target);
+    return () => {
+      scene.remove(refl.target);
+      // the level materials switch to the new ground within a frame; free the old mirror after that
+      setTimeout(() => refl.dispose?.(), 1000);
+    };
   }, [scene, ground]);
-  useEffect(() => { ground.refl.reflector.resolutionScale = lowQuality ? 0.125 : 0.25; }, [ground, lowQuality]);
+  useEffect(() => { if (ground.refl) ground.refl.reflector.resolutionScale = lowQuality ? 0.125 : 0.25; }, [ground, lowQuality]);
+  useEffect(() => {
+    const near = clean ? READ.rainNear.clean : READ.rainNear.full;
+    streetFx.rainNear0.value = near[0];
+    streetFx.rainNear1.value = near[1];
+  }, [clean]);
 
   // sky gradient + height-thinned fog
   useEffect(() => {
@@ -353,7 +471,7 @@ export function StreetLook({ level, s, lowQuality }: { level: LevelData; s?: Ses
   }, [scene]);
 
   const rain = useMemo(() => makeRain(), []);
-  useEffect(() => { rain.geometry.setDrawRange(0, (lowQuality ? RAIN_LOW : RAIN_HIGH) * 6); }, [rain, lowQuality]);
+  useEffect(() => { rain.geometry.setDrawRange(0, (lowQuality ? RAIN_LOW : RAIN_HIGH) * (clean ? 3 : 6)); }, [rain, lowQuality, clean]);
   const drips = useMemo(() => makeDrips(level.markers.filter(m => m.kind === "fx" && m.data.fx === "drip")), [level]);
   const steam = useMemo(() => makeSteam(level.markers.filter(m => m.kind === "fx" && m.data.fx === "steam")), [level]);
   useEffect(() => () => { for (const x of [rain, drips, steam]) if (x) { x.geometry.dispose(); (x.material as Material).dispose(); } }, [rain, drips, steam]);
@@ -385,14 +503,15 @@ export function StreetLook({ level, s, lowQuality }: { level: LevelData; s?: Ses
 
   return (
     <>
-      <hemisphereLight args={["#34508f", "#120c18", 0.6]} />
-      <directionalLight position={[30, 50, 25]} intensity={0.35} color="#86a0ff" />
+      <hemisphereLight args={[READ.hemi.sky, READ.hemi.ground, READ.hemi.intensity]} />
+      <directionalLight position={[30, 50, 25]} intensity={READ.moon} color="#86a0ff" />
+      <CameraKey />
       <MarkerLights level={level} />
-      <LevelMaterials ground={ground} />
+      <LevelMaterials ground={ground} actorLift={READ.actorLift} />
       <primitive object={rain} />
       {drips && <primitive object={drips} />}
       {steam && <primitive object={steam} />}
-      <StreetPost low={!!lowQuality} />
+      <StreetPost low={!!lowQuality} clean={clean} />
     </>
   );
 }

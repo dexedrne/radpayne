@@ -71,6 +71,8 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
   - `?webgl2` forces the WebGL2 renderer.
   - `?q=low` switches to low quality.
   - `?cam=<camera marker>` holds the camera on a shot (room 1: `cam-wide`, `cam-club`, `cam-canyon`).
+  - `?fx=clean` starts with Effects on Clean (also in the pause menu): no rain near the camera, no
+    bloom, a plain wet sheen instead of the puddle reflections. Works in production builds too.
 
 The simulation runs at a fixed 120 Hz and is deterministic for a given level, seed, difficulty and
 input log. Bullet time is a time scale on it.

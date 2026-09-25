@@ -136,5 +136,5 @@ export function Hud() {
 export function gradeFilter(timeScale: number): string {
   const k = Math.max(0, Math.min(1, (1 - timeScale) / 0.7));
   if (k < 0.01) return "none";
-  return `sepia(${(0.45 * k).toFixed(3)}) saturate(${(1 - 0.35 * k).toFixed(3)}) contrast(${(1 + 0.08 * k).toFixed(3)}) brightness(${(1 + 0.04 * k).toFixed(3)})`;
+  return `sepia(${(0.22 * k).toFixed(3)}) saturate(${(1 - 0.15 * k).toFixed(3)}) contrast(${(1 + 0.05 * k).toFixed(3)})`;
 }
