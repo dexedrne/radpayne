@@ -3,16 +3,16 @@
 // nothing here needs WebGL2 to be forced.
 //
 //  - Level materials get rules from their name tokens (tools/room1.ts lists them): repeat textures
-//    are sampled in world space; "wet" ground = a planar reflector through a puddle mask (mirror-like
-//    in the puddles, a blurred glossy smear elsewhere) with rain ripples in the puddles; "lit" facades
+//    are sampled in world space; "wet" ground = a planar reflector through a puddle mask (a soft wet
+//    sheen in the puddles, a blurred glossy smear elsewhere) with rain ripples in the puddles; "lit" facades
 //    = their lit windows glow; "glow" = unlit colour x gain (neon, lamps), "pulse" follows the club's
 //    kick, "flicker" is a dying tube, "blink" a barricade flasher.
 //  - Render pipeline: scene pass -> bloom -> cool shadows / warm neon grade -> neutral tone map ->
 //    vignette. Sky gradient + exponential fog thinned with height (towers poke out of the haze).
 //  - Rain streaks around the camera, drips off awnings and fire escapes, steam from the manholes. All
 //    of it runs on a world clock that follows the sim's timeScale: bullet time slows the rain too.
-//  - Quality Low: reflector at quarter resolution, bloom at quarter res and weaker, a third of the
-//    rain, no MSAA.
+//  - Quality Low: reflector at an eighth resolution, bloom at quarter res and weaker, less than half
+//    the rain, no MSAA.
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { AdditiveBlending, BufferAttribute, BufferGeometry, DoubleSide, Mesh, RepeatWrapping, Sphere, TextureLoader, Vector3, type Material, type Texture } from "three";
@@ -37,12 +37,12 @@ type N = any; // TSL node graphs: the three typings are too narrow for chained s
 const SKY = { horizon: "#2f2638", mid: "#151829", zenith: "#05060b" };
 const FOG_COLOR = "#211e2e";
 const FOG_DENSITY = 0.0072;
-const RAIN_HIGH = 7000, RAIN_LOW = 2300;
+const RAIN_HIGH = 2600, RAIN_LOW = 1000;
 
 /** Shared clocks / hooks (one street scene at a time). time = world seconds (x timeScale). */
 export const streetFx = {
   time: uniform(0),
-  streak: uniform(0.55),
+  streak: uniform(0.4),
   pulse: uniform(0),
   flicker: uniform(1),
   blink: uniform(1),
@@ -95,7 +95,7 @@ export type Ground = { refl: N; color: N; roughness: N; emissive: N; mats: Set<M
 
 /** The wet street: one planar reflector (y = 0) shared by every "wet" material, masked by puddles. */
 function makeGround(puddles: Texture): Ground {
-  const refl: N = reflector({ resolutionScale: 0.5, generateMipmaps: true, bounces: false });
+  const refl: N = reflector({ resolutionScale: 0.25, generateMipmaps: true, bounces: false });
   // Every "wet" material samples the reflection, so all of them (not only the one that triggered the
   // update) must stay out of the mirrored render, or the pass reads the texture it is writing.
   const mats = new Set<Material>();
@@ -115,13 +115,13 @@ function makeGround(puddles: Texture): Ground {
   const puddle = smoothstep(0.5, 0.57, raw).mul(mix(0.4, 1.0, onStreet)).mul(up);
   const damp = smoothstep(0.28, 0.5, raw);
   const rip: N = ripples(wp, streetFx.time);
-  refl.uvNode = refl.uvNode.add(rip.xy.mul(0.014).mul(puddle.add(0.12)));
-  refl.levelNode = mix(float(4.2), float(0), puddle);
+  refl.uvNode = refl.uvNode.add(rip.xy.mul(0.022).mul(puddle.add(0.15)));
+  refl.levelNode = mix(float(5.2), float(2.2), puddle); // soft even in the puddles: wet, not a mirror
   const ndv = saturate(dot(normalView, positionViewDirection));
   const fres = mix(0.28, 1.0, pow(float(1).sub(ndv), 3));
-  const emissive = refl.rgb.mul(mix(0.3, 1.0, puddle)).mul(fres).mul(up).add(vec3(0.45, 0.5, 0.6).mul(rip.z.mul(puddle).mul(0.018)));
+  const emissive = refl.rgb.mul(mix(0.2, 0.62, puddle)).mul(fres).mul(up).add(vec3(0.45, 0.5, 0.6).mul(rip.z.mul(puddle).mul(0.018)));
   const col = materialColor.rgb.mul(mix(mix(0.62, 0.45, damp), 0.1, puddle));
-  return { refl, color: vec4(col, 1), roughness: materialRoughness.mul(mix(1.0, 0.07, puddle)), emissive, mats };
+  return { refl, color: vec4(col, 1), roughness: materialRoughness.mul(mix(1.0, 0.3, puddle)), emissive, mats };
 }
 
 function isLevelMaterial(m: Material): m is MeshStandardNodeMaterial | MeshBasicNodeMaterial {
@@ -223,12 +223,12 @@ function makeRain(): Mesh {
   const toCam: N = base.sub(cameraPosition);
   const dist: N = length(toCam);
   const side = normalize(cross(dir, toCam));
-  const width = dist.mul(0.0016).add(0.006);
+  const width = dist.mul(0.0009).add(0.0035);
   m.positionNode = base.sub(dir.mul(streetFx.streak.mul(corner.y))).add(side.mul(corner.x.mul(width)));
   const edge = max(abs(rel.x).div(28), abs(rel.z).div(28));
   const a: N = varying(smoothstep(1.0, 3.2, dist).mul(float(1).sub(smoothstep(0.34, 0.5, edge))));
   m.colorNode = vec4(0.62, 0.68, 0.82, 1);
-  m.opacityNode = a.mul(float(1).sub(abs(corner.x))).mul(0.27).mul(float(1).sub(corner.y.mul(0.6))); // bright head, fading tail
+  m.opacityNode = a.mul(float(1).sub(abs(corner.x))).mul(0.13).mul(float(1).sub(corner.y.mul(0.7))); // faint head, fading tail
   return particleMesh(g, m, 5);
 }
 
@@ -303,7 +303,7 @@ function StreetPost({ low }: { low: boolean }) {
     const pipeline = new RenderPipeline(gl);
     const scenePass: N = pass(scene, camera, { samples: low ? 0 : 4 });
     const col: N = scenePass.getTextureNode("output");
-    const b: N = bloom(col, low ? 0.5 : 0.85, 0.55, 0.62);
+    const b: N = bloom(col, low ? 0.22 : 0.32, 0.4, 0.82);
     b.setResolutionScale(low ? 0.25 : 0.5);
     const hdr: N = col.rgb.add(b.rgb);
     // cool blue shadows and mids, the bright neon / lamps keep their own colour
@@ -339,7 +339,7 @@ export function StreetLook({ level, s, lowQuality }: { level: LevelData; s?: Ses
     scene.add(ground.refl.target);
     return () => { scene.remove(ground.refl.target); };
   }, [scene, ground]);
-  useEffect(() => { ground.refl.reflector.resolutionScale = lowQuality ? 0.25 : 0.5; }, [ground, lowQuality]);
+  useEffect(() => { ground.refl.reflector.resolutionScale = lowQuality ? 0.125 : 0.25; }, [ground, lowQuality]);
 
   // sky gradient + height-thinned fog
   useEffect(() => {
@@ -365,7 +365,7 @@ export function StreetLook({ level, s, lowQuality }: { level: LevelData; s?: Ses
     const ts = !s || s.paused ? 1 : s.game.timeScale;
     const fx = streetFx;
     fx.time.value += dt * ts;
-    const want = Math.max(0.05, 0.55 * ts);
+    const want = Math.max(0.05, 0.4 * ts);
     fx.streak.value += (want - fx.streak.value) * Math.min(1, dt * 10);
     let p = clubPulse();
     if (p < 0) { // no audio yet: the club's 124 bpm on its own
