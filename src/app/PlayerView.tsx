@@ -6,11 +6,12 @@
 //   -3 bones: spine twist + pitch toward the aim, both arms onto the crosshair point, recoil kicks,
 //      the reload layer (upper body) and the additive hit flinch; the pistols sit in the hands with the
 //      clip set's grip offsets and swing (clamped) onto the crosshair point.
-// Round 2: the dual SMGs ride the pistol clips and grips; the shotgun plays the long-gun set (Shotgun_*,
-// radbro<id>.r2.glb) shouldered in the right hand with the left hand on the pump (the clips hold it
-// there), the fire / reload as upper-body layers that rack the pump, and the whole upper body turned
-// onto the crosshair (not the arms: the two-handed hold stays together). Weapon_Swap plays on a
-// switch; the guns change hands at its "swap" point (0.23 s).
+// Round 2: the dual SMGs ride the pistol clips and grips, the arms spread wide so both clear his hair
+// from the shoulder camera; the shotgun plays the long-gun set (Shotgun_*, radbro<id>.r2.glb) for the
+// body, the fire / reload as upper-body layers that rack the pump, but rides at his right hip (the
+// clips shoulder it under his big head, end-on to the camera, where it did not read): the barrel swung
+// up onto the crosshair, the left hand on the pump. Weapon_Swap plays on a switch; the guns change
+// hands at its "swap" point (0.23 s).
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useAssetRuntime } from "react-three-game";
@@ -37,14 +38,16 @@ const GUN_SCALE = 1.3;
 const SMG_SCALE = 1.2;
 /** Weapon_Swap: the guns change hands at this point of the clip (real seconds at the player's clock). */
 const SWAP_AT = 0.23;
-/** The shotgun's upper-body turn onto the crosshair is clamped to this (radians). */
-const SHOTGUN_AIM_MAX = 0.7;
-/** The shotgun carried out to his right of the crosshair line (radians), so the shoulder camera sees it past his hair. */
-const SHOTGUN_CARRY = 0.3;
+/** The shotgun's hip carry: where the right hand goes from the right shoulder (metres forward along the
+ *  aim, out to his right, down) and how far the barrel may swing up onto the crosshair (radians). */
+const SHOTGUN_HIP = { forward: 0.3, out: 0.16, down: 0.48, aimMax: 1.4 };
+/** His shotgun a little chunkier across than the heavies' (it is what the shoulder camera sees most). */
+const SHOTGUN_THICK_PLAYER = 1.55;
 /** Arms spread apart (radians off the aim line; right, left): the akimbo stance puts the right gun out
  *  past his big head and hair, where the shoulder camera sees it; the guns swing back onto the
- *  crosshair (aimGun). The left one is behind him from that camera whatever it does. */
-const ARM_SPREAD = [0.5, 0.25] as const;
+ *  crosshair (aimGun). The dual SMGs go wide on both sides so the left one clears his hair too (the
+ *  pistols keep the left one close: it is behind him from that camera). */
+const ARM_SPREAD: Record<string, readonly [number, number]> = { pistols: [0.5, 0.25], smgs: [0.5, 0.95] };
 /** Under this fade he is hidden outright: a dither this close to the lens breaks up into solid blobs. */
 const HIDE_BELOW = 0.45;
 /** How far he fades while his head covers the crosshair (stays above the guns' 0.6 cut-off). */
@@ -157,7 +160,7 @@ function makeRig(id: RadbroId, src: Object3D, pack: Object3D | null, gunPack: Ob
   if (bones.lHand) attachGun(guns[1], bones.lHand, grips.left, 1, GUN_SCALE);
   if (bones.rHand) attachGun(smgs[0], bones.rHand, grips.right, 1, SMG_SCALE);
   if (bones.lHand) attachGun(smgs[1], bones.lHand, grips.left, 1, SMG_SCALE);
-  if (bones.rHand) attachGun(shotgun, bones.rHand, grips.right, 1, [SHOTGUN_THICK, SHOTGUN_THICK, SHOTGUN_SCALE[id]]);
+  if (bones.rHand) attachGun(shotgun, bones.rHand, grips.right, 1, [SHOTGUN_THICK_PLAYER, SHOTGUN_THICK_PLAYER, SHOTGUN_SCALE[id]]);
   for (const g of [...smgs, shotgun]) g.visible = false;
   // additive hit flinch (no root translation) and the upper-body reload layer
   const gunClips = clipsOf(gunPack);
@@ -393,37 +396,29 @@ export function PlayerView({ s }: { s: Session }) {
     const armK = r.armW * (1 - r.swapW);
     const held = handGuns(rig, r.shown);
     if (r.shown === "shotgun") {
-      // two hands on one gun: turn the upper body (arms, gun and all) most of the way onto the
-      // crosshair point, clamped; the fire / reload layers already rack the pump with the left hand
-      const w = armK * (1 - 0.8 * r.reloadW) * 0.6;
-      for (let k = 0; k < 2 && w > 0.01 && alive; k++) {
-        rig.shotgun.updateMatrixWorld(true);
-        const mz = muzzleWorld(rig.shotgun, tmp.a);
-        const cur = tmp.q.copy(rig.shotgun.getWorldQuaternion(tmp.q));
-        const dir = SG_DIR.set(0, 0, 1).applyQuaternion(cur).normalize();
-        const want = SG_WANT.copy(tmp.aim).sub(mz).normalize();
-        const ang = Math.min(SHOTGUN_AIM_MAX, dir.angleTo(want)) * w;
-        if (ang < 1e-4) break;
-        SG_AXIS.crossVectors(dir, want);
-        if (SG_AXIS.lengthSq() < 1e-10) break;
-        rotateBoneWorld(B.spine, SG_AXIS.normalize(), ang);
+      // the hip carry: shouldered (the clips' hold) the gun sits under his big head and points away
+      // from the shoulder camera, end-on: it did not read. So it rides at his right hip, the barrel
+      // swung up onto the crosshair point (aimGun below), the left hand on the pump; the reload keeps it
+      // there (the right hand holds it low, the left feeds the tube), the fire layer racks the pump.
+      if (alive && armK > 0.01 && B.rArm) {
+        const sh = B.rArm.getWorldPosition(SG_DIR);
+        const fwd = SG_WANT.copy(tmp.aim).sub(sh).setY(0);
+        if (fwd.lengthSq() < 1e-6) fwd.set(-Math.sin(p.yaw), 0, -Math.cos(p.yaw));
+        fwd.normalize();
+        const hip = SG_AXIS.copy(sh).addScaledVector(fwd, SHOTGUN_HIP.forward).addScaledVector(tmp.side, SHOTGUN_HIP.out).addScaledVector(UP, -SHOTGUN_HIP.down);
+        aimLimb(B.rArm, B.rHand, hip, armK * (1 - 0.25 * r.reloadW));
       }
-      // shouldered under his big head the gun is hidden from the shoulder camera: carry it out to the
-      // right (low ready, like the pistols' akimbo arm), the left hand after the pump, and the barrel
-      // swung back onto the crosshair in the grip (aimGun below)
+      aimGun(rig.shotgun, alive ? tmp.aim : null, armK * (1 - 0.85 * r.reloadW), SHOTGUN_HIP.aimMax);
       if (alive && armK > 0.01) {
-        const reach = B.rArm ? B.rArm.getWorldPosition(tmp.a).distanceTo(tmp.aim) : 10;
-        const out = SG_WANT.copy(tmp.side).multiplyScalar(0.12 + Math.tan(SHOTGUN_CARRY) * reach).add(tmp.aim);
-        out.y -= 0.12 * reach * 0.1;
-        aimLimb(B.rArm, B.rHand, out, armK * (1 - 0.7 * r.reloadW));
         rig.shotgun.updateMatrixWorld(true);
-        aimLimb(B.lArm, B.lHand, rig.shotgun.localToWorld(SG_DIR.copy(SHOTGUN_PUMP)), armK * (1 - r.reloadW) * (1 - r.fireW * 0.5));
+        aimLimb(B.lArm, B.lHand, rig.shotgun.localToWorld(SG_DIR.copy(SHOTGUN_PUMP)), armK * (1 - 0.7 * r.reloadW) * (1 - r.fireW * 0.4));
       }
     } else {
       // each arm aims a little outside the crosshair point (akimbo), scaled with the distance
       const reach = B.rArm ? B.rArm.getWorldPosition(tmp.a).distanceTo(tmp.aim) : 10;
-      const rOff = tmp.a.copy(tmp.side).multiplyScalar(0.07 + Math.tan(ARM_SPREAD[0]) * reach).add(tmp.aim).clone();
-      const lOff = tmp.a.copy(tmp.side).multiplyScalar(-(0.07 + Math.tan(ARM_SPREAD[1]) * reach)).add(tmp.aim);
+      const spread = ARM_SPREAD[r.shown] ?? ARM_SPREAD.pistols;
+      const rOff = tmp.a.copy(tmp.side).multiplyScalar(0.07 + Math.tan(spread[0]) * reach).add(tmp.aim).clone();
+      const lOff = tmp.a.copy(tmp.side).multiplyScalar(-(0.07 + Math.tan(spread[1]) * reach)).add(tmp.aim);
       aimLimb(B.rArm, B.rHand, rOff, armK * (1 - 0.6 * r.reloadW));
       aimLimb(B.lArm, B.lHand, lOff, armK * (1 - 0.95 * r.reloadW));
       // recoil: a quick kick up at the elbow (the SMGs kick a little less, but faster)
@@ -440,8 +435,7 @@ export function PlayerView({ s }: { s: Session }) {
     if (r.shown !== "shotgun") {
       held.forEach((gun, h) => aimGun(gun, alive ? tmp.aim : null, armK * (1 - (h === 1 ? 0.9 : 0.5) * r.reloadW), 0.75));
     } else {
-      aimGun(rig.shotgun, alive ? tmp.aim : null, armK * (1 - 0.8 * r.reloadW), 0.6);
-      // rack the pump: back and forward at the clip's pumpBack (fire 0.30 s, reload 1.60 s)
+      // (aimed above, with the carry) rack the pump: back and forward at the clip's pumpBack (fire 0.30 s, reload 1.60 s)
       const pump = rig.shotgun.userData.pump as Object3D;
       const f = rig.sgFire && r.fireW > 0.05 ? rackAt(rig.sgFire.time, 0.3) : 0;
       const rl = rig.sgReload && r.reloadW > 0.05 ? rackAt(rig.sgReload.time, 1.6) : 0;

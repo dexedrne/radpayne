@@ -36,6 +36,8 @@ export class Bot {
   private demoBt = false;
   private demoDodge = false;
   private swapCd = 0;
+  /** Test / dev: keep this weapon in hand whenever it has rounds (the view checks of one gun). */
+  only: WeaponId | null = null;
   private fired = false;
   /** Seconds without a target (bullet time goes off only after a moment: no on / off every step). */
   private lost = 0;
@@ -183,7 +185,7 @@ export class Bot {
     const p = g.player;
     if (this.swapCd > 0 || p.owned.length < 2 || p.weapon.reloadT > 0 && ammoLeft(p.weapon) > 0) return;
     const has = (id: WeaponId) => p.owned.includes(id) && ammoLeft(p.arsenal[id]!) > 0;
-    const want: WeaponId = dist < 9 && has("shotgun") ? "shotgun" : has("smgs") ? "smgs" : has("shotgun") && dist < 14 ? "shotgun" : "pistols";
+    const want: WeaponId = this.only && has(this.only) ? this.only : dist < 9 && has("shotgun") ? "shotgun" : has("smgs") ? "smgs" : has("shotgun") && dist < 14 ? "shotgun" : "pistols";
     if (want !== p.weapon.id) { f.slot = SLOT_ORDER.indexOf(want) + 1; this.swapCd = 1.5; }
   }
 }

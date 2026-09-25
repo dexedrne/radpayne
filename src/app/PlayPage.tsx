@@ -47,6 +47,9 @@ const EXTRA = DEV ? params.get("extra") ?? "" : "";
 const STILL = DEV && params.has("still");
 /** Dev: ?loadout=shotgun,smgs owns those weapons from the start (the last one in hand). */
 const LOADOUT = (DEV ? params.get("loadout") ?? "" : "").split(",").filter((w): w is WeaponId => w === "shotgun" || w === "smgs");
+/** Dev: ?botgun=shotgun|smgs keeps the bot on that weapon while it has rounds (the gun view checks). */
+const BOT_GUN = DEV ? (params.get("botgun") as WeaponId | null) : null;
+const newBot = () => { const b = new Bot(3.5, 0.3, BOT_DEMO); b.only = BOT_GUN; return b; };
 /** ?q=low: low quality for this page load only (headless smoke runs). */
 if (params.get("q") === "low") useUi.setState({ quality: "low" });
 const SEED = params.has("seed") ? Number(params.get("seed")) >>> 0 : (Math.random() * 2 ** 31) >>> 0;
@@ -239,7 +242,7 @@ export default function PlayPage() {
     for (let i = 0; i < 400 && !useUi.getState().assetsVersion; i++) await new Promise(r => setTimeout(r, 50));
     await samplesReady(4000); // the first barks and the room's opening line need their files
     session.restart({ difficulty: useUi.getState().difficulty });
-    session.bot = BOT ? new Bot(3.5, 0.3, BOT_DEMO) : null;
+    session.bot = BOT ? newBot() : null;
     session.paused = true;
     if (!seenCutscene.current && (!SKIP || CUTSCENE)) {
       seenCutscene.current = true;
@@ -258,7 +261,7 @@ export default function PlayPage() {
   /** The next room's session takes over the canvas and play goes straight on (the bot too). */
   const enterRoom = useCallback(async (ns: Session) => {
     stopRoomAudio(false);
-    ns.bot = BOT ? new Bot(3.5, 0.3, BOT_DEMO) : null;
+    ns.bot = BOT ? newBot() : null;
     ns.paused = true;
     (window as unknown as { __session?: Session }).__session = ns;
     setSession(ns);
@@ -340,7 +343,7 @@ export default function PlayPage() {
     if (!session) return;
     // from the room's last checkpoint when it has one (room 3: after the security office)
     session.restart({ difficulty: useUi.getState().difficulty, resume: session.game.saved ?? undefined });
-    session.bot = BOT ? new Bot(3.5, 0.3, BOT_DEMO) : null;
+    session.bot = BOT ? newBot() : null;
     void startPlay();
   };
   const toTitle = () => {
