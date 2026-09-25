@@ -10,7 +10,8 @@ import { Scene } from "./Scene.tsx";
 import { assetsRef, loadManifest, manifestFor, loadOptional, gunClipsPath, MILADY_CLIPS } from "./characters.ts";
 import { readLevel } from "../world/level.ts";
 import { useUi } from "../ui/store.ts";
-import { Hud, gradeFilter } from "../ui/Hud.tsx";
+import { Hud, canvasFx } from "../ui/Hud.tsx";
+import { UiEffects } from "../ui/hud/UiEffects.tsx";
 import { Loading, Pause, ResultsScreen, Title, btn, layer } from "../ui/screens.tsx";
 import { Cutscene, loadCutscene, type CutsceneData } from "../ui/Cutscene.tsx";
 import { attachDom } from "../input/input.ts";
@@ -193,10 +194,14 @@ export default function PlayPage() {
     }
   }, [session]);
 
-  // the bullet-time grade on the canvas layer (15 Hz via the HUD store)
+  // the canvas layer's filter (15 Hz via the HUD store): bullet-time grade, low-health
+  // desaturation, pause blur, results dim, death greyout. The HUD is never filtered.
   useEffect(() => useUi.subscribe(s => {
     const el = filterRef.current;
-    if (el) el.style.filter = gradeFilter(s.screen === "play" || s.screen === "paused" ? s.hud.timeScale : 1);
+    if (!el) return;
+    const fx = canvasFx({ screen: s.screen, timeScale: s.hud.timeScale, health: s.hud.health, deadAt: s.deadAt, now: performance.now(), killcam: s.hud.killcam });
+    if (el.style.transition !== fx.transition) el.style.transition = fx.transition;
+    if (el.style.filter !== fx.filter) el.style.filter = fx.filter;
   }), []);
 
   const retry = () => {
@@ -225,12 +230,13 @@ export default function PlayPage() {
       {screen === "play" && <Hud />}
       {screen === "play" && !locked && !BOT && (
         <div style={{ ...layer, background: "rgba(5,6,12,0.35)", cursor: "pointer" }} onClick={() => { session?.input.flush(); lock(); }}>
-          <div style={{ ...btn(true), fontSize: 18, padding: "14px 34px" }}>CLICK TO FIGHT</div>
+          <div style={btn(true)}>CLICK TO FIGHT</div>
         </div>
       )}
       {screen === "paused" && <Pause onResume={() => { useUi.setState({ screen: "play" }); if (session) { session.input.flush(); session.paused = !BOT && !document.pointerLockElement; } lock(); }} onRestart={retry} onQuit={toTitle} />}
       {screen === "results" && <ResultsScreen onRetry={retry} onTitle={toTitle} />}
       {!session && <div style={{ ...layer, background: "#05060c" }}>{useUi.getState().load.error ?? "loading…"}</div>}
+      <UiEffects />
     </>
   );
 }

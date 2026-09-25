@@ -39,7 +39,7 @@ export type GameEvent =
   | { type: "impact"; x: number; y: number; z: number; nx: number; ny: number; nz: number; surface: string; shooter: number }
   | { type: "blood"; x: number; y: number; z: number; dx: number; dy: number; dz: number; target: number; part: number }
   | { type: "decal"; x: number; y: number; z: number; nx: number; ny: number; nz: number; blood: boolean }
-  | { type: "hurt"; target: number; amount: number; part: number; hp: number }
+  | { type: "hurt"; target: number; amount: number; part: number; hp: number; shooter?: number; fromX?: number; fromZ?: number }
   | { type: "kill"; target: number; headshot: boolean; final: boolean }
   | { type: "projectileEnd"; id: number }
   | { type: "alert"; enemy: number }
@@ -57,4 +57,6 @@ export type GameEvent =
   | { type: "roomClear" }
   | { type: "killcam"; on: boolean }
   | { type: "trigger"; id: string; action: string; group?: string }
-  | { type: "exit" };
+  | { type: "exit" }
+  /** Bullet time asked for with too little meter (the HUD flashes the hourglass). */
+  | { type: "btRefused" };
