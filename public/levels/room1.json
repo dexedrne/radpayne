@@ -13824,7 +13824,7 @@
       }
      },
      {
-      "id": "sign-gm-g",
+      "id": "sign-cafe-g",
       "components": {
        "transform": {
         "type": "Transform",
@@ -13836,14 +13836,14 @@
       },
       "children": [
        {
-        "id": "sign-gm-0G-0",
+        "id": "sign-cafe-0C-0",
         "components": {
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [-0.258, 0.3, 0],
+           "position": [-0.645, 0.25, 0],
            "rotation": [0, 0, 3.142],
-           "scale": [0.405, 0.045, 0.045]
+           "scale": [0.345, 0.045, 0.045]
           }
          },
          "geometry": {
@@ -13869,14 +13869,14 @@
         }
        },
        {
-        "id": "sign-gm-0G-1",
+        "id": "sign-cafe-0C-1",
         "components": {
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [-0.438, 0, 0],
+           "position": [-0.795, 0, 0],
            "rotation": [0, 0, -1.571],
-           "scale": [0.645, 0.045, 0.045]
+           "scale": [0.545, 0.045, 0.045]
           }
          },
          "geometry": {
@@ -13902,13 +13902,13 @@
         }
        },
        {
-        "id": "sign-gm-0G-2",
+        "id": "sign-cafe-0C-2",
         "components": {
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [-0.258, -0.3, 0],
-           "scale": [0.405, 0.045, 0.045]
+           "position": [-0.645, -0.25, 0],
+           "scale": [0.345, 0.045, 0.045]
           }
          },
          "geometry": {
@@ -13934,14 +13934,14 @@
         }
        },
        {
-        "id": "sign-gm-0G-3",
+        "id": "sign-cafe-1A-0",
         "components": {
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [-0.078, -0.162, 0],
+           "position": [-0.365, -0.075, 0],
            "rotation": [0, 0, 1.571],
-           "scale": [0.321, 0.045, 0.045]
+           "scale": [0.395, 0.045, 0.045]
           }
          },
          "geometry": {
@@ -13967,14 +13967,242 @@
         }
        },
        {
-        "id": "sign-gm-0G-4",
+        "id": "sign-cafe-1A-1",
         "components": {
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [-0.162, -0.024, 0],
+           "position": [-0.29, 0.175, 0],
+           "rotation": [0, 0, 0.785],
+           "scale": [0.257, 0.045, 0.045]
+          }
+         },
+         "geometry": {
+          "type": "Geometry",
+          "properties": {
+           "geometryType": "box",
+           "args": [1, 1, 1]
+          }
+         },
+         "material": {
+          "type": "Material",
+          "properties": {
+           "materialId": "neonPink2"
+          }
+         },
+         "mesh": {
+          "type": "Mesh",
+          "properties": {
+           "castShadow": false,
+           "receiveShadow": false
+          }
+         }
+        }
+       },
+       {
+        "id": "sign-cafe-1A-2",
+        "components": {
+         "transform": {
+          "type": "Transform",
+          "properties": {
+           "position": [-0.14, 0.175, 0],
+           "rotation": [0, 0, -0.785],
+           "scale": [0.257, 0.045, 0.045]
+          }
+         },
+         "geometry": {
+          "type": "Geometry",
+          "properties": {
+           "geometryType": "box",
+           "args": [1, 1, 1]
+          }
+         },
+         "material": {
+          "type": "Material",
+          "properties": {
+           "materialId": "neonPink2"
+          }
+         },
+         "mesh": {
+          "type": "Mesh",
+          "properties": {
+           "castShadow": false,
+           "receiveShadow": false
+          }
+         }
+        }
+       },
+       {
+        "id": "sign-cafe-1A-3",
+        "components": {
+         "transform": {
+          "type": "Transform",
+          "properties": {
+           "position": [-0.065, -0.075, 0],
+           "rotation": [0, 0, -1.571],
+           "scale": [0.395, 0.045, 0.045]
+          }
+         },
+         "geometry": {
+          "type": "Geometry",
+          "properties": {
+           "geometryType": "box",
+           "args": [1, 1, 1]
+          }
+         },
+         "material": {
+          "type": "Material",
+          "properties": {
+           "materialId": "neonPink2"
+          }
+         },
+         "mesh": {
+          "type": "Mesh",
+          "properties": {
+           "castShadow": false,
+           "receiveShadow": false
+          }
+         }
+        }
+       },
+       {
+        "id": "sign-cafe-1A-4",
+        "components": {
+         "transform": {
+          "type": "Transform",
+          "properties": {
+           "position": [-0.215, -0.03, 0],
+           "scale": [0.345, 0.045, 0.045]
+          }
+         },
+         "geometry": {
+          "type": "Geometry",
+          "properties": {
+           "geometryType": "box",
+           "args": [1, 1, 1]
+          }
+         },
+         "material": {
+          "type": "Material",
+          "properties": {
+           "materialId": "neonPink2"
+          }
+         },
+         "mesh": {
+          "type": "Mesh",
+          "properties": {
+           "castShadow": false,
+           "receiveShadow": false
+          }
+         }
+        }
+       },
+       {
+        "id": "sign-cafe-2F-0",
+        "components": {
+         "transform": {
+          "type": "Transform",
+          "properties": {
+           "position": [0.065, 0, 0],
+           "rotation": [0, 0, 1.571],
+           "scale": [0.545, 0.045, 0.045]
+          }
+         },
+         "geometry": {
+          "type": "Geometry",
+          "properties": {
+           "geometryType": "box",
+           "args": [1, 1, 1]
+          }
+         },
+         "material": {
+          "type": "Material",
+          "properties": {
+           "materialId": "neonPink2"
+          }
+         },
+         "mesh": {
+          "type": "Mesh",
+          "properties": {
+           "castShadow": false,
+           "receiveShadow": false
+          }
+         }
+        }
+       },
+       {
+        "id": "sign-cafe-2F-1",
+        "components": {
+         "transform": {
+          "type": "Transform",
+          "properties": {
+           "position": [0.215, 0.25, 0],
+           "scale": [0.345, 0.045, 0.045]
+          }
+         },
+         "geometry": {
+          "type": "Geometry",
+          "properties": {
+           "geometryType": "box",
+           "args": [1, 1, 1]
+          }
+         },
+         "material": {
+          "type": "Material",
+          "properties": {
+           "materialId": "neonPink2"
+          }
+         },
+         "mesh": {
+          "type": "Mesh",
+          "properties": {
+           "castShadow": false,
+           "receiveShadow": false
+          }
+         }
+        }
+       },
+       {
+        "id": "sign-cafe-2F-2",
+        "components": {
+         "transform": {
+          "type": "Transform",
+          "properties": {
+           "position": [0.175, 0, 0],
+           "scale": [0.265, 0.045, 0.045]
+          }
+         },
+         "geometry": {
+          "type": "Geometry",
+          "properties": {
+           "geometryType": "box",
+           "args": [1, 1, 1]
+          }
+         },
+         "material": {
+          "type": "Material",
+          "properties": {
+           "materialId": "neonPink2"
+          }
+         },
+         "mesh": {
+          "type": "Mesh",
+          "properties": {
+           "castShadow": false,
+           "receiveShadow": false
+          }
+         }
+        }
+       },
+       {
+        "id": "sign-cafe-3E-0",
+        "components": {
+         "transform": {
+          "type": "Transform",
+          "properties": {
+           "position": [0.645, 0.25, 0],
            "rotation": [0, 0, 3.142],
-           "scale": [0.213, 0.045, 0.045]
+           "scale": [0.345, 0.045, 0.045]
           }
          },
          "geometry": {
@@ -14000,113 +14228,78 @@
         }
        },
        {
-        "id": "sign-gm-1M-0",
+        "id": "sign-cafe-3E-1",
         "components": {
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [0.078, 0, 0],
-           "rotation": [0, 0, 1.571],
-           "scale": [0.645, 0.045, 0.045]
-          }
-         },
-         "geometry": {
-          "type": "Geometry",
-          "properties": {
-           "geometryType": "box",
-           "args": [1, 1, 1]
-          }
-         },
-         "material": {
-          "type": "Material",
-          "properties": {
-           "materialId": "neonPink2"
-          }
-         },
-         "mesh": {
-          "type": "Mesh",
-          "properties": {
-           "castShadow": false,
-           "receiveShadow": false
-          }
-         }
-        }
-       },
-       {
-        "id": "sign-gm-1M-1",
-        "components": {
-         "transform": {
-          "type": "Transform",
-          "properties": {
-           "position": [0.168, 0.156, 0],
-           "rotation": [0, 0, -1.012],
-           "scale": [0.385, 0.045, 0.045]
-          }
-         },
-         "geometry": {
-          "type": "Geometry",
-          "properties": {
-           "geometryType": "box",
-           "args": [1, 1, 1]
-          }
-         },
-         "material": {
-          "type": "Material",
-          "properties": {
-           "materialId": "neonPink2"
-          }
-         },
-         "mesh": {
-          "type": "Mesh",
-          "properties": {
-           "castShadow": false,
-           "receiveShadow": false
-          }
-         }
-        }
-       },
-       {
-        "id": "sign-gm-1M-2",
-        "components": {
-         "transform": {
-          "type": "Transform",
-          "properties": {
-           "position": [0.348, 0.156, 0],
-           "rotation": [0, 0, 1.012],
-           "scale": [0.385, 0.045, 0.045]
-          }
-         },
-         "geometry": {
-          "type": "Geometry",
-          "properties": {
-           "geometryType": "box",
-           "args": [1, 1, 1]
-          }
-         },
-         "material": {
-          "type": "Material",
-          "properties": {
-           "materialId": "neonPink2"
-          }
-         },
-         "mesh": {
-          "type": "Mesh",
-          "properties": {
-           "castShadow": false,
-           "receiveShadow": false
-          }
-         }
-        }
-       },
-       {
-        "id": "sign-gm-1M-3",
-        "components": {
-         "transform": {
-          "type": "Transform",
-          "properties": {
-           "position": [0.438, 0, 0],
+           "position": [0.495, 0, 0],
            "rotation": [0, 0, -1.571],
-           "scale": [0.645, 0.045, 0.045]
+           "scale": [0.545, 0.045, 0.045]
+          }
+         },
+         "geometry": {
+          "type": "Geometry",
+          "properties": {
+           "geometryType": "box",
+           "args": [1, 1, 1]
+          }
+         },
+         "material": {
+          "type": "Material",
+          "properties": {
+           "materialId": "neonPink2"
+          }
+         },
+         "mesh": {
+          "type": "Mesh",
+          "properties": {
+           "castShadow": false,
+           "receiveShadow": false
+          }
+         }
+        }
+       },
+       {
+        "id": "sign-cafe-3E-2",
+        "components": {
+         "transform": {
+          "type": "Transform",
+          "properties": {
+           "position": [0.645, -0.25, 0],
+           "scale": [0.345, 0.045, 0.045]
+          }
+         },
+         "geometry": {
+          "type": "Geometry",
+          "properties": {
+           "geometryType": "box",
+           "args": [1, 1, 1]
+          }
+         },
+         "material": {
+          "type": "Material",
+          "properties": {
+           "materialId": "neonPink2"
+          }
+         },
+         "mesh": {
+          "type": "Mesh",
+          "properties": {
+           "castShadow": false,
+           "receiveShadow": false
+          }
+         }
+        }
+       },
+       {
+        "id": "sign-cafe-3E-3",
+        "components": {
+         "transform": {
+          "type": "Transform",
+          "properties": {
+           "position": [0.605, 0, 0],
+           "scale": [0.265, 0.045, 0.045]
           }
          },
          "geometry": {
@@ -20940,13 +21133,13 @@
       },
       "children": [
        {
-        "id": "billboard-text-0W-0",
+        "id": "billboard-text-0D-0",
         "components": {
          "transform": {
           "type": "Transform",
           "properties": {
            "position": [-3.45, 0, 0],
-           "rotation": [0, 0, -1.571],
+           "rotation": [0, 0, 1.571],
            "scale": [1.82, 0.12, 0.12]
           }
          },
@@ -20973,14 +21166,13 @@
         }
        },
        {
-        "id": "billboard-text-0W-1",
+        "id": "billboard-text-0D-1",
         "components": {
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [-3.195, -0.442, 0],
-           "rotation": [0, 0, 1.012],
-           "scale": [1.082, 0.12, 0.12]
+           "position": [-3.11, 0.85, 0],
+           "scale": [0.8, 0.12, 0.12]
           }
          },
          "geometry": {
@@ -21006,14 +21198,14 @@
         }
        },
        {
-        "id": "billboard-text-0W-2",
+        "id": "billboard-text-0D-2",
         "components": {
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [-2.685, -0.442, 0],
-           "rotation": [0, 0, -1.012],
-           "scale": [1.082, 0.12, 0.12]
+           "position": [-2.6, 0.68, 0],
+           "rotation": [0, 0, -0.785],
+           "scale": [0.601, 0.12, 0.12]
           }
          },
          "geometry": {
@@ -21039,12 +21231,111 @@
         }
        },
        {
-        "id": "billboard-text-0W-3",
+        "id": "billboard-text-0D-3",
         "components": {
          "transform": {
           "type": "Transform",
           "properties": {
            "position": [-2.43, 0, 0],
+           "rotation": [0, 0, -1.571],
+           "scale": [1.14, 0.12, 0.12]
+          }
+         },
+         "geometry": {
+          "type": "Geometry",
+          "properties": {
+           "geometryType": "box",
+           "args": [1, 1, 1]
+          }
+         },
+         "material": {
+          "type": "Material",
+          "properties": {
+           "materialId": "neonPink"
+          }
+         },
+         "mesh": {
+          "type": "Mesh",
+          "properties": {
+           "castShadow": false,
+           "receiveShadow": false
+          }
+         }
+        }
+       },
+       {
+        "id": "billboard-text-0D-4",
+        "components": {
+         "transform": {
+          "type": "Transform",
+          "properties": {
+           "position": [-2.6, -0.68, 0],
+           "rotation": [0, 0, -2.356],
+           "scale": [0.601, 0.12, 0.12]
+          }
+         },
+         "geometry": {
+          "type": "Geometry",
+          "properties": {
+           "geometryType": "box",
+           "args": [1, 1, 1]
+          }
+         },
+         "material": {
+          "type": "Material",
+          "properties": {
+           "materialId": "neonPink"
+          }
+         },
+         "mesh": {
+          "type": "Mesh",
+          "properties": {
+           "castShadow": false,
+           "receiveShadow": false
+          }
+         }
+        }
+       },
+       {
+        "id": "billboard-text-0D-5",
+        "components": {
+         "transform": {
+          "type": "Transform",
+          "properties": {
+           "position": [-3.11, -0.85, 0],
+           "rotation": [0, 0, 3.142],
+           "scale": [0.8, 0.12, 0.12]
+          }
+         },
+         "geometry": {
+          "type": "Geometry",
+          "properties": {
+           "geometryType": "box",
+           "args": [1, 1, 1]
+          }
+         },
+         "material": {
+          "type": "Material",
+          "properties": {
+           "materialId": "neonPink"
+          }
+         },
+         "mesh": {
+          "type": "Mesh",
+          "properties": {
+           "castShadow": false,
+           "receiveShadow": false
+          }
+         }
+        }
+       },
+       {
+        "id": "billboard-text-1I-0",
+        "components": {
+         "transform": {
+          "type": "Transform",
+          "properties": {
+           "position": [-1.47, 0, 0],
            "rotation": [0, 0, 1.571],
            "scale": [1.82, 0.12, 0.12]
           }
@@ -21072,14 +21363,13 @@
         }
        },
        {
-        "id": "billboard-text-1A-0",
+        "id": "billboard-text-1I-1",
         "components": {
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [-1.98, -0.255, 0],
-           "rotation": [0, 0, 1.571],
-           "scale": [1.31, 0.12, 0.12]
+           "position": [-1.47, 0.85, 0],
+           "scale": [0.732, 0.12, 0.12]
           }
          },
          "geometry": {
@@ -21105,14 +21395,13 @@
         }
        },
        {
-        "id": "billboard-text-1A-1",
+        "id": "billboard-text-1I-2",
         "components": {
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [-1.725, 0.595, 0],
-           "rotation": [0, 0, 0.785],
-           "scale": [0.841, 0.12, 0.12]
+           "position": [-1.47, -0.85, 0],
+           "scale": [0.732, 0.12, 0.12]
           }
          },
          "geometry": {
@@ -21138,144 +21427,13 @@
         }
        },
        {
-        "id": "billboard-text-1A-2",
-        "components": {
-         "transform": {
-          "type": "Transform",
-          "properties": {
-           "position": [-1.215, 0.595, 0],
-           "rotation": [0, 0, -0.785],
-           "scale": [0.841, 0.12, 0.12]
-          }
-         },
-         "geometry": {
-          "type": "Geometry",
-          "properties": {
-           "geometryType": "box",
-           "args": [1, 1, 1]
-          }
-         },
-         "material": {
-          "type": "Material",
-          "properties": {
-           "materialId": "neonPink"
-          }
-         },
-         "mesh": {
-          "type": "Mesh",
-          "properties": {
-           "castShadow": false,
-           "receiveShadow": false
-          }
-         }
-        }
-       },
-       {
-        "id": "billboard-text-1A-3",
-        "components": {
-         "transform": {
-          "type": "Transform",
-          "properties": {
-           "position": [-0.96, -0.255, 0],
-           "rotation": [0, 0, -1.571],
-           "scale": [1.31, 0.12, 0.12]
-          }
-         },
-         "geometry": {
-          "type": "Geometry",
-          "properties": {
-           "geometryType": "box",
-           "args": [1, 1, 1]
-          }
-         },
-         "material": {
-          "type": "Material",
-          "properties": {
-           "materialId": "neonPink"
-          }
-         },
-         "mesh": {
-          "type": "Mesh",
-          "properties": {
-           "castShadow": false,
-           "receiveShadow": false
-          }
-         }
-        }
-       },
-       {
-        "id": "billboard-text-1A-4",
-        "components": {
-         "transform": {
-          "type": "Transform",
-          "properties": {
-           "position": [-1.47, -0.102, 0],
-           "scale": [1.14, 0.12, 0.12]
-          }
-         },
-         "geometry": {
-          "type": "Geometry",
-          "properties": {
-           "geometryType": "box",
-           "args": [1, 1, 1]
-          }
-         },
-         "material": {
-          "type": "Material",
-          "properties": {
-           "materialId": "neonPink"
-          }
-         },
-         "mesh": {
-          "type": "Mesh",
-          "properties": {
-           "castShadow": false,
-           "receiveShadow": false
-          }
-         }
-        }
-       },
-       {
-        "id": "billboard-text-2G-0",
-        "components": {
-         "transform": {
-          "type": "Transform",
-          "properties": {
-           "position": [0, 0.85, 0],
-           "rotation": [0, 0, 3.142],
-           "scale": [1.14, 0.12, 0.12]
-          }
-         },
-         "geometry": {
-          "type": "Geometry",
-          "properties": {
-           "geometryType": "box",
-           "args": [1, 1, 1]
-          }
-         },
-         "material": {
-          "type": "Material",
-          "properties": {
-           "materialId": "neonPink"
-          }
-         },
-         "mesh": {
-          "type": "Mesh",
-          "properties": {
-           "castShadow": false,
-           "receiveShadow": false
-          }
-         }
-        }
-       },
-       {
-        "id": "billboard-text-2G-1",
+        "id": "billboard-text-2N-0",
         "components": {
          "transform": {
           "type": "Transform",
           "properties": {
            "position": [-0.51, 0, 0],
-           "rotation": [0, 0, -1.571],
+           "rotation": [0, 0, 1.571],
            "scale": [1.82, 0.12, 0.12]
           }
          },
@@ -21302,12 +21460,79 @@
         }
        },
        {
-        "id": "billboard-text-2G-2",
+        "id": "billboard-text-2N-1",
         "components": {
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [0, -0.85, 0],
+           "position": [0, 0, 0],
+           "rotation": [0, 0, -1.03],
+           "scale": [2.103, 0.12, 0.12]
+          }
+         },
+         "geometry": {
+          "type": "Geometry",
+          "properties": {
+           "geometryType": "box",
+           "args": [1, 1, 1]
+          }
+         },
+         "material": {
+          "type": "Material",
+          "properties": {
+           "materialId": "neonPink"
+          }
+         },
+         "mesh": {
+          "type": "Mesh",
+          "properties": {
+           "castShadow": false,
+           "receiveShadow": false
+          }
+         }
+        }
+       },
+       {
+        "id": "billboard-text-2N-2",
+        "components": {
+         "transform": {
+          "type": "Transform",
+          "properties": {
+           "position": [0.51, 0, 0],
+           "rotation": [0, 0, 1.571],
+           "scale": [1.82, 0.12, 0.12]
+          }
+         },
+         "geometry": {
+          "type": "Geometry",
+          "properties": {
+           "geometryType": "box",
+           "args": [1, 1, 1]
+          }
+         },
+         "material": {
+          "type": "Material",
+          "properties": {
+           "materialId": "neonPink"
+          }
+         },
+         "mesh": {
+          "type": "Mesh",
+          "properties": {
+           "castShadow": false,
+           "receiveShadow": false
+          }
+         }
+        }
+       },
+       {
+        "id": "billboard-text-3E-0",
+        "components": {
+         "transform": {
+          "type": "Transform",
+          "properties": {
+           "position": [1.47, 0.85, 0],
+           "rotation": [0, 0, 3.142],
            "scale": [1.14, 0.12, 0.12]
           }
          },
@@ -21334,177 +21559,12 @@
         }
        },
        {
-        "id": "billboard-text-2G-3",
-        "components": {
-         "transform": {
-          "type": "Transform",
-          "properties": {
-           "position": [0.51, -0.459, 0],
-           "rotation": [0, 0, 1.571],
-           "scale": [0.902, 0.12, 0.12]
-          }
-         },
-         "geometry": {
-          "type": "Geometry",
-          "properties": {
-           "geometryType": "box",
-           "args": [1, 1, 1]
-          }
-         },
-         "material": {
-          "type": "Material",
-          "properties": {
-           "materialId": "neonPink"
-          }
-         },
-         "mesh": {
-          "type": "Mesh",
-          "properties": {
-           "castShadow": false,
-           "receiveShadow": false
-          }
-         }
-        }
-       },
-       {
-        "id": "billboard-text-2G-4",
-        "components": {
-         "transform": {
-          "type": "Transform",
-          "properties": {
-           "position": [0.272, -0.068, 0],
-           "rotation": [0, 0, 3.142],
-           "scale": [0.596, 0.12, 0.12]
-          }
-         },
-         "geometry": {
-          "type": "Geometry",
-          "properties": {
-           "geometryType": "box",
-           "args": [1, 1, 1]
-          }
-         },
-         "material": {
-          "type": "Material",
-          "properties": {
-           "materialId": "neonPink"
-          }
-         },
-         "mesh": {
-          "type": "Mesh",
-          "properties": {
-           "castShadow": false,
-           "receiveShadow": false
-          }
-         }
-        }
-       },
-       {
-        "id": "billboard-text-3M-0",
+        "id": "billboard-text-3E-1",
         "components": {
          "transform": {
           "type": "Transform",
           "properties": {
            "position": [0.96, 0, 0],
-           "rotation": [0, 0, 1.571],
-           "scale": [1.82, 0.12, 0.12]
-          }
-         },
-         "geometry": {
-          "type": "Geometry",
-          "properties": {
-           "geometryType": "box",
-           "args": [1, 1, 1]
-          }
-         },
-         "material": {
-          "type": "Material",
-          "properties": {
-           "materialId": "neonPink"
-          }
-         },
-         "mesh": {
-          "type": "Mesh",
-          "properties": {
-           "castShadow": false,
-           "receiveShadow": false
-          }
-         }
-        }
-       },
-       {
-        "id": "billboard-text-3M-1",
-        "components": {
-         "transform": {
-          "type": "Transform",
-          "properties": {
-           "position": [1.215, 0.442, 0],
-           "rotation": [0, 0, -1.012],
-           "scale": [1.082, 0.12, 0.12]
-          }
-         },
-         "geometry": {
-          "type": "Geometry",
-          "properties": {
-           "geometryType": "box",
-           "args": [1, 1, 1]
-          }
-         },
-         "material": {
-          "type": "Material",
-          "properties": {
-           "materialId": "neonPink"
-          }
-         },
-         "mesh": {
-          "type": "Mesh",
-          "properties": {
-           "castShadow": false,
-           "receiveShadow": false
-          }
-         }
-        }
-       },
-       {
-        "id": "billboard-text-3M-2",
-        "components": {
-         "transform": {
-          "type": "Transform",
-          "properties": {
-           "position": [1.725, 0.442, 0],
-           "rotation": [0, 0, 1.012],
-           "scale": [1.082, 0.12, 0.12]
-          }
-         },
-         "geometry": {
-          "type": "Geometry",
-          "properties": {
-           "geometryType": "box",
-           "args": [1, 1, 1]
-          }
-         },
-         "material": {
-          "type": "Material",
-          "properties": {
-           "materialId": "neonPink"
-          }
-         },
-         "mesh": {
-          "type": "Mesh",
-          "properties": {
-           "castShadow": false,
-           "receiveShadow": false
-          }
-         }
-        }
-       },
-       {
-        "id": "billboard-text-3M-3",
-        "components": {
-         "transform": {
-          "type": "Transform",
-          "properties": {
-           "position": [1.98, 0, 0],
            "rotation": [0, 0, -1.571],
            "scale": [1.82, 0.12, 0.12]
           }
@@ -21532,12 +21592,76 @@
         }
        },
        {
-        "id": "billboard-text-4I-0",
+        "id": "billboard-text-3E-2",
         "components": {
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [2.94, 0, 0],
+           "position": [1.47, -0.85, 0],
+           "scale": [1.14, 0.12, 0.12]
+          }
+         },
+         "geometry": {
+          "type": "Geometry",
+          "properties": {
+           "geometryType": "box",
+           "args": [1, 1, 1]
+          }
+         },
+         "material": {
+          "type": "Material",
+          "properties": {
+           "materialId": "neonPink"
+          }
+         },
+         "mesh": {
+          "type": "Mesh",
+          "properties": {
+           "castShadow": false,
+           "receiveShadow": false
+          }
+         }
+        }
+       },
+       {
+        "id": "billboard-text-3E-3",
+        "components": {
+         "transform": {
+          "type": "Transform",
+          "properties": {
+           "position": [1.334, 0, 0],
+           "scale": [0.868, 0.12, 0.12]
+          }
+         },
+         "geometry": {
+          "type": "Geometry",
+          "properties": {
+           "geometryType": "box",
+           "args": [1, 1, 1]
+          }
+         },
+         "material": {
+          "type": "Material",
+          "properties": {
+           "materialId": "neonPink"
+          }
+         },
+         "mesh": {
+          "type": "Mesh",
+          "properties": {
+           "castShadow": false,
+           "receiveShadow": false
+          }
+         }
+        }
+       },
+       {
+        "id": "billboard-text-4R-0",
+        "components": {
+         "transform": {
+          "type": "Transform",
+          "properties": {
+           "position": [2.43, 0, 0],
            "rotation": [0, 0, 1.571],
            "scale": [1.82, 0.12, 0.12]
           }
@@ -21565,13 +21689,13 @@
         }
        },
        {
-        "id": "billboard-text-4I-1",
+        "id": "billboard-text-4R-1",
         "components": {
          "transform": {
           "type": "Transform",
           "properties": {
            "position": [2.94, 0.85, 0],
-           "scale": [0.732, 0.12, 0.12]
+           "scale": [1.14, 0.12, 0.12]
           }
          },
          "geometry": {
@@ -21597,13 +21721,80 @@
         }
        },
        {
-        "id": "billboard-text-4I-2",
+        "id": "billboard-text-4R-2",
         "components": {
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [2.94, -0.85, 0],
-           "scale": [0.732, 0.12, 0.12]
+           "position": [3.45, 0.425, 0],
+           "rotation": [0, 0, -1.571],
+           "scale": [0.97, 0.12, 0.12]
+          }
+         },
+         "geometry": {
+          "type": "Geometry",
+          "properties": {
+           "geometryType": "box",
+           "args": [1, 1, 1]
+          }
+         },
+         "material": {
+          "type": "Material",
+          "properties": {
+           "materialId": "neonPink"
+          }
+         },
+         "mesh": {
+          "type": "Mesh",
+          "properties": {
+           "castShadow": false,
+           "receiveShadow": false
+          }
+         }
+        }
+       },
+       {
+        "id": "billboard-text-4R-3",
+        "components": {
+         "transform": {
+          "type": "Transform",
+          "properties": {
+           "position": [2.94, 0, 0],
+           "rotation": [0, 0, 3.142],
+           "scale": [1.14, 0.12, 0.12]
+          }
+         },
+         "geometry": {
+          "type": "Geometry",
+          "properties": {
+           "geometryType": "box",
+           "args": [1, 1, 1]
+          }
+         },
+         "material": {
+          "type": "Material",
+          "properties": {
+           "materialId": "neonPink"
+          }
+         },
+         "mesh": {
+          "type": "Mesh",
+          "properties": {
+           "castShadow": false,
+           "receiveShadow": false
+          }
+         }
+        }
+       },
+       {
+        "id": "billboard-text-4R-4",
+        "components": {
+         "transform": {
+          "type": "Transform",
+          "properties": {
+           "position": [3.144, -0.425, 0],
+           "rotation": [0, 0, -0.947],
+           "scale": [1.167, 0.12, 0.12]
           }
          },
          "geometry": {
@@ -35772,8 +35963,8 @@
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [58, 9.074, -11.14],
-           "scale": [0.16, 8.148, 1.52]
+           "position": [58, 9.83, -11.14],
+           "scale": [0.16, 9.66, 1.52]
           }
          },
          "geometry": {
@@ -35804,7 +35995,7 @@
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [58, 12.848, -11.95],
+           "position": [58, 14.36, -11.95],
            "scale": [0.08, 0.08, 0.2]
           }
          },
@@ -35836,19 +36027,19 @@
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [57.9, 9.074, -11.14],
+           "position": [57.9, 9.83, -11.14],
            "rotation": [0, -1.571, 0]
           }
          }
         },
         "children": [
          {
-          "id": "blade-58-w-0W-0",
+          "id": "blade-58-w-0L-0",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [-0.36, 3.024, 0],
+             "position": [-0.36, 3.78, 0],
              "rotation": [0, 0, -1.571],
              "scale": [1.272, 0.072, 0.072]
             }
@@ -35876,243 +36067,12 @@
           }
          },
          {
-          "id": "blade-58-w-0W-1",
+          "id": "blade-58-w-0L-1",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [-0.18, 2.712, 0],
-             "rotation": [0, 0, 1.012],
-             "scale": [0.751, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonPink"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-58-w-0W-2",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [0.18, 2.712, 0],
-             "rotation": [0, 0, -1.012],
-             "scale": [0.751, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonPink"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-58-w-0W-3",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [0.36, 3.024, 0],
-             "rotation": [0, 0, 1.571],
-             "scale": [1.272, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonPink"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-58-w-1A-0",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [-0.36, 1.332, 0],
-             "rotation": [0, 0, 1.571],
-             "scale": [0.912, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonPink"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-58-w-1A-1",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [-0.18, 1.932, 0],
-             "rotation": [0, 0, 0.785],
-             "scale": [0.581, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonPink"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-58-w-1A-2",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [0.18, 1.932, 0],
-             "rotation": [0, 0, -0.785],
-             "scale": [0.581, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonPink"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-58-w-1A-3",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [0.36, 1.332, 0],
-             "rotation": [0, 0, -1.571],
-             "scale": [0.912, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonPink"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-58-w-1A-4",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [0, 1.44, 0],
+             "position": [0, 3.18, 0],
              "scale": [0.792, 0.072, 0.072]
             }
            },
@@ -36139,12 +36099,207 @@
           }
          },
          {
-          "id": "blade-58-w-2G-0",
+          "id": "blade-58-w-1I-0",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0, 0.6, 0],
+             "position": [0, 2.268, 0],
+             "rotation": [0, 0, 1.571],
+             "scale": [1.272, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-58-w-1I-1",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0, 2.868, 0],
+             "scale": [0.504, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-58-w-1I-2",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0, 1.668, 0],
+             "scale": [0.504, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-58-w-2Q-0",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [-0.36, 0.756, 0],
+             "rotation": [0, 0, 1.571],
+             "scale": [1.272, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-58-w-2Q-1",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0, 1.356, 0],
+             "scale": [0.792, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-58-w-2Q-2",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0.36, 0.756, 0],
+             "rotation": [0, 0, -1.571],
+             "scale": [1.272, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-58-w-2Q-3",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0, 0.156, 0],
              "rotation": [0, 0, 3.142],
              "scale": [0.792, 0.072, 0.072]
             }
@@ -36172,12 +36327,45 @@
           }
          },
          {
-          "id": "blade-58-w-2G-1",
+          "id": "blade-58-w-2Q-4",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [-0.36, 0, 0],
+             "position": [0.228, 0.264, 0],
+             "rotation": [0, 0, -0.857],
+             "scale": [0.548, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-58-w-3U-0",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [-0.36, -0.756, 0],
              "rotation": [0, 0, -1.571],
              "scale": [1.272, 0.072, 0.072]
             }
@@ -36205,12 +36393,12 @@
           }
          },
          {
-          "id": "blade-58-w-2G-2",
+          "id": "blade-58-w-3U-1",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0, -0.6, 0],
+             "position": [0, -1.356, 0],
              "scale": [0.792, 0.072, 0.072]
             }
            },
@@ -36237,78 +36425,12 @@
           }
          },
          {
-          "id": "blade-58-w-2G-3",
+          "id": "blade-58-w-3U-2",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0.36, -0.324, 0],
-             "rotation": [0, 0, 1.571],
-             "scale": [0.624, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonPink"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-58-w-2G-4",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [0.192, -0.048, 0],
-             "rotation": [0, 0, 3.142],
-             "scale": [0.408, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonPink"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-58-w-3M-0",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [-0.36, -1.512, 0],
+             "position": [0.36, -0.756, 0],
              "rotation": [0, 0, 1.571],
              "scale": [1.272, 0.072, 0.072]
             }
@@ -36336,14 +36458,14 @@
           }
          },
          {
-          "id": "blade-58-w-3M-1",
+          "id": "blade-58-w-4O-0",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [-0.18, -1.2, 0],
-             "rotation": [0, 0, -1.012],
-             "scale": [0.751, 0.072, 0.072]
+             "position": [-0.36, -2.268, 0],
+             "rotation": [0, 0, 1.571],
+             "scale": [1.272, 0.072, 0.072]
             }
            },
            "geometry": {
@@ -36369,14 +36491,13 @@
           }
          },
          {
-          "id": "blade-58-w-3M-2",
+          "id": "blade-58-w-4O-1",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0.18, -1.2, 0],
-             "rotation": [0, 0, 1.012],
-             "scale": [0.751, 0.072, 0.072]
+             "position": [0, -1.668, 0],
+             "scale": [0.792, 0.072, 0.072]
             }
            },
            "geometry": {
@@ -36402,12 +36523,12 @@
           }
          },
          {
-          "id": "blade-58-w-3M-3",
+          "id": "blade-58-w-4O-2",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0.36, -1.512, 0],
+             "position": [0.36, -2.268, 0],
              "rotation": [0, 0, -1.571],
              "scale": [1.272, 0.072, 0.072]
             }
@@ -36435,12 +36556,45 @@
           }
          },
          {
-          "id": "blade-58-w-4I-0",
+          "id": "blade-58-w-4O-3",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0, -3.024, 0],
+             "position": [0, -2.868, 0],
+             "rotation": [0, 0, 3.142],
+             "scale": [0.792, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-58-w-5R-0",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [-0.36, -3.78, 0],
              "rotation": [0, 0, 1.571],
              "scale": [1.272, 0.072, 0.072]
             }
@@ -36468,13 +36622,13 @@
           }
          },
          {
-          "id": "blade-58-w-4I-1",
+          "id": "blade-58-w-5R-1",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0, -2.424, 0],
-             "scale": [0.504, 0.072, 0.072]
+             "position": [0, -3.18, 0],
+             "scale": [0.792, 0.072, 0.072]
             }
            },
            "geometry": {
@@ -36500,13 +36654,80 @@
           }
          },
          {
-          "id": "blade-58-w-4I-2",
+          "id": "blade-58-w-5R-2",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0, -3.624, 0],
-             "scale": [0.504, 0.072, 0.072]
+             "position": [0.36, -3.48, 0],
+             "rotation": [0, 0, -1.571],
+             "scale": [0.672, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-58-w-5R-3",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0, -3.78, 0],
+             "rotation": [0, 0, 3.142],
+             "scale": [0.792, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-58-w-5R-4",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0.144, -4.08, 0],
+             "rotation": [0, 0, -0.947],
+             "scale": [0.811, 0.072, 0.072]
             }
            },
            "geometry": {
@@ -36537,7 +36758,7 @@
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0, 3.949, 0],
+             "position": [0, 4.705, 0],
              "scale": [1.32, 0.05, 0.05]
             }
            },
@@ -36569,7 +36790,7 @@
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0, -3.949, 0],
+             "position": [0, -4.705, 0],
              "scale": [1.32, 0.05, 0.05]
             }
            },
@@ -36602,7 +36823,7 @@
             "type": "Transform",
             "properties": {
              "position": [-0.635, 0, 0],
-             "scale": [0.05, 7.898, 0.05]
+             "scale": [0.05, 9.41, 0.05]
             }
            },
            "geometry": {
@@ -36634,7 +36855,7 @@
             "type": "Transform",
             "properties": {
              "position": [0.635, 0, 0],
-             "scale": [0.05, 7.898, 0.05]
+             "scale": [0.05, 9.41, 0.05]
             }
            },
            "geometry": {
@@ -37556,8 +37777,8 @@
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [83, 7.818, -11.14],
-           "scale": [0.16, 6.636, 1.52]
+           "position": [83, 8.574, -11.14],
+           "scale": [0.16, 8.148, 1.52]
           }
          },
          "geometry": {
@@ -37588,7 +37809,7 @@
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [83, 10.836, -11.95],
+           "position": [83, 12.348, -11.95],
            "scale": [0.08, 0.08, 0.2]
           }
          },
@@ -37620,19 +37841,19 @@
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [82.9, 7.818, -11.14],
+           "position": [82.9, 8.574, -11.14],
            "rotation": [0, -1.571, 0]
           }
          }
         },
         "children": [
          {
-          "id": "blade-83-w-0H-0",
+          "id": "blade-83-w-0D-0",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [-0.36, 2.268, 0],
+             "position": [-0.36, 3.024, 0],
              "rotation": [0, 0, 1.571],
              "scale": [1.272, 0.072, 0.072]
             }
@@ -37660,241 +37881,12 @@
           }
          },
          {
-          "id": "blade-83-w-0H-1",
+          "id": "blade-83-w-0D-1",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0.36, 2.268, 0],
-             "rotation": [0, 0, 1.571],
-             "scale": [1.272, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonCyan2"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-83-w-0H-2",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [0, 2.268, 0],
-             "scale": [0.792, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonCyan2"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-83-w-1O-0",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [-0.36, 0.756, 0],
-             "rotation": [0, 0, 1.571],
-             "scale": [1.272, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonCyan2"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-83-w-1O-1",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [0, 1.356, 0],
-             "scale": [0.792, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonCyan2"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-83-w-1O-2",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [0.36, 0.756, 0],
-             "rotation": [0, 0, -1.571],
-             "scale": [1.272, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonCyan2"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-83-w-1O-3",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [0, 0.156, 0],
-             "rotation": [0, 0, 3.142],
-             "scale": [0.792, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonCyan2"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-83-w-2D-0",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [-0.36, -0.756, 0],
-             "rotation": [0, 0, 1.571],
-             "scale": [1.272, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonCyan2"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-83-w-2D-1",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [-0.12, -0.156, 0],
+             "position": [-0.12, 3.624, 0],
              "scale": [0.552, 0.072, 0.072]
             }
            },
@@ -37921,12 +37913,12 @@
           }
          },
          {
-          "id": "blade-83-w-2D-2",
+          "id": "blade-83-w-0D-2",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0.24, -0.276, 0],
+             "position": [0.24, 3.504, 0],
              "rotation": [0, 0, -0.785],
              "scale": [0.411, 0.072, 0.072]
             }
@@ -37954,12 +37946,12 @@
           }
          },
          {
-          "id": "blade-83-w-2D-3",
+          "id": "blade-83-w-0D-3",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0.36, -0.756, 0],
+             "position": [0.36, 3.024, 0],
              "rotation": [0, 0, -1.571],
              "scale": [0.792, 0.072, 0.072]
             }
@@ -37987,12 +37979,12 @@
           }
          },
          {
-          "id": "blade-83-w-2D-4",
+          "id": "blade-83-w-0D-4",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0.24, -1.236, 0],
+             "position": [0.24, 2.544, 0],
              "rotation": [0, 0, -2.356],
              "scale": [0.411, 0.072, 0.072]
             }
@@ -38020,12 +38012,12 @@
           }
          },
          {
-          "id": "blade-83-w-2D-5",
+          "id": "blade-83-w-0D-5",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [-0.12, -1.356, 0],
+             "position": [-0.12, 2.424, 0],
              "rotation": [0, 0, 3.142],
              "scale": [0.552, 0.072, 0.072]
             }
@@ -38053,12 +38045,241 @@
           }
          },
          {
-          "id": "blade-83-w-3L-0",
+          "id": "blade-83-w-1I-0",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [-0.36, -2.268, 0],
+             "position": [0, 1.512, 0],
+             "rotation": [0, 0, 1.571],
+             "scale": [1.272, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonCyan2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-83-w-1I-1",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0, 2.112, 0],
+             "scale": [0.504, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonCyan2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-83-w-1I-2",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0, 0.912, 0],
+             "scale": [0.504, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonCyan2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-83-w-2N-0",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [-0.36, 0, 0],
+             "rotation": [0, 0, 1.571],
+             "scale": [1.272, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonCyan2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-83-w-2N-1",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0, 0, 0],
+             "rotation": [0, 0, -1.03],
+             "scale": [1.471, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonCyan2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-83-w-2N-2",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0.36, 0, 0],
+             "rotation": [0, 0, 1.571],
+             "scale": [1.272, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonCyan2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-83-w-3E-0",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0, -0.912, 0],
+             "rotation": [0, 0, 3.142],
+             "scale": [0.792, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonCyan2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-83-w-3E-1",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [-0.36, -1.512, 0],
              "rotation": [0, 0, -1.571],
              "scale": [1.272, 0.072, 0.072]
             }
@@ -38086,13 +38307,209 @@
           }
          },
          {
-          "id": "blade-83-w-3L-1",
+          "id": "blade-83-w-3E-2",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0, -2.868, 0],
+             "position": [0, -2.112, 0],
              "scale": [0.792, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonCyan2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-83-w-3E-3",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [-0.096, -1.512, 0],
+             "scale": [0.6, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonCyan2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-83-w-4R-0",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [-0.36, -3.024, 0],
+             "rotation": [0, 0, 1.571],
+             "scale": [1.272, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonCyan2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-83-w-4R-1",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0, -2.424, 0],
+             "scale": [0.792, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonCyan2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-83-w-4R-2",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0.36, -2.724, 0],
+             "rotation": [0, 0, -1.571],
+             "scale": [0.672, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonCyan2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-83-w-4R-3",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0, -3.024, 0],
+             "rotation": [0, 0, 3.142],
+             "scale": [0.792, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonCyan2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-83-w-4R-4",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0.144, -3.324, 0],
+             "rotation": [0, 0, -0.947],
+             "scale": [0.811, 0.072, 0.072]
             }
            },
            "geometry": {
@@ -38123,7 +38540,7 @@
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0, 3.193, 0],
+             "position": [0, 3.949, 0],
              "scale": [1.32, 0.05, 0.05]
             }
            },
@@ -38155,7 +38572,7 @@
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0, -3.193, 0],
+             "position": [0, -3.949, 0],
              "scale": [1.32, 0.05, 0.05]
             }
            },
@@ -38188,7 +38605,7 @@
             "type": "Transform",
             "properties": {
              "position": [-0.635, 0, 0],
-             "scale": [0.05, 6.386, 0.05]
+             "scale": [0.05, 7.898, 0.05]
             }
            },
            "geometry": {
@@ -38220,7 +38637,7 @@
             "type": "Transform",
             "properties": {
              "position": [0.635, 0, 0],
-             "scale": [0.05, 6.386, 0.05]
+             "scale": [0.05, 7.898, 0.05]
             }
            },
            "geometry": {
@@ -39779,8 +40196,8 @@
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [131, 6.306, 11.14],
-           "scale": [0.16, 3.612, 1.52]
+           "position": [131, 7.818, 11.14],
+           "scale": [0.16, 6.636, 1.52]
           }
          },
          "geometry": {
@@ -39811,7 +40228,7 @@
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [131, 7.812, 11.95],
+           "position": [131, 10.836, 11.95],
            "scale": [0.08, 0.08, 0.2]
           }
          },
@@ -39843,19 +40260,117 @@
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [130.9, 6.306, 11.14],
+           "position": [130.9, 7.818, 11.14],
            "rotation": [0, -1.571, 0]
           }
          }
         },
         "children": [
          {
-          "id": "blade-131-w-0G-0",
+          "id": "blade-131-w-0P-0",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0, 1.356, 0],
+             "position": [-0.36, 2.268, 0],
+             "rotation": [0, 0, 1.571],
+             "scale": [1.272, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-131-w-0P-1",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0, 2.868, 0],
+             "scale": [0.792, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-131-w-0P-2",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0.36, 2.568, 0],
+             "rotation": [0, 0, -1.571],
+             "scale": [0.672, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-131-w-0P-3",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0, 2.268, 0],
              "rotation": [0, 0, 3.142],
              "scale": [0.792, 0.072, 0.072]
             }
@@ -39883,12 +40398,176 @@
           }
          },
          {
-          "id": "blade-131-w-0G-1",
+          "id": "blade-131-w-1A-0",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [-0.36, 0.756, 0],
+             "position": [-0.36, 0.576, 0],
+             "rotation": [0, 0, 1.571],
+             "scale": [0.912, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-131-w-1A-1",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [-0.18, 1.176, 0],
+             "rotation": [0, 0, 0.785],
+             "scale": [0.581, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-131-w-1A-2",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0.18, 1.176, 0],
+             "rotation": [0, 0, -0.785],
+             "scale": [0.581, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-131-w-1A-3",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0.36, 0.576, 0],
+             "rotation": [0, 0, -1.571],
+             "scale": [0.912, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-131-w-1A-4",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0, 0.684, 0],
+             "scale": [0.792, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-131-w-2W-0",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [-0.36, -0.756, 0],
              "rotation": [0, 0, -1.571],
              "scale": [1.272, 0.072, 0.072]
             }
@@ -39916,176 +40595,12 @@
           }
          },
          {
-          "id": "blade-131-w-0G-2",
+          "id": "blade-131-w-2W-1",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0, 0.156, 0],
-             "scale": [0.792, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonPink2"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-131-w-0G-3",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [0.36, 0.432, 0],
-             "rotation": [0, 0, 1.571],
-             "scale": [0.624, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonPink2"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-131-w-0G-4",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [0.192, 0.708, 0],
-             "rotation": [0, 0, 3.142],
-             "scale": [0.408, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonPink2"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-131-w-1M-0",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [-0.36, -0.756, 0],
-             "rotation": [0, 0, 1.571],
-             "scale": [1.272, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonPink2"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-131-w-1M-1",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [-0.18, -0.444, 0],
-             "rotation": [0, 0, -1.012],
-             "scale": [0.751, 0.072, 0.072]
-            }
-           },
-           "geometry": {
-            "type": "Geometry",
-            "properties": {
-             "geometryType": "box",
-             "args": [1, 1, 1]
-            }
-           },
-           "material": {
-            "type": "Material",
-            "properties": {
-             "materialId": "neonPink2"
-            }
-           },
-           "mesh": {
-            "type": "Mesh",
-            "properties": {
-             "castShadow": false,
-             "receiveShadow": false
-            }
-           }
-          }
-         },
-         {
-          "id": "blade-131-w-1M-2",
-          "components": {
-           "transform": {
-            "type": "Transform",
-            "properties": {
-             "position": [0.18, -0.444, 0],
+             "position": [-0.18, -1.068, 0],
              "rotation": [0, 0, 1.012],
              "scale": [0.751, 0.072, 0.072]
             }
@@ -40113,13 +40628,145 @@
           }
          },
          {
-          "id": "blade-131-w-1M-3",
+          "id": "blade-131-w-2W-2",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0.18, -1.068, 0],
+             "rotation": [0, 0, -1.012],
+             "scale": [0.751, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-131-w-2W-3",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
              "position": [0.36, -0.756, 0],
-             "rotation": [0, 0, -1.571],
+             "rotation": [0, 0, 1.571],
+             "scale": [1.272, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-131-w-3N-0",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [-0.36, -2.268, 0],
+             "rotation": [0, 0, 1.571],
+             "scale": [1.272, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-131-w-3N-1",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0, -2.268, 0],
+             "rotation": [0, 0, -1.03],
+             "scale": [1.471, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade-131-w-3N-2",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0.36, -2.268, 0],
+             "rotation": [0, 0, 1.571],
              "scale": [1.272, 0.072, 0.072]
             }
            },
@@ -40151,7 +40798,7 @@
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0, 1.681, 0],
+             "position": [0, 3.193, 0],
              "scale": [1.32, 0.05, 0.05]
             }
            },
@@ -40183,7 +40830,7 @@
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0, -1.681, 0],
+             "position": [0, -3.193, 0],
              "scale": [1.32, 0.05, 0.05]
             }
            },
@@ -40216,7 +40863,7 @@
             "type": "Transform",
             "properties": {
              "position": [-0.635, 0, 0],
-             "scale": [0.05, 3.362, 0.05]
+             "scale": [0.05, 6.386, 0.05]
             }
            },
            "geometry": {
@@ -40248,7 +40895,7 @@
             "type": "Transform",
             "properties": {
              "position": [0.635, 0, 0],
-             "scale": [0.05, 3.362, 0.05]
+             "scale": [0.05, 6.386, 0.05]
             }
            },
            "geometry": {
@@ -40294,8 +40941,8 @@
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [-56, 6.806, -11.14],
-           "scale": [0.16, 3.612, 1.52]
+           "position": [-56, 8.318, -11.14],
+           "scale": [0.16, 6.636, 1.52]
           }
          },
          "geometry": {
@@ -40326,7 +40973,7 @@
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [-56, 8.312, -11.95],
+           "position": [-56, 11.336, -11.95],
            "scale": [0.08, 0.08, 0.2]
           }
          },
@@ -40358,19 +41005,19 @@
          "transform": {
           "type": "Transform",
           "properties": {
-           "position": [-56.1, 6.806, -11.14],
+           "position": [-56.1, 8.318, -11.14],
            "rotation": [0, -1.571, 0]
           }
          }
         },
         "children": [
          {
-          "id": "blade--56-w-0G-0",
+          "id": "blade--56-w-0C-0",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0, 1.356, 0],
+             "position": [0, 2.868, 0],
              "rotation": [0, 0, 3.142],
              "scale": [0.792, 0.072, 0.072]
             }
@@ -40398,12 +41045,12 @@
           }
          },
          {
-          "id": "blade--56-w-0G-1",
+          "id": "blade--56-w-0C-1",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [-0.36, 0.756, 0],
+             "position": [-0.36, 2.268, 0],
              "rotation": [0, 0, -1.571],
              "scale": [1.272, 0.072, 0.072]
             }
@@ -40431,12 +41078,12 @@
           }
          },
          {
-          "id": "blade--56-w-0G-2",
+          "id": "blade--56-w-0C-2",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0, 0.156, 0],
+             "position": [0, 1.668, 0],
              "scale": [0.792, 0.072, 0.072]
             }
            },
@@ -40463,14 +41110,14 @@
           }
          },
          {
-          "id": "blade--56-w-0G-3",
+          "id": "blade--56-w-1A-0",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0.36, 0.432, 0],
+             "position": [-0.36, 0.576, 0],
              "rotation": [0, 0, 1.571],
-             "scale": [0.624, 0.072, 0.072]
+             "scale": [0.912, 0.072, 0.072]
             }
            },
            "geometry": {
@@ -40496,14 +41143,14 @@
           }
          },
          {
-          "id": "blade--56-w-0G-4",
+          "id": "blade--56-w-1A-1",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0.192, 0.708, 0],
-             "rotation": [0, 0, 3.142],
-             "scale": [0.408, 0.072, 0.072]
+             "position": [-0.18, 1.176, 0],
+             "rotation": [0, 0, 0.785],
+             "scale": [0.581, 0.072, 0.072]
             }
            },
            "geometry": {
@@ -40529,7 +41176,105 @@
           }
          },
          {
-          "id": "blade--56-w-1M-0",
+          "id": "blade--56-w-1A-2",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0.18, 1.176, 0],
+             "rotation": [0, 0, -0.785],
+             "scale": [0.581, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade--56-w-1A-3",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0.36, 0.576, 0],
+             "rotation": [0, 0, -1.571],
+             "scale": [0.912, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade--56-w-1A-4",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0, 0.684, 0],
+             "scale": [0.792, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade--56-w-2F-0",
           "components": {
            "transform": {
             "type": "Transform",
@@ -40562,14 +41307,13 @@
           }
          },
          {
-          "id": "blade--56-w-1M-1",
+          "id": "blade--56-w-2F-1",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [-0.18, -0.444, 0],
-             "rotation": [0, 0, -1.012],
-             "scale": [0.751, 0.072, 0.072]
+             "position": [0, -0.156, 0],
+             "scale": [0.792, 0.072, 0.072]
             }
            },
            "geometry": {
@@ -40595,14 +41339,13 @@
           }
          },
          {
-          "id": "blade--56-w-1M-2",
+          "id": "blade--56-w-2F-2",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0.18, -0.444, 0],
-             "rotation": [0, 0, 1.012],
-             "scale": [0.751, 0.072, 0.072]
+             "position": [-0.096, -0.756, 0],
+             "scale": [0.6, 0.072, 0.072]
             }
            },
            "geometry": {
@@ -40628,14 +41371,111 @@
           }
          },
          {
-          "id": "blade--56-w-1M-3",
+          "id": "blade--56-w-3E-0",
           "components": {
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0.36, -0.756, 0],
+             "position": [0, -1.668, 0],
+             "rotation": [0, 0, 3.142],
+             "scale": [0.792, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade--56-w-3E-1",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [-0.36, -2.268, 0],
              "rotation": [0, 0, -1.571],
              "scale": [1.272, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade--56-w-3E-2",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [0, -2.868, 0],
+             "scale": [0.792, 0.072, 0.072]
+            }
+           },
+           "geometry": {
+            "type": "Geometry",
+            "properties": {
+             "geometryType": "box",
+             "args": [1, 1, 1]
+            }
+           },
+           "material": {
+            "type": "Material",
+            "properties": {
+             "materialId": "neonPink2"
+            }
+           },
+           "mesh": {
+            "type": "Mesh",
+            "properties": {
+             "castShadow": false,
+             "receiveShadow": false
+            }
+           }
+          }
+         },
+         {
+          "id": "blade--56-w-3E-3",
+          "components": {
+           "transform": {
+            "type": "Transform",
+            "properties": {
+             "position": [-0.096, -2.268, 0],
+             "scale": [0.6, 0.072, 0.072]
             }
            },
            "geometry": {
@@ -40666,7 +41506,7 @@
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0, 1.681, 0],
+             "position": [0, 3.193, 0],
              "scale": [1.32, 0.05, 0.05]
             }
            },
@@ -40698,7 +41538,7 @@
            "transform": {
             "type": "Transform",
             "properties": {
-             "position": [0, -1.681, 0],
+             "position": [0, -3.193, 0],
              "scale": [1.32, 0.05, 0.05]
             }
            },
@@ -40731,7 +41571,7 @@
             "type": "Transform",
             "properties": {
              "position": [-0.635, 0, 0],
-             "scale": [0.05, 3.362, 0.05]
+             "scale": [0.05, 6.386, 0.05]
             }
            },
            "geometry": {
@@ -40763,7 +41603,7 @@
             "type": "Transform",
             "properties": {
              "position": [0.635, 0, 0],
-             "scale": [0.05, 3.362, 0.05]
+             "scale": [0.05, 6.386, 0.05]
             }
            },
            "geometry": {

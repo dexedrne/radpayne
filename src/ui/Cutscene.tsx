@@ -7,11 +7,13 @@
 // that fits its length. Used for cutscene 1 (c1) and the room 1 ending (e1, captions only).
 // A line with a `speaker` is someone else's (c2: the bouncer, goon_b): voices/<speaker>/<audio>, set
 // upright (the narrator's captions are italic). `music` names the room music under the panels.
+// A caption appears when its line starts (with its voice), never before; a panel's `maxW` (fraction of
+// the width) and `size` (font scale) keep a long caption off the faces next to the painted box.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { narrate, sampleDuration, samplesReady, stopNarration } from "../audio/sfx.ts";
 
 export type Line = { audio?: string; text: string; speaker?: string };
-export type Panel = { image?: string; tone?: string; box?: [number, number, number, number]; lines: Line[]; dur?: number };
+export type Panel = { image?: string; tone?: string; box?: [number, number, number, number]; lines: Line[]; dur?: number; maxW?: number; size?: number };
 export type CutsceneData = { id: string; title?: string; panels: Panel[]; music?: string };
 
 const font = "ui-monospace, SFMono-Regular, Menlo, monospace";
@@ -35,17 +37,26 @@ const readTime = (t: string) => Math.max(2.8, t.length * 0.055);
 
 export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => void }) {
   const [i, setI] = useState(0);
-  const [shown, setShown] = useState(1);
+  const [shown, setShown] = useState(0);
   const [ready, setReady] = useState(false);
   const timers = useRef<number[]>([]);
   const done = useRef(false);
+  // the page may re-render the parent (and hand a new onDone) mid-panel: the panel's timers and its
+  // voice must not restart for that, so the callbacks below never change identity
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
+  const at = useRef(0);
   const finish = useCallback(() => {
     if (done.current) return;
     done.current = true;
     stopNarration();
-    onDone();
-  }, [onDone]);
-  const next = useCallback(() => setI(k => { if (k + 1 >= data.panels.length) { finish(); return k; } return k + 1; }), [data, finish]);
+    onDoneRef.current();
+  }, []);
+  const next = useCallback(() => {
+    if (at.current + 1 >= data.panels.length) { finish(); return; }
+    at.current += 1;
+    setI(at.current);
+  }, [data, finish]);
 
   // the narrator's voice files (decoded after the PLAY gesture); start the panels once they are in
   useEffect(() => { let live = true; void samplesReady(3500).then(() => { if (live) setReady(true); }); return () => { live = false; }; }, []);
@@ -55,7 +66,7 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
     if (!ready) return;
     const clear = () => { for (const t of timers.current) clearTimeout(t); timers.current = []; };
     clear();
-    setShown(1);
+    setShown(0);
     const panel = data.panels[i];
     const lines = panel?.lines ?? [];
     let t = 0.3;
@@ -92,13 +103,14 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
         {/* the art and its caption box push in together, so the box stays over the painted one */}
         <div style={{ position: "absolute", inset: 0, transformOrigin: "60% 45%", animation: "rp-push 14s ease-out forwards" }}>
         <Art p={p} zoom={false} />
-        <div style={{
-          position: "absolute", left: `${box[0] * 100}%`, top: `${box[1] * 100}%`, minWidth: `${box[2] * 100}%`, minHeight: `${box[3] * 100}%`, maxWidth: "46%",
+        {lines.length > 0 && <div style={{
+          position: "absolute", left: `${box[0] * 100}%`, top: `${box[1] * 100}%`, minWidth: `${box[2] * 100}%`, minHeight: `${box[3] * 100}%`, maxWidth: `${(p.maxW ?? 0.46) * 100}%`,
           background: "#f4e7b8", color: "#141210", padding: "0.55em 0.8em", border: "2px solid #141210", boxShadow: "3px 3px 0 rgba(0,0,0,0.55)",
-          font: `italic 700 clamp(12px, 1.55vw, 21px)/1.3 ${serif}`, display: "flex", flexDirection: "column", gap: "0.35em",
+          font: `italic 700 clamp(${Math.round(12 * (p.size ?? 1))}px, ${(1.55 * (p.size ?? 1)).toFixed(2)}vw, ${Math.round(21 * (p.size ?? 1))}px)/1.3 ${serif}`, display: "flex", flexDirection: "column", gap: "0.35em",
+          boxSizing: "border-box", animation: "rp-line 0.3s ease-out",
         }}>
           {lines.map((ln, k) => <div key={k} style={{ animation: "rp-line 0.4s ease-out", ...(ln.speaker ? { fontStyle: "normal" } : {}) }}>{ln.text}</div>)}
-        </div>
+        </div>}
         </div>
       </div>
       <div style={{ display: "flex", gap: 8 }}>

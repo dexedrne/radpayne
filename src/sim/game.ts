@@ -586,7 +586,7 @@ export class Game {
     let l = Math.sqrt(dx * dx + dy * dy + dz * dz);
     if (l < 0.5) { const a = aimDir(p.yaw, p.pitch, this.v2); dx = a.x; dy = a.y; dz = a.z; l = 1; }
     dx /= l; dy /= l; dz /= l;
-    this.stats.shots++;
+    this.stats.shots += def.pellets; // accuracy counts every pellet (hits do)
     // hearing: idle goons in range wake up
     for (const e of this.enemies) {
       if (e.state !== "idle" || e.deaf) continue;

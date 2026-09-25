@@ -87,6 +87,7 @@ const FONT: Record<string, number[][][]> = {
   C: [[[3, 5], [0, 5], [0, 0], [3, 0]]],
   D: [[[0, 0], [0, 5], [2, 5], [3, 4], [3, 1], [2, 0], [0, 0]]],
   E: [[[3, 5], [0, 5], [0, 0], [3, 0]], [[0, 2.5], [2.2, 2.5]]],
+  F: [[[0, 0], [0, 5], [3, 5]], [[0, 2.5], [2.2, 2.5]]],
   G: [[[3, 5], [0, 5], [0, 0], [3, 0], [3, 2.3], [1.6, 2.3]]],
   H: [[[0, 0], [0, 5]], [[3, 0], [3, 5]], [[0, 2.5], [3, 2.5]]],
   I: [[[1.5, 0], [1.5, 5]], [[0.6, 5], [2.4, 5]], [[0.6, 0], [2.4, 0]]],
@@ -96,6 +97,7 @@ const FONT: Record<string, number[][][]> = {
   N: [[[0, 0], [0, 5], [3, 0], [3, 5]]],
   O: [[[0, 0], [0, 5], [3, 5], [3, 0], [0, 0]]],
   P: [[[0, 0], [0, 5], [3, 5], [3, 2.5], [0, 2.5]]],
+  Q: [[[0, 0], [0, 5], [3, 5], [3, 0], [0, 0]], [[1.8, 1.2], [3.1, -0.3]]],
   R: [[[0, 0], [0, 5], [3, 5], [3, 2.5], [0, 2.5]], [[1.2, 2.5], [3, 0]]],
   S: [[[3, 5], [0, 5], [0, 2.5], [3, 2.5], [3, 0], [0, 0]]],
   T: [[[0, 5], [3, 5]], [[1.5, 5], [1.5, 0]]],
@@ -433,7 +435,7 @@ decor.push(group("sign-24h", [-10.8, 2.2, 11.9], PI, [...neonText("sign-24h", "2
 decor.push(group("sign-open", [-4.4, 2.0, 11.9], PI, [...neonText("sign-open", "OPEN", { u: 0.07, mat: "neonRed" }), ...neonFrame("sign-open-fr", 1.35, 0.6, 0.03, "neonCyan2")]));
 decor.push(...storefront("sf-sw4", -2, 6, "s", "shutter"));
 decor.push(...storefront("sf-sw4b", 6, 14, "s", "shop", "awningRed"));
-decor.push(wallSign("sign-gm", 9.2, "s", 3.35, "GM", "neonPink2", 0.12, undefined, false));
+decor.push(wallSign("sign-cafe", 9.2, "s", 3.35, "CAFE", "neonPink2", 0.1, undefined, false));
 decor.push(...storefront("sf-sw1", -20, -13, "s", "shutter"));
 
 // ---- CLUB MILADY: marquee canopy, the sign over the door, a blade sign on the corner
@@ -463,7 +465,7 @@ decor.push(bladeSign("bar-blade", 26.8, "n", 3.9, "BAR", "neonCyan2", "neonPink2
 decor.push(...waterTower("wt-1", -15, 15.2, -24), ...waterTower("wt-2", -6, 18.2, 26), ...waterTower("wt-3", 4, 16.5, -30));
 // rooftop billboard over the brownstone (lit panel)
 decor.push(box("billboard-frame", [-23, 24, -20], [9, 4.2, 0.3], "metalDark"), box("billboard", [-23, 24, -19.8], [8.6, 3.8, 0.1], "billboardGlow"));
-decor.push(group("billboard-text", [-23, 24, -19.7], 0, neonText("billboard-text", "WAGMI", { u: 0.34, mat: "neonPink", thick: 0.12, gap: 0.45 })));
+decor.push(group("billboard-text", [-23, 24, -19.7], 0, neonText("billboard-text", "DINER", { u: 0.34, mat: "neonPink", thick: 0.12, gap: 0.45 })));
 for (const x of [-26, -20]) decor.push(box(`billboard-leg-${x}`, [x, 21.2, -20.4], [0.2, 2.4, 0.2], "metalDark"));
 
 // ---- street paint: lane dashes, crosswalks, stop lines
@@ -519,13 +521,13 @@ for (const [id, x, s] of [["lamp-n1", -22, "n"], ["lamp-n2", 2, "n"], ["lamp-s1"
       }
     }
   const blades: Array<[number, Side, number, string, string, string]> = [
-    [58, "n", 5, "WAGMI", "neonPink", "neonCyan2"],
+    [58, "n", 5, "LIQUOR", "neonPink", "neonCyan2"],
     [66, "s", 6, "BAR", "neonCyan2", "neonPink2"],
-    [83, "n", 4.5, "HODL", "neonCyan2", "neonAmber"],
+    [83, "n", 4.5, "DINER", "neonCyan2", "neonAmber"],
     [97, "s", 5.5, "HOTEL", "neonAmber", "neonRed"],
     [112, "n", 6, "PIZZA", "neonRed", "neonGreen"],
-    [131, "s", 4.5, "GM", "neonPink2", "neonCyan2"],
-    [-56, "n", 5, "GM", "neonPink2", "neonCyan2"],
+    [131, "s", 4.5, "PAWN", "neonPink2", "neonCyan2"],
+    [-56, "n", 5, "CAFE", "neonPink2", "neonCyan2"],
   ];
   for (const [x, s, y, str, m, f] of blades) decor.push(bladeSign(`blade-${x}`, x, s, y, str, m, f, 0.24));
   // parked cars along the far curbs

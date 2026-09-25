@@ -76,6 +76,8 @@ export class Director {
   private queue: Line[] = [];
   private narratorUntil = 0;
   private barkUntil = 0;
+  /** When the bark on the air right now ends (real s): a forced line (a hit) never talks over it. */
+  private barkPlaying = 0;
   private goonNext: number[] = [];
   private lastState: string[] = [];
   private lastBurst: number[] = [];
@@ -105,6 +107,7 @@ export class Director {
     this.queue = [];
     this.narratorUntil = 0;
     this.barkUntil = 0;
+    this.barkPlaying = 0;
     this.goonNext = [];
     this.lastState = [];
     this.lastBurst = [];
@@ -123,9 +126,9 @@ export class Director {
     this.scatterAt = -1;
     this.whimperNext = 0;
     this.lastReload = [];
-    // the room's opening line
+    // the room's opening line (not again on a retry from a checkpoint inside the room)
     const enter = this.s.level.room.enterLine;
-    if (typeof enter === "string") this.say(enter, typeof this.s.level.room.enterDelay === "number" ? this.s.level.room.enterDelay : 1.5);
+    if (typeof enter === "string" && !g.resumed) this.say(enter, typeof this.s.level.room.enterDelay === "number" ? this.s.level.room.enterDelay : 1.5);
   }
 
   private get tutorial(): boolean {
@@ -147,6 +150,7 @@ export class Director {
       const len = pa(line);
       if (len <= 0) { this.paSaid.delete(line); return; } // not loaded / muted: a later cue may try again
       this.barkUntil = performance.now() / 1000 + len + 0.6;
+      this.barkPlaying = performance.now() / 1000 + len;
       goonTalk[this.dj] = performance.now() + len * 1000;
       this.sub(PA[line], Math.max(1.8, len + 0.6));
     };
@@ -156,6 +160,7 @@ export class Director {
   /** A heavy's line (positional); the taunt carries a subtitle. */
   private heavy(i: number, line: HeavyLine, force = false): void {
     const now = performance.now() / 1000;
+    if (now < this.barkPlaying) return; // never over another voice, forced or not
     if (!force && (now < this.barkUntil || now < (this.goonNext[i] ?? 0))) return;
     const e = this.s.game.enemies[i];
     if (!e) return;
@@ -164,6 +169,7 @@ export class Director {
     const d = heavyBark(line, dist, pan);
     if (d <= 0) return;
     this.barkUntil = now + d + 1.2;
+    this.barkPlaying = now + d;
     this.goonNext[i] = now + d + 5; // the heavies are nearly silent
     if (line === "taunt_1") this.sub("you should've sold.", Math.max(1.6, d + 0.6));
   }
@@ -185,9 +191,11 @@ export class Director {
     return { dist, pan: (dx * Math.cos(p.yaw) - dz * Math.sin(p.yaw)) / dist };
   }
 
-  /** A goon bark if nobody is talking (hits cut in). */
+  /** A goon bark if nobody is talking. `force` (a hit, a rusher's charge) skips the gap and her own
+   *  cooldown, never a line still on the air. */
   private bark(i: number, kind: BarkKind, force = false): void {
     const now = performance.now() / 1000;
+    if (now < this.barkPlaying) return;
     if (!force && (now < this.barkUntil || now < (this.goonNext[i] ?? 0))) return;
     const e = this.s.game.enemies[i];
     if (!e) return;
@@ -206,6 +214,7 @@ export class Director {
     const d = bark(this.voiceOf(i), kind, dist, pan, this.pitchOf(i));
     if (d <= 0) return;
     this.barkUntil = now + d + 1.5; // one talker at a time, ~1.5 s between barks
+    this.barkPlaying = now + d;
     this.goonNext[i] = now + d + 3.5;
     goonTalk[i] = performance.now() + d * 1000;
   }
@@ -273,6 +282,12 @@ export class Director {
         break;
       case "trigger":
         if (e.action === "spawn" && e.group === "backup" && this.dj >= 0) this.pa("pa_3", 0.3);
+        // the locked office door: the line and its key hint
+        if (e.action === "breach") this.say("r3_breach", 0.2);
+        break;
+      case "breach":
+        // his effort grunt on the dive through it (the kick from inside is the heavy's moment)
+        if (!e.kick && !this.narrating()) radbro("breach", 0.05);
         break;
       case "stagger":
         this.heavy(e.enemy, "stagger_1", true);
@@ -358,7 +373,9 @@ export class Director {
     // one in progress (the player may reach the door, and the ending, a few seconds after the clear)
     const clearAt = this.queue.findIndex(l => CLEAR_LINES.has(l.id));
     if (clearAt >= 0) this.queue = [this.queue[clearAt]];
-    if (this.queue.length && (now >= this.narratorUntil || clearAt >= 0)) {
+    // a tutorial line never starts outside the fight (the final-kill cam, the clear): it is dropped
+    while (this.queue.length && this.queue[0].id.startsWith("tut_") && g.phase !== "play") this.queue.shift();
+    if (this.queue.length && (now >= this.narratorUntil || clearAt >= 0) && g.phase !== "killcam") {
       const line = this.queue[0];
       if (now >= line.at) {
         this.queue.shift();
