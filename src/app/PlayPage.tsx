@@ -1,5 +1,6 @@
 // The game page: TITLE (the room idles behind it) -> LOADING (the picked Radbro) -> CUTSCENE 1 (first
-// play only) -> PLAY -> RESULTS (room clear or rugged) -> retry / title. One canvas, mounted once;
+// play only) -> PLAY -> the ENDING cutscene (e1: the first time the room is cleared, after the kill cam
+// and the walk to the club door) -> RESULTS (room clear or rugged) -> retry / title. One canvas, mounted once;
 // retries swap the Game inside the session. Pointer lock lost = pause.
 // Dev / test builds: ?bot plays the room by itself (smoke test), ?room=<id> picks a level file,
 // ?seed=N fixes the seed, ?skip skips the title and the cutscene.
@@ -23,6 +24,10 @@ const BOT = DEV && params.has("bot");
 /** ?bot=demo: the bot shows off bullet time, a shootdodge and the full kill cam (browser check). */
 const BOT_DEMO = params.get("bot") === "demo";
 const SKIP = DEV && (params.has("skip") || BOT);
+/** ?ending: play the ending cutscene even with ?skip / ?bot (it plays anyway with ?bot=demo);
+ *  ?cutscene: play cutscene 1 even with ?bot (the headless run: cutscene, fight, ending, results). */
+const ENDING = params.has("ending");
+const CUTSCENE = params.has("cutscene");
 const ROOM = params.get("room") ?? "room1";
 /** ?q=low: low quality for this page load only (headless smoke runs). */
 if (params.get("q") === "low") useUi.setState({ quality: "low" });
@@ -48,8 +53,10 @@ export default function PlayPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [canvasReady, setCanvasReady] = useState(false);
   const [modelsReady, setModelsReady] = useState(false);
-  const [cut, setCut] = useState<CutsceneData | null>(null);
+  /** The cutscene on screen and what follows it (play for c1, the results for the ending). */
+  const [cut, setCut] = useState<{ data: CutsceneData; then: () => void } | null>(null);
   const seenCutscene = useRef(false);
+  const seenEnding = useRef(false);
   const screen = useUi(s => s.screen);
   const radbro = useUi(s => s.radbro);
   const quality = useUi(s => s.quality);
@@ -148,10 +155,10 @@ export default function PlayPage() {
     session.restart({ difficulty: useUi.getState().difficulty });
     session.bot = BOT ? new Bot(3.5, 0.3, BOT_DEMO) : null;
     session.paused = true;
-    if (!seenCutscene.current && !SKIP) {
+    if (!seenCutscene.current && (!SKIP || CUTSCENE)) {
       seenCutscene.current = true;
       const c = await loadCutscene("c1");
-      if (c) { setCut(c); useUi.setState({ screen: "cutscene" }); void loadSamples().then(() => setMusic("calm")); return; }
+      if (c) { setCut({ data: c, then: startPlay }); useUi.setState({ screen: "cutscene" }); void loadSamples().then(() => setMusic("calm")); return; }
     }
     startPlay();
   }, [session, modelsReady, startPlay]);
@@ -170,7 +177,19 @@ export default function PlayPage() {
       setHeartbeat(false);
       setFootsteps(0);
       const g = session.game;
-      useUi.setState({ screen: "results", results: { cleared: phase === "done", stats: { ...g.stats }, room: session.roomId, difficulty: g.difficulty, radbro: useUi.getState().radbro } });
+      const results = { cleared: phase === "done", stats: { ...g.stats }, room: session.roomId, difficulty: g.difficulty, radbro: useUi.getState().radbro };
+      const show = () => useUi.setState({ screen: "results", results });
+      // the first clear plays the ending panels (captions only) before the results
+      if (results.cleared && !seenEnding.current && (!SKIP || BOT_DEMO || ENDING)) {
+        seenEnding.current = true;
+        void loadCutscene("e1").then(c => {
+          if (!c) { show(); return; }
+          setCut({ data: c, then: show });
+          useUi.setState({ screen: "cutscene" });
+        });
+        return;
+      }
+      show();
     }
   }, [session]);
 
@@ -202,7 +221,7 @@ export default function PlayPage() {
       </div>
       {screen === "title" && <Title onPlay={() => void play()} ready={!!session && modelsReady} />}
       {screen === "loading" && <Loading />}
-      {screen === "cutscene" && cut && <Cutscene data={cut} onDone={() => { setCut(null); startPlay(); }} />}
+      {screen === "cutscene" && cut && <Cutscene key={cut.data.id} data={cut.data} onDone={() => { const then = cut.then; setCut(null); then(); }} />}
       {screen === "play" && <Hud />}
       {screen === "play" && !locked && !BOT && (
         <div style={{ ...layer, background: "rgba(5,6,12,0.35)", cursor: "pointer" }} onClick={() => { session?.input.flush(); lock(); }}>

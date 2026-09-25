@@ -1,0 +1,33 @@
+{
+  "id": "e1",
+  "title": "Chapter 1: The Door",
+  "panels": [
+    {
+      "image": "/cutscenes/e1/panel_e1.webp",
+      "tone": "street",
+      "box": [0.03, 0.04, 0.178, 0.102],
+      "dur": 6.0,
+      "lines": [
+        { "text": "the last one went down without a sound. the rain didn't care. it never does." }
+      ]
+    },
+    {
+      "image": "/cutscenes/e1/panel_e2.webp",
+      "tone": "club",
+      "box": [0.029, 0.045, 0.188, 0.095],
+      "dur": 6.0,
+      "lines": [
+        { "text": "the door gave. the bass came through it like a heartbeat that wasn't mine." }
+      ]
+    },
+    {
+      "image": "/cutscenes/e1/panel_e3.webp",
+      "tone": "club",
+      "box": [0.02, 0.029, 0.192, 0.078],
+      "dur": 7.5,
+      "lines": [
+        { "text": "the music kept playing. the dancing stopped. every sweet little face in the room turned to me." }
+      ]
+    }
+  ]
+}

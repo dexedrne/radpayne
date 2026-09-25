@@ -85,10 +85,14 @@ const variant = (keys: readonly string[]) => keys[Math.floor(Math.random() * key
 
 type PlayOpts = { gain?: number; rate?: number; pan?: number; at?: number; dest?: AudioNode };
 
+/** The last voice lines played (key @ seconds since the page opened): the headless run reads it. */
+export const voiceLog: string[] = [];
+
 /** One-shot buffer; returns the source (null when silent / not loaded). */
 function play(e: Engine, key: string, o: PlayOpts = {}): AudioBufferSourceNode | null {
   const buf = buffers.get(key);
   if (!buf) return null;
+  if (key.startsWith("voices/")) { voiceLog.push(`${key.slice(7)} @${(performance.now() / 1000).toFixed(1)}`); if (voiceLog.length > 120) voiceLog.shift(); }
   const src = e.ac.createBufferSource();
   src.buffer = buf;
   src.playbackRate.value = o.rate ?? rate;

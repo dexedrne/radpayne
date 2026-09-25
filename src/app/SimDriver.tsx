@@ -7,14 +7,14 @@ import type { Session } from "./session.ts";
 import { useUi } from "../ui/store.ts";
 import { FRAME } from "./frame.ts";
 import { WEAPONS } from "../combat/weapons.ts";
-import { setAmbience, setClubBass, setFootsteps, setHeartbeat, setMusic, setNeonBuzz, setTimeScaleAudio, sfx } from "../audio/sfx.ts";
+import { setAmbience, setClubBass, setFootsteps, setHeartbeat, setMusic, setNeonBuzz, setTimeScaleAudio, sfx, voiceLog } from "../audio/sfx.ts";
 import { audioState } from "../audio/engine.ts";
 import { Director } from "./director.ts";
 import { PLAYER, TIME } from "../sim/tuning.ts";
 
 declare global {
   interface Window {
-    __rp?: { session: Session; fps: number; frames: number; audio: string };
+    __rp?: { session: Session; fps: number; frames: number; audio: string; voices: string[] };
   }
 }
 
@@ -91,7 +91,7 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
       setMusic(g.phase === "play" && awake ? "fight" : "calm");
       if (!s.paused) director.frame();
     } else setFootsteps(0);
-    window.__rp = { session: s, fps: fps.current, frames: frames.current, audio: audioState() };
+    window.__rp = { session: s, fps: fps.current, frames: frames.current, audio: audioState(), voices: voiceLog };
     if (g.phase !== lastPhase.current) {
       lastPhase.current = g.phase;
       onPhase(g.phase);

@@ -6,6 +6,9 @@
 //   RADPAYNE_GPU=1       use the machine's GPU through ANGLE/GL (add &webgl2 to the url); default SwiftShader
 //   RADPAYNE_CUTSCENE=1  first play the title -> cutscene path and shoot a panel
 //   RADPAYNE_WIDE=<cam>  finally hold the camera on a level camera marker and shoot the street
+// With &cutscene in the url the bot run itself starts with cutscene 1, and with ?bot=demo (or &ending)
+// the ending cutscene plays after the clear: every panel of both is shot ("c-<id>-<panel>") and the
+// voice lines that played are printed at the end.
 // Always launches Chromium with a THROWAWAY --user-data-dir (required; never a real profile).
 import fs from "node:fs";
 import path from "node:path";
@@ -34,7 +37,7 @@ const browser = await puppeteer.launch({
 });
 const log: string[] = [];
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
-type State = { phase: string; t: number; hp: number; kills: number; alive: number; ts: number; mode: string; fps: number; screen: string; proj: number; dodges: number; bt: number } | null;
+type State = { phase: string; t: number; hp: number; kills: number; alive: number; ts: number; mode: string; fps: number; screen: string; proj: number; dodges: number; bt: number; cut: string } | null;
 let code = 1;
 try {
   const page = await browser.newPage();
@@ -73,16 +76,23 @@ try {
   let fightAt = 0;
   let lastLog = 0;
   let slowShots = 0;
+  const cutSeen: Record<string, number> = {};
   while (Date.now() - t0 < 300_000) {
     last = (await page.evaluate(() => {
       type G = { phase: string; realTime: number; player: { health: number; mode: string }; stats: { kills: number; dodges: number; btTime: number }; alive: number; timeScale: number; projectiles: unknown[] };
       const rp = (window as unknown as { __rp?: { session: { game: G }; fps: number } }).__rp;
       const g = rp?.session.game;
       const scr = document.querySelector("[data-testid=results]") ? "results" : "";
-      return g ? { phase: g.phase, t: g.realTime, hp: g.player.health, kills: g.stats.kills, alive: g.alive, ts: g.timeScale, mode: g.player.mode, fps: rp!.fps, screen: scr, proj: g.projectiles.length, dodges: g.stats.dodges, bt: g.stats.btTime } : null;
+      const c = document.querySelector("[data-testid=cutscene]") as HTMLElement | null;
+      const cut = c ? `${c.dataset.cut}-${Number(c.dataset.panel) + 1}` : "";
+      return g ? { phase: g.phase, t: g.realTime, hp: g.player.health, kills: g.stats.kills, alive: g.alive, ts: g.timeScale, mode: g.player.mode, fps: rp!.fps, screen: scr, proj: g.projectiles.length, dodges: g.stats.dodges, bt: g.stats.btTime, cut } : null;
     })) as State;
     if (last && Date.now() - lastLog > 10_000) { lastLog = Date.now(); console.log(`  ${((Date.now() - t0) / 1000).toFixed(0)} s: ${JSON.stringify(last)}`); }
-    if (last) {
+    if (last?.cut) {
+      // a cutscene panel: shoot it once its caption is in
+      cutSeen[last.cut] ??= Date.now();
+      if (Date.now() - cutSeen[last.cut] > 2500) await shot(`c-${last.cut}`);
+    } else if (last) {
       if (last.t > 0.5) await shot("1-start");
       if (last.kills >= 1 && !fightAt) fightAt = Date.now();
       if (fightAt && Date.now() - fightAt > 1500) await shot("2-fight");
@@ -96,6 +106,8 @@ try {
     await sleep(100);
   }
   log.push(`STATE ${JSON.stringify(last)} after ${((Date.now() - t0) / 1000).toFixed(1)} s`);
+  const voices = (await page.evaluate(() => (window as unknown as { __rp?: { voices?: string[] } }).__rp?.voices ?? [])) as string[];
+  log.push(`VOICES ${voices.length}: ${voices.join(", ")}`);
 
   const wide = process.env.RADPAYNE_WIDE;
   if (wide) {

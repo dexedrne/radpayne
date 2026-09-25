@@ -84,7 +84,7 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
   const box = p.box ?? [0.02, 0.03, 0.2, 0.1];
   const lines = p.lines.slice(0, shown);
   return (
-    <div onClick={() => { stopNarration(); next(); }} data-testid="cutscene" style={{ position: "fixed", inset: 0, zIndex: 40, background: "#07070a", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, cursor: "pointer", userSelect: "none" }}>
+    <div onClick={() => { stopNarration(); next(); }} data-testid="cutscene" data-cut={data.id} data-panel={i} style={{ position: "fixed", inset: 0, zIndex: 40, background: "#07070a", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, cursor: "pointer", userSelect: "none" }}>
       <style>{"@keyframes rp-push { from { transform: scale(1.0) } to { transform: scale(1.07) } } @keyframes rp-land { from { opacity: 0; transform: translateY(8px) rotate(-0.4deg) } to { opacity: 1; transform: none } } @keyframes rp-line { from { opacity: 0 } to { opacity: 1 } }"}</style>
       <div key={i} style={{ position: "relative", width: "min(92vw, 126vh)", aspectRatio: "3 / 2", overflow: "hidden", border: "5px solid #f1e8d4", outline: "2px solid #111", boxShadow: "0 18px 80px rgba(0,0,0,0.8)", animation: "rp-land 0.4s ease-out", background: "#111" }}>
         {/* the art and its caption box push in together, so the box stays over the painted one */}

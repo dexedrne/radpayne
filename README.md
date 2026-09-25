@@ -8,7 +8,7 @@ a Milady gang's rave in bullet time: dual pistols, slow motion, shootdodges, and
 **Status:** chapter 1, first round. The opening plays start to finish: title, the comic-panel
 cutscene with the narrator, then room 1, the rainy Manhattan street outside CLUB MILADY (puddle
 reflections, neon bloom, rain that slows in bullet time). Clear the Milady goons, watch the last bullet
-land, walk to the club door. To be continued: the rave.
+land, walk to the club door, and the ending panels show what waits inside. To be continued: the rave.
 
 ## Play
 
@@ -34,7 +34,7 @@ Pick a Radbro and a difficulty, then press **PLAY**. Click the game to lock the 
 A gamepad also works: left stick to move, right stick to aim, RT to fire, LT for bullet time, B to dive,
 A to jump, X to reload, Y for copium.
 
-The cutscene: click, Space or Enter turns the page, Esc skips it.
+The cutscenes: click, Space or Enter turns the page, Esc skips the rest.
 
 After you land from a dive you lie prone and can keep shooting. Press a move key to get up (0.6 s). If
 you hold a move key as you land, you roll straight into a run. Kill the whole room, watch the last
@@ -65,7 +65,8 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
     club's bass), `flicker` or `blink` added. Change the gain in the editor to retune a sign.
 - **Dev URL flags:**
   - `?room=<id>` loads a level file.
-  - `?skip` skips the title and the cutscene.
+  - `?skip` skips the title and the cutscenes (`&cutscene` plays cutscene 1 anyway, `&ending` the
+    ending).
   - `?bot` lets a bot play the room (`?bot=demo`: it also pops bullet time, shootdodges once and
     watches the whole kill cam).
   - `?seed=N` fixes the seed.
@@ -91,12 +92,14 @@ input log. Bullet time is a time scale on it.
     the two high Milady voices in `voices/goon_a|goon_b/`. `src/audio/sfx.ts` plays them;
     `src/app/director.ts` runs the barks (chances and cooldowns at the top) and the narrator's
     tutorial lines.
-  - `public/cutscenes/c1.json` + `c1/panel_*.webp`: the comic panels, each with its caption box
-    position and narrator lines.
+  - `public/cutscenes/c1.json` + `c1/panel_*.webp`: cutscene 1's comic panels, each with its caption
+    box position, narrator line and hold time. `e1.json` + `e1/panel_e*.webp`: the room 1 ending (the
+    first clear, after the walk to the door; captions only).
 - **Headless check:** with the dev server up,
   `RADPAYNE_CHROME_PROFILE=<throwaway dir> RADPAYNE_GPU=1 RADPAYNE_CUTSCENE=1 node tools/smoke.ts
   "http://localhost:4880/?bot=demo&seed=1&webgl2" .local/shots/run` plays title -> cutscene, then the
-  bot clears the room, and saves screenshots. `RADPAYNE_GPU=1` uses the machine's GPU (WebGL2);
+  bot clears the room, and saves screenshots. `?bot=demo&cutscene&seed=1&webgl2` does it in one go:
+  cutscene 1, the fight, the ending, the results, with every panel shot and the voice lines listed. `RADPAYNE_GPU=1` uses the machine's GPU (WebGL2);
   without it Chromium falls back to SwiftShader (very slow).
 
 ## Credits
