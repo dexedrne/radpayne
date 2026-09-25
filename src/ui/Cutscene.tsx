@@ -3,6 +3,8 @@
 // narrator reads its lines and they appear in the caption box drawn over the panel's painted one
 // (box = [x, y, w, h] as fractions of the image); the strip below shows where you are. Click / Space /
 // Enter goes to the next panel, Esc skips the rest. A panel without an image paints a placeholder.
+// A panel's `dur` is how long it holds (seconds); a line without audio (or muted) is read for a time
+// that fits its length. Used for cutscene 1 (c1) and the room 1 ending (e1, captions only).
 import { useCallback, useEffect, useRef, useState } from "react";
 import { narrate, sampleDuration, samplesReady, stopNarration } from "../audio/sfx.ts";
 
@@ -52,8 +54,9 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
     const clear = () => { for (const t of timers.current) clearTimeout(t); timers.current = []; };
     clear();
     setShown(1);
-    const lines = data.panels[i]?.lines ?? [];
-    let t = 0.5;
+    const panel = data.panels[i];
+    const lines = panel?.lines ?? [];
+    let t = 0.3;
     lines.forEach((ln, k) => {
       timers.current.push(window.setTimeout(() => {
         setShown(k + 1);
@@ -62,7 +65,8 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
       const d = ln.audio ? audioLen(ln.audio) : 0;
       t += (d > 0 ? d : readTime(ln.text)) + 0.35;
     });
-    timers.current.push(window.setTimeout(next, (t + (data.panels[i]?.dur ?? 1.1)) * 1000));
+    // dur = how long the panel holds (the clip + ~1 s); never shorter than its lines
+    timers.current.push(window.setTimeout(next, Math.max(t + 0.4, panel?.dur ?? t + 1.1) * 1000));
     return clear;
   }, [i, data, next, ready]);
 

@@ -1,20 +1,24 @@
 // Voices in the room (view side, never touches the sim): the gang's barks (alert, spotted, cover,
-// reload, hit) with one talker at a time, and the narrator's tutorial lines (first contact, bullet
-// time, shootdodge, copium, room clear) with subtitles and a key hint on the HUD.
+// reload, hit) with one talker at a time, the Radbro's own voice in the fight (grunts when hit, the
+// landing, the bullet-time breath, the copium sigh, "not yet." at low health, the death groan) and the
+// narrator's tutorial lines (first contact, bullet time, shootdodge, copium, room clear) with subtitles
+// and a key hint on the HUD. Lines, chances and cooldowns follow the voice script (audio v2).
 import type { Session } from "./session.ts";
 import type { GameEvent } from "../sim/types.ts";
-import { bark, narrate, type BarkKind, type GoonVoice } from "../audio/sfx.ts";
+import { bark, narrate, radbro, stopNarration, type BarkKind, type GoonVoice } from "../audio/sfx.ts";
 import { useUi } from "../ui/store.ts";
+import { PLAYER } from "../sim/tuning.ts";
 
 /** performance.now() until which goon i is talking (EnemiesView moves the mouth). */
 export const goonTalk: number[] = [];
 
+/** The narrator's tutorial / room lines: subtitle == spoken line. */
 export const NARRATION: Record<string, string> = {
-  tut_shoot: "the door girls saw me first. pockit miladys, strapped and not very comfy. time to get my bag back.",
-  tut_bullet_time: "when it got loud, time got slow. stay in the trenches long enough and you see every bullet coming.",
-  tut_shootdodge: "sometimes the only way out is sideways. in slow motion. few understand.",
-  tut_copium: "copium. cheap, bitter, and it kept me standing. everybody in this city was on it.",
-  room_clear: "the street went quiet. the rain didn't. it's so over... for them.",
+  tut_shoot: "they saw me first. it didn't help them much.",
+  tut_bullet_time: "everything slowed down. i'd had practice watching things fall.",
+  tut_shootdodge: "the only way out was sideways. guns first.",
+  tut_copium: "copium. it didn't fix anything. it kept me standing.",
+  room_clear: "the street went quiet. the rain didn't. inside, the music never stopped.",
 };
 const HINTS: Record<string, string> = {
   tut_shoot: "LMB: shoot · WASD: move",
@@ -22,6 +26,21 @@ const HINTS: Record<string, string> = {
   tut_shootdodge: "SHIFT: shootdodge",
   tut_copium: "H: copium",
 };
+
+/** The Radbro's combat voice (chances, cooldowns in real seconds). */
+const RADBRO = {
+  hurt: { chance: 0.35, cooldown: 3 },
+  land: { chance: 0.5, cooldown: 4 },
+  /** bt_breath: always on the first bullet time of a fight, then this chance. */
+  breath: 0.3,
+  /** heal: after the copium hiss. */
+  healDelay: 0.3,
+  /** "not yet." once per life under this share of max health. */
+  lowHp: 0.25,
+};
+
+/** Each goon's voice: a small rate offset on top of her voice (goon_a / goon_b alternate by goon). */
+const PITCH = [1.0, 1.05, 0.97, 1.08, 1.03, 0.99, 1.06, 1.01];
 
 type Line = { id: string; at: number };
 
@@ -36,6 +55,12 @@ export class Director {
   private lastState: string[] = [];
   private lastBurst: number[] = [];
   private btEnded = false;
+  private hurtNext = 0;
+  private hurtAlt = 0;
+  private landNext = 0;
+  private breathed = false;
+  private lowSaid = false;
+  private spotted = new Set<number>();
 
   constructor(s: Session) {
     this.s = s;
@@ -51,12 +76,21 @@ export class Director {
     this.lastState = [];
     this.lastBurst = [];
     this.btEnded = false;
+    this.hurtNext = 0;
+    this.landNext = 0;
+    this.breathed = false;
+    this.lowSaid = false;
+    this.spotted.clear();
     goonTalk.length = 0;
   }
 
+  /** Goons alternate the two voices (bright / dreamy) and each has her own pitch on top. */
   private voiceOf(i: number): GoonVoice {
+    return i % 2 === 0 ? "goon_a" : "goon_b";
+  }
+  private pitchOf(i: number): number {
     const e = this.s.game.enemies[i];
-    return ((e?.milady ?? i) % 2 === 0 ? "goon_a" : "goon_b");
+    return PITCH[((e?.milady ?? i) + i) % PITCH.length];
   }
 
   private where(x: number, z: number): { dist: number; pan: number } {
@@ -75,9 +109,13 @@ export class Director {
     if (!e) return;
     const { dist, pan } = this.where(e.x, e.z);
     if (dist > 38) return;
-    const d = bark(this.voiceOf(i), kind, dist, pan);
+    if (kind === "spotted") {
+      if (this.spotted.has(i)) return; // once per fight per goon
+      this.spotted.add(i);
+    }
+    const d = bark(this.voiceOf(i), kind, dist, pan, this.pitchOf(i));
     if (d <= 0) return;
-    this.barkUntil = now + d + 0.5;
+    this.barkUntil = now + d + 1.5; // one talker at a time, ~1.5 s between barks
     this.goonNext[i] = now + d + 3.5;
     goonTalk[i] = performance.now() + d * 1000;
   }
@@ -89,9 +127,36 @@ export class Director {
     this.queue.push({ id, at: performance.now() / 1000 + delay });
   }
 
+  /** The narrator is mid-line (the Radbro's own grunts wait: it is the same voice). */
+  private narrating(): boolean {
+    return performance.now() / 1000 < this.narratorUntil - 0.6;
+  }
+
+  /** A short spoken bark gets the HUD subtitle when the narrator is not using it. */
+  private sub(text: string, secs: number): void {
+    if (this.narrating()) return;
+    useUi.setState({ subtitle: { text, hint: "", until: performance.now() + secs * 1000 } });
+  }
+
+  private playerHurt(hp: number): void {
+    const now = performance.now() / 1000;
+    if (hp <= 0) return;
+    if (!this.lowSaid && hp < PLAYER.maxHealth * RADBRO.lowHp) {
+      this.lowSaid = true;
+      const d = radbro("low_hp");
+      if (d > 0) { this.hurtNext = now + d + RADBRO.hurt.cooldown; this.sub("not yet.", Math.max(1.6, d + 0.8)); }
+      return;
+    }
+    if (now < this.hurtNext || this.narrating() || Math.random() >= RADBRO.hurt.chance) return;
+    this.hurtAlt ^= 1;
+    const d = radbro(this.hurtAlt ? "hurt_1" : "hurt_2");
+    if (d > 0) this.hurtNext = now + RADBRO.hurt.cooldown;
+  }
+
   onEvent(e: GameEvent): void {
     if (this.run !== this.s.run) this.reset();
     const g = this.s.game;
+    const now = performance.now() / 1000;
     switch (e.type) {
       case "alert":
         this.bark(e.enemy, "alert");
@@ -99,10 +164,27 @@ export class Director {
         break;
       case "hurt":
         if (e.target >= 0 && e.hp > 0 && Math.random() < 0.55) this.bark(e.target, "hit", true);
+        else if (e.target === -1) this.playerHurt(e.hp);
         break;
       case "bt":
-        if (e.on) this.say("tut_bullet_time", 0.3);
-        else this.btEnded = true;
+        if (e.on) {
+          this.say("tut_bullet_time", 0.3);
+          // the breath in, under the bullet-time whoosh: the first time in a fight, then now and then
+          if (!this.breathed || Math.random() < RADBRO.breath) { this.breathed = true; radbro("bt_breath", 0.05, 1); }
+        } else this.btEnded = true;
+        break;
+      case "land":
+        if (now >= this.landNext && !this.narrating() && Math.random() < RADBRO.land.chance) {
+          if (radbro("dodge_land") > 0) this.landNext = now + RADBRO.land.cooldown;
+        }
+        break;
+      case "copium":
+        if (!this.narrating()) radbro("heal", RADBRO.healDelay);
+        break;
+      case "playerDead":
+        stopNarration();
+        this.queue = [];
+        radbro("death");
         break;
       case "pickup":
         if (e.item === "copium") this.say("tut_copium", 0.4);

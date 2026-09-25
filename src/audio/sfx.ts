@@ -14,7 +14,8 @@ const FILES = [
   "sfx/heartbeat_loop", "sfx/dive_whoosh", "sfx/dive_land", "sfx/dive_land_2", "sfx/footsteps_wet_loop", "sfx/copium_hiss", "sfx/rain_loop",
   "sfx/club_bass_loop", "sfx/neon_buzz", "music/street_calm", "music/fight_tense",
   ...["alert_1", "alert_2", "spotted_1", "cover_1", "cover_2", "reload_1", "hit_1", "hit_2"].flatMap(k => [`voices/goon_a/${k}`, `voices/goon_b/${k}`]),
-  ...["cs1_01", "cs1_02", "cs1_03", "cs1_04", "cs1_05", "tut_shoot", "tut_bullet_time", "tut_shootdodge", "tut_copium", "room_clear"].map(k => `voices/narrator/${k}`),
+  ...["cs1_01", "cs1_02", "cs1_03", "cs1_04", "tut_shoot", "tut_bullet_time", "tut_shootdodge", "tut_copium", "room_clear"].map(k => `voices/narrator/${k}`),
+  ...["hurt_1", "hurt_2", "dodge_land", "bt_breath", "heal", "low_hp", "death"].map(k => `voices/radbro/${k}`),
 ] as const;
 
 const buffers = new Map<string, AudioBuffer>();
@@ -337,13 +338,36 @@ const BARKS: Record<BarkKind, string[]> = {
   alert: ["alert_1", "alert_2"], spotted: ["spotted_1"], cover: ["cover_1", "cover_2"], reload: ["reload_1"], hit: ["hit_1", "hit_2"],
 };
 
-/** A goon's line in the world (pitched with bullet time). Returns its length in REAL seconds, 0 = silent. */
-export function bark(voice: GoonVoice, kind: BarkKind, dist: number, pan: number): number {
+const lastBark = new Map<string, string>();
+
+/**
+ * A goon's line in the world (pitched with bullet time). `pitch` is the goon's own voice (a small
+ * per-goon rate offset, so two girls on the same voice still sound like two people); the same line is
+ * never picked twice in a row for a voice. Returns its length in REAL seconds, 0 = silent.
+ */
+export function bark(voice: GoonVoice, kind: BarkKind, dist: number, pan: number, pitch = 1): number {
   const e = voiceOn();
   if (!e) return 0;
-  const key = `voices/${voice}/${variant(BARKS[kind])}`;
-  const src = play(e, key, { gain: 0.95 * att(dist * 0.7), pan: pan * 0.7, dest: vbus(e) });
-  return src ? (src.buffer?.duration ?? 0) / rate : 0;
+  const opts = BARKS[kind], prev = lastBark.get(`${voice}/${kind}`);
+  const pick = opts.length > 1 ? variant(opts.filter(k => k !== prev)) : opts[0];
+  lastBark.set(`${voice}/${kind}`, pick);
+  const r = rate * pitch;
+  const src = play(e, `voices/${voice}/${pick}`, { gain: 0.95 * att(dist * 0.7), pan: pan * 0.7, dest: vbus(e), rate: r });
+  return src ? (src.buffer?.duration ?? 0) / r : 0;
+}
+
+export type RadbroLine = "hurt_1" | "hurt_2" | "dodge_land" | "bt_breath" | "heal" | "low_hp" | "death";
+
+/**
+ * The player's own voice (the narrator's, in the moment): grunts, the bullet-time breath, the copium
+ * sigh, "not yet.", the death groan. Unscaled like the narrator and the bullet-time whooshes (it is
+ * him, not the world), straight onto the voice volume. `delay` in real seconds. Returns its length.
+ */
+export function radbro(line: RadbroLine, delay = 0, gain = 0.9): number {
+  const e = voiceOn();
+  if (!e) return 0;
+  const src = play(e, `voices/radbro/${line}`, { gain, rate: 1, dest: e.voiceGain, at: e.ac.currentTime + delay });
+  return src ? (src.buffer?.duration ?? 0) : 0;
 }
 
 let narrating: AudioBufferSourceNode | null = null;

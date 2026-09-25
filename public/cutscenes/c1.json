@@ -6,33 +6,36 @@
       "image": "/cutscenes/c1/panel_1.webp",
       "tone": "phone",
       "box": [0.031, 0.036, 0.234, 0.093],
+      "dur": 7.3,
       "lines": [
-        { "audio": "cs1_01", "text": "they said wagmi. they lied." },
-        { "audio": "cs1_02", "text": "the rain in manhattan never stops. neither does the rug." }
+        { "audio": "cs1_01", "text": "the rug came quietly. the screen said zero. i watched it for an hour. it didn't change its mind." }
       ]
     },
     {
       "image": "/cutscenes/c1/panel_2.webp",
       "tone": "street",
       "box": [0.025, 0.037, 0.193, 0.107],
+      "dur": 6.7,
       "lines": [
-        { "audio": "cs1_03", "text": "one minute i was comfy. diamond hands, a fat bag, a future. then the chart went vertical... the wrong way." }
+        { "audio": "cs1_02", "text": "manhattan, 2 a.m. three days of rain. every trail ended under the same pink light." }
       ]
     },
     {
       "image": "/cutscenes/c1/panel_3.webp",
       "tone": "club",
       "box": [0.019, 0.028, 0.167, 0.078],
+      "dur": 7.0,
       "lines": [
-        { "audio": "cs1_04", "text": "the miladys had my bag. three floors of bass and bad intentions, and my bag was on the top one." }
+        { "audio": "cs1_03", "text": "club milady. two girls on the door, smiling like they'd been expecting me. one had my bag." }
       ]
     },
     {
       "image": "/cutscenes/c1/panel_4.webp",
       "tone": "guns",
       "box": [0.013, 0.028, 0.221, 0.111],
+      "dur": 6.4,
       "lines": [
-        { "audio": "cs1_05", "text": "soaked to the bone outside club milady. a pistol, a blade, and nothing left to lose but my cope." }
+        { "audio": "cs1_04", "text": "two pistols. no plan past the door. it's a simple way to live. it doesn't last long." }
       ]
     }
   ]

@@ -86,9 +86,11 @@ input log. Bullet time is a time scale on it.
     strafe / run, Shootdodge -> Prone_Idle -> Prone_GetUp, Land_Roll, Hit_Small, Reload, cover crouch,
     four deaths). `milady.gun.glb` is the same set as the source the Miladys are retargeted from.
     Pistol grip offsets per hand: `src/anim/grips.ts`.
-  - `public/audio/`: `sfx/`, `music/` (calm street + fight loops), `voices/narrator/` and the two goon
-    voices in `voices/goon_a|goon_b/`. `src/audio/sfx.ts` plays them; `src/app/director.ts` runs the
-    barks and the narrator's tutorial lines.
+  - `public/audio/`: `sfx/`, `music/` (calm street + fight loops), `voices/narrator/` (the Radbro's
+    low, tired noir voice-over), `voices/radbro/` (his grunts, breath and last words in the fight) and
+    the two high Milady voices in `voices/goon_a|goon_b/`. `src/audio/sfx.ts` plays them;
+    `src/app/director.ts` runs the barks (chances and cooldowns at the top) and the narrator's
+    tutorial lines.
   - `public/cutscenes/c1.json` + `c1/panel_*.webp`: the comic panels, each with its caption box
     position and narrator lines.
 - **Headless check:** with the dev server up,
