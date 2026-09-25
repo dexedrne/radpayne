@@ -15,6 +15,7 @@ import { playerMuzzles } from "./PlayerView.tsx";
 import { enemyMuzzles } from "./EnemiesView.tsx";
 import { FRAME } from "./frame.ts";
 import { useUi } from "../ui/store.ts";
+import { lookOwns } from "./look/fx.ts";
 
 const Z = new Vector3(0, 0, 1);
 const HIDE = new Matrix4().makeScale(0, 0, 0);
@@ -126,7 +127,7 @@ export function FxView({ s }: { s: Session }) {
           const li = e.shooter === -1 ? 0 : 1;
           fx.lights[li].position.copy(from);
           fx.lightT[li] = 0.06;
-          if (!e.projectile) {
+          if (!e.projectile && (e.shooter === -1 || !lookOwns.enemyTracers)) {
             const t = fx.tracers.spawn(0.07);
             t.a.copy(from);
             t.b.set(e.ex, e.ey, e.ez);

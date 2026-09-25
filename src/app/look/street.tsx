@@ -19,6 +19,11 @@
 //    reflections are soft-clipped and kept dimmer than the characters; the big shop windows are
 //    toned down; vignette and blue grade are light. Effects "clean" (fx.ts) goes further: no rain
 //    near the camera, no bloom, a plain wet sheen instead of reflections.
+//  - The fight is 23-46 m out, so read.tsx adds a combat layer on top: a warm outline and a far fill
+//    on every visible live goon (post), red enemy fire that lights up the shooter, gold player tracers
+//    from the muzzle, and impact / hit glows that keep a minimum size downrange. The steam plumes fade
+//    where they sit on a line of sight to a goon, and the puddles only reflect from ~4-12 m out (the
+//    lamps no longer mirror as hot blobs at the player's feet).
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
@@ -30,7 +35,7 @@ import {
   Fn, abs, attribute, cameraPosition, clamp, color, cross, densityFogFactor, dot, float, floor, fog, fract, hash, length, luminance,
   materialColor, materialRoughness, max, mix, mx_noise_float, neutralToneMapping, normalView, normalWorld, normalize, pass,
   positionLocal, positionViewDirection, positionWorld, pow, reflector, replaceDefaultUV, saturate, screenUV, select, sign, sin, smoothstep,
-  texture, uniform, uv, varying, vec2, vec3, vec4,
+  texture, uniform, uniformArray, uv, varying, vec2, vec3, vec4,
 } from "three/tsl";
 import { bloom } from "three/examples/jsm/tsl/display/BloomNode.js";
 import type { LevelData, Marker } from "../../world/level.ts";
@@ -39,6 +44,7 @@ import { FRAME } from "../frame.ts";
 import { clubPulse } from "../../audio/sfx.ts";
 import { MarkerLights } from "./lights.tsx";
 import { useFx } from "./fx.ts";
+import { CombatRead, enemyMaskPass, enemyOutline } from "./read.tsx";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type N = any; // TSL node graphs: the three typings are too narrow for chained swizzles / mixes
@@ -63,13 +69,17 @@ const READ = {
    *  the skyline's windows (1.5) a little; neon and lamps (2.2+) keep their full gain. */
   softGlow: [[1.2, 0.45], [2, 0.75]],
   bloom: { strength: 0.2, radius: 0.3, threshold: 1.05 },
-  /** Reflection gain in the puddles and on the damp street, after a soft clip (no hot lamp blobs). */
-  refl: { puddle: 0.34, damp: 0.1, clip: 0.9 },
+  /** Reflection gain in the puddles and on the damp street, after a soft clip (no hot lamp blobs).
+   *  near: metres from the camera over which reflections and gloss come in (the overhead lamps mirror
+   *  right at the player's feet, the bottom of the frame: kept at nearGain there, rougher puddles). */
+  refl: { puddle: 0.3, damp: 0.09, clip: 0.7, near: [4, 12], nearGain: 0.25, nearRough: 0.68 },
   /** Rain: fully clear within near.x m of the camera, full from near.y; thinner in the screen centre. */
   rainNear: { full: [4, 7], clean: [10, 15] },
   rainCentre: 0.3,
   vignette: 0.2,
   steam: 0.12,
+  /** Steam fades out where a plume sits between the camera and a live goon (or on the aim line). */
+  steamClear: 0.9,
 } as const;
 
 /** Shared clocks / hooks (one street scene at a time). time = world seconds (x timeScale). */
@@ -144,7 +154,9 @@ function makeGround(puddles: Texture, clean = false): Ground {
   const ndv = saturate(dot(normalView, positionViewDirection));
   const fres = mix(0.28, 1.0, pow(float(1).sub(ndv), 3));
   const col = materialColor.rgb.mul(mix(mix(0.62, 0.45, damp), 0.1, puddle));
-  const roughness = materialRoughness.mul(mix(1.0, 0.45, puddle)); // glossy, but no pin-sharp lamp / flash hotspots
+  // near the camera (the bottom of the frame) the street is only damp: no lamp hot spots at the feet
+  const nearK = smoothstep(READ.refl.near[0], READ.refl.near[1], length(positionWorld.xz.sub(cameraPosition.xz)));
+  const roughness = mix(max(materialRoughness, READ.refl.nearRough), materialRoughness.mul(mix(1.0, 0.45, puddle)), nearK); // glossy, but no pin-sharp lamp / flash hotspots
   const ripple = vec3(0.45, 0.5, 0.6).mul(rip.z.mul(puddle).mul(0.018));
   if (clean) {
     // the night sky's cool sheen on the wet street, strongest in the puddles and at grazing angles
@@ -169,7 +181,7 @@ function makeGround(puddles: Texture, clean = false): Ground {
   // soft clip: lamps and neon reflect as coloured smears, never as hot blobs brighter than a goon
   const r: N = refl.rgb;
   const clipped = r.div(luminance(r).div(READ.refl.clip).add(1));
-  const emissive = clipped.mul(mix(READ.refl.damp, READ.refl.puddle, puddle)).mul(fres).mul(up).add(ripple);
+  const emissive = clipped.mul(mix(READ.refl.damp, READ.refl.puddle, puddle)).mul(fres).mul(up).mul(mix(READ.refl.nearGain, 1, nearK)).add(ripple);
   return { id: ++groundIds, refl, color: vec4(col, 1), roughness, emissive, mats };
 }
 
@@ -349,8 +361,9 @@ function makeSteam(ms: Marker[]): Mesh | null {
   const puffs: Array<{ o: number[]; p: number[] }> = [];
   for (const m of ms) {
     const size = typeof m.data.size === "number" ? m.data.size : 1;
-    for (let i = 0; i < K; i++) puffs.push({ o: [m.x, m.y, m.z], p: [i / K + r() * 0.04, size, r() * 10, 0] });
+    for (let i = 0; i < K; i++) puffs.push({ o: [m.x, m.y, m.z], p: [i / K + r() * 0.04, size, r() * 10, ms.indexOf(m)] });
   }
+  const fade: N = uniformArray(ms.map(() => 1), "float");
   const g = quads(puffs.length, i => ({ origin: puffs[i].o, puff: puffs[i].p }), { origin: 3, puff: 4 });
   const m = new MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: DoubleSide });
   const o: N = attribute("origin", "vec3"), p: N = attribute("puff", "vec4"), corner: N = attribute("corner", "vec2");
@@ -363,13 +376,54 @@ function makeSteam(ms: Marker[]): Mesh | null {
   const cy = corner.y.mul(2).sub(1); // quads are built 0..1 in y; centre them
   m.positionNode = center.add(right.mul(corner.x.mul(radius))).add(vec3(0, cy.mul(radius), 0));
   const q: N = vec2(corner.x, cy);
-  const lifeV: N = varying(life), seedV: N = varying(p.z);
+  const lifeV: N = varying(life), seedV: N = varying(p.z), fadeV: N = varying(fade.element(p.w.toInt()));
   const soft = smoothstep(1.0, 0.15, length(q));
   const n = mx_noise_float(vec3(q.mul(1.4).add(seedV), streetFx.time.mul(0.3))).mul(0.5).add(0.5);
   m.colorNode = vec4(0.58, 0.6, 0.68, 1);
-  m.opacityNode = soft.mul(n).mul(sin(lifeV.mul(Math.PI))).mul(READ.steam);
-  return particleMesh(g, m, 4);
+  m.opacityNode = soft.mul(n).mul(sin(lifeV.mul(Math.PI))).mul(READ.steam).mul(fadeV);
+  const mesh = particleMesh(g, m, 4);
+  mesh.userData.steam = { markers: ms, fade, want: ms.map(() => 1) };
+  return mesh;
 }
+
+/** Closest distance between segments p0-p1 and q0-q1. */
+const SA = new Vector3(), SB = new Vector3(), SR = new Vector3(), SC = new Vector3(), SD = new Vector3();
+function segDist(p0: Vector3, p1: Vector3, q0: Vector3, q1: Vector3): number {
+  SA.subVectors(p1, p0); SB.subVectors(q1, q0); SR.subVectors(p0, q0);
+  const a = SA.dot(SA), e = SB.dot(SB), f = SB.dot(SR), c = SA.dot(SR), b = SA.dot(SB);
+  const den = a * e - b * b;
+  let s = den > 1e-8 ? Math.min(1, Math.max(0, (b * f - c * e) / den)) : 0;
+  let t = (b * s + f) / e;
+  if (t < 0) { t = 0; s = Math.min(1, Math.max(0, -c / a)); } else if (t > 1) { t = 1; s = Math.min(1, Math.max(0, (b - c) / a)); }
+  SC.copy(p0).addScaledVector(SA, s); SD.copy(q0).addScaledVector(SB, t);
+  return SC.distanceTo(SD);
+}
+
+/** Per frame: a plume that sits on a line of sight (camera -> live goon's head, or the aim line) fades. */
+const P0 = new Vector3(), P1 = new Vector3(), Q0 = new Vector3(), Q1 = new Vector3(), FWD = new Vector3();
+function clearSteam(mesh: Mesh, s: Session, camera: Object3D, dt: number): void {
+  const st = mesh.userData.steam as { markers: Marker[]; fade: N; want: number[] };
+  camera.getWorldPosition(Q0);
+  camera.getWorldDirection(FWD);
+  st.markers.forEach((m, i) => {
+    const size = typeof m.data.size === "number" ? m.data.size : 1;
+    P0.set(m.x, m.y + 0.3 * size, m.z);
+    P1.set(m.x + 0.9, m.y + 3.4 * size, m.z + 0.45);
+    const r = 1.1 * size;
+    let block = 1 - smooth(r * 0.7, r + 2.2, segDist(P0, P1, Q0, Q1.copy(Q0).addScaledVector(FWD, 45)));
+    for (const e of s.game.enemies) {
+      if (e.state === "dead" || e.state === "inactive") continue;
+      for (const h of [1.1, 1.6]) { // over cover: the head, standing: the chest
+        Q1.set(e.x, e.y + h, e.z);
+        block = Math.max(block, 1 - smooth(r * 0.7, r + 2.2, segDist(P0, P1, Q0, Q1)));
+      }
+    }
+    const want = 1 - READ.steamClear * block;
+    const arr = st.fade.array as number[];
+    arr[i] += (want - arr[i]) * Math.min(1, dt * 5);
+  });
+}
+const smooth = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
 // ------------------------------------------------------------------ render pipeline
 function StreetPost({ low, clean }: { low: boolean; clean: boolean }) {
@@ -379,6 +433,7 @@ function StreetPost({ low, clean }: { low: boolean; clean: boolean }) {
   const p = useMemo(() => {
     const pipeline = new RenderPipeline(gl);
     const scenePass: N = pass(scene, camera, { samples: low ? 0 : 4 });
+    const maskPass: N = enemyMaskPass(scene, camera, gl);
     const col: N = scenePass.getTextureNode("output");
     let hdr: N = col.rgb;
     if (!clean) {
@@ -392,17 +447,19 @@ function StreetPost({ low, clean }: { low: boolean; clean: boolean }) {
     const l = luminance(hdr);
     let c: N = mix(hdr.mul(vec3(0.92, 0.97, 1.1)), hdr, smoothstep(0.05, 0.55, l));
     c = c.add(vec3(0.004, 0.005, 0.008));
+    c = enemyOutline(c, maskPass); // the goons read at range (read.tsx)
     c = neutralToneMapping(c, float(READ.exposure));
     const v = smoothstep(0.45, 1.05, length(uv().sub(0.5).mul(vec2(1.0, 0.8))));
     c = c.mul(float(1).sub(v.mul(READ.vignette)));
     pipeline.outputNode = vec4(c, 1);
-    return { pipeline, scenePass };
+    return { pipeline, scenePass, maskPass };
     // the pass camera is re-read every frame; rebuild only for the renderer / quality / effects
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gl, scene, low, clean]);
   useEffect(() => () => p.pipeline.dispose(), [p]);
   useFrame(st => {
     p.scenePass.camera = st.camera;
+    p.maskPass.camera = st.camera;
     p.pipeline.render();
   }, 1); // a positive priority: this frame callback renders instead of R3F
   return null;
@@ -478,7 +535,7 @@ export function StreetLook({ level, s, lowQuality }: { level: LevelData; s?: Ses
 
   // clocks: the world clock follows the sim's time scale (title / pause: real time)
   const st = useRef({ beat: 0, flickT: 0, flick: 1 });
-  useFrame((_, raw) => {
+  useFrame((three, raw) => {
     const dt = Math.min(raw, 0.1);
     const ts = !s || s.paused ? 1 : s.game.timeScale;
     const fx = streetFx;
@@ -499,6 +556,7 @@ export function StreetLook({ level, s, lowQuality }: { level: LevelData; s?: Ses
     }
     fx.flicker.value = c.flick;
     fx.blink.value = Math.sin(fx.time.value * Math.PI * 1.25) > 0 ? 1 : 0.06;
+    if (steam && s) clearSteam(steam, s, three.camera, dt);
   }, FRAME.fx);
 
   return (
@@ -511,6 +569,7 @@ export function StreetLook({ level, s, lowQuality }: { level: LevelData; s?: Ses
       <primitive object={rain} />
       {drips && <primitive object={drips} />}
       {steam && <primitive object={steam} />}
+      {s && <CombatRead s={s} />}
       <StreetPost low={!!lowQuality} clean={clean} />
     </>
   );
