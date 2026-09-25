@@ -33,3 +33,8 @@ export function greybox(): LevelData {
   const file = path.resolve(import.meta.dirname, "..", "public", "levels", "greybox.json");
   return readLevel(JSON.parse(fs.readFileSync(file, "utf8")));
 }
+
+export function room1(): LevelData {
+  const file = path.resolve(import.meta.dirname, "..", "public", "levels", "room1.json");
+  return readLevel(JSON.parse(fs.readFileSync(file, "utf8")));
+}

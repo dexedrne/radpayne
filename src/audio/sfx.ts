@@ -7,7 +7,7 @@ import { engine, live, sfxOn, whenCreated, type Engine } from "./engine.ts";
 let rate = 1;
 let slow: { filter: BiquadFilterNode; out: GainNode } | null = null;
 let heart: { gain: GainNode; timer: number } | null = null;
-let club: { gain: GainNode; filter: BiquadFilterNode; timer: number; next: number } | null = null;
+let club: { gain: GainNode; filter: BiquadFilterNode; timer: number; next: number; kicks: number[] } | null = null;
 
 function bus(e: Engine): AudioNode {
   if (!slow) {
@@ -198,7 +198,7 @@ export function setClubBass(near: number): void {
       gain.gain.value = 0;
       filter.connect(gain).connect(e.musicIn);
       const beat = 60 / 124;
-      const c = { gain, filter, timer: 0, next: e.ac.currentTime + 0.1 };
+      const c = { gain, filter, timer: 0, next: e.ac.currentTime + 0.1, kicks: [] as number[] };
       c.timer = window.setInterval(() => {
         const x = live();
         if (!x) return;
@@ -215,6 +215,8 @@ export function setClubBass(near: number): void {
           o.connect(g).connect(filter);
           o.start(t);
           o.stop(t + 0.4 / rate);
+          c.kicks.push(t);
+          if (c.kicks.length > 8) c.kicks.shift();
           c.next += beat / rate;
         }
       }, 100);
@@ -224,4 +226,20 @@ export function setClubBass(near: number): void {
     club.gain.gain.setTargetAtTime(near * 0.9, t, 0.2);
     club.filter.frequency.setTargetAtTime(120 + 260 * near, t, 0.2);
   });
+}
+
+/**
+ * The club's kick as a light hook: 0..1, peaking on each kick the bass engine has played and decaying
+ * over ~0.25 s (slower in bullet time, like the kick itself), scaled by how loud the bass is. -1 when
+ * no audio is running (muted / no gesture yet), so the look falls back to its own beat.
+ */
+export function clubPulse(): number {
+  const e = live();
+  if (!e || !club || !club.kicks.length) return -1;
+  const now = e.ac.currentTime;
+  let last = -1;
+  for (const k of club.kicks) if (k <= now) last = k;
+  if (last < 0) return 0;
+  const level = Math.min(1, club.gain.gain.value / 0.5);
+  return Math.exp(-(now - last) * 7 * rate) * (0.35 + 0.65 * level);
 }

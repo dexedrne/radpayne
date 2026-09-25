@@ -13,11 +13,16 @@ const arg = process.argv[2];
 const files = arg ? [`${arg.replace(/\.json$/, "")}.json`] : fs.readdirSync(dir).filter(f => f.endsWith(".json"));
 let bad = 0;
 for (const f of files) {
-  const level = readLevel(JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")));
+  const doc = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
+  const level = readLevel(doc);
   const world = new World(level.boxes);
   const graph = new Graph(level.markers, world);
   const count = (k: string) => level.markers.filter(m => m.kind === k).length;
   const issues = [...level.warnings];
+  // the engine refuses a prefab with duplicate node ids
+  const ids = new Set<string>();
+  const dup = (n: { id?: string; children?: unknown[] }) => { if (n.id) { if (ids.has(n.id)) issues.push(`duplicate node id ${n.id}`); ids.add(n.id); } for (const c of n.children ?? []) dup(c as { id?: string }); };
+  dup(doc.root);
   graph.nodes.forEach(n => { if (!n.links.length) issues.push(`waypoint ${n.id} has no links`); });
   for (const c of graph.covers) if (graph.nearest(c.x, c.y, c.z) < 0) issues.push(`cover ${c.id}: no waypoint in walkable line of sight`);
   for (const m of level.markers) {

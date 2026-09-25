@@ -56,7 +56,7 @@ export function Scene({ s, onPhase, lowQuality, bootRef }: { s: Session; onPhase
         if (!booted.current) { booted.current = true; bootRef?.(true); }
       }}
     >
-      <RoomLook level={s.level} />
+      <RoomLook level={s.level} s={s} lowQuality={lowQuality} />
       <PrefabRoot data={prefab}>
         <AssetsBridge />
         <LoadBridge />

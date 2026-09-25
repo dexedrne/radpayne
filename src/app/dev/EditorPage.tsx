@@ -8,8 +8,9 @@ import { PrefabEditor, type PrefabEditorRef } from "react-three-game/editor";
 import type { Prefab } from "react-three-game";
 import { BoxGeometry, ConeGeometry, Group, Mesh, MeshBasicMaterial, SphereGeometry } from "three";
 import { readLevel } from "../../world/level.ts";
+import { LevelMaterials } from "../look/street.tsx";
 
-const COLORS: Record<string, string> = { spawn: "#ffffff", enemy: "#ff3fa8", cover: "#39ff88", waypoint: "#3fa8ff", pickup: "#ff8a1f", trigger: "#ffe23f", checkpoint: "#ffffff", exit: "#3ff0ff", light: "#ffae52", camera: "#aaaaaa" };
+const COLORS: Record<string, string> = { spawn: "#ffffff", enemy: "#ff3fa8", cover: "#39ff88", waypoint: "#3fa8ff", pickup: "#ff8a1f", trigger: "#ffe23f", checkpoint: "#ffffff", exit: "#3ff0ff", light: "#ffae52", fx: "#9fd8ff", camera: "#aaaaaa" };
 
 /** Redraws the marker gizmos from the editor's live document twice a second. */
 function MarkerGizmos({ get }: { get: () => Prefab | null }) {
@@ -105,6 +106,7 @@ export default function EditorPage() {
           <hemisphereLight args={["#c8d4ff", "#3a3040", 1.4]} />
           <directionalLight position={[-30, 40, 20]} intensity={1.2} />
           <FrameLevel />
+          <LevelMaterials />
           <MarkerGizmos get={() => ref.current?.save() ?? null} />
         </PrefabEditor>
       )}

@@ -53,6 +53,11 @@ function releaseCover(g: Game, e: Enemy): void {
 /** Head for a cover point (claims it) or fall back to engaging in the open. */
 function goToCover(g: Game, e: Enemy): void {
   releaseCover(g, e);
+  if (e.perch) { // fire escape / balcony: shoot from where it stands
+    setState(e, "engage");
+    e.timer = within(1.2, 2.4, g.rng.next());
+    return;
+  }
   const ci = pickCover(g, e);
   if (ci >= 0) {
     const c = g.graph.covers[ci];
@@ -195,7 +200,12 @@ export function stepGoon(g: Game, e: Enemy, dt: number): void {
       if (e.timer <= 0) {
         e.strafe = g.rng.next() < 0.5 ? -1 : 1;
         e.timer = within(1.2, 2.4, g.rng.next());
-        if (g.graph.covers.length && e.stateT > 3) { goToCover(g, e); break; }
+        if (g.graph.covers.length && e.stateT > 3 && !e.perch) { goToCover(g, e); break; }
+      }
+      if (e.perch) { // hold the platform; duck behind the rail now and then
+        wantCrouch = e.strafe < 0 && !e.sees;
+        if (e.sees && e.flinch <= 0) tryFire(g, e, dt, true);
+        break;
       }
       const dx = p.x - e.x, dz = p.z - e.z;
       const d = Math.sqrt(dx * dx + dz * dz) || 1;

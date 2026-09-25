@@ -2,7 +2,8 @@
 //
 //  - Every node with a box Geometry and a Mesh becomes a collider (its world transform: position,
 //    yaw and scale composed down the tree; X/Z tilt is ignored with a warning). Opt out per node with
-//    Data {"collider": false}; Data {"shootThrough": true} lets bullets pass; Data {"surface": "metal"}
+//    Data {"collider": false}; on a group node it opts out the whole subtree (decor: signs, awnings,
+//    fire-escape stairs). Data {"shootThrough": true} lets bullets pass; Data {"surface": "metal"}
 //    tags impacts.
 //  - A node whose Data has a "marker" field (or a top-level "marker" field) is a gameplay marker and
 //    never a collider. Kinds and their fields are listed in MarkerKind below; the node's position is
@@ -20,6 +21,7 @@ export type MarkerKind =
   | "checkpoint" // respawn point (facing = yaw)
   | "exit" // room exit point (the door the player walks through after the room is clear)
   | "light" // a light the look pass can use (the sim ignores it)
+  | "fx" // a look effect: { fx: "steam" | "drip", ... } (the sim ignores it; see src/app/look/street.tsx)
   | "camera"; // a scripted camera point (cutscenes / intro; the sim ignores it)
 
 export type Marker = {
@@ -61,7 +63,7 @@ function comp(node: Node, type: string): Record<string, unknown> | null {
   return null;
 }
 
-const MARKERS = new Set<string>(["spawn", "enemy", "cover", "waypoint", "pickup", "trigger", "checkpoint", "exit", "light", "camera"]);
+const MARKERS = new Set<string>(["spawn", "enemy", "cover", "waypoint", "pickup", "trigger", "checkpoint", "exit", "light", "fx", "camera"]);
 
 export function readLevel(prefab: Prefabish): LevelData {
   const boxes: Box[] = [];
@@ -69,7 +71,7 @@ export function readLevel(prefab: Prefabish): LevelData {
   const warnings: string[] = [];
   let room: RoomSettings = { name: "room" };
 
-  const walk = (node: Node, parent: Xf) => {
+  const walk = (node: Node, parent: Xf, decor: boolean) => {
     if (node.disabled) return;
     const t = comp(node, "Transform");
     const pos = (t?.position as number[] | undefined) ?? [0, 0, 0];
@@ -97,7 +99,7 @@ export function readLevel(prefab: Prefabish): LevelData {
     } else {
       const g = comp(node, "Geometry");
       const mesh = comp(node, "Mesh");
-      if (g && mesh && (g.geometryType ?? "box") === "box" && data.collider !== false) {
+      if (g && mesh && (g.geometryType ?? "box") === "box" && data.collider !== false && !decor) {
         if (Math.abs(rot[0] ?? 0) > 1e-4 || Math.abs(rot[2] ?? 0) > 1e-4) warnings.push(`${node.id}: X/Z rotation ignored by the collider (yaw only)`);
         const args = (g.args as number[] | undefined) ?? [1, 1, 1];
         boxes.push(makeBox(
@@ -107,9 +109,9 @@ export function readLevel(prefab: Prefabish): LevelData {
         ));
       }
     }
-    for (const ch of node.children ?? []) walk(ch, xf);
+    for (const ch of node.children ?? []) walk(ch, xf, decor || data.collider === false);
   };
-  walk(prefab.root as Node, { x: 0, y: 0, z: 0, yaw: 0, sx: 1, sy: 1, sz: 1 });
+  walk(prefab.root as Node, { x: 0, y: 0, z: 0, yaw: 0, sx: 1, sy: 1, sz: 1 }, false);
   if (!markers.some(m => m.kind === "spawn")) warnings.push("no spawn marker: the player starts at the origin");
   return { boxes, markers, room, warnings };
 }

@@ -12,6 +12,8 @@ import { FRAME } from "./frame.ts";
 import type { V3 } from "../sim/types.ts";
 
 export const CAMERA_NODE = "rp-camera";
+/** Dev builds: ?cam=<id of a "camera" marker> holds the camera on that shot (data.at = look-at point). */
+const DEV_CAM = import.meta.env.MODE !== "production" ? new URLSearchParams(location.search).get("cam") : null;
 export const FOV = 68;
 const FOV_BT = 60;
 
@@ -31,7 +33,13 @@ export function CameraView({ s }: { s: Session }) {
     const p = g.player;
     const k = g.killcam;
     let fovWant = g.timeScale < 0.99 ? FOV_BT : FOV;
-    if (k) {
+    const dev = DEV_CAM ? g.level.markers.find(m => m.kind === "camera" && m.id === DEV_CAM) : undefined;
+    if (dev) {
+      const at = (dev.data.at as number[] | undefined) ?? [dev.x, dev.y, dev.z - 1];
+      tmp.eye.set(dev.x, dev.y, dev.z);
+      tmp.at.set(at[0], at[1], at[2]);
+      fovWant = FOV;
+    } else if (k) {
       // bullet position along the replayed shot
       const f = Math.min(1, k.t / k.flight);
       const bx = k.from.x + (k.to.x - k.from.x) * f, by = k.from.y + (k.to.y - k.from.y) * f, bz = k.from.z + (k.to.z - k.from.z) * f;

@@ -1,30 +1,16 @@
-// Room looks. The level's Data {room: {look}} picks one; the scene agent adds the real rainy-Manhattan
-// look here (planar puddle reflector, bloom, rain, neon lights, fog, colour grade) as its own
-// component and registers it in LOOKS. GreyboxLook is the stand-in: night fog, a cool moon, sodium
-// street lamps and neon-coloured point lights from "light" markers.
+// Room looks. The level's Data {room: {look}} picks one: "street" is room 1's rainy Manhattan night
+// (street.tsx: puddle reflections, bloom, rain, neon); GreyboxLook is the plain stand-in (night fog, a
+// cool moon, sodium street lamps and the level's "light" markers).
 import type { LevelData } from "../../world/level.ts";
+import type { Session } from "../session.ts";
+import { MarkerLights } from "./lights.tsx";
+import { StreetLook } from "./street.tsx";
 
 export const FOG = "#0b0f1c";
 
-/** Lights from "light" markers: Data {marker: "light", color, intensity, distance}. */
-function MarkerLights({ level }: { level: LevelData }) {
-  return (
-    <>
-      {level.markers.filter(m => m.kind === "light").map(m => (
-        <pointLight
-          key={m.id}
-          position={[m.x, m.y, m.z]}
-          color={(m.data.color as string) ?? "#ffb35c"}
-          intensity={(m.data.intensity as number) ?? 20}
-          distance={(m.data.distance as number) ?? 14}
-          decay={2}
-        />
-      ))}
-    </>
-  );
-}
+export type LookProps = { level: LevelData; s?: Session; lowQuality?: boolean };
 
-export function GreyboxLook({ level }: { level: LevelData }) {
+export function GreyboxLook({ level }: LookProps) {
   const exit = level.markers.find(m => m.kind === "exit");
   return (
     <>
@@ -41,11 +27,12 @@ export function GreyboxLook({ level }: { level: LevelData }) {
   );
 }
 
-export const LOOKS: Record<string, (p: { level: LevelData }) => React.ReactNode> = {
+export const LOOKS: Record<string, (p: LookProps) => React.ReactNode> = {
   greybox: GreyboxLook,
+  street: StreetLook,
 };
 
-export function RoomLook({ level }: { level: LevelData }) {
-  const L = LOOKS[(level.room.look as string) ?? "greybox"] ?? GreyboxLook;
-  return <L level={level} />;
+export function RoomLook(p: LookProps) {
+  const L = LOOKS[(p.level.room.look as string) ?? "greybox"] ?? GreyboxLook;
+  return <L {...p} />;
 }

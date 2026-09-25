@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { Game } from "../src/sim/game.ts";
 import { Bot } from "../src/sim/bot.ts";
 import type { InputFrame } from "../src/sim/types.ts";
-import { greybox } from "./helpers.ts";
+import { greybox, room1 } from "./helpers.ts";
 
 test("a recorded input log replays bit-exactly (same hash every step)", () => {
   const lv = greybox();
@@ -30,9 +30,9 @@ test("a recorded input log replays bit-exactly (same hash every step)", () => {
   assert.notDeepEqual(o.enemies.map(e => e.milady), r.enemies.map(e => e.milady));
 });
 
-test("smoke: the bot clears the room-1 greybox and walks out (normal)", () => {
-  for (const seed of [1, 2, 3]) {
-    const g = new Game(greybox(), { seed, difficulty: "normal" });
+test("smoke: the bot clears room 1 (greybox and the street) and walks out (normal)", () => {
+  for (const [name, lv] of [["greybox", greybox()], ["room1", room1()]] as const) for (const seed of [1, 2, 3]) {
+    const g = new Game(lv, { seed, difficulty: "normal" });
     const bot = new Bot();
     let killcam = false;
     for (let i = 0; i < 120 * 120 && g.phase !== "done" && g.phase !== "dead"; i++) {
@@ -40,7 +40,7 @@ test("smoke: the bot clears the room-1 greybox and walks out (normal)", () => {
       if (g.phase === "killcam") killcam = true;
       g.drain();
     }
-    assert.equal(g.phase, "done", `seed ${seed}: ${g.phase}, ${g.alive} alive, hp ${g.player.health}`);
+    assert.equal(g.phase, "done", `${name} seed ${seed}: ${g.phase}, ${g.alive} alive, hp ${g.player.health}`);
     assert.equal(g.stats.kills, g.enemies.length);
     assert.ok(killcam, "final-kill cam played");
   }

@@ -126,6 +126,7 @@ export class Game {
         const pick = typeof m.data.milady === "number" ? (m.data.milady as number) : 1 + Math.floor(hash01(this.seed, n, 0x6d, 0) * POCKIT_COUNT);
         const gy = this.world.groundBelow(m.x, m.z, 0.3, m.y + 1);
         const e = makeEnemy(n, m.id, m.x, Number.isFinite(gy) ? gy : m.y, m.z, m.yaw, ENEMY.goon.hp, pick, typeof m.data.group === "string" ? m.data.group : "");
+        e.perch = m.data.perch === true;
         const patrol = m.data.patrol;
         if (Array.isArray(patrol)) e.patrol = patrol.map(id => this.graph.nodes.findIndex(w => w.id === id)).filter(i => i >= 0);
         this.enemies.push(e);

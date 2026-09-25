@@ -5,9 +5,9 @@ a Milady gang's rave in bullet time: dual pistols, slow motion, shootdodges, and
 
 > they said wagmi. they lied.
 
-**Status:** chapter 1, first round. Room 1 (outside the Milady rave) is playable as a greybox, with
-the core mechanics in place. The rainy Manhattan street, the pistol animations and the other rooms
-come next.
+**Status:** chapter 1, first round. Room 1 is playable with the core mechanics: the rainy Manhattan
+street outside the Milady rave, with puddle reflections, neon bloom and rain that slows in bullet time.
+The pistol animations and the other rooms come next.
 
 ## Play
 
@@ -45,14 +45,21 @@ npm run typecheck
 npm run build      # production build in dist/
 npm run greybox    # regenerate public/levels/greybox.json
 npm run check-level [room]   # parse a level like the game does and list its markers and issues
+node tools/room1.ts      # regenerate public/levels/room1.json (overwrites hand edits made in the editor)
+node tools/textures.ts   # re-bake the procedural tiling textures in public/textures (needs ImageMagick)
 ```
 
 - **Levels** are engine prefabs in `public/levels/<room>.json`. Open `/?editor=<room>` on the dev server
   to edit one in the engine's editor. **Save** writes the file back and runs the level check.
-  - Every box becomes a collider.
+  - Every box becomes a collider, except under a node with Data `{collider: false}` (room 1's `decor`
+    group: signs, awnings, fire escapes, the far blocks and the skyline).
   - Nodes with a Data `marker` field are gameplay markers: `spawn`, `enemy`, `cover`, `waypoint`,
-    `pickup`, `trigger`, `checkpoint`, `exit` and `light`. `src/world/level.ts` lists the fields each
-    one takes.
+    `pickup`, `trigger`, `checkpoint`, `exit`, `light`, `fx` (steam / drips) and `camera`.
+    `src/world/level.ts` lists the fields each one takes. An enemy with `perch: true` holds its spot
+    (fire escapes).
+  - Room 1's look (`src/app/look/street.tsx`) reads material names: `wet <k>` for reflective ground,
+    `lit <gain>` for facades whose lit windows glow, and `glow <gain>` for neon, with `pulse` (the
+    club's bass), `flicker` or `blink` added. Change the gain in the editor to retune a sign.
 - **Dev URL flags:**
   - `?room=<id>` loads a level file.
   - `?skip` skips the title and the cutscene.
@@ -63,6 +70,7 @@ npm run check-level [room]   # parse a level like the game does and list its mar
   - `?milady=0` uses stand-ins instead of the Pockit models.
   - `?webgl2` forces the WebGL2 renderer.
   - `?q=low` switches to low quality.
+  - `?cam=<camera marker>` holds the camera on a shot (room 1: `cam-wide`, `cam-club`, `cam-canyon`).
 
 The simulation runs at a fixed 120 Hz and is deterministic for a given level, seed, difficulty and
 input log. Bullet time is a time scale on it.
