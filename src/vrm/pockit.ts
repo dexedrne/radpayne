@@ -86,8 +86,9 @@ export const GOON_CLIPS = [
   "Aim_Idle", "Aim_Walk_Fwd", "Aim_Walk_Back", "Aim_Strafe_L", "Aim_Strafe_R", "Aim_Run", "Cover_Crouch_Idle", "Hit_Small",
   "Death_Back", "Death_Back_2", "Death_Fwd", "Death_Fwd_2", "Idle", "Casual_Walk", "Run_02", "Falling_Down", "Big_Land",
 ];
-/** Clips that keep their root travel on the Miladys (bodies fly / fall where the clip puts them). */
-const TRAVEL = /^(Death_|Falling_Down)/;
+/** Clips that keep their root travel on the Miladys (bodies fly / fall where the clip puts them; the
+ *  rave's dances, drinks, seats and the DJ are baked on the spot and must not be pinned). */
+export const TRAVEL = /^(Death_|Falling_Down|Dance_|DJ_Idle|Drink_Idle|Sit_Idle|Startle|Cower_Idle)/;
 
 export type LoadedGoon = {
   vrm: VRM;
@@ -138,7 +139,7 @@ function lit(vrm: VRM): Material[] {
 }
 
 /** Parse + light + scale + retarget one goon's model. `sources` = Radbro GLB roots carrying clips. */
-export async function buildGoon(n: number, sources: Object3D[]): Promise<LoadedGoon | null> {
+export async function buildGoon(n: number, sources: Object3D[], extra: readonly string[] = []): Promise<LoadedGoon | null> {
   const got = await fetchPockit(n);
   if (!got) return null;
   const { vrm } = await parseVrm(got.buf.slice(0), got.url);
@@ -163,7 +164,7 @@ export async function buildGoon(n: number, sources: Object3D[]): Promise<LoadedG
   for (const src of sources) {
     const list = ((src as unknown as { animations?: AnimationClip[] }).animations ?? []) as AnimationClip[];
     for (const c of list) {
-      if (!GOON_CLIPS.includes(c.name) || seen.has(c.name)) continue;
+      if ((!GOON_CLIPS.includes(c.name) && !extra.includes(c.name)) || seen.has(c.name)) continue;
       seen.add(c.name);
       try {
         clips.push(retargetClip(c, src, vrm, RADBRO_RIG, { inPlace: !TRAVEL.test(c.name), alignRestPose: true }));

@@ -8,6 +8,9 @@
 // Nothing is drawn as a big flat quad next to the lens: flashes shrink with their distance to the camera,
 // bullets fade out inside ~3 m of it.
 // Particles age on world time, so bullet time slows them with everything else.
+// Round 2: a shotgun blast is one flash for its 8 pellets, and its pellets fly as thinner, shorter
+// streaks than a pistol round (8 of them must not cover the screen); the heavies bleed a slightly
+// bigger puff; weapon and ammo pickups (placed or dropped at a body) show as the gun / a box of rounds.
 import { useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import {
@@ -20,6 +23,7 @@ import type { Session } from "./session.ts";
 import type { GameEvent } from "../sim/types.ts";
 import { playerMuzzles } from "./PlayerView.tsx";
 import { enemyMuzzles } from "./EnemiesView.tsx";
+import { makeShotgun, makeSmg } from "./guns.ts";
 import { FRAME } from "./frame.ts";
 import { useUi } from "../ui/store.ts";
 import { lookOwns } from "./look/fx.ts";
@@ -205,25 +209,52 @@ export function FxView({ s }: { s: Session }) {
     exit.rotation.x = Math.PI;
     exit.visible = false;
     group.add(exit);
-    const out = { group, tracers, bullets, trails, heads, flashes, blood, mist, dropFade: drops.fade, mistFade: mists.fade, sparks, holes, splats, lights, lightT, pickups, canGeo, capGeo, canMat, capMat, exit, run: -1 };
+    const boxGeo = new BoxGeometry(0.22, 0.12, 0.14);
+    const ammoMat = { shotgun: new MeshStandardMaterial({ color: "#8c1d1d", roughness: 0.5, emissive: new Color("#3a0808") }), smgs: new MeshStandardMaterial({ color: "#2b2f36", roughness: 0.5, emissive: new Color("#1c140a") }) };
+    const brass = new MeshStandardMaterial({ color: "#c9a045", roughness: 0.3, metalness: 0.7, emissive: new Color("#3a2a0c") });
+    const out = { group, tracers, bullets, trails, heads, flashes, blood, mist, dropFade: drops.fade, mistFade: mists.fade, sparks, holes, splats, lights, lightT, pickups, canGeo, capGeo, canMat, capMat, boxGeo, ammoMat, brass, exit, run: -1, pickupN: 0 };
     if (import.meta.env.MODE !== "production") (window as unknown as { __fx?: unknown }).__fx = out; // dev / test: inspect the pools
     return out;
   }, []);
 
-  // pickups follow the game's list (rebuilt on restart)
-  const syncPickups = () => {
-    for (const g of fx.pickups.values()) fx.group.remove(g);
-    fx.pickups.clear();
-    for (const k of s.game.pickups) {
-      const g = new Group();
+  // pickups follow the game's list (rebuilt on restart; drops at a body are added as they land)
+  const pickupMesh = (item: string): Group => {
+    const g = new Group();
+    if (item === "shotgun") {
+      const gun = makeShotgun();
+      gun.scale.set(1.2, 1.2, 0.8);
+      gun.rotation.set(0, 0, Math.PI / 2);
+      g.add(gun);
+    } else if (item === "smgs") {
+      const a = makeSmg(), b = makeSmg();
+      a.scale.setScalar(1.3); b.scale.setScalar(1.3);
+      a.position.x = -0.07; b.position.x = 0.07; b.rotation.y = 0.5;
+      g.add(a, b);
+    } else if (item === "shotgun_ammo" || item === "smgs_ammo") {
+      const box = new Mesh(fx.boxGeo, item === "shotgun_ammo" ? fx.ammoMat.shotgun : fx.ammoMat.smgs);
+      const top = new Mesh(fx.capGeo, fx.brass);
+      top.scale.set(0.6, 0.5, 0.6);
+      top.position.y = 0.08;
+      g.add(box, top);
+    } else {
       const can = new Mesh(fx.canGeo, fx.canMat);
       const cap = new Mesh(fx.capGeo, fx.capMat);
       cap.position.y = 0.16;
       g.add(can, cap);
+    }
+    g.userData.item = item;
+    return g;
+  };
+  const syncPickups = () => {
+    for (const g of fx.pickups.values()) fx.group.remove(g);
+    fx.pickups.clear();
+    for (const k of s.game.pickups) {
+      const g = pickupMesh(k.item);
       g.position.set(k.x, k.y + 0.35, k.z);
       fx.group.add(g);
       fx.pickups.set(k.id, g);
     }
+    fx.pickupN = s.game.pickups.length;
   };
 
   useEffect(() => {
@@ -231,6 +262,7 @@ export function FxView({ s }: { s: Session }) {
     const onEvent = (e: GameEvent) => {
       switch (e.type) {
         case "shot": {
+          if (e.pellet > 0) break; // one flash per blast
           const muzzle = e.shooter === -1 ? playerMuzzles[e.hand] : enemyMuzzles[e.shooter];
           const from = muzzle && muzzle.lengthSq() > 0 ? muzzle : tmpA.set(e.ox, e.oy, e.oz);
           // flash (gold for him, red for them) + light
@@ -238,7 +270,7 @@ export function FxView({ s }: { s: Session }) {
           const f = fx.flashes.spawn(0.05);
           f.p.copy(from);
           f.v.set(0, 0, 0);
-          f.s = me ? 0.34 : 0.3;
+          f.s = (me ? 0.34 : 0.3) * (e.weapon === "shotgun" ? 1.35 : e.weapon === "smgs" || e.weapon === "smg" ? 0.8 : 1);
           const c = me ? GUNFIRE.player : GUNFIRE.enemy;
           fx.flashes.mesh.setColorAt(fx.flashes.last, col.setRGB(c[0], c[1], c[2]));
           if (fx.flashes.mesh.instanceColor) fx.flashes.mesh.instanceColor.needsUpdate = true;
@@ -253,7 +285,8 @@ export function FxView({ s }: { s: Session }) {
           break;
         }
         case "blood": {
-          const n = 16;
+          const heavy = e.target >= 0 && s.game.enemies[e.target]?.kind === "heavy";
+          const n = heavy ? 20 : 16;
           for (let i = 0; i < n; i++) {
             fx.blood.spawn(0.3 + Math.random() * 0.3);
             const idx = fx.blood.last;
@@ -272,7 +305,7 @@ export function FxView({ s }: { s: Session }) {
             const m = fx.mist.items[idx];
             m.p.set(e.x + e.dx * 0.08 * i, e.y, e.z + e.dz * 0.08 * i);
             m.v.set(e.dx * (0.4 + i * 0.5), 0.15, e.dz * (0.4 + i * 0.5));
-            m.s = 0.24 + Math.random() * 0.12;
+            m.s = (0.24 + Math.random() * 0.12) * (heavy ? 1.3 : 1);
             m.a.x = Math.random() * Math.PI * 2; // spin
             fx.mist.mesh.setColorAt(idx, col.setRGB(0.78 + Math.random() * 0.14, 0.03, 0.05, SRGBColorSpace));
           }
@@ -324,6 +357,7 @@ export function FxView({ s }: { s: Session }) {
       for (const p of [fx.tracers, fx.bullets, fx.trails, fx.heads, fx.flashes, fx.blood, fx.mist, fx.sparks, fx.holes, fx.splats]) p.clear();
       syncPickups();
     }
+    if (fx.pickupN !== g.pickups.length) syncPickups(); // a drop landed
     // tracers: a 4 m streak racing from the muzzle to the hit
     {
       const P = fx.tracers;
@@ -367,7 +401,9 @@ export function FxView({ s }: { s: Session }) {
         const travelled = Math.sqrt((b.x - b.sx) ** 2 + (b.y - b.sy) ** 2 + (b.z - b.sz) ** 2);
         // fades out inside ~3 m of the lens (his own bullets leave the muzzle right in front of it)
         const near = Math.min(1, Math.max(0, (vd.set(b.x, b.y, b.z).distanceTo(camPos) - 1.2) / 1.8));
-        put(b.x, b.y, b.z, b.dx, b.dy, b.dz, Math.min(5, travelled), b.shooter === -1 ? GUNFIRE.player : GUNFIRE.enemy, 0.24, near);
+        // shotgun pellets: small heads and short, thin streaks (8 of them in the air at once)
+        const pellet = b.weapon === "shotgun";
+        put(b.x, b.y, b.z, b.dx, b.dy, b.dz, Math.min(pellet ? 1.6 : 5, travelled), b.shooter === -1 ? GUNFIRE.player : GUNFIRE.enemy, pellet ? 0.1 : 0.24, near * (pellet ? 0.45 : 1));
       }
       const k = g.killcam;
       if (k && k.t < k.flight) {

@@ -31,3 +31,7 @@ export const MILADY_GRIP: HandGrips & { forearm: number } = {
   left: { p: [0.0651, -0.0119, -0.0101], q: [0.50295, 0.49703, 0.50295, 0.49703] },
   forearm: 0.217,
 };
+
+/** The shotgun's attach scale per Radbro (round-2 clip manifest grips.shotgun.RightHand.scale): the
+ *  shouldered pump gun at the reach of each chibi's arms. The right-hand grip is the pistol's. */
+export const SHOTGUN_SCALE: Record<RadbroId, number> = { "652": 0.72, "723": 0.72, "2564": 0.64, "4764": 0.72 };

@@ -9,8 +9,17 @@ export const clipsPath = (id: RadbroId) => `/models/radbro${id}.clips.glb`;
 /** Optional pistol clip pack (same rig, copied onto every Radbro by bone name). */
 export const gunClipsPath = (id: RadbroId) => `/models/radbro${id}.gun.glb`;
 
+/** Round-2 clip pack (same rig): the shotgun set, the heavy's stagger, the weapon swap. Optional. */
+export const r2ClipsPath = (id: RadbroId) => `/models/radbro${id}.r2.glb`;
+
 /** The shooter clip set on the Radbro rig: the Miladys' retarget source (optional, loaded with the Radbro). */
 export const MILADY_CLIPS = "/models/milady.gun.glb";
+/** The rave's clips on the same rig (dances, the bar and the booths, startle / flee / cower, the DJ). */
+export const MILADY_R2 = "/models/milady.r2.glb";
+
+/** A rival heavy's model (a recoloured Radbro #652 / #723: it plays that Radbro's clip packs). */
+export const rivalPath = (model: string) => `/models/${model}.glb`;
+export const rivalBase = (model: string): RadbroId => (model === "rival723" ? "723" : "652");
 
 /** The Miladys' clips are retargeted from this Radbro's rig. */
 export const RETARGET_SOURCE: RadbroId = "652";
