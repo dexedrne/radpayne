@@ -9,6 +9,8 @@
 // screen), indoor casings and footsteps (setIndoor), music per room (setMusic(cue, room): the rave's
 // club track is diegetic and cuts on the first shot with a record scratch), the crowd on its own bus
 // (at most 2 screams at once) with its cheer / panic loops, the DJ's PA lines, the heavy's voice.
+// Room 3: the office room tone with the club's kick through the wall, the breach (the door bursting in,
+// slowed with the world), the glass wall, a failing tube now and then, the keycard and the elevator.
 import { engine, live, sfxOn, voiceOn, whenCreated, type Engine } from "./engine.ts";
 
 /** Files under public/audio (no extension). Keys are the paths. */
@@ -319,6 +321,16 @@ export const sfx = {
     tone(e, t, 0.12, 660, 990, 0.1, "triangle");
     tone(e, t + 0.08, 0.14, 990, 1320, 0.08, "triangle");
   },
+  /** The office door gives (a dive through it, or a kick from inside): slowed with the world. */
+  breach(dist = 0, pan = 0): void {
+    const e = sfxOn();
+    if (e) play(e, "sfx/door_breach", { gain: 0.95 * att(dist), pan });
+  },
+  /** A one-shot in the room (the glass wall, a failing tube, the keycard, the elevator): world time. */
+  at(key: "glass_wall_shatter" | "fluorescent_flicker" | "keycard_beep" | "elevator_ding" | "elevator_doors" | "door_open", dist = 0, pan = 0, gain = 0.7, delay = 0): void {
+    const e = sfxOn();
+    if (e) play(e, `sfx/${key}`, { gain: gain * att(dist), pan, at: e.ac.currentTime + delay });
+  },
 };
 
 // ---- loops ----------------------------------------------------------------------------------------
@@ -403,6 +415,13 @@ export function setCrowd(state: "party" | "panic" | "off"): void {
 }
 let crowdState: "party" | "panic" | "off" | "" = "";
 
+/** The back rooms' air: fluorescent hum and HVAC (0..1; the club's kick comes through the wall with
+ *  setClubBass). */
+export function setRoomTone(level: number): void {
+  const e = live();
+  if (e) fade(loop(e, "sfx/office_room_tone_loop", bus(e), "world"), level * 0.5, 0.6);
+}
+
 /** The neon's hum near the club door: 0..1. */
 export function setNeonBuzz(near: number): void {
   const e = live();
@@ -486,7 +505,7 @@ export function setMusic(c: MusicCue, room = cueRoom): void {
 
 /** Everything in the room goes quiet (title / results). Music keeps its cue unless `music`. */
 export function stopRoomAudio(music = false): void {
-  for (const k of ["sfx/rain_loop", "sfx/club_bass_loop", "sfx/footsteps_wet_loop", "sfx/footsteps_hard_loop", "sfx/heartbeat_loop", "sfx/neon_buzz", "sfx/crowd_cheer_loop", "sfx/crowd_panic_loop"]) fade(loops.get(k) ?? null, 0, 0.3);
+  for (const k of ["sfx/rain_loop", "sfx/club_bass_loop", "sfx/footsteps_wet_loop", "sfx/footsteps_hard_loop", "sfx/heartbeat_loop", "sfx/neon_buzz", "sfx/crowd_cheer_loop", "sfx/crowd_panic_loop", "sfx/office_room_tone_loop"]) fade(loops.get(k) ?? null, 0, 0.3);
   crowdState = "";
   if (music) setMusic(null);
 }
@@ -517,7 +536,7 @@ export function bark(voice: GoonVoice, kind: BarkKind, dist: number, pan: number
   return src ? (src.buffer?.duration ?? 0) / r : 0;
 }
 
-export type RadbroLine = "hurt_1" | "hurt_2" | "dodge_land" | "bt_breath" | "heal" | "low_hp" | "death";
+export type RadbroLine = "hurt_1" | "hurt_2" | "dodge_land" | "bt_breath" | "heal" | "low_hp" | "death" | "breach";
 
 /**
  * The player's own voice (the narrator's, in the moment): grunts, the bullet-time breath, the copium

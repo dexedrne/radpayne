@@ -131,6 +131,11 @@
    "roughness": 0.4,
    "metalness": 0.7
   },
+  "carWall": {
+   "color": "#8c8f96",
+   "roughness": 0.35,
+   "metalness": 0.7
+  },
   "metalDark": {
    "color": "#25272c",
    "roughness": 0.45,
@@ -4485,8 +4490,128 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [3.4, 1.5, -10.5],
-         "scale": [2, 3, 0.2]
+         "position": [3.4, 1.5, -12.1],
+         "scale": [2.4, 3, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "carWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "elevator-side-l",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2.3, 1.5, -11.1],
+         "scale": [0.2, 3, 1.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "carWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "elevator-side-r",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.5, 1.5, -11.1],
+         "scale": [0.2, 3, 1.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "carWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "elevator-ceil",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.4, 2.7, -11.2],
+         "scale": [2.4, 0.2, 2]
         }
        },
        "geometry": {
@@ -4507,14 +4632,6 @@
         "properties": {
          "castShadow": false,
          "receiveShadow": false
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "surface": "metal"
-         }
         }
        }
       }
@@ -13228,6 +13345,70 @@
       }
      },
      {
+      "id": "elevator-car-light",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.4, 2.585, -11.1],
+         "scale": [1, 0.03, 0.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "lampWarm"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "elevator-rail",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.4, 0.975, -11.925],
+         "scale": [1.9, 0.05, 0.05]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "chrome"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
       "id": "elevator-frame-l",
       "components": {
        "transform": {
@@ -14837,6 +15018,46 @@
       }
      },
      {
+      "id": "fx-flicker-a",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3, 2.9, -12]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "fx",
+          "fx": "flicker"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "fx-flicker-c",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [14, 2.9, -6.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "fx",
+          "fx": "flicker"
+         }
+        }
+       }
+      }
+     },
+     {
       "id": "fx-elevator",
       "components": {
        "transform": {
@@ -14864,7 +15085,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-3, 2.6, -2]
+         "position": [-3, 2.3, -2]
         }
        },
        "data": {
@@ -14873,7 +15094,7 @@
          "data": {
           "marker": "light",
           "color": "#dfe6ff",
-          "intensity": 7,
+          "intensity": 8,
           "distance": 7
          }
         }
@@ -14886,7 +15107,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-3, 2.6, -8.5]
+         "position": [-3, 2.3, -8.5]
         }
        },
        "data": {
@@ -14895,7 +15116,7 @@
          "data": {
           "marker": "light",
           "color": "#dfe6ff",
-          "intensity": 7,
+          "intensity": 8,
           "distance": 7
          }
         }
@@ -14908,7 +15129,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-3, 2.6, -15.5]
+         "position": [-3, 2.3, -15.5]
         }
        },
        "data": {
@@ -14917,7 +15138,7 @@
          "data": {
           "marker": "light",
           "color": "#dfe6ff",
-          "intensity": 7,
+          "intensity": 8,
           "distance": 7
          }
         }
@@ -14930,7 +15151,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [3, 2.6, -17.7]
+         "position": [3, 2.3, -17.7]
         }
        },
        "data": {
@@ -14939,7 +15160,7 @@
          "data": {
           "marker": "light",
           "color": "#dfe6ff",
-          "intensity": 6,
+          "intensity": 6.9,
           "distance": 6
          }
         }
@@ -14952,7 +15173,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [9.5, 2.6, -18]
+         "position": [9.5, 2.3, -18]
         }
        },
        "data": {
@@ -14961,7 +15182,7 @@
          "data": {
           "marker": "light",
           "color": "#e6ecff",
-          "intensity": 9,
+          "intensity": 10.3,
           "distance": 8
          }
         }
@@ -14974,7 +15195,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [14.5, 2.6, -17.5]
+         "position": [14.5, 2.3, -17.5]
         }
        },
        "data": {
@@ -14983,7 +15204,7 @@
          "data": {
           "marker": "light",
           "color": "#e6ecff",
-          "intensity": 9,
+          "intensity": 10.3,
           "distance": 8
          }
         }
@@ -14996,7 +15217,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [14, 2.6, -8.5]
+         "position": [14, 2.3, -8.5]
         }
        },
        "data": {
@@ -15005,7 +15226,7 @@
          "data": {
           "marker": "light",
           "color": "#dfe6ff",
-          "intensity": 7,
+          "intensity": 8,
           "distance": 7
          }
         }
@@ -15018,7 +15239,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [12.5, 2.6, -1.2]
+         "position": [12.5, 2.3, -1.2]
         }
        },
        "data": {
@@ -15027,7 +15248,7 @@
          "data": {
           "marker": "light",
           "color": "#e8eeff",
-          "intensity": 9,
+          "intensity": 10.3,
           "distance": 8
          }
         }
@@ -15040,7 +15261,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [16, 2.6, 1]
+         "position": [16, 2.3, 1]
         }
        },
        "data": {
@@ -15049,7 +15270,7 @@
          "data": {
           "marker": "light",
           "color": "#e8eeff",
-          "intensity": 8,
+          "intensity": 9.2,
           "distance": 7
          }
         }
@@ -15084,7 +15305,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [2.4, 2.6, -1.2]
+         "position": [2.4, 2.3, -1.2]
         }
        },
        "data": {
@@ -15093,7 +15314,7 @@
          "data": {
           "marker": "light",
           "color": "#fff0dc",
-          "intensity": 9,
+          "intensity": 10.3,
           "distance": 8
          }
         }
@@ -15106,7 +15327,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [6.6, 2.6, 1.8]
+         "position": [6.6, 2.3, 1.8]
         }
        },
        "data": {
@@ -15115,7 +15336,7 @@
          "data": {
           "marker": "light",
           "color": "#fff0dc",
-          "intensity": 8,
+          "intensity": 9.2,
           "distance": 7
          }
         }
@@ -15150,7 +15371,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [3.4, 2.6, -7]
+         "position": [3.4, 2.3, -7]
         }
        },
        "data": {
@@ -15159,7 +15380,7 @@
          "data": {
           "marker": "light",
           "color": "#dfe6ff",
-          "intensity": 8,
+          "intensity": 9.2,
           "distance": 7
          }
         }

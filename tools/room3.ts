@@ -309,7 +309,11 @@ blockWall("f-wall-w", 0.2, -10.2, 0.4, -4.2);
 blockWall("f-wall-e", 6.4, -10.2, 6.6, -4.2);
 blockWall("f-wall-n1", 0.2, -10.2, 2.4, -10);
 blockWall("f-wall-n2", 4.4, -10.2, 6.6, -10);
-solid.push(boxMM("elevator-back", [2.4, 0, -10.6], [4.4, H, -10.4], "metalDark", { data: { surface: "metal" } }));
+// the car behind the doors (seen when they open at the exit): steel walls, a warm ceiling light
+solid.push(boxMM("elevator-back", [2.2, 0, -12.2], [4.6, H, -12.0], "carWall", { data: { surface: "metal" } }));
+solid.push(boxMM("elevator-side-l", [2.2, 0, -12.0], [2.4, H, -10.2], "carWall", { data: { surface: "metal" } }), boxMM("elevator-side-r", [4.4, 0, -12.0], [4.6, H, -10.2], "carWall", { data: { surface: "metal" } }));
+solid.push(boxMM("elevator-ceil", [2.2, 2.6, -12.2], [4.6, 2.8, -10.2], "metalDark"));
+decor.push(boxMM("elevator-car-light", [2.9, 2.57, -11.5], [3.9, 2.6, -10.7], "lampWarm"), boxMM("elevator-rail", [2.45, 0.95, -11.95], [4.35, 1.0, -11.9], "chrome"));
 solid.push(boxMM("elevator-doors", [2.4, 0, -10.2], [4.4, 2.2, -10.1], "metalDark", { hidden: true, data: { surface: "metal", camera: true } }));
 solid.push(boxMM("elevator-lintel", [2.4, 2.2, -10.2], [4.4, H, -10], "metalDark"));
 decor.push(boxMM("elevator-frame-l", [2.3, 0, -10.05], [2.4, 2.3, -9.95], "chrome"), boxMM("elevator-frame-r", [4.4, 0, -10.05], [4.5, 2.3, -9.95], "chrome"), boxMM("elevator-frame-t", [2.3, 2.2, -10.05], [4.5, 2.3, -9.95], "chrome"));
@@ -378,15 +382,18 @@ const markers: Node[] = [
   marker("trigger-manager", "trigger", [4.2, 1, 0.5], { action: "spawn", group: "manager" }, 0, [10, 3, 9]),
   marker("exit-elevator", "exit", [3.4, 0, -9.7], {}, FACE_N),
   marker("trigger-exit", "trigger", [3.4, 1, -8.9], { action: "exit" }, 0, [2.4, 3, 1.8]),
+  // the failing tubes (the look clicks and buzzes them when he is near)
+  marker("fx-flicker-a", "fx", [-3, 2.9, -12], { fx: "flicker" }),
+  marker("fx-flicker-c", "fx", [14, 2.9, -6.6], { fx: "flicker" }),
   // the elevator doors (the view slides them open at the exit)
   marker("fx-elevator", "fx", [3.4, 0, -10.08], { fx: "elevator", w: 2.0, h: 2.2 }, FACE_S),
-  // lights: under every troffer a cool fill, warm desk lamps, the red exit lights
+  // lights: a cool fill under every troffer (0.7 m below the ceiling: no hot spot on the tiles), warm desk lamps, the red exit lights
   ...([
-    ["a1", -3, 2.6, -2, "#dfe6ff", 7, 7], ["a2", -3, 2.6, -8.5, "#dfe6ff", 7, 7], ["a3", -3, 2.6, -15.5, "#dfe6ff", 7, 7], ["leg", 3, 2.6, -17.7, "#dfe6ff", 6, 6],
-    ["b1", 9.5, 2.6, -18, "#e6ecff", 9, 8], ["b2", 14.5, 2.6, -17.5, "#e6ecff", 9, 8], ["c", 14, 2.6, -8.5, "#dfe6ff", 7, 7],
-    ["d1", 12.5, 2.6, -1.2, "#e8eeff", 9, 8], ["d2", 16, 2.6, 1, "#e8eeff", 8, 7], ["d-lamp", 12.35, 1.5, 2.2, "#ffc98a", 4, 4],
-    ["e1", 2.4, 2.6, -1.2, "#fff0dc", 9, 8], ["e2", 6.6, 2.6, 1.8, "#fff0dc", 8, 7], ["e-lamp", 3.2, 1.4, 1.0, "#ffc98a", 5, 4.5],
-    ["f", 3.4, 2.6, -7, "#dfe6ff", 8, 7], ["staff-red", -3, 2.3, 1.6, "#ff2a1a", 3, 3.5], ["door-red", 14, 2.4, -4.6, "#ff2a1a", 3, 3.5],
+    ["a1", -3, 2.3, -2, "#dfe6ff", 8, 7], ["a2", -3, 2.3, -8.5, "#dfe6ff", 8, 7], ["a3", -3, 2.3, -15.5, "#dfe6ff", 8, 7], ["leg", 3, 2.3, -17.7, "#dfe6ff", 6.9, 6],
+    ["b1", 9.5, 2.3, -18, "#e6ecff", 10.3, 8], ["b2", 14.5, 2.3, -17.5, "#e6ecff", 10.3, 8], ["c", 14, 2.3, -8.5, "#dfe6ff", 8, 7],
+    ["d1", 12.5, 2.3, -1.2, "#e8eeff", 10.3, 8], ["d2", 16, 2.3, 1, "#e8eeff", 9.2, 7], ["d-lamp", 12.35, 1.5, 2.2, "#ffc98a", 4, 4],
+    ["e1", 2.4, 2.3, -1.2, "#fff0dc", 10.3, 8], ["e2", 6.6, 2.3, 1.8, "#fff0dc", 9.2, 7], ["e-lamp", 3.2, 1.4, 1.0, "#ffc98a", 5, 4.5],
+    ["f", 3.4, 2.3, -7, "#dfe6ff", 9.2, 7], ["staff-red", -3, 2.3, 1.6, "#ff2a1a", 3, 3.5], ["door-red", 14, 2.4, -4.6, "#ff2a1a", 3, 3.5],
   ] as Array<[string, number, number, number, string, number, number]>).map(([id, x, y, z, color, intensity, distance]) => marker(`light-${id}`, "light", [x, y, z], { color, intensity, distance })),
   // camera shots (?cam=<id> in dev builds)
   marker("cam-hall", "camera", [-3.2, 1.7, 1.4], { at: [-3, 1.2, -16] }),
@@ -427,6 +434,7 @@ const materials: Record<string, Record<string, unknown>> = {
   bucket: { color: "#c9a13a", roughness: 0.5 },
   pallet: { color: "#6e5234", roughness: 0.85 },
   pipe: { color: "#51555c", roughness: 0.4, metalness: 0.7 },
+  carWall: { color: "#8c8f96", roughness: 0.35, metalness: 0.7 },
   metalDark: { color: "#25272c", roughness: 0.45, metalness: 0.6 },
   chrome: { color: "#b9bcc4", roughness: 0.2, metalness: 0.9 },
   doorFrame: { color: "#2e2a26", roughness: 0.5 },

@@ -214,7 +214,9 @@ export default function PlayPage() {
       setFootsteps(0);
       const g = session.game;
       const results = { cleared: phase === "done", stats: { ...g.stats }, room: session.roomId, difficulty: g.difficulty, radbro: useUi.getState().radbro };
-      const show = () => useUi.setState({ screen: "results", results });
+      // room 3 holds the last frame while the elevator opens (room.exitHold seconds)
+      const hold = phase === "done" && typeof session.level.room.exitHold === "number" ? session.level.room.exitHold * 1000 : 0;
+      const show = () => { if (hold) setTimeout(() => useUi.setState({ screen: "results", results }), hold); else useUi.setState({ screen: "results", results }); };
       if (!results.cleared) { show(); return; }
       // the next room (when its level exists), else the results: "to be continued"
       const room = session.level.room;
@@ -248,7 +250,8 @@ export default function PlayPage() {
 
   const retry = () => {
     if (!session) return;
-    session.restart({ difficulty: useUi.getState().difficulty });
+    // from the room's last checkpoint when it has one (room 3: after the security office)
+    session.restart({ difficulty: useUi.getState().difficulty, resume: session.game.saved ?? undefined });
     session.bot = BOT ? new Bot(3.5, 0.3, BOT_DEMO) : null;
     startPlay();
   };
@@ -260,7 +263,7 @@ export default function PlayPage() {
     useUi.setState({ screen: "title" });
     // the title idles in the first room
     if (session.roomId !== ROOM) void loadRoom(ROOM).then(s => setSession(s));
-    else session.restart();
+    else session.restart({ resume: undefined });
   };
 
   return (

@@ -120,7 +120,10 @@ const fmt = (t: number) => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart
 
 /** What comes after a cleared room (while the next room is not built, the results say so). */
 const NEXT_TITLE: Record<string, string> = { room1: "THE RAVE", room2: "THE BACK OF THE HOUSE", room3: "THE ELEVATOR" };
-const CLEAR_LINE: Record<string, string> = { room2: "a brass key on a pink lanyard. somewhere past the staff door, an elevator." };
+const CLEAR_LINE: Record<string, string> = {
+  room2: "a brass key on a pink lanyard. somewhere past the staff door, an elevator.",
+  room3: "the doors closed. the car went up, the way my bag had.",
+};
 
 export function ResultsScreen({ onRetry, onTitle }: { onRetry: () => void; onTitle: () => void }) {
   const r = useUi(s => s.results);

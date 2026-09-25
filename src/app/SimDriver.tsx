@@ -7,7 +7,7 @@ import type { Session } from "./session.ts";
 import { useUi } from "../ui/store.ts";
 import { FRAME } from "./frame.ts";
 import { WEAPONS } from "../combat/weapons.ts";
-import { setAmbience, setClubBass, setCrowd, setFootsteps, setHeartbeat, setIndoor, setMusic, setNeonBuzz, setTimeScaleAudio, sfx, voiceLog } from "../audio/sfx.ts";
+import { setAmbience, setClubBass, setCrowd, setFootsteps, setHeartbeat, setIndoor, setMusic, setNeonBuzz, setRoomTone, setTimeScaleAudio, sfx, voiceLog } from "../audio/sfx.ts";
 import { audioState } from "../audio/engine.ts";
 import { Director } from "./director.ts";
 import { PLAYER, TIME } from "../sim/tuning.ts";
@@ -24,6 +24,8 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
   const frames = useRef(0);
   const lastPhase = useRef("");
   const director = useMemo(() => new Director(s), [s]);
+  /** World seconds to each heavy's next footstep (they are heard before they are seen). */
+  const heavySteps = useRef<number[]>([]);
 
   useEffect(() => s.on((e, ss) => {
     const g = ss.game, p = g.player;
@@ -94,9 +96,22 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
         setClubBass(near);
         setNeonBuzz(Math.max(0, 1 - d / 14));
       } else {
+        // the back rooms: the air handling, and the club's kick through the wall (heavily low-passed)
+        const back = room.look === "backrooms";
         setAmbience(false);
-        setClubBass(0);
+        setClubBass(back ? 0.3 : 0);
         setNeonBuzz(0);
+        setRoomTone(back ? 0.7 : 0);
+      }
+      // the heavies' boots
+      if (!s.paused) for (const e of g.enemies) {
+        if (e.kind !== "heavy" || e.state === "dead" || e.state === "inactive" || Math.hypot(e.vx, e.vz) < 0.3) continue;
+        const t = (heavySteps.current[e.idx] ?? 0) - Math.min(delta, 0.1) * g.timeScale;
+        heavySteps.current[e.idx] = t;
+        if (t > 0) continue;
+        heavySteps.current[e.idx] = 0.62;
+        const dx = e.x - g.player.x, dz = e.z - g.player.z, d = Math.hypot(dx, dz) || 1;
+        if (d < 26) sfx.heavyStep(d, (dx * Math.cos(g.player.yaw) - dz * Math.sin(g.player.yaw)) / d);
       }
       const p = g.player;
       const moving = !s.paused && p.grounded && p.mode === "normal" ? Math.sqrt(p.vx * p.vx + p.vz * p.vz) / PLAYER.runSpeed : 0;
