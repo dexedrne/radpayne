@@ -5,7 +5,7 @@
     {
       "image": "/cutscenes/e1/panel_e1.webp",
       "tone": "street",
-      "box": [0.03, 0.04, 0.178, 0.102],
+      "box": [0.022, 0.029, 0.195, 0.121],
       "dur": 6.0,
       "lines": [
         { "text": "the last one went down without a sound. the rain didn't care. it never does." }
@@ -14,7 +14,7 @@
     {
       "image": "/cutscenes/e1/panel_e2.webp",
       "tone": "club",
-      "box": [0.029, 0.045, 0.188, 0.095],
+      "box": [0.021, 0.034, 0.203, 0.116],
       "dur": 6.0,
       "lines": [
         { "text": "the door gave. the bass came through it like a heartbeat that wasn't mine." }
@@ -23,7 +23,7 @@
     {
       "image": "/cutscenes/e1/panel_e3.webp",
       "tone": "club",
-      "box": [0.02, 0.029, 0.192, 0.078],
+      "box": [0.017, 0.027, 0.196, 0.082],
       "dur": 7.5,
       "lines": [
         { "text": "the music kept playing. the dancing stopped. every sweet little face in the room turned to me." }

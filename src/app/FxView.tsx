@@ -345,16 +345,19 @@ export function FxView({ s }: { s: Session }) {
     {
       const B = fx.bullets, T = fx.trails, H = fx.heads;
       let n = 0;
-      const put = (x: number, y: number, z: number, dx: number, dy: number, dz: number, trail: number, c: readonly number[], glow = 0.24, near = 1) => {
+      /** close = the kill cam's bullet, a metre in front of the chase lens: a slim slug and a hairline
+       *  trail at a third of the brightness (full size it filled the frame as a flat white bar). */
+      const put = (x: number, y: number, z: number, dx: number, dy: number, dz: number, trail: number, c: readonly number[], glow = 0.24, near = 1, close = false) => {
         if (n >= B.items.length || near <= 0.02) return;
         m4.compose(vd.set(x, y, z), camQ, vs.set(glow * near, glow * near, 1));
         H.mesh.setMatrixAt(n, m4);
         // a fat slug with a long hot trail: readable in bullet time from across the street
-        const a = vs.set(x - dx * 0.1, y - dy * 0.1, z - dz * 0.1).clone();
-        const b = new Vector3(x + dx * 0.05, y + dy * 0.05, z + dz * 0.05);
-        segment(B.mesh, n, a, b, 0.04 * near);
-        segment(T.mesh, n, new Vector3(x - dx * trail, y - dy * trail, z - dz * trail), a, 0.026 * near);
-        col.setRGB(c[0], c[1], c[2]);
+        const a = vs.set(x - dx * (close ? 0.04 : 0.1), y - dy * (close ? 0.04 : 0.1), z - dz * (close ? 0.04 : 0.1)).clone();
+        const b = new Vector3(x + dx * (close ? 0.03 : 0.05), y + dy * (close ? 0.03 : 0.05), z + dz * (close ? 0.03 : 0.05));
+        segment(B.mesh, n, a, b, (close ? 0.012 : 0.04) * near);
+        segment(T.mesh, n, new Vector3(x - dx * trail, y - dy * trail, z - dz * trail), a, (close ? 0.003 : 0.026) * near);
+        const k = close ? 0.35 : 1;
+        col.setRGB(c[0] * k, c[1] * k, c[2] * k);
         B.mesh.setColorAt(n, col);
         T.mesh.setColorAt(n, col);
         H.mesh.setColorAt(n, col);
@@ -372,7 +375,7 @@ export function FxView({ s }: { s: Session }) {
         let dx = k.to.x - k.from.x, dy = k.to.y - k.from.y, dz = k.to.z - k.from.z;
         const l = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
         dx /= l; dy /= l; dz /= l;
-        put(k.from.x + (k.to.x - k.from.x) * f, k.from.y + (k.to.y - k.from.y) * f, k.from.z + (k.to.z - k.from.z) * f, dx, dy, dz, Math.min(0.55, l * f), GUNFIRE.player, 0.05); // the chase cam rides 0.9 m back: the trail stops short of the lens
+        put(k.from.x + (k.to.x - k.from.x) * f, k.from.y + (k.to.y - k.from.y) * f, k.from.z + (k.to.z - k.from.z) * f, dx, dy, dz, Math.min(0.3, l * f), GUNFIRE.player, 0.05, 1, true); // the chase cam rides 0.9 m back: the trail stops well short of the lens
       }
       for (let i = n; i < B.items.length; i++) { B.mesh.setMatrixAt(i, HIDE); T.mesh.setMatrixAt(i, HIDE); H.mesh.setMatrixAt(i, HIDE); }
       for (const P of [B, T, H]) {

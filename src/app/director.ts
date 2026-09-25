@@ -120,9 +120,9 @@ export class Director {
     goonTalk[i] = performance.now() + d * 1000;
   }
 
-  /** Queue a narrator line once per attempt. */
+  /** Queue a narrator line once per attempt (the tutorial lines only while the fight is on). */
   say(id: string, delay = 0): void {
-    if (this.said.has(id)) return;
+    if (this.said.has(id) || (id.startsWith("tut_") && this.s.game.phase !== "play")) return;
     this.said.add(id);
     this.queue.push({ id, at: performance.now() / 1000 + delay });
   }
@@ -215,13 +215,14 @@ export class Director {
     // tutorial beats
     if (this.btEnded && this.said.has("tut_bullet_time")) this.say("tut_shootdodge", 1.2);
     if (g.phase === "clear") this.say("room_clear", 0.3);
-    // narrator queue: one line at a time, room clear jumps the queue
-    if (this.queue.length && now >= this.narratorUntil) {
-      const clearAt = this.queue.findIndex(l => l.id === "room_clear");
-      const i = clearAt >= 0 ? clearAt : 0;
-      const line = this.queue[i];
+    // narrator queue: one line at a time; room clear drops the tutorial lines still waiting and cuts
+    // one in progress (the player may reach the door, and the ending, a few seconds after the clear)
+    const clearAt = this.queue.findIndex(l => l.id === "room_clear");
+    if (clearAt >= 0) this.queue = [this.queue[clearAt]];
+    if (this.queue.length && (now >= this.narratorUntil || clearAt >= 0)) {
+      const line = this.queue[0];
       if (now >= line.at) {
-        this.queue.splice(i, 1);
+        this.queue.shift();
         const d = narrate(line.id);
         const until = now + Math.max(d, 3.5);
         this.narratorUntil = until + 0.6;
