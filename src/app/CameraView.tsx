@@ -6,6 +6,7 @@ import { useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { usePrefab } from "react-three-game";
 import { Matrix4, PerspectiveCamera, Vector3 } from "three";
+import { World } from "../sim/world.ts";
 import type { Session } from "./session.ts";
 import { SHOULDER, aimDir } from "../sim/aim.ts";
 import { FRAME } from "./frame.ts";
@@ -15,6 +16,8 @@ export const CAMERA_NODE = "rp-camera";
 /** Dev builds: ?cam=<id of a "camera" marker> holds the camera on that shot (data.at = look-at point). */
 const DEV_CAM = import.meta.env.MODE !== "production" ? new URLSearchParams(location.search).get("cam") : null;
 export const FOV = 68;
+/** The current camera arm (the player fades out when a wall pulls the camera into his head). */
+export const camView = { arm: SHOULDER.arm as number };
 const FOV_BT = 60;
 
 export function CameraView({ s }: { s: Session }) {
@@ -23,6 +26,9 @@ export function CameraView({ s }: { s: Session }) {
     m: new Matrix4(), eye: new Vector3(), at: new Vector3(), up: new Vector3(0, 1, 0), d: { x: 0, y: 0, z: -1 } as V3,
     arm: SHOULDER.arm as number, fov: FOV, kick: 0, orbit: 0, piv: new Vector3(),
   }), []);
+  // what the camera collides with: every visible box, decor included (a tall decor box must not sit
+  // between the camera and the shoulder), not the invisible play-area walls
+  const camWorld = useMemo(() => new World(s.level.camBoxes.map((b, i) => ({ ...b, id: i }))), [s]);
   useEffect(() => s.on(e => {
     if (e.type === "hurt" && e.target === -1) tmp.kick = 1;
   }), [s, tmp]);
@@ -39,6 +45,7 @@ export function CameraView({ s }: { s: Session }) {
       tmp.eye.set(dev.x, dev.y, dev.z);
       tmp.at.set(at[0], at[1], at[2]);
       fovWant = FOV;
+      camView.arm = SHOULDER.arm;
     } else if (k) {
       // bullet position along the replayed shot
       const f = Math.min(1, k.t / k.flight);
@@ -59,15 +66,17 @@ export function CameraView({ s }: { s: Session }) {
         tmp.at.set(k.to.x, k.to.y - 0.3, k.to.z);
       }
       fovWant = 50;
+      camView.arm = SHOULDER.arm;
     } else {
       const r = s.renderP;
       const d = aimDir(p.yaw, p.pitch, tmp.d);
       const c = Math.cos(p.yaw), sn = Math.sin(p.yaw);
       tmp.piv.set(r.x + c * SHOULDER.right, r.y + p.pivotUp, r.z - sn * SHOULDER.right);
       // wall collision along the arm (the sim's own boxes), then ease back out
-      const hit = g.world.raycast(tmp.piv.x, tmp.piv.y, tmp.piv.z, -d.x, -d.y, -d.z, SHOULDER.arm + 0.3, false);
+      const hit = camWorld.raycast(tmp.piv.x, tmp.piv.y, tmp.piv.z, -d.x, -d.y, -d.z, SHOULDER.arm + 0.3, false);
       const want = hit ? Math.max(SHOULDER.minArm, hit.t - 0.3) : SHOULDER.arm;
       tmp.arm = want < tmp.arm ? want : tmp.arm + (want - tmp.arm) * Math.min(1, 6 * dt);
+      camView.arm = tmp.arm;
       tmp.eye.set(tmp.piv.x - d.x * tmp.arm, tmp.piv.y - d.y * tmp.arm, tmp.piv.z - d.z * tmp.arm);
       tmp.at.set(tmp.piv.x + d.x * 10, tmp.piv.y + d.y * 10, tmp.piv.z + d.z * 10);
       // hit kick

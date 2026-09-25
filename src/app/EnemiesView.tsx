@@ -15,6 +15,7 @@ import type { Enemy } from "../sim/actors.ts";
 import { AnimPlayer } from "../anim/animPlayer.ts";
 import { CLIPS, aimLimb, deathFor, pick, rotateBoneWorld } from "../anim/rig.ts";
 import { MILADY_GRIP } from "../anim/grips.ts";
+import { MILADY_GAIT, RUN_FROM, clipSpeed, legsFor } from "../anim/gait.ts";
 import { buildGoon, fetchPockit, type LoadedGoon } from "../vrm/pockit.ts";
 import { MILADY_CLIPS, RETARGET_SOURCE, clipsPath, modelPath } from "./characters.ts";
 import { aimGun, attachGun, makePistol, muzzleWorld } from "./guns.ts";
@@ -42,6 +43,9 @@ type GoonView = {
   hit: AnimationAction | null;
   clip: string;
   yaw: number;
+  /** Legs (root) yaw: along the move, or toward the aim when backing off; the spine twists the rest. */
+  legYaw: number;
+  back: boolean;
   flinch: number;
   pain: number;
   blinkT: number;
@@ -79,7 +83,7 @@ function makeView(e: Enemy): GoonView {
   const standIn = makeStandIn();
   root.add(standIn);
   const gun = makePistol();
-  return { idx: e.idx, n: e.milady, root, standIn, gun, gunInHand: false, model: null, player: null, hit: null, clip: "", yaw: e.facing, flinch: 0, pain: 0, blinkT: -1, blinkAt: 1 + Math.random() * 3, deadShown: false, fallYaw: 0, loading: false };
+  return { idx: e.idx, n: e.milady, root, standIn, gun, gunInHand: false, model: null, player: null, hit: null, clip: "", yaw: e.facing, legYaw: e.facing, back: false, flinch: 0, pain: 0, blinkT: -1, blinkAt: 1 + Math.random() * 3, deadShown: false, fallYaw: 0, loading: false };
 }
 
 /** Deterministic 0..1 per goon and attempt (death variant picks). */
@@ -165,7 +169,7 @@ export function EnemiesView({ s }: { s: Session }) {
     if (run.current !== s.run) {
       run.current = s.run;
       for (const v of views) {
-        v.deadShown = false; v.clip = ""; v.flinch = 0; v.pain = 0; v.yaw = g.enemies[v.idx]?.facing ?? 0;
+        v.deadShown = false; v.clip = ""; v.flinch = 0; v.pain = 0; v.yaw = g.enemies[v.idx]?.facing ?? 0; v.legYaw = v.yaw; v.back = false;
         v.hit?.stop();
         if (v.player) v.player.force(pick(v.player, CLIPS.relaxed), 0);
       }
@@ -183,6 +187,7 @@ export function EnemiesView({ s }: { s: Session }) {
           v.deadShown = true;
           v.fallYaw = Math.atan2(-e.killDX, -e.killDZ); // facing the shot: the back deaths fly away from it
           v.yaw = v.fallYaw;
+          v.legYaw = v.fallYaw;
           v.hit?.stop();
           const pl = v.player;
           if (pl) {
@@ -194,7 +199,7 @@ export function EnemiesView({ s }: { s: Session }) {
         }
       } else v.yaw += wrapAngle(e.facing - v.yaw) * Math.min(1, 14 * dt);
       v.root.position.set(p.x, p.y, p.z);
-      tmp.q.setFromAxisAngle(UP, v.yaw);
+      tmp.q.setFromAxisAngle(UP, v.player && e.state !== "dead" ? v.legYaw : v.yaw);
       v.root.quaternion.copy(tmp.q);
       // stand-in poses (no clips): crouch squash, lying dead
       v.standIn.scale.y = e.crouch && e.state !== "dead" ? 0.66 : 1;
@@ -206,17 +211,21 @@ export function EnemiesView({ s }: { s: Session }) {
       if (!pl || e.state === "dead") continue;
       const speed = Math.sqrt(e.vx * e.vx + e.vz * e.vz);
       const fighting = e.state !== "idle";
-      let want = "", rate = 1;
+      let want = "", rate = 1, legWant = v.yaw;
       const m = v.model!;
       if (e.crouch) want = pick(pl, CLIPS.crouch);
       else if (speed > 0.2) {
-        if (fighting) {
-          const rel = wrapAngle(Math.atan2(e.vx, e.vz) - v.yaw);
-          if (Math.abs(rel) <= 1.0) { want = pick(pl, speed > 2.6 ? CLIPS.run : CLIPS.walk); rate = want.endsWith("Run") || want === "Run_02" ? speed / 5.2 : speed / 1.5; }
-          else if (Math.abs(rel) >= 2.2) { want = pick(pl, CLIPS.back); rate = Math.max(0.8, speed / 1.6); }
-          else { want = pick(pl, rel > 0 ? CLIPS.strafeL : CLIPS.strafeR); rate = Math.max(0.8, Math.min(2.6, speed / 1.4)); }
-        } else { want = pick(pl, speed > 2.6 ? ["Run_02", "Aim_Run"] : CLIPS.stroll); rate = speed / (speed > 2.6 ? 5.2 : 1.3); }
+        // the run / walk cycle at body speed over its ground speed (scaled to her legs): no skating.
+        // Legs along the move; backing off while fighting plays the cycle backwards facing the aim.
+        const moveYaw = Math.atan2(e.vx, e.vz);
+        const legs = fighting ? legsFor(moveYaw, wrapAngle(moveYaw - v.yaw), v.back) : { back: false, legYaw: moveYaw };
+        v.back = legs.back;
+        legWant = legs.legYaw;
+        const running = speed > RUN_FROM * m.legScale;
+        want = pick(pl, fighting ? (running ? CLIPS.run : CLIPS.walk) : running ? ["Run_02", "Aim_Run"] : CLIPS.stroll);
+        rate = (legs.back ? -1 : 1) * speed / (clipSpeed(MILADY_GAIT, want) * m.legScale);
       } else want = pick(pl, fighting ? CLIPS.idle : CLIPS.relaxed);
+      v.legYaw += wrapAngle(legWant - v.legYaw) * Math.min(1, 12 * dt);
       if (!want && e.crouch && pl.has("Big_Land") && m.crouchAt >= 0) want = "Big_Land";
       if (want !== v.clip) {
         if (want === "Big_Land") pl.play(want, { hold: true, startAt: Math.max(0, m.crouchAt - 0.25), freezeAt: m.crouchAt, fade: 0.2 });
@@ -261,6 +270,13 @@ export function EnemiesView({ s }: { s: Session }) {
         const nb = (n: Parameters<typeof h.getNormalizedBoneNode>[0]) => h.getNormalizedBoneNode(n) ?? undefined;
         v.root.updateMatrixWorld(true);
         if (alive) {
+          // the chest back onto the aim when the legs run another way
+          const twist = Math.max(-1.75, Math.min(1.75, wrapAngle(v.yaw - v.legYaw)));
+          if (Math.abs(twist) > 1e-3) {
+            rotateBoneWorld(nb("spine"), UP, twist * 0.45);
+            rotateBoneWorld(nb("chest"), UP, twist * (nb("upperChest") ? 0.3 : 0.55));
+            rotateBoneWorld(nb("upperChest"), UP, twist * 0.25);
+          }
           // lean out of high cover (sim lean: +1 = local +x)
           if (Math.abs(e.lean) > 0.01) {
             rotateBoneWorld(nb("spine"), tmp.fwd, -e.lean * 0.35);

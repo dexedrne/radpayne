@@ -35,7 +35,8 @@ export const METER = {
 export const PLAYER = {
   radius: 0.35,
   height: 1.8,
-  runSpeed: 5.6,
+  /** Run speed; the run cycle plays at about 1.6x here (see anim/gait.ts). */
+  runSpeed: 5.0,
   /** Backpedal / strafe multipliers relative to aim. */
   backSpeed: 0.7,
   accel: 38,
@@ -71,7 +72,8 @@ export const DODGE_GRAVITY = (2 * DODGE.up) / DODGE.airTime;
 
 /** Enemy kinds (spec section 5). Only the goon is built this round. */
 export const ENEMY = {
-  goon: { hp: 60, radius: 0.35, walk: 2.2, run: 4.2, fireInterval: 0.42, burst: 3, damage: 9, sight: 34, fov: 0.35 },
+  // idleSight: how far an idle goon (chatting in the rain, before the alert trigger) notices the player
+  goon: { hp: 60, radius: 0.35, walk: 2.2, run: 4.2, fireInterval: 0.42, burst: 3, damage: 9, sight: 34, idleSight: 18, fov: 0.35 },
 } as const;
 
 export type Difficulty = "easy" | "normal" | "hard";

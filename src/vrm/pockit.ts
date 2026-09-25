@@ -72,6 +72,8 @@ export type LoadedGoon = {
   talk: string | null;
   /** Right forearm length in the model's own units (scales the pistol grip). */
   forearm: number;
+  /** Her hips height (scaled) over the clip source's: the retargeted loops' ground speed scales with it. */
+  legScale: number;
   vrm0: boolean;
 };
 
@@ -112,6 +114,9 @@ export async function buildGoon(n: number, sources: Object3D[]): Promise<LoadedG
   const head = vrm.humanoid?.getNormalizedBoneNode("head");
   const headY = head ? head.getWorldPosition(new Vector3()).y : 1.6;
   const scale = headY > 0.3 ? MILADY_HEAD_BONE / headY : 1;
+  const hipsY = vrm.humanoid?.getNormalizedBoneNode("hips")?.getWorldPosition(new Vector3()).y ?? 0;
+  const srcHipsY = sources[0]?.getObjectByName("Hips")?.getWorldPosition(new Vector3()).y ?? 0;
+  const legScale = hipsY > 0.1 && srcHipsY > 0.1 ? Math.min(1.4, Math.max(0.5, (hipsY * scale) / srcHipsY)) : 1;
   const body = new Group();
   body.name = `milady-${n}`;
   body.scale.setScalar(scale);
@@ -153,5 +158,5 @@ export async function buildGoon(n: number, sources: Object3D[]): Promise<LoadedG
       if (y < lo) { lo = y; crouchAt = hipsTrack.times[i]; }
     }
   }
-  return { vrm, body, clips, scale, blink: bound("blink"), pain, materials, crouchAt, hit, talk, forearm, vrm0: vrm.meta?.metaVersion === "0" };
+  return { vrm, body, clips, scale, blink: bound("blink"), pain, materials, crouchAt, hit, talk, forearm, legScale, vrm0: vrm.meta?.metaVersion === "0" };
 }

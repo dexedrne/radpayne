@@ -81,7 +81,8 @@ export const store = (k: string, v: string): void => {
 
 export const useUi = create<Ui>(() => ({
   screen: "title",
-  radbro: (stored("radbro", "652") as RadbroId),
+  // #4764 is the hero of the comic panels, so he is the default pick
+  radbro: (stored("radbro", "4764") as RadbroId),
   difficulty: (stored("difficulty", "normal") as Difficulty),
   quality: (stored("quality", "high") as Quality),
   sensitivity: Number(stored("sensitivity", "1")) || 1,

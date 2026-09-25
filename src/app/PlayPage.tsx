@@ -104,7 +104,7 @@ export default function PlayPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
-  // Esc / gamepad start while playing without lock (the browser eats Esc with the lock)
+  // Esc / P / gamepad Start while playing (the browser eats Esc with the lock and unlocks by itself)
   useEffect(() => {
     const kd = (e: KeyboardEvent) => {
       if (e.code !== "Escape" && e.code !== "KeyP") return;
@@ -112,7 +112,11 @@ export default function PlayPage() {
       if (sc === "play") pause();
     };
     addEventListener("keydown", kd);
-    return () => removeEventListener("keydown", kd);
+    if (session) session.onPadStart = () => { if (useUi.getState().screen === "play") pause(); };
+    return () => {
+      removeEventListener("keydown", kd);
+      if (session) session.onPadStart = null;
+    };
   });
 
   const lock = () => { if (!BOT) void (canvasEl()?.requestPointerLock() as unknown as Promise<void> | undefined)?.catch?.(() => undefined); };
@@ -131,6 +135,8 @@ export default function PlayPage() {
     if (!session) return;
     session.paused = true;
     useUi.setState({ screen: "paused" });
+    // free the cursor so Resume can be clicked (P / gamepad Start keep the lock otherwise)
+    if (document.pointerLockElement) document.exitPointerLock();
   }
 
   const play = useCallback(async () => {

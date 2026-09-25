@@ -1,14 +1,16 @@
 // Gunfire and hit effects, all pooled InstancedMeshes fed by the sim's events:
 //  tracer streaks (hitscan), visible bullets with trails (bullet time + the kill cam's replayed shot),
-//  muzzle flashes with a light, stylised blood puffs (not gory), bullet holes and blood decals on the
+//  muzzle flashes with a light, a stylised red blood spray + mist (not gory), bullet holes and blood decals on the
 //  wall behind, impact sparks, copium pickups, the exit marker once the room is clear.
 // Particles age on world time, so bullet time slows them with everything else.
 import { useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import {
-  AdditiveBlending, NormalBlending, BoxGeometry, CanvasTexture, Color, ConeGeometry, CylinderGeometry, Group, IcosahedronGeometry, InstancedMesh, Matrix4, Mesh,
+  AdditiveBlending, NormalBlending, BoxGeometry, CanvasTexture, Color, ConeGeometry, CylinderGeometry, Group, InstancedBufferAttribute, InstancedMesh, Matrix4, Mesh,
   MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, PointLight, Quaternion, SRGBColorSpace, Vector3, type BufferGeometry, type Material,
 } from "three";
+import { MeshBasicNodeMaterial } from "three/webgpu";
+import { attribute } from "three/tsl";
 import type { Session } from "./session.ts";
 import type { GameEvent } from "../sim/types.ts";
 import { playerMuzzles } from "./PlayerView.tsx";
@@ -25,6 +27,8 @@ class Pool {
   readonly mesh: InstancedMesh;
   readonly items: Item[];
   private next = 0;
+  /** Index of the item the last spawn() returned. */
+  last = 0;
   constructor(geo: BufferGeometry, mat: Material, n: number) {
     this.mesh = new InstancedMesh(geo, mat, n);
     this.mesh.frustumCulled = false;
@@ -33,6 +37,7 @@ class Pool {
   }
   spawn(max: number): Item {
     const it = this.items[this.next];
+    this.last = this.next;
     this.next = (this.next + 1) % this.items.length;
     it.life = 0;
     it.max = max;
@@ -92,8 +97,49 @@ function glowTexture(): CanvasTexture {
   return t;
 }
 
+/** Soft round blot for the blood spray (white: the instance colour tints it). */
+function blotTexture(soft: boolean): CanvasTexture {
+  const c = document.createElement("canvas");
+  c.width = c.height = 64;
+  const x = c.getContext("2d")!;
+  const g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  if (soft) {
+    g.addColorStop(0, "rgba(255,255,255,0.9)");
+    g.addColorStop(0.35, "rgba(255,255,255,0.55)");
+    g.addColorStop(0.7, "rgba(255,255,255,0.18)");
+    g.addColorStop(1, "rgba(255,255,255,0)");
+  } else {
+    g.addColorStop(0, "rgba(255,255,255,1)");
+    g.addColorStop(0.55, "rgba(255,255,255,0.95)");
+    g.addColorStop(0.8, "rgba(255,255,255,0.35)");
+    g.addColorStop(1, "rgba(255,255,255,0)");
+  }
+  x.fillStyle = g;
+  x.fillRect(0, 0, 64, 64);
+  const t = new CanvasTexture(c);
+  t.colorSpace = SRGBColorSpace;
+  return t;
+}
+
+/** Camera-facing blood sprites: per-instance colour and a per-instance fade (the "fade" attribute). */
+function spritePool(soft: boolean, n: number): { pool: Pool; fade: InstancedBufferAttribute } {
+  const geo = new PlaneGeometry(1, 1);
+  const fade = new InstancedBufferAttribute(new Float32Array(n), 1);
+  geo.setAttribute("fade", fade);
+  const mat = new MeshBasicNodeMaterial({ map: blotTexture(soft), transparent: true, depthWrite: false });
+  mat.opacityNode = attribute("fade", "float");
+  const pool = new Pool(geo, mat, n);
+  const white = new Color(1, 1, 1);
+  for (let i = 0; i < n; i++) pool.mesh.setColorAt(i, white); // instanceColor exists before the first compile
+  return { pool, fade };
+}
+
 const m4 = new Matrix4();
 const q = new Quaternion();
+const qInv = new Quaternion();
+const vc = new Vector3();
+const camP = new Vector3();
+const col = new Color();
 const qCam = new Quaternion();
 const qSpin = new Quaternion();
 const vs = new Vector3();
@@ -122,11 +168,17 @@ export function FxView({ s }: { s: Session }) {
     const flashMat = new MeshBasicMaterial({ map: flashTexture(), color: "#ffffff", toneMapped: false, transparent: true, blending: AdditiveBlending, depthWrite: false });
     const flashes = new Pool(new PlaneGeometry(1, 1), flashMat, 16);
     const heads = new Pool(new PlaneGeometry(1, 1), new MeshBasicMaterial({ map: glowTexture(), color: "#ffffff", toneMapped: false, transparent: true, blending: AdditiveBlending, depthWrite: false }), 64);
-    const blood = new Pool(new IcosahedronGeometry(1, 0), new MeshStandardMaterial({ color: "#7a0a12", roughness: 0.4 }), 240);
+    // blood: a red spray of small droplets (fading, stretched along their flight) + a soft mist that
+    // blooms out and thins away. Normal blending, no glow: it reads as blood in the neon.
+    const drops = spritePool(false, 240);
+    const mists = spritePool(true, 48);
+    const blood = drops.pool, mist = mists.pool;
+    blood.mesh.renderOrder = 2;
+    mist.mesh.renderOrder = 1;
     const sparks = new Pool(unit, glow("#ffcf6a"), 120);
     const holes = new Pool(unit, new MeshStandardMaterial({ color: "#050505", roughness: 1 }), 120);
     const splats = new Pool(new CylinderGeometry(0.5, 0.5, 1, 10), new MeshStandardMaterial({ color: "#5c0710", roughness: 0.5 }), 60);
-    for (const p of [tracers, bullets, trails, heads, flashes, blood, sparks, holes, splats]) group.add(p.mesh);
+    for (const p of [tracers, bullets, trails, heads, flashes, blood, mist, sparks, holes, splats]) group.add(p.mesh);
     // one flash light for the player's guns, one for the gang's (a fixed light count: no shader rebuilds)
     const lights = [new PointLight("#ffc46b", 0, 7, 2), new PointLight("#ffc46b", 0, 7, 2)];
     lights.forEach(l => group.add(l));
@@ -142,7 +194,9 @@ export function FxView({ s }: { s: Session }) {
     exit.rotation.x = Math.PI;
     exit.visible = false;
     group.add(exit);
-    return { group, tracers, bullets, trails, heads, flashes, blood, sparks, holes, splats, lights, lightT, pickups, canGeo, capGeo, canMat, capMat, exit, run: -1 };
+    const out = { group, tracers, bullets, trails, heads, flashes, blood, mist, dropFade: drops.fade, mistFade: mists.fade, sparks, holes, splats, lights, lightT, pickups, canGeo, capGeo, canMat, capMat, exit, run: -1 };
+    if (import.meta.env.MODE !== "production") (window as unknown as { __fx?: unknown }).__fx = out; // dev / test: inspect the pools
+    return out;
   }, []);
 
   // pickups follow the game's list (rebuilt on restart)
@@ -184,19 +238,31 @@ export function FxView({ s }: { s: Session }) {
           break;
         }
         case "blood": {
-          const n = 10;
+          const n = 16;
           for (let i = 0; i < n; i++) {
-            const b = fx.blood.spawn(0.35 + Math.random() * 0.25);
+            fx.blood.spawn(0.3 + Math.random() * 0.3);
+            const idx = fx.blood.last;
+            const b = fx.blood.items[idx];
             b.p.set(e.x, e.y, e.z);
             // most spray out of the exit side, a little back toward the shooter
-            const back = i < 3 ? -0.8 : 1;
-            b.v.set(e.dx * back * (1.5 + Math.random() * 2) + (Math.random() - 0.5) * 2.2, (Math.random() - 0.2) * 2.2, e.dz * back * (1.5 + Math.random() * 2) + (Math.random() - 0.5) * 2.2);
-            b.s = 0.025 + Math.random() * 0.035;
+            const back = i < 4 ? -0.7 : 1;
+            const sp = 1.8 + Math.random() * 2.6;
+            b.v.set(e.dx * back * sp + (Math.random() - 0.5) * 2.4, (Math.random() - 0.15) * 2.4, e.dz * back * sp + (Math.random() - 0.5) * 2.4);
+            b.s = 0.045 + Math.random() * 0.055;
+            fx.blood.mesh.setColorAt(idx, col.setRGB(0.62 + Math.random() * 0.25, 0.01 + Math.random() * 0.03, 0.02 + Math.random() * 0.03, SRGBColorSpace));
           }
-          const puff = fx.blood.spawn(0.22);
-          puff.p.set(e.x, e.y, e.z);
-          puff.v.set(0, 0.3, 0);
-          puff.s = -0.14; // negative = the expanding mist ball
+          for (let i = 0; i < 2; i++) {
+            fx.mist.spawn(0.28 + Math.random() * 0.14);
+            const idx = fx.mist.last;
+            const m = fx.mist.items[idx];
+            m.p.set(e.x + e.dx * 0.08 * i, e.y, e.z + e.dz * 0.08 * i);
+            m.v.set(e.dx * (0.4 + i * 0.5), 0.15, e.dz * (0.4 + i * 0.5));
+            m.s = 0.24 + Math.random() * 0.12;
+            m.a.x = Math.random() * Math.PI * 2; // spin
+            fx.mist.mesh.setColorAt(idx, col.setRGB(0.78 + Math.random() * 0.14, 0.03, 0.05, SRGBColorSpace));
+          }
+          if (fx.blood.mesh.instanceColor) fx.blood.mesh.instanceColor.needsUpdate = true;
+          if (fx.mist.mesh.instanceColor) fx.mist.mesh.instanceColor.needsUpdate = true;
           if (e.target >= 0) useUi.setState({ hitAt: performance.now() });
           break;
         }
@@ -235,7 +301,7 @@ export function FxView({ s }: { s: Session }) {
     const camQ = state.camera.getWorldQuaternion(qCam);
     if (fx.run !== s.run) {
       fx.run = s.run;
-      for (const p of [fx.tracers, fx.bullets, fx.trails, fx.heads, fx.flashes, fx.blood, fx.sparks, fx.holes, fx.splats]) p.clear();
+      for (const p of [fx.tracers, fx.bullets, fx.trails, fx.heads, fx.flashes, fx.blood, fx.mist, fx.sparks, fx.holes, fx.splats]) p.clear();
       syncPickups();
     }
     // tracers: a 4 m streak racing from the muzzle to the hit
@@ -306,16 +372,61 @@ export function FxView({ s }: { s: Session }) {
         l.intensity = fx.lightT[i] > 0 ? 18 * (fx.lightT[i] / 0.06) : 0;
       });
     }
-    // blood droplets / mist and sparks
-    for (const [P, grav] of [[fx.blood, 9], [fx.sparks, 12]] as const) {
+    // blood spray: camera-facing droplets stretched along their flight, fading out as they fall; far
+    // away they grow a little so a hit across the street still reads
+    qInv.copy(camQ).invert();
+    const camPos = state.camera.getWorldPosition(camP);
+    const farK = (p: Vector3) => Math.max(1, p.distanceTo(camPos) / 7);
+    {
+      const P = fx.blood, F = fx.dropFade.array as Float32Array;
+      P.items.forEach((b, i) => {
+        if (!b.alive) return;
+        b.life += wdt;
+        if (b.life >= b.max) { b.alive = false; F[i] = 0; P.mesh.setMatrixAt(i, HIDE); return; }
+        b.v.y -= 9 * wdt;
+        b.v.multiplyScalar(Math.max(0, 1 - 1.5 * wdt)); // air drag
+        b.p.addScaledVector(b.v, wdt);
+        const k = b.life / b.max;
+        vc.copy(b.v).applyQuaternion(qInv);
+        const along = Math.hypot(vc.x, vc.y);
+        q.copy(camQ).multiply(qSpin.setFromAxisAngle(Z, Math.atan2(vc.y, vc.x)));
+        const sc = b.s * (1 - 0.35 * k) * farK(b.p);
+        m4.compose(b.p, q, vs.set(sc * (1 + Math.min(2.2, along * 0.35)), sc, 1));
+        P.mesh.setMatrixAt(i, m4);
+        F[i] = 0.95 * (1 - k * k);
+      });
+      P.mesh.instanceMatrix.needsUpdate = true;
+      fx.dropFade.needsUpdate = true;
+    }
+    // blood mist: a soft red cloud that swells and thins away
+    {
+      const P = fx.mist, F = fx.mistFade.array as Float32Array;
+      P.items.forEach((m, i) => {
+        if (!m.alive) return;
+        m.life += wdt;
+        if (m.life >= m.max) { m.alive = false; F[i] = 0; P.mesh.setMatrixAt(i, HIDE); return; }
+        m.v.multiplyScalar(Math.max(0, 1 - 3 * wdt));
+        m.p.addScaledVector(m.v, wdt);
+        const k = m.life / m.max;
+        const sc = m.s * (1 + 1.4 * Math.sqrt(k)) * farK(m.p);
+        q.copy(camQ).multiply(qSpin.setFromAxisAngle(Z, m.a.x + k * 0.6));
+        m4.compose(m.p, q, vs.set(sc, sc, 1));
+        P.mesh.setMatrixAt(i, m4);
+        F[i] = 0.7 * (1 - k) * (1 - k);
+      });
+      P.mesh.instanceMatrix.needsUpdate = true;
+      fx.mistFade.needsUpdate = true;
+    }
+    // sparks
+    {
+      const P = fx.sparks;
       P.items.forEach((b, i) => {
         if (!b.alive) return;
         b.life += wdt;
         if (b.life >= b.max) { b.alive = false; P.mesh.setMatrixAt(i, HIDE); return; }
-        b.v.y -= grav * wdt;
+        b.v.y -= 12 * wdt;
         b.p.addScaledVector(b.v, wdt);
-        const k = b.life / b.max;
-        const sc = b.s < 0 ? -b.s * (0.5 + 1.5 * k) * (1 - k * k) : b.s * (1 - k * 0.6);
+        const sc = b.s * (1 - (b.life / b.max) * 0.6);
         m4.compose(b.p, q.identity(), vs.set(sc, sc, sc));
         P.mesh.setMatrixAt(i, m4);
       });

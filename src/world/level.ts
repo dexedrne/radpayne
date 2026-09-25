@@ -42,6 +42,8 @@ export type RoomSettings = { name: string; next?: string; music?: string; [k: st
 
 export type LevelData = {
   boxes: Box[];
+  /** What the camera collides with: every visible box (decor too, except thin trim under 0.2 m). */
+  camBoxes: Box[];
   markers: Marker[];
   room: RoomSettings;
   warnings: string[];
@@ -67,6 +69,7 @@ const MARKERS = new Set<string>(["spawn", "enemy", "cover", "waypoint", "pickup"
 
 export function readLevel(prefab: Prefabish): LevelData {
   const boxes: Box[] = [];
+  const camBoxes: Box[] = [];
   const markers: Marker[] = [];
   const warnings: string[] = [];
   let room: RoomSettings = { name: "room" };
@@ -99,19 +102,24 @@ export function readLevel(prefab: Prefabish): LevelData {
     } else {
       const g = comp(node, "Geometry");
       const mesh = comp(node, "Mesh");
-      if (g && mesh && (g.geometryType ?? "box") === "box" && data.collider !== false && !decor) {
-        if (Math.abs(rot[0] ?? 0) > 1e-4 || Math.abs(rot[2] ?? 0) > 1e-4) warnings.push(`${node.id}: X/Z rotation ignored by the collider (yaw only)`);
+      if (g && mesh && (g.geometryType ?? "box") === "box") {
         const args = (g.args as number[] | undefined) ?? [1, 1, 1];
-        boxes.push(makeBox(
-          boxes.length, node.id, xf.x, xf.y, xf.z,
-          xf.sx * (args[0] ?? 1), xf.sy * (args[1] ?? 1), xf.sz * (args[2] ?? 1), xf.yaw,
-          typeof data.surface === "string" ? data.surface : "concrete", data.shootThrough === true,
-        ));
+        const sx = xf.sx * (args[0] ?? 1), sy = xf.sy * (args[1] ?? 1), sz = xf.sz * (args[2] ?? 1);
+        const collider = data.collider !== false && !decor;
+        const surface = typeof data.surface === "string" ? data.surface : "concrete";
+        if (collider) {
+          if (Math.abs(rot[0] ?? 0) > 1e-4 || Math.abs(rot[2] ?? 0) > 1e-4) warnings.push(`${node.id}: X/Z rotation ignored by the collider (yaw only)`);
+          boxes.push(makeBox(boxes.length, node.id, xf.x, xf.y, xf.z, sx, sy, sz, xf.yaw, surface, data.shootThrough === true));
+        }
+        const thick = Math.min(Math.abs(sx), Math.abs(sy), Math.abs(sz)) >= 0.2;
+        if (mesh.visible !== false && data.camera !== false && (collider || thick)) {
+          camBoxes.push(makeBox(camBoxes.length, node.id, xf.x, xf.y, xf.z, sx, sy, sz, xf.yaw, surface));
+        }
       }
     }
     for (const ch of node.children ?? []) walk(ch, xf, decor || data.collider === false);
   };
   walk(prefab.root as Node, { x: 0, y: 0, z: 0, yaw: 0, sx: 1, sy: 1, sz: 1 }, false);
   if (!markers.some(m => m.kind === "spawn")) warnings.push("no spawn marker: the player starts at the origin");
-  return { boxes, markers, room, warnings };
+  return { boxes, camBoxes, markers, room, warnings };
 }

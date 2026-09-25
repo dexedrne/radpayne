@@ -34,7 +34,7 @@
    "repeat": true,
    "repeatCount": [0.07575757575757576, 0.07575757575757576],
    "roughness": 0.92,
-   "name": "lit 2.4"
+   "name": "lit 1.8"
   },
   "brickDark": {
    "color": "#b8aaa6",
@@ -42,7 +42,7 @@
    "repeat": true,
    "repeatCount": [0.07575757575757576, 0.07575757575757576],
    "roughness": 0.92,
-   "name": "lit 2.4"
+   "name": "lit 1.8"
   },
   "brickTan": {
    "color": "#e8cfa8",
@@ -50,7 +50,7 @@
    "repeat": true,
    "repeatCount": [0.07575757575757576, 0.07575757575757576],
    "roughness": 0.92,
-   "name": "lit 2.4"
+   "name": "lit 1.8"
   },
   "brickPlain": {
    "color": "#5a2e26",
@@ -62,7 +62,7 @@
    "repeat": true,
    "repeatCount": [0.07575757575757576, 0.07575757575757576],
    "roughness": 0.92,
-   "name": "lit 2.4"
+   "name": "lit 1.8"
   },
   "brownstoneLight": {
    "color": "#e0cbb8",
@@ -70,7 +70,7 @@
    "repeat": true,
    "repeatCount": [0.07575757575757576, 0.07575757575757576],
    "roughness": 0.92,
-   "name": "lit 2.4"
+   "name": "lit 1.8"
   },
   "brownstoneStep": {
    "color": "#4a3024",
@@ -320,13 +320,13 @@
    "materialType": "basic",
    "color": "#ffcf8f",
    "toneMapped": false,
-   "name": "glow 0.95"
+   "name": "glow 0.3"
   },
   "shopCool": {
    "materialType": "basic",
    "color": "#d9f2ff",
    "toneMapped": false,
-   "name": "glow 1"
+   "name": "glow 0.24"
   },
   "billboardGlow": {
    "materialType": "basic",

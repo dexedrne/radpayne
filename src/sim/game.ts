@@ -391,6 +391,8 @@ export class Game {
     const G = ENEMY.goon;
     if (d2 > G.sight * G.sight) return false;
     if (e.state === "idle") {
+      // not yet alerted: only a close player is noticed (the room's alert trigger wakes the rest)
+      if (d2 > G.idleSight * G.idleSight) return false;
       const d = Math.sqrt(d2) || 1;
       const fx = Math.sin(e.facing), fz = Math.cos(e.facing);
       if ((fx * dx + fz * dz) / d < G.fov) return false;

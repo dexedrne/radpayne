@@ -10,7 +10,7 @@ import { WEAPONS } from "../combat/weapons.ts";
 import { setAmbience, setClubBass, setFootsteps, setHeartbeat, setMusic, setNeonBuzz, setTimeScaleAudio, sfx } from "../audio/sfx.ts";
 import { audioState } from "../audio/engine.ts";
 import { Director } from "./director.ts";
-import { TIME } from "../sim/tuning.ts";
+import { PLAYER, TIME } from "../sim/tuning.ts";
 
 declare global {
   interface Window {
@@ -84,7 +84,7 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
       setClubBass(near);
       setNeonBuzz(Math.max(0, 1 - d / 14));
       const p = g.player;
-      const moving = !s.paused && p.grounded && p.mode === "normal" ? Math.sqrt(p.vx * p.vx + p.vz * p.vz) / 5.6 : 0;
+      const moving = !s.paused && p.grounded && p.mode === "normal" ? Math.sqrt(p.vx * p.vx + p.vz * p.vz) / PLAYER.runSpeed : 0;
       setFootsteps(moving > 0.07 ? moving : 0);
       // music: calm on the street, the fight loop once the gang is awake, calm again when clear
       const awake = g.enemies.some(e => e.state !== "idle" && e.state !== "inactive" && e.state !== "dead");

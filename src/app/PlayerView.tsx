@@ -15,6 +15,7 @@ import type { Session } from "./session.ts";
 import { AnimPlayer } from "../anim/animPlayer.ts";
 import { CLIPS, UPPER_BODY, aimLimb, deathFor, findBone, pick, rotateBoneWorld } from "../anim/rig.ts";
 import { RADBRO_GRIPS } from "../anim/grips.ts";
+import { RADBRO_GAIT, RUN_FROM, clipSpeed, legsFor } from "../anim/gait.ts";
 import { clipsPath, gunClipsPath, lightUp, modelPath } from "./characters.ts";
 import { aimGun, attachGun, makePistol, muzzleWorld } from "./guns.ts";
 import { useUi, type RadbroId } from "../ui/store.ts";
@@ -22,6 +23,7 @@ import { FRAME } from "./frame.ts";
 import { TIME } from "../sim/tuning.ts";
 import { WEAPONS } from "../combat/weapons.ts";
 import { wrapAngle } from "../sim/aim.ts";
+import { camView } from "./CameraView.tsx";
 
 const UP = new Vector3(0, 1, 0);
 
@@ -47,6 +49,8 @@ const clipsOf = (o: Object3D | null) => ((o as unknown as { animations?: Animati
 function makeRig(id: RadbroId, src: Object3D, pack: Object3D | null, gunPack: Object3D | null): Rig {
   const model = cloneSkeleton(src);
   const materials = lightUp(model);
+  // screen-door fade when a wall pulls the camera into his back (no transparency sorting, no recompiles)
+  for (const m of materials) m.alphaHash = true;
   const root = new Group();
   root.name = `radbro-${id}`;
   root.add(model);
@@ -100,7 +104,7 @@ export function PlayerView({ s }: { s: Session }) {
     if (!src) return null;
     return makeRig(radbro, src, assets.getModel(clipsPath(radbro)), assets.getModel(gunClipsPath(radbro)));
   }, [assets, radbro, version]);
-  const st = useRef({ legYaw: 0, bodyYaw: 0, twist: 0, recoil: [0, 0], run: -1, clip: "", mode: "", jumpHold: false, reloadW: 0, armW: 1, diveY: 0 });
+  const st = useRef({ legYaw: 0, bodyYaw: 0, twist: 0, back: false, fade: 1, recoil: [0, 0], run: -1, clip: "", mode: "", jumpHold: false, reloadW: 0, armW: 1, diveY: 0 });
   const tmp = useMemo(() => ({ aim: new Vector3(), side: new Vector3(), a: new Vector3(), q: new Quaternion() }), []);
 
   useEffect(() => {
@@ -131,7 +135,7 @@ export function PlayerView({ s }: { s: Session }) {
     const dt = Math.min(rawDelta, 0.1);
     const pos = s.renderP;
     if (r.run !== s.run) {
-      r.run = s.run; r.clip = ""; r.mode = ""; r.legYaw = p.facing; r.bodyYaw = p.facing; r.jumpHold = false; r.reloadW = 0;
+      r.run = s.run; r.clip = ""; r.mode = ""; r.legYaw = p.facing; r.bodyYaw = p.facing; r.jumpHold = false; r.reloadW = 0; r.back = false;
       pl.force(pick(pl, CLIPS.idle), 0);
       rig.hit?.stop();
       rig.reload?.stop();
@@ -172,7 +176,7 @@ export function PlayerView({ s }: { s: Session }) {
       }
     }
 
-    let rate = 1, twistWant = 0, legYawWant = p.facing, want = "";
+    let rate = 1, legYawWant = p.facing, want = "";
     if (p.mode === "normal") {
       const speed = Math.sqrt(p.vx * p.vx + p.vz * p.vz);
       if (!p.grounded) {
@@ -182,31 +186,24 @@ export function PlayerView({ s }: { s: Session }) {
           if (j) pl.play(j, { hold: true, startAt: 0.48, freezeAt: 0.8, fade: 0.1 });
         }
       } else if (speed > 0.4) {
+        // legs along the move (or, against the aim, the cycle backwards with the legs toward the aim);
+        // the clip rate is body speed over the clip's own ground speed, so the planted foot stays put
         const moveYaw = Math.atan2(p.vx, p.vz);
-        const rel = wrapAngle(moveYaw - p.facing);
-        const strafe = rel > 0 ? pick(pl, CLIPS.strafeL) : pick(pl, CLIPS.strafeR);
-        if (Math.abs(rel) <= 1.0 || !strafe.startsWith("Aim_") && Math.abs(rel) <= 1.95) {
-          legYawWant = moveYaw;
-          want = pick(pl, speed > 3.2 ? CLIPS.run : CLIPS.walk);
-          rate = want.endsWith("Run") || want === "Run_02" ? speed / 5.6 : speed / 1.6;
-        } else if (Math.abs(rel) >= 2.2 || !strafe.startsWith("Aim_")) {
-          legYawWant = moveYaw + Math.PI;
-          want = pick(pl, CLIPS.back);
-          rate = want === "Casual_Walk" ? -Math.max(0.9, speed / 1.5) : Math.max(0.8, speed / 1.6);
-        } else {
-          legYawWant = moveYaw - Math.sign(rel) * Math.PI / 2;
-          want = strafe;
-          rate = Math.max(0.8, Math.min(2.6, speed / 1.5));
-        }
-        twistWant = wrapAngle(p.facing - legYawWant);
+        const legs = legsFor(moveYaw, wrapAngle(moveYaw - p.facing), r.back);
+        r.back = legs.back;
+        legYawWant = legs.legYaw;
+        const gait = RADBRO_GAIT[rig.id];
+        want = pick(pl, speed > RUN_FROM ? CLIPS.run : CLIPS.walk);
+        rate = (legs.back ? -1 : 1) * speed / clipSpeed(gait, want);
       } else want = pick(pl, CLIPS.idle);
       if (p.grounded && r.jumpHold) { r.jumpHold = false; r.clip = ""; }
       if (want && !r.jumpHold) {
         if (want !== r.clip) { pl.force(want, 0.18, rate); r.clip = want; }
         else pl.setTimeScale(rate);
       }
-      r.twist += (Math.max(-1.3, Math.min(1.3, twistWant)) - r.twist) * Math.min(1, 12 * dt);
       r.legYaw += wrapAngle(legYawWant - r.legYaw) * Math.min(1, 12 * dt);
+      // the spine turns the chest back onto the aim (a full quarter turn while running sideways)
+      r.twist = Math.max(-1.75, Math.min(1.75, wrapAngle(p.facing - r.legYaw)));
       r.bodyYaw = r.legYaw;
     } else r.twist += (0 - r.twist) * Math.min(1, 12 * dt);
 
@@ -267,6 +264,13 @@ export function PlayerView({ s }: { s: Session }) {
       muzzleWorld(gun, playerMuzzles[h]);
     });
     B.head?.getWorldPosition(playerHead);
+    // a short camera arm (wall or cover right behind him) fades him out so he never fills the frame
+    const fadeWant = g.killcam ? 1 : Math.max(0, Math.min(1, (camView.arm - 0.75) / 0.75));
+    r.fade += (fadeWant - r.fade) * Math.min(1, 14 * dt);
+    const fade = r.fade > 0.98 ? 1 : r.fade;
+    for (const m of rig.materials) m.opacity = fade;
+    rig.model.visible = fade > 0.06;
+    for (const gun of rig.guns) gun.visible = fade > 0.4;
   }, FRAME.bones);
 
   if (!rig) return null;
