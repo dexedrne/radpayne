@@ -57,7 +57,8 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
         </div>
         <div style={{ opacity: 0.5, fontSize: 11 }}>
           desktop, keyboard + mouse (a gamepad works too). built on{" "}
-          <a href="https://prnth.com/react-three-game/" target="_blank" rel="noreferrer" style={{ color: "#9fd8ff" }}>react-three-game</a> by prnth · Pockit Miladys by prnth
+          <a href="https://prnth.com/react-three-game/" target="_blank" rel="noreferrer" style={{ color: "#9fd8ff" }}>react-three-game</a> and the Pockit Miladys by prnth,
+          used with permission · Radbros by dexedrne, used with the Radbro Webring dev's permission
         </div>
       </div>
     </div>

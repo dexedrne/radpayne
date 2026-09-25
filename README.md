@@ -99,14 +99,26 @@ input log. Bullet time is a time scale on it.
   `RADPAYNE_CHROME_PROFILE=<throwaway dir> RADPAYNE_GPU=1 RADPAYNE_CUTSCENE=1 node tools/smoke.ts
   "http://localhost:4880/?bot=demo&seed=1&webgl2" .local/shots/run` plays title -> cutscene, then the
   bot clears the room, and saves screenshots. `?bot=demo&cutscene&seed=1&webgl2` does it in one go:
-  cutscene 1, the fight, the ending, the results, with every panel shot and the voice lines listed. `RADPAYNE_GPU=1` uses the machine's GPU (WebGL2);
-  without it Chromium falls back to SwiftShader (very slow).
+  cutscene 1, the fight, the ending, the results, with every panel shot and the voice lines listed.
+  `RADPAYNE_GPU=1` uses the machine's GPU (WebGL2); without it Chromium falls back to SwiftShader
+  (very slow).
+
+## Use it
+
+RadPayne is under the [Viral Public License](LICENSE), the same license as Milady, Remilio and
+react-three-game. Fork it, remix it, ship your own version, sell it; no credit needed. Anything made
+from it keeps the license. The four Radbros are also free to use on their own, as rigged and animated
+models: [dexedrne/radbros-3d](https://github.com/dexedrne/radbros-3d).
+
+The license covers what is in this repo. It does not cover the Pockit Milady models: they are prnth's,
+they load at runtime from his repo, and they are not part of this one. Ask him before using them in
+your own thing.
 
 ## Credits
 
-- Built on [react-three-game](https://prnth.com/react-three-game/) by prnth.
-- The Milady gang are [Pockit](https://github.com/prnthh/Pockit) models by prnth, loaded at runtime from
-  one pinned commit.
-- The Radbros come from RadRun.
-- Some of the gun clips are retargeted from free clips in prnth's [moviemaker](https://github.com/prnthh/moviemaker) set.
+- Built on [react-three-game](https://prnth.com/react-three-game/) by prnth, used with his permission.
+- The Milady gang are [Pockit](https://github.com/prnthh/Pockit) models by prnth, used with his
+  permission. They load at runtime from one pinned commit and are not part of this repo.
+- Radbros #652, #4764, #2564 and #723 are dexedrne's own, used with permission from the Radbro Webring
+  dev. The models come from RadRun.
 - By [@dexedrne](https://x.com/dexedrne).
