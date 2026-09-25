@@ -74,28 +74,41 @@ function useFontsReady(): boolean {
 
 // ---- title ---------------------------------------------------------------------------------------
 
+/** The title's focus rows, top to bottom (↑↓ / Tab / D-pad move, ←→ change, Enter / A plays from any). */
+const TITLE_ROWS = ["radbro", "difficulty", "effects", "play"] as const;
+type TitleRow = (typeof TITLE_ROWS)[number];
+
 export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean }) {
   const radbro = useUi(s => s.radbro);
   const diff = useUi(s => s.difficulty);
   const effects = useFx(s => s.effects);
   const fonts = useFontsReady();
   const go = ready && fonts;
+  const [row, setRow] = useState<TitleRow>("radbro");
   const pick = (id: RadbroId) => { useUi.setState({ radbro: id }); store("radbro", id); };
+  const move = (d: number) => setRow(r => TITLE_ROWS[(TITLE_ROWS.indexOf(r) + d + TITLE_ROWS.length) % TITLE_ROWS.length]);
   useMenuInput(a => {
-    if (a === "enter" && go) { onPlay(); return; }
+    if (a === "enter") { if (go) onPlay(); return; }
+    if (a === "up" || a === "tabPrev") return move(-1);
+    if (a === "down" || a === "tabNext") return move(1);
     if (a === "left" || a === "right") {
-      const i = RADBROS.findIndex(r => r.id === radbro);
-      pick(RADBROS[(i + (a === "right" ? 1 : RADBROS.length - 1)) % RADBROS.length].id);
+      const d = a === "right" ? 1 : -1;
+      if (row === "radbro") {
+        const i = RADBROS.findIndex(r => r.id === radbro);
+        pick(RADBROS[(i + d + RADBROS.length) % RADBROS.length].id);
+      } else if (row === "difficulty") setSetting("difficulty", stepOption(DIFFS, diff, d));
+      else if (row === "effects") setEffects(stepOption(EFFECTS, effects, d));
       return;
     }
     return false;
   });
+  const focus = (r: TitleRow) => ({ onMouseEnter: () => setRow(r), onFocus: () => setRow(r) });
   return (
     <div className="rp-layer" style={{ background: "linear-gradient(180deg, rgba(5,6,12,0.55), rgba(5,6,12,0.9) 70%)", overflowY: "auto" }}>
       <div className="rp-title rp-z" style={{ visibility: fonts ? "visible" : "hidden" }}>
         <div className="rp-wordmark">RAD<span>PAYNE</span></div>
         <div className="rp-chapter">CHAPTER 1: RUGGED</div>
-        <div className="rp-cards">
+        <div className={`rp-cards rp-focusrow${row === "radbro" ? " focus" : ""}`} {...focus("radbro")}>
           {RADBROS.map(r => (
             <button key={r.id} type="button" onClick={() => pick(r.id)} data-testid={`pick-${r.id}`} className={`rp-panel rp-card${radbro === r.id ? " on" : ""}`} style={radbro === r.id ? { borderColor: r.color } : undefined}>
               <img src={`/ui/radbro${r.id}.webp`} alt="" style={radbro === r.id ? { borderBottomColor: r.color } : undefined} />
@@ -107,14 +120,17 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
           ))}
         </div>
         <div className="rp-row">
-          <div className="grp"><span className="h">DIFFICULTY</span><Seg value={diff} options={DIFFS} onChange={d => setSetting("difficulty", d)} /></div>
-          <div className="grp"><span className="h">EFFECTS</span><Seg value={effects} options={EFFECTS} onChange={setEffects} /></div>
+          <div className={`grp rp-focusrow${row === "difficulty" ? " focus" : ""}`} {...focus("difficulty")} data-testid="title-difficulty"><span className="h">DIFFICULTY</span><Seg value={diff} options={DIFFS} onChange={d => setSetting("difficulty", d)} /></div>
+          <div className={`grp rp-focusrow${row === "effects" ? " focus" : ""}`} {...focus("effects")} data-testid="title-effects"><span className="h">EFFECTS</span><Seg value={effects} options={EFFECTS} onChange={setEffects} /></div>
           <div className="grp" style={{ maxWidth: 330, font: "700 17px/1.3 var(--type)", opacity: 0.7, alignSelf: "flex-end" }}>
             {effects === "clean" ? "clean: no bloom, no rain on the lens. you see who's shooting." : "full: the rain, the bloom, the mirror puddles."}
           </div>
-          <button type="button" className="rp-mbtn primary rp-play" onClick={onPlay} disabled={!go} data-testid="play">
+          <button type="button" className={`rp-mbtn primary rp-play${row === "play" ? " sel" : ""}`} onClick={onPlay} disabled={!go} data-testid="play" {...focus("play")}>
             {go ? "PLAY" : "LOADING…"}{go && <span className="k">ENTER</span>}
           </button>
+        </div>
+        <div className="rp-foot-hint rp-title-hint">
+          <span><Keycap k="↑↓" /> choose</span><span><Keycap k="←→" /> change</span><span><Keycap k="ENTER" /> play</span>
         </div>
         <KeyList className="rp-controls" />
         <div className="rp-credits">

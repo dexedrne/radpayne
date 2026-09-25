@@ -1,6 +1,7 @@
 // Copium stock: one small can per slot (PLAYER.maxCopium), "COPIUM ×n" and the [H] keycap. Using one
 // drains the right-most full can; a pickup pops the new can. Low health with cans left: the panel,
-// label and keycap turn amber (the "drink it" cue). Low with none: the empty cans flash red once.
+// label and keycap turn amber (the "drink it" cue) until a can is being drunk. Low with none (and none
+// being drunk): the empty cans flash red once.
 import { PLAYER } from "../../sim/tuning.ts";
 import { Keycap } from "./Keycap.tsx";
 import { useEdge, useStampClass } from "./anim.ts";
@@ -19,12 +20,13 @@ export function SmallCan({ full }: { full: boolean }) {
   );
 }
 
-export function CopiumStock({ copium, hp, now, run }: { copium: number; hp: number; now: number; run: number }) {
+export function CopiumStock({ copium, hp, healing, now, run }: { copium: number; hp: number; healing: boolean; now: number; run: number }) {
   const low = hp <= 25 && hp > 0;
-  const cue = low && copium > 0;
+  // while a can is being drunk there is nothing to press (and drinking the last one is not "out")
+  const cue = low && copium > 0 && !healing;
   const usedAt = useEdge(copium, (a, b) => b < a, run);
   const gotAt = useEdge(copium, (a, b) => b > a, run);
-  const dryAt = useEdge(low && copium === 0, (a, b) => !a && b, run);
+  const dryAt = useEdge(low && copium === 0 && !healing, (a, b) => !a && b, run);
   const cansRef = useStampClass<HTMLDivElement>(dryAt, "red");
   const draining = now - usedAt < 260 ? copium : -1; // the can just used (index = the new count)
   return (

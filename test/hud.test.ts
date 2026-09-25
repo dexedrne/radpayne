@@ -5,8 +5,10 @@ import { METER } from "../src/sim/tuning.ts";
 import { emptyInput } from "../src/sim/types.ts";
 import { level, markerNode } from "./helpers.ts";
 import {
-  ammoLow, canvasFx, captionBudget, damageAngle, edgePin, hudScale, hurtPhase, hurtStrength, parseHint, recordBest, rowLow, slashPath, threatScale,
+  BL_H, BR_H, NUDGE_HOLD, STRIP_W, ammoLow, arrowDir, arrowInsets, canvasFx, captionBudget, damageAngle, edgePin, hudScale, hurtPhase, hurtStrength, markerScale, parseHint, recordBest, rowLow,
+  slashPath, subtitleWidth, threatScale,
 } from "../src/ui/hud/logic.ts";
+import type { Hud } from "../src/ui/store.ts";
 import { roomLabel, roomText } from "../src/ui/rooms.ts";
 
 const near = (a: number, b: number, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
@@ -79,6 +81,103 @@ test("threat markers shrink with distance; edge arrows pin inside the screen", (
   near(l.x, 42); near(l.y, 540); near(l.rot, -90);
   const d = edgePin(0, 5, 1920, 1080, 42);
   near(d.y, 1080 - 42); near(Math.abs(d.rot), 180);
+});
+
+test("edge arrows: behind you is the bottom edge, whatever the camera's pitch; in front, the projection", () => {
+  const W = 1280, H = 720, inset = 36;
+  const pin = (front: boolean, px: number, py: number, deg: number) => edgePin(...arrowDir(front, px, py, W, H, deg), W, H, inset);
+  // straight behind (the verify run's -178 deg): bottom centre, pointing down (it used to pin top-centre, pointing up)
+  const b = pin(false, 0, 0, -178);
+  near(b.y, H - inset); assert.ok(Math.abs(b.x - W / 2) < 20, `x ${b.x}`); assert.ok(Math.abs(b.rot) > 170, `rot ${b.rot}`);
+  // the bottom row sits above the corner group under it (BL plates 28 + 150, BR tabs + ammo 28 + 166
+  // authored), right into the corners, and stays under a nudge (bottom 28 + 212): 720p and 1080p
+  for (const [w, h, s] of [[1280, 720, 0.72], [1920, 1080, 1]] as const) {
+    for (let deg = -178; deg <= 178; deg += 2) {
+      const [dx, dy] = arrowDir(false, 0, 0, w, h, deg);
+      const ins = arrowInsets(s, dx);
+      const p = edgePin(dx, dy, w, h, ins.edge, ins.bottom);
+      const bottom = p.y + 20 * s, top = p.y - 20 * s;
+      const under = p.x - 20 * s < (28 + STRIP_W) * s ? BL_H : p.x + 20 * s > w - (28 + 330) * s ? BR_H : 0;
+      if (under) assert.ok(bottom <= h - (28 + under) * s, `${w}x${h} ${deg}: arrow bottom ${bottom} vs plates ${h - (28 + under) * s}`);
+      const onBottom = Math.abs(p.y - (h - ins.bottom)) < 0.5;
+      if (onBottom && under === BL_H) assert.ok(top >= h - (28 + 212) * s, `${w}x${h} ${deg}: arrow top ${top} vs nudge ${h - 240 * s}`);
+    }
+    const ins = arrowInsets(s);
+    near(edgePin(0, -1, w, h, ins.edge, ins.bottom).y, ins.edge);
+  }
+  // no jump sweeping past straight behind
+  for (let deg = 170; deg <= 190; deg += 0.5) {
+    const at = (d: number) => { const [dx, dy] = arrowDir(false, 0, 0, W, H, d); const ins = arrowInsets(0.72, dx); return edgePin(dx, dy, W, H, ins.edge, ins.bottom); };
+    const a = at(deg), b = at(deg + 0.5);
+    assert.ok(Math.hypot(a.x - b.x, a.y - b.y) < 6, `${deg}: (${a.x}, ${a.y}) -> (${b.x}, ${b.y})`);
+  }
+  // behind-right (107..160 deg): the bottom-right, never the top half, and the arrow leans down-right
+  for (const deg of [107, 120, 135, 160]) {
+    const p = pin(false, 0, 0, deg);
+    assert.ok(p.y > H / 2 && p.x > W / 2, `${deg}: (${p.x}, ${p.y})`);
+    assert.ok(p.rot > 90 && p.rot < 180, `${deg}: rot ${p.rot}`);
+  }
+  // the projection wins in front of the lens (off the right edge, a little high)
+  const f = edgePin(...arrowDir(true, W + 400, H / 2 - 50, W, H, 60, 55), W, H, inset);
+  near(f.x, W - inset); assert.ok(f.y < H / 2);
+  // ... and hands over to the bearing toward the camera plane: no jump when she crosses behind
+  const at = (front: boolean, off: number) => edgePin(...arrowDir(front, W + 4000, H / 2 - 900, W, H, 100, off), W, H, inset);
+  const before = at(true, 89.9), after = at(false, 90.1);
+  assert.ok(Math.hypot(before.x - after.x, before.y - after.y) < 3, `(${before.x}, ${before.y}) vs (${after.x}, ${after.y})`);
+  assert.ok(at(true, 70).y > at(true, 55).y);
+  // and the arrow agrees with the damage slash for the same shooter
+  const deg = damageAngle(0, 0, 6, 8, 0, -1); // behind-right of a player facing -Z
+  const p = pin(false, 0, 0, deg);
+  assert.ok(deg > 90 && p.y > H / 2 && p.x > W / 2);
+});
+
+test("head markers: never under 20 px across; 1080p keeps the distance scale", () => {
+  near(markerScale(40, 0.72) * 32, 20);
+  near(markerScale(5, 0.72), 0.72);
+  near(markerScale(40, 1), 0.7);
+  near(markerScale(23.5, 1), 0.85);
+});
+
+test("subtitle: fits between the corner strips at every HUD size; 780 when there is room", () => {
+  const strips = (W: number, H: number, size: "s" | "m" | "l") => {
+    const s = hudScale(H, size), w = subtitleWidth(W, s, W / H < 1.6) * s;
+    return { left: W / 2 - w / 2, right: W / 2 + w / 2, stripEnd: (28 + STRIP_W) * s, w: w / s };
+  };
+  for (const [W, H] of [[1280, 720], [1366, 768], [1440, 900], [1920, 1080], [2560, 1440]] as const) {
+    for (const size of ["s", "m", "l"] as const) {
+      const r = strips(W, H, size);
+      assert.ok(r.left >= r.stripEnd, `${W}x${H} ${size}: subtitle from ${r.left.toFixed(0)}, strip to ${r.stripEnd.toFixed(0)}`);
+    }
+  }
+  near(strips(1280, 720, "m").w, 780);
+  near(strips(1920, 1080, "m").w, 780);
+  assert.ok(strips(1280, 720, "l").w < 640);
+  // narrow screens lift it over the strips: only the margins cap it
+  near(subtitleWidth(1280, hudScale(1024), true), 780);
+});
+
+test("nudges: the heal prompt goes once the can is drunk; out of copium goes once health is back", async () => {
+  // the store reads saved settings when it loads: give it a memory store first
+  const mem = new Map<string, string>();
+  Object.defineProperty(globalThis, "localStorage", { configurable: true, value: { getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => void mem.set(k, v) } });
+  const { useNudge } = await import("../src/ui/hud/captions.ts");
+  const { useUi } = await import("../src/ui/store.ts");
+  const base = useUi.getState().hud;
+  const h = (o: Partial<Hud>): Hud => ({ ...base, run: 77, health: 100, copium: 2, healing: false, mags: [12, 12], hands: 2, reserve: 50, owned: ["pistols"], ...o });
+  assert.equal(useNudge(h({}), 0), null);
+  assert.equal(useNudge(h({ health: 20, copium: 1 }), 100)?.text, "one can left. drink it. [H]");
+  assert.ok(useNudge(h({ health: 20, copium: 1 }), 1000));
+  // H: the can is being drunk (copium 0, still low for a moment): no prompt, and no "out of copium" either
+  assert.equal(useNudge(h({ health: 22, copium: 0, healing: true }), 1100), null);
+  assert.equal(useNudge(h({ health: 57, copium: 0, healing: false }), 2100), null);
+  // hit again with none left: out of copium, until the health is back
+  assert.equal(useNudge(h({ health: 20, copium: 0 }), 5000)?.text, "out of copium. don't get hit.");
+  assert.equal(useNudge(h({ health: 60, copium: 1 }), 5200), null);
+  // a pickup runs its full hold
+  const got = useNudge(h({ health: 60, copium: 1, owned: ["pistols", "shotgun"] }), 6000);
+  assert.equal(got?.text, "picked up the shotgun. [2]");
+  assert.ok(useNudge(h({ health: 60, copium: 1, owned: ["pistols", "shotgun"] }), 6000 + NUDGE_HOLD - 1));
+  assert.equal(useNudge(h({ health: 60, copium: 1, owned: ["pistols", "shotgun"] }), 6000 + NUDGE_HOLD), null);
 });
 
 test("canvas filter: none at rest; BT grade; low-HP desaturation; pause blur; death greyout; results dim", () => {

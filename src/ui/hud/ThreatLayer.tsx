@@ -1,14 +1,15 @@
 // Threat markers (the main readability aid): a pink chevron over each awake Milady's head; a
 // sand-hot "!" starburst when she is lining you up (peeking / engaging with a line of sight); 55%
 // when she can't see you; a flash on the frame she fires; an edge arrow for the ones lining you up
-// off screen. Once the room is clear, a paper chevron + DOOR tag marks the exit. A pool of divs whose
+// off screen (behind you = the bottom edge, above the corner plates, where the damage slash for her
+// shots lands). Once the room is clear, a paper chevron + DOOR tag marks the exit. A pool of divs whose
 // transforms are written every frame (HudFrame); React never re-renders per frame.
 import { memo, useEffect, useMemo, useRef } from "react";
 import { Vector3, type Camera } from "three";
 import type { Session } from "../../app/session.ts";
 import { useUi } from "../store.ts";
 import { HB_HEAD, aimPoint, makeCapsules } from "../../combat/hitboxes.ts";
-import { edgePin, starPath, threatScale } from "./logic.ts";
+import { arrowDir, arrowInsets, damageAngle, edgePin, markerScale, starPath } from "./logic.ts";
 import { hudFrame } from "./HudFrame.tsx";
 import { hudScaleNow } from "./scale.ts";
 
@@ -20,7 +21,7 @@ const ARROW = "M-12 -4 L0 12 L12 -4 L4 -4 L4 -13 L-4 -13 L-4 -4 Z";
 export const enemyShotAt: number[] = [];
 
 /** Where each marker ended up last frame (smoke tests / screenshots read it). */
-export const threatProbe: Array<{ i: number; x: number; y: number; on: boolean; engaged: boolean; arrow: boolean }> = [];
+export const threatProbe: Array<{ i: number; x: number; y: number; on: boolean; engaged: boolean; arrow: boolean; ax: number; ay: number }> = [];
 
 function Marker({ exit }: { exit?: boolean }) {
   if (exit) return (
@@ -56,7 +57,7 @@ export const ThreatLayer = memo(function ThreatLayer({ s }: { s: Session }) {
   const n = s.game.enemies.length;
   const marks = useRef<Array<HTMLDivElement | null>>([]);
   const arrows = useRef<Array<HTMLDivElement | null>>([]);
-  const tmp = useMemo(() => ({ v: new Vector3(), head: { x: 0, y: 0, z: 0 }, caps: makeCapsules() }), []);
+  const tmp = useMemo(() => ({ v: new Vector3(), fwd: new Vector3(), px: 0, pz: 0, head: { x: 0, y: 0, z: 0 }, caps: makeCapsules() }), []);
 
   useEffect(() => s.on(e => {
     if (e.type === "shot" && e.shooter >= 0) enemyShotAt[e.shooter] = performance.now();
@@ -73,7 +74,7 @@ export const ThreatLayer = memo(function ThreatLayer({ s }: { s: Session }) {
       if (!mark || !arrow) return;
       const v = tmp.v.set(wx, wy, wz).applyMatrix4(camera.matrixWorldInverse);
       const front = v.z < -0.05;
-      const cx = v.x, cy = v.y; // camera space (x right, y up): the bearing, even behind the lens
+      const off = (Math.atan2(Math.hypot(v.x, v.y), -v.z) * 180) / Math.PI; // degrees off the view axis
       v.applyMatrix4(camera.projectionMatrix);
       const x = ((v.x + 1) / 2) * W, y = ((1 - v.y) / 2) * H;
       const onScreen = front && x >= 0 && x <= W && y >= 0 && y <= H;
@@ -89,16 +90,20 @@ export const ThreatLayer = memo(function ThreatLayer({ s }: { s: Session }) {
         }
       } else mark.style.display = "none";
       const showArrow = !onScreen && opts.showArrow;
+      let ax = NaN, ay = NaN;
       if (showArrow) {
-        const dx = front ? x - W / 2 : cx, dy = front ? y - H / 2 : -cy;
-        const p = edgePin(Math.abs(dx) + Math.abs(dy) < 1e-4 ? 0 : dx, Math.abs(dx) + Math.abs(dy) < 1e-4 ? 1 : dy, W, H, 22 + 20 * hudScaleNow());
+        // behind the lens: the ground-plane bearing from the player, as the damage slash has it (behind = bottom edge)
+        const [dx, dy] = arrowDir(front, x, y, W, H, damageAngle(tmp.px, tmp.pz, wx, wz, tmp.fwd.x, tmp.fwd.z), off);
+        const ins = arrowInsets(hudScaleNow(), dx / (Math.hypot(dx, dy) || 1));
+        const p = edgePin(dx, dy, W, H, ins.edge, ins.bottom);
+        ax = p.x; ay = p.y;
         arrow.style.display = "block";
         arrow.style.transform = `translate3d(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px, 0) translate(-50%, -50%) scale(${hudScaleNow().toFixed(3)}) rotate(${p.rot.toFixed(1)}deg)`;
         const body = arrow.querySelector(".body") as SVGElement, notch = arrow.querySelector(".notch") as SVGElement;
         body.setAttribute("fill", opts.kind === "exit" ? "#f3ead8" : opts.kind === "engaged" ? "#ffcf6a" : "#ff3fa8");
         notch.style.display = opts.kind === "engaged" ? "block" : "none";
       } else arrow.style.display = "none";
-      threatProbe.push({ i, x, y, on: onScreen && opts.showMark, engaged: opts.kind === "engaged", arrow: showArrow });
+      threatProbe.push({ i, x, y, on: onScreen && opts.showMark, engaged: opts.kind === "engaged", arrow: showArrow, ax, ay });
     };
 
     const f = (camera: Camera, ss: Session, now: number) => {
@@ -109,6 +114,8 @@ export const ThreatLayer = memo(function ThreatLayer({ s }: { s: Session }) {
       if (ui.screen !== "play" || g.phase === "killcam" || ui.deadAt || mode === "off" && g.phase !== "clear") { hideAll(); return; }
       const W = innerWidth, H = innerHeight, S = hudScaleNow();
       const p = ss.renderP;
+      camera.getWorldDirection(tmp.fwd);
+      tmp.px = p.x; tmp.pz = p.z;
       for (let i = 0; i < g.enemies.length; i++) {
         const e = g.enemies[i];
         const awake = e.state !== "inactive" && e.state !== "dead";
@@ -121,7 +128,7 @@ export const ThreatLayer = memo(function ThreatLayer({ s }: { s: Session }) {
         const r = ss.renderE[i] ?? e;
         const hx = tmp.head.x + (r.x - e.x), hy = tmp.head.y + (r.y - e.y) + 0.25, hz = tmp.head.z + (r.z - e.z);
         const dist = Math.hypot(r.x - p.x, r.z - p.z);
-        place(i, hx, hy, hz, camera, W, H, threatScale(dist) * S, { kind: engaged ? "engaged" : "idle", showMark, showArrow, alpha: e.sees ? 1 : 0.55, fire: now - (enemyShotAt[i] ?? -1e9) < 120 });
+        place(i, hx, hy, hz, camera, W, H, markerScale(dist, S), { kind: engaged ? "engaged" : "idle", showMark, showArrow, alpha: e.sees ? 1 : 0.55, fire: now - (enemyShotAt[i] ?? -1e9) < 120 });
       }
       // the exit, once the room is clear
       const exit = g.phase === "clear" ? g.triggers.find(t => t.data.action === "exit") : undefined;

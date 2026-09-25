@@ -9,7 +9,7 @@ export function BottomLeft({ h, now }: { h: Hud; now: number }) {
     <div className="rp-strip rp-z">
       <HealthTank hp={h.health} healing={h.healing} copium={h.copium} run={h.run} />
       <Hourglass meter={h.meter} on={h.bt || h.timeScale < 0.99} refusedAt={h.btRefusedAt} refill={h.refill} now={now} />
-      <CopiumStock copium={h.copium} hp={h.health} now={now} run={h.run} />
+      <CopiumStock copium={h.copium} hp={h.health} healing={h.healing} now={now} run={h.run} />
     </div>
   );
 }

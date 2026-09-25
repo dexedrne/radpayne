@@ -75,15 +75,54 @@ export const HURT_LIFE = 1280;
 /** Threat marker size from the distance: 1.0 at 12 m or closer, 0.7 at 35 m or further. */
 export const threatScale = (dist: number): number => (dist <= 12 ? 1 : dist >= 35 ? 0.7 : 1 - (0.3 * (dist - 12)) / 23);
 
+/** The corner groups' authored heights: the bottom-left plates; bottom-right, the weapon tabs + ammo plate. */
+export const BL_H = 150, BR_H = 166;
+
+/**
+ * Edge arrows' insets at --s: 22 px + half the 40 px arrow from the top and the sides; from the
+ * bottom, clear of the corner group under it (margin 28 + its height + 10 + half the arrow) so an
+ * arrow for a Milady behind you is never hidden under the health, copium or ammo plates. `ux` is
+ * the arrow's direction (x of the unit vector): left of centre the BL strip, right of it the taller
+ * BR group, eased across the middle so an arrow sweeping past straight-behind never jumps.
+ */
+export function arrowInsets(s: number, ux = 0): { edge: number; bottom: number } {
+  const plates = BL_H + (BR_H - BL_H) * clamp01((ux + 0.25) / 0.5);
+  return { edge: 22 + 20 * s, bottom: (28 + plates + 10 + 20) * s };
+}
+
+/** The smallest a head marker draws, in screen px across (the chevron is 32 authored). */
+export const MARK_MIN_PX = 20;
+/** A head marker's scale: the distance scale x --s, never under MARK_MIN_PX across (far ones at 720p). */
+export const markerScale = (dist: number, s: number): number => Math.max(threatScale(dist) * s, MARK_MIN_PX / 32);
+
+/**
+ * The edge arrow's direction from the screen centre (screen px, y down). Behind the lens a projection
+ * says nothing useful (camera-space x / y follow the camera's pitch and height), so it is the
+ * ground-plane bearing from the player, the damage slash's angle: 0 ahead = up, 90 right, 180
+ * behind = down. In front of the lens it is the projected point (px, py), handed over to the bearing
+ * as the point swings out toward the camera plane (`off`: degrees off the view axis, 90 = on the
+ * plane), so the arrow never jumps when she crosses behind you.
+ */
+export function arrowDir(front: boolean, px: number, py: number, W: number, H: number, bearingDeg: number, off = 0): [number, number] {
+  const a = (bearingDeg * Math.PI) / 180;
+  const bx = Math.sin(a), by = -Math.cos(a);
+  if (!front) return [bx, by];
+  const dx = px - W / 2, dy = py - H / 2, l = Math.hypot(dx, dy);
+  if (l < 1e-4) return [bx, by];
+  const k = clamp01((off - 50) / 40);
+  const x = (dx / l) * (1 - k) + bx * k, y = (dy / l) * (1 - k) + by * k;
+  return Math.hypot(x, y) < 1e-3 ? [bx, by] : [x, y];
+}
+
 /**
  * Pin an off-screen bearing to the screen edge: the direction (dx, dy) from the centre (screen
- * pixels, y down), a W x H screen, `inset` px inside the edge. Returns the point and the arrow's
- * rotation (deg, 0 = pointing up).
+ * pixels, y down), a W x H screen, `inset` px inside the edge (`insetBottom` at the bottom). Returns
+ * the point and the arrow's rotation (deg, 0 = pointing up).
  */
-export function edgePin(dx: number, dy: number, W: number, H: number, inset: number): { x: number; y: number; rot: number } {
+export function edgePin(dx: number, dy: number, W: number, H: number, inset: number, insetBottom = inset): { x: number; y: number; rot: number } {
   const l = Math.hypot(dx, dy) || 1;
   const ux = dx / l, uy = dy / l;
-  const hw = W / 2 - inset, hh = H / 2 - inset;
+  const hw = W / 2 - inset, hh = H / 2 - (uy > 0 ? insetBottom : inset);
   const t = Math.min(Math.abs(ux) > 1e-6 ? hw / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-6 ? hh / Math.abs(uy) : Infinity);
   return { x: W / 2 + ux * t, y: H / 2 + uy * t, rot: (Math.atan2(ux, -uy) * 180) / Math.PI };
 }
@@ -106,6 +145,18 @@ export function captionBudget(active: Record<CaptionSlot, boolean>, awake: boole
 /** Objective caption: shows 8 s after it changes (then a 300 ms fade). */
 export const OBJECTIVE_HOLD = 8000;
 export const NUDGE_HOLD = 4000;
+
+/** The bottom-left strip's authored width: tank 150 + hourglass 104 + copium 176, two 8 px gaps, the 5 px shadow. */
+export const STRIP_W = 451;
+/**
+ * The bottom-centre subtitle's authored width (it carries zoom: --s): 780, capped so it stays
+ * centred between the corner strips with 12 px to spare (the left strip is the wider one). On
+ * narrow screens it sits above the strips, so only the screen margins cap it.
+ */
+export function subtitleWidth(W: number, s: number, narrow: boolean): number {
+  const side = narrow ? 28 : 28 + STRIP_W + 12;
+  return Math.max(240, Math.min(780, W / s - 2 * side));
+}
 
 /**
  * A key hint like "RMB / Q: bullet time · SHIFT: shootdodge" -> keycaps + labels. Text without a
