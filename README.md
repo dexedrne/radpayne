@@ -138,7 +138,9 @@ input log. Bullet time is a time scale on it.
     box position, voice lines and hold time. `e1.json` + `e1/panel_e*.webp`: the room 1 ending (the
     first clear, after the walk to the door, voiced). `c2.json`: cutscene 2 after the rave. A line
     with a `speaker` plays that voice instead of the narrator's (the girls at the door and on the
-    floor, the DJ through the door); a panel's lines play in order, one after another.
+    floor, the DJ through the door); a panel's lines play in order, one after another. A panel's
+    `maxW` / `size` keep a long caption off the faces, and `push` (the push-in's end scale) keeps the
+    caption box inside the frame through a long hold.
   - Round 2: `radbro<id>.r2.glb` (the shotgun set, the heavy's stagger, the weapon swap),
     `milady.r2.glb` (the crowd's dances, flee and cower, the DJ), `rival652.glb` / `rival723.glb`
     (the heavies), `textures/club/`, `textures/backrooms/`, and the music, crowd, PA and heavy voices.

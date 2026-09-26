@@ -1,8 +1,9 @@
 // A cutscene panel's clock (pure, so the Node tests can run it): its lines are read one after another,
-// never on top of each other. A line starts 0.3 s into the panel or GAP after the previous line ends;
-// a line lasts its clip (the length narrate() reports, else the decoded buffer's) or, with no clip at
-// all, a reading time that fits its text. The panel then holds until its `dur` (the clip lengths +
-// ~1 s in the JSON), and never less than HOLD after its last line.
+// never on top of each other. A line starts 0.3 s into the panel or GAP after the previous line's
+// length has run; that length is the clip narrate() started (the buffer length it returns), else the
+// decoded buffer's, or, with no clip at all, a reading time that fits its text. The panel then holds
+// until its `dur` (the clip lengths + ~1 s in the JSON), and never less than HOLD after its last line.
+// Also here: which captions are on screen right after a page turn, and the panel's slow push-in.
 
 export type TimedLine = { audio?: string; text: string; speaker?: string };
 
@@ -40,3 +41,23 @@ export function planPanel(lines: readonly TimedLine[], dur: number | undefined, 
   const last = end.length ? end[end.length - 1] : FIRST - GAP;
   return { start, end, turn: last + holdAfter(dur, last) };
 }
+
+/**
+ * The captions on screen. `shown` counts the lines started on the panel it was set for, so on the
+ * first render after a page turn (before the new panel's clock has run) the new panel shows none of
+ * its lines: a caption never appears before its voice.
+ */
+export type Shown<P> = { panel: P | null; n: number };
+export const onScreen = <P>(s: Shown<P>, panel: P): number => (s.panel === panel ? s.n : 0);
+
+/**
+ * The slow push-in: the art and its caption box scale together from 1 to PUSH over PUSH_S seconds
+ * (ease-out) about ORIGIN (fractions of the frame). A panel's `push` (its end scale) weakens it where
+ * a long hold would carry the caption box's corner out of the frame.
+ */
+export const PUSH = 1.07;
+export const PUSH_S = 14;
+export const ORIGIN = [0.6, 0.45] as const;
+
+/** Where a point of the panel (a fraction of the frame on one axis) sits at push scale `s`. */
+export const pushed = (x: number, origin: number, s: number): number => origin + (x - origin) * s;

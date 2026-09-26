@@ -1,13 +1,15 @@
 // The cutscenes' voice lines: every clip exists and is preloaded with the rest of the audio, a line
 // with a speaker is quoted, and each panel reads its lines one after another with no overlap and holds
-// about a second after the last one (lengths read from the mp3 frames, no decoder needed).
+// about a second after the last one (lengths read from the mp3 frames, no decoder needed). A page turn
+// shows none of the new panel's captions before its voices, and the long door panels keep their
+// caption box inside the frame through the push-in.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { FILES } from "../src/audio/sfx.ts";
-import { FIRST, GAP, HOLD, lineLen, planPanel, readTime, type TimedLine } from "../src/ui/cutsceneTiming.ts";
+import { FIRST, GAP, HOLD, lineLen, onScreen, ORIGIN, planPanel, PUSH, pushed, readTime, type Shown, type TimedLine } from "../src/ui/cutsceneTiming.ts";
 
-type Panel = { lines: TimedLine[]; dur?: number };
+type Panel = { lines: TimedLine[]; dur?: number; box?: [number, number, number, number]; push?: number };
 const root = new URL("../public/", import.meta.url);
 const load = (id: string) => JSON.parse(readFileSync(new URL(`cutscenes/${id}.json`, root), "utf8")) as { panels: Panel[] };
 const clip = (ln: TimedLine) => `voices/${ln.speaker ?? "narrator"}/${ln.audio}`;
@@ -68,7 +70,7 @@ test("each panel reads its lines in turn and holds ~1 s after the last", () => {
   }
 });
 
-test("a line lasts what played, else its clip, else a reading time", () => {
+test("a line lasts the clip narrate() started, else its decoded clip, else a reading time", () => {
   const ln = { audio: "x", text: "the door gave. the bass came through it like a heartbeat that wasn't mine." };
   assert.equal(lineLen(ln, 4.9, 4.8), 4.9);
   assert.equal(lineLen(ln, 0, 4.8), 4.8); // muted: the caption stays for the clip's length
@@ -80,4 +82,24 @@ test("a line lasts what played, else its clip, else a reading time", () => {
   const plan = planPanel([ln, { audio: "y", text: "\"keep dancing.\"" }], 3, l => (l.audio === "x" ? 4.9 : 1.6));
   assert.ok(Math.abs(plan.start[1] - (FIRST + 4.9 + GAP)) < 1e-9);
   assert.ok(Math.abs(plan.turn - (plan.end[1] + GAP + HOLD)) < 1e-9);
+});
+
+test("a page turn shows none of the new panel's lines until its own clock starts them", () => {
+  const [p2, p3] = load("e1").panels.slice(1, 3);
+  const left: Shown<Panel> = { panel: p2, n: 2 }; // panel 2's two lines are up when the page turns
+  assert.equal(onScreen(left, p3), 0); // the first render of panel 3: no "it's him." before its voice
+  assert.equal(onScreen(left, p2), 2);
+  assert.equal(onScreen({ panel: p3, n: 1 }, p3), 1);
+  assert.equal(onScreen({ panel: null, n: 0 }, p3), 0);
+});
+
+test("the long door panels keep their caption box in the frame through the whole push", () => {
+  const c1 = load("c1").panels[2], e1 = load("e1").panels[2];
+  for (const p of [c1, e1]) assert.ok(p.push && p.push < PUSH, "c1 p3 / e1 p3 push in less than the default");
+  for (const id of CUTS) for (const [k, p] of load(id).panels.entries()) {
+    if (p.push === undefined || !p.box) continue;
+    // at the full push (later than any hold reaches) the box's top-left corner is still inside
+    assert.ok(pushed(p.box[0], ORIGIN[0], p.push) >= 0.004, `${id} panel ${k + 1}: the box's left edge leaves the frame`);
+    assert.ok(pushed(p.box[1], ORIGIN[1], p.push) >= 0.004, `${id} panel ${k + 1}: the box's top edge leaves the frame`);
+  }
 });

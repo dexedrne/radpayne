@@ -30,7 +30,10 @@
         { "audio": "e1_03", "text": "the music kept playing. the dancing stopped. every sweet little face in the room turned to me." },
         { "audio": "e1_whisper", "speaker": "goon_b", "text": "\"it's him.\"" },
         { "audio": "e1_dance", "speaker": "goon_b", "text": "\"we saved you a dance.\"" }
-      ]
+      ],
+      "maxW": 0.6,
+      "size": 0.82,
+      "push": 1.02
     }
   ]
 }
