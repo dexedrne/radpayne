@@ -137,7 +137,13 @@
    "metalness": 0.7
   },
   "metalDark": {
-   "color": "#25272c",
+   "color": "#ffffff",
+   "texture": "/textures/backrooms/steel_panel.webp",
+   "repeat": true,
+   "repeatCount": [
+    1,
+    1
+   ],
    "roughness": 0.45,
    "metalness": 0.6
   },
@@ -151,16 +157,19 @@
    "roughness": 0.5
   },
   "console": {
-   "color": "#1f2227",
+   "color": "#ffffff",
+   "texture": "/textures/backrooms/console_panel.webp",
    "roughness": 0.5,
    "metalness": 0.3
   },
   "desk": {
-   "color": "#4a3322",
+   "color": "#ffffff",
+   "texture": "/textures/backrooms/wood_desk.webp",
    "roughness": 0.5
   },
   "deskTop": {
-   "color": "#5a3e28",
+   "color": "#ffffff",
+   "texture": "/textures/backrooms/wood_desk.webp",
    "roughness": 0.35
   },
   "chair": {
@@ -180,11 +189,13 @@
    "roughness": 0.9
   },
   "bookA": {
-   "color": "#5a2a2a",
+   "color": "#ffffff",
+   "texture": "/textures/backrooms/books_a.webp",
    "roughness": 0.8
   },
   "bookB": {
-   "color": "#2a3a4a",
+   "color": "#ffffff",
+   "texture": "/textures/backrooms/books_b.webp",
    "roughness": 0.8
   },
   "bookC": {
