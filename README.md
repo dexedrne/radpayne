@@ -134,6 +134,13 @@ input log. Bullet time is a time scale on it.
     the two high Milady voices in `voices/goon_a|goon_b/`. `src/audio/sfx.ts` plays them;
     `src/app/director.ts` runs the barks (chances and cooldowns at the top) and the narrator's
     tutorial lines.
+  - The guns (`GUNS` at the top of `src/audio/sfx.ts`): each of his guns has its own dry shots
+    (`pistol_shot*`, `ak_shot*`, `shotgun_shot*`, `smg_shot*`) and a tail per room (`*_tail_street`,
+    `*_tail_club` / `*_tail_backrooms`, or `*_tail_room` for both indoor rooms). The pistols' and the
+    shotgun's tail starts with every shot; the SMGs' and the AK's plays when the trigger is let go.
+    The gang has its own darker shots (`enemy_pistol*`, `enemy_smg*`, `enemy_shotgun*`). In bullet
+    time his own shots stay brighter than the world and the pistols and the AK get `pistol_bt_boom`
+    under them. `window.__rp.guns` lists the gun samples that played (a tail when it rings out).
   - `public/cutscenes/c1.json` + `c1/panel_*.webp`: cutscene 1's comic panels, each with its caption
     box position, narrator line and hold time. `e1.json` + `e1/panel_e*.webp`: the room 1 ending (the
     first clear, after the walk to the door; captions only). `c2.json`: cutscene 2 after the rave; a
