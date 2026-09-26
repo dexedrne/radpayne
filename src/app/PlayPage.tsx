@@ -28,6 +28,7 @@ import type { WeaponId } from "../combat/weapons.ts";
 import { awaitRoom, frames, roomWarm, warmRoom } from "./warmup.ts";
 import { renderGate } from "./frame.ts";
 import { roomText } from "../ui/rooms.ts";
+import { bridge, roomResult } from "../radbro/bridge.ts";
 
 const DEV = import.meta.env.MODE !== "production";
 const params = new URLSearchParams(location.search);
@@ -192,6 +193,7 @@ export default function PlayPage() {
     if (!session) return;
     await holdRoom(session);
     useUi.setState({ screen: "play" });
+    bridge().result("run");
     setPadFight(false);
     session.input.flush();
     session.stepper.reset();
@@ -267,6 +269,7 @@ export default function PlayPage() {
     setSession(ns);
     await holdRoom(ns);
     useUi.setState({ screen: "play" });
+    bridge().result("run");
     ns.input.flush();
     ns.stepper.reset();
     // a pad player goes straight on (no lock needed); a mouse player gets the prompt if the lock is gone
@@ -288,6 +291,9 @@ export default function PlayPage() {
     // the room is clear: the next room's models build during the walk to the door and the panels after it
     if (phase === "clear" || phase === "done") void prepareNext(session);
     if (phase === "done" || phase === "dead") {
+      // radbro.fun (framed only): a cleared room = "clear" with its time, a death = "gameover"
+      const end = roomResult(phase, session.game.stats);
+      bridge().result(end.status, end.score);
       session.paused = true;
       if (document.pointerLockElement) document.exitPointerLock();
       setHeartbeat(false);
