@@ -309,7 +309,7 @@ export default function PlayPage() {
           else { console.info(`[radpayne] ${next} is not built yet`); show(); }
         });
       };
-      // the cutscene after the room: its own (c2), or room 1's ending panels (captions only), once per page load
+      // the cutscene after the room: its own (c2), or room 1's ending panels (e1), once per page load
       const after = typeof room.cutsceneAfter === "string" ? room.cutsceneAfter : session.roomId === "room1" ? "e1" : "";
       if (after && !seenAfter.current.has(after) && (!SKIP || BOT_DEMO || ENDING)) {
         seenAfter.current.add(after);

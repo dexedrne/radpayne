@@ -5,13 +5,16 @@
 // Enter / gamepad A goes to the next panel, Esc / gamepad B or Start skips the rest. A panel without an
 // image paints a placeholder.
 // A panel's `dur` is how long it holds (seconds); a line without audio (or muted) is read for a time
-// that fits its length. Used for cutscene 1 (c1) and the room 1 ending (e1, captions only).
-// A line with a `speaker` is someone else's (c2: the bouncer, goon_b): voices/<speaker>/<audio>, set
-// upright (the narrator's captions are italic). `music` names the room music under the panels.
+// that fits its length. Used for cutscene 1 (c1), the room 1 ending (e1) and cutscene 2 (c2).
+// A panel's lines play in order, each GAP after the one before ends (cutsceneTiming.ts).
+// A line with a `speaker` is someone else's (the girls at the door and on the floor, goon_a / goon_b;
+// the DJ through the door, pa): voices/<speaker>/<audio>, set upright and in quotes (the narrator's
+// captions are italic). `music` names the room music under the panels.
 // A caption appears when its line starts (with its voice), never before; a panel's `maxW` (fraction of
 // the width) and `size` (font scale) keep a long caption off the faces next to the painted box.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { narrate, sampleDuration, samplesReady, stopNarration } from "../audio/sfx.ts";
+import { FIRST, GAP, holdAfter, lineLen, planPanel, type TimedLine } from "./cutsceneTiming.ts";
 import { Keycap } from "./hud/Keycap.tsx";
 import { usePadConnected, usePadInput, type MenuAction } from "./menu.ts";
 import "./hud/tokens.css";
@@ -19,7 +22,7 @@ import "./hud/tokens.css";
 /** Gamepad: A next, B or Start skip (the standard mapping). */
 const PAD: ReadonlyArray<readonly [number, MenuAction]> = [[0, "enter"], [1, "back"], [9, "back"]];
 
-export type Line = { audio?: string; text: string; speaker?: string };
+export type Line = TimedLine;
 export type Panel = { image?: string; tone?: string; box?: [number, number, number, number]; lines: Line[]; dur?: number; maxW?: number; size?: number };
 export type CutsceneData = { id: string; title?: string; panels: Panel[]; music?: string };
 
@@ -38,9 +41,6 @@ function Art({ p, zoom }: { p: Panel; zoom: boolean }) {
   if (p.image) return <img src={p.image} alt="" style={style} draggable={false} />;
   return <div style={{ ...style, background: TONES[p.tone ?? "street"] ?? TONES.street }} />;
 }
-
-/** Real seconds a line is shown when its audio does not play (muted / not loaded). */
-const readTime = (t: string) => Math.max(2.8, t.length * 0.055);
 
 export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => void }) {
   const [i, setI] = useState(0);
@@ -68,7 +68,9 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
   // the narrator's voice files (decoded after the PLAY gesture); start the panels once they are in
   useEffect(() => { let live = true; void samplesReady(3500).then(() => { if (live) setReady(true); }); return () => { live = false; }; }, []);
 
-  // read the panel's lines one after another, then turn the page
+  // read the panel's lines one after another, then turn the page. Each line is started when the one
+  // before it has ended (by the length its voice actually played), so two voices never overlap or cut
+  // each other off, even when a clip decoded late
   useEffect(() => {
     if (!ready) return;
     const clear = () => { for (const t of timers.current) clearTimeout(t); timers.current = []; };
@@ -76,17 +78,20 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
     setShown(0);
     const panel = data.panels[i];
     const lines = panel?.lines ?? [];
-    let t = 0.3;
-    lines.forEach((ln, k) => {
-      timers.current.push(window.setTimeout(() => {
-        setShown(k + 1);
-        if (ln.audio) narrate(ln.audio, ln.speaker ?? "narrator");
-      }, t * 1000));
-      const d = ln.audio ? audioLen(ln.audio, ln.speaker) : 0;
-      t += (d > 0 ? d : readTime(ln.text)) + 0.35;
-    });
-    // dur = how long the panel holds (the clip + ~1 s); never shorter than its lines
-    timers.current.push(window.setTimeout(next, Math.max(t + 0.4, panel?.dur ?? t + 1.1) * 1000));
+    const t0 = performance.now();
+    const now = () => (performance.now() - t0) / 1000;
+    const after = (s: number, f: () => void) => { timers.current.push(window.setTimeout(f, Math.max(0, s * 1000))); };
+    const read = (k: number) => {
+      const ln = lines[k];
+      setShown(k + 1);
+      const played = ln.audio ? narrate(ln.audio, ln.speaker ?? "narrator") : 0;
+      const d = lineLen(ln, played, ln.audio ? audioLen(ln.audio, ln.speaker) : 0);
+      // dur = how long the panel holds (its clips + ~1 s); never shorter than its lines
+      if (k + 1 < lines.length) after(d + GAP, () => read(k + 1));
+      else after(d + holdAfter(panel?.dur, now() + d), next);
+    };
+    if (lines.length) after(FIRST, () => read(0));
+    else after(planPanel([], panel?.dur, () => 0).turn, next);
     return clear;
   }, [i, data, next, ready]);
 
