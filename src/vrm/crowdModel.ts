@@ -22,7 +22,8 @@ export const SRC_HIPS = 0.736;
 const LIFT = 0.12;
 const DESAT = 0.25;
 
-/** `arms`: the raw left / right upper-arm bone names (the view's T-pose check). */
+/** `arms`: the raw left / right upper-arm bone names, plus the hips (the view's T-pose check: whichever
+ *  of these names resolve on the clone, all of them near their bind rotation means she never got posed). */
 export type CrowdModel = { n: number; body: Group; clips: AnimationClip[]; legScale: number; hand: string; arms: string[] };
 
 // The crowd's colour and lift: ONE node graph shared by every crowd material (a graph per material
@@ -143,9 +144,15 @@ export async function buildCrowdModel(n: number, source: Object3D, want: readonl
       console.info(`[crowd] retarget ${c.name} failed on #${n}: ${String(e)}`);
     }
   }
+  // no clip survived the bake on this rig: treat her like a model that never came (the view already
+  // dresses the spare girls who lack a body with the most-worn one that did), never a body with
+  // nothing to ever play
+  if (!clips.length) { console.info(`[crowd] #${n}: no clip baked, treating her like a download that failed`); return null; }
   // back to the rest pose before anything is cloned
   vrm.humanoid.resetNormalizedPose();
   vrm.humanoid.update();
-  const arms = (["leftUpperArm", "rightUpperArm"] as const).map(b => vrm.humanoid.getRawBoneNode(b)?.name ?? "");
+  // the T-pose check's anchor bones: both upper arms, plus the hips so a rig whose arm names this
+  // view cannot resolve still has something to catch her frozen at bind (never silently waved through)
+  const arms = (["leftUpperArm", "rightUpperArm", "hips"] as const).map(b => vrm.humanoid.getRawBoneNode(b)?.name ?? "");
   return { n, body, clips, legScale: Math.min(1.6, Math.max(0.5, (hipsY * scale) / SRC_HIPS)), hand: vrm.humanoid.getRawBoneNode("rightHand")?.name ?? "", arms };
 }
