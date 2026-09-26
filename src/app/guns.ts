@@ -45,9 +45,13 @@ const sgTube = new CylinderGeometry(0.015, 0.015, 0.4, 10);
 const sgPump = new CylinderGeometry(0.027, 0.027, 0.16, 12);
 const sgStock = new BoxGeometry(0.046, 0.09, 0.3);
 const sgGuard = new BoxGeometry(0.01, 0.03, 0.06);
+const sgBead = new BoxGeometry(0.008, 0.01, 0.012);
+const sgBand = new BoxGeometry(0.036, 0.05, 0.02);
 
-/** The pump shotgun (plan section 4). The pump is gun.userData.pump (rack it by moving it along -z). */
-export function makeShotgun(): Group {
+/** The pump shotgun (plan section 4). The pump is gun.userData.pump (rack it by moving it along -z).
+ *  `front`: the barrel and magazine tube run this much further ahead of the pump (the player's copy, so
+ *  the gun still reads from the shoulder camera once it is shouldered; the grip, pump and stock stay put). */
+export function makeShotgun(front = 0): Group {
   const g = new Group();
   const grip = new Mesh(sgGrip, walnut);
   grip.rotation.x = 0.22;
@@ -55,10 +59,12 @@ export function makeShotgun(): Group {
   receiver.position.set(0, 0.05, 0.1);
   const barrel = new Mesh(sgBarrel, gunmetal);
   barrel.rotation.x = Math.PI / 2;
-  barrel.position.set(0, 0.07, 0.43);
+  barrel.position.set(0, 0.07, 0.43 + front / 2);
+  barrel.scale.y = (0.46 + front) / 0.46;
   const tube = new Mesh(sgTube, gunmetal);
   tube.rotation.x = Math.PI / 2;
-  tube.position.set(0, 0.035, 0.4);
+  tube.position.set(0, 0.035, 0.4 + front / 2);
+  tube.scale.y = (0.4 + front) / 0.4;
   const pump = new Mesh(sgPump, walnut);
   pump.rotation.x = Math.PI / 2;
   pump.position.copy(SHOTGUN_PUMP);
@@ -67,8 +73,16 @@ export function makeShotgun(): Group {
   const guard = new Mesh(sgGuard, gunmetal);
   guard.position.set(0, 0.0, 0.05);
   g.add(grip, receiver, barrel, tube, pump, stock, guard);
+  if (front > 0) {
+    // a bead sight at the new muzzle and a barrel band where the longer tube meets it
+    const bead = new Mesh(sgBead, chrome);
+    bead.position.set(0, 0.092, 0.66 + front);
+    const band = new Mesh(sgBand, gunmetal);
+    band.position.set(0, 0.052, 0.62 + front * 0.8);
+    g.add(bead, band);
+  }
   g.userData.rpGun = true;
-  g.userData.muzzle = SHOTGUN_MUZZLE;
+  g.userData.muzzle = front ? new Vector3(SHOTGUN_MUZZLE.x, SHOTGUN_MUZZLE.y, SHOTGUN_MUZZLE.z + front) : SHOTGUN_MUZZLE;
   g.userData.pump = pump;
   g.traverse(o => { o.frustumCulled = false; });
   return g;
@@ -95,8 +109,9 @@ const akMag = new BoxGeometry(0.03, 0.052, 0.048);
 const akStock = new BoxGeometry(0.04, 0.07, 0.28);
 const akButt = new BoxGeometry(0.044, 0.12, 0.03);
 
-/** #250's AK-47 (see AK_MUZZLE / AK_HANDGUARD). */
-export function makeAk(): Group {
+/** #250's AK-47 (see AK_MUZZLE / AK_HANDGUARD). `front`: the barrel runs this much further out (the
+ *  player's copy, as the shotgun's). */
+export function makeAk(front = 0): Group {
   const g = new Group();
   const receiver = new Mesh(akReceiver, akSteel);
   receiver.position.set(0, 0.045, 0.1);
@@ -113,12 +128,13 @@ export function makeAk(): Group {
   gas.position.set(0, 0.085, 0.38);
   const barrel = new Mesh(akBarrel, akSteel);
   barrel.rotation.x = Math.PI / 2;
-  barrel.position.set(0, 0.06, 0.58);
+  barrel.position.set(0, 0.06, 0.58 + front / 2);
+  barrel.scale.y = (0.2 + front) / 0.2;
   const brake = new Mesh(akBrake, akSteel);
   brake.rotation.x = Math.PI / 2;
-  brake.position.set(0, 0.06, 0.66);
+  brake.position.set(0, 0.06, 0.66 + front);
   const sight = new Mesh(akSight, akSteel);
-  sight.position.set(0, 0.088, 0.6);
+  sight.position.set(0, 0.088, 0.6 + front);
   // the banana mag: three short segments curving forward under the receiver, in front of the guard
   // (short: the gun is attached 1.55x over true height for the shoulder camera, the mag with it)
   const mag = new Group();
@@ -137,7 +153,7 @@ export function makeAk(): Group {
   butt.position.set(0, 0.01, -0.28);
   g.add(receiver, cover, grip, guard, hand, gas, barrel, brake, sight, mag, stock, butt);
   g.userData.rpGun = true;
-  g.userData.muzzle = AK_MUZZLE;
+  g.userData.muzzle = front ? new Vector3(AK_MUZZLE.x, AK_MUZZLE.y, AK_MUZZLE.z + front) : AK_MUZZLE;
   g.userData.mag = mag;
   g.traverse(o => { o.frustumCulled = false; });
   return g;
@@ -196,6 +212,7 @@ export function attachGun(gun: Object3D, hand: Object3D, g: Grip, k = 1, scale: 
   if (typeof scale === "number") gun.scale.setScalar(scale);
   else gun.scale.set(scale[0], scale[1], scale[2]);
   gun.userData.grip = gun.quaternion.clone();
+  gun.userData.gripPos = gun.position.clone();
 }
 
 const va = new Vector3();
@@ -226,6 +243,31 @@ export function aimGun(gun: Object3D, target: Vector3 | null, weight: number, ma
   const inv = qb.clone().invert();
   gun.quaternion.premultiply(qb).premultiply(qa).premultiply(inv);
   gun.updateMatrixWorld(true);
+}
+
+/**
+ * The wrist, not the gun (arsenal spec 1.6): reset the gun to its grip, then bend the HAND bone in world
+ * space so the gun's barrel points from its muzzle at `target`, by at most `maxAngle` radians, blended by
+ * `weight`. The gun stays in the palm exactly as the grip puts it.
+ */
+export function aimHand(hand: Object3D | undefined, gun: Object3D, target: Vector3 | null, weight: number, maxAngle = 0.75): void {
+  const gq = gun.userData.grip as Quaternion | undefined;
+  const gp = gun.userData.gripPos as Vector3 | undefined;
+  if (gq) gun.quaternion.copy(gq);
+  if (gp) gun.position.copy(gp);
+  gun.updateMatrixWorld(true);
+  if (!hand || !hand.parent || !target || weight <= 0.001) return;
+  const muzzle = gun.localToWorld(va.copy((gun.userData.muzzle as Vector3 | undefined) ?? MUZZLE));
+  const cur = vb.set(0, 0, 1).applyQuaternion(gun.getWorldQuaternion(qb));
+  const want = vc.copy(target).sub(muzzle).normalize();
+  qa.setFromUnitVectors(cur, want);
+  const ang = 2 * Math.acos(Math.min(1, Math.abs(qa.w)));
+  const k = Math.min(1, ang > 1e-4 ? maxAngle / ang : 1) * weight;
+  if (k < 1) qa.slerp(qi.identity(), 1 - k);
+  hand.parent.getWorldQuaternion(qb);
+  const inv = qb.clone().invert();
+  hand.quaternion.premultiply(qb).premultiply(qa).premultiply(inv);
+  hand.updateMatrixWorld(true);
 }
 
 /** Muzzle world position of a gun (after its matrix is up to date). */

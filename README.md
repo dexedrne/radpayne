@@ -116,6 +116,9 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
     room 2: `cam-floor`, `cam-dj`; room 3: `cam-hall`, `cam-store`, `cam-door`, `cam-office`,
     `cam-manager`, `cam-lobby`).
   - `?loadout=shotgun,smgs` starts with those weapons (the last one in hand).
+  - `?radbro=<id>` plays that Radbro for one page load.
+  - `?holdcheck=<shotgun|ak|pistols|smgs>` runs the hold check: an empty street, that gun in hand,
+    and a scripted player instead of the input (`src/app/dev/holdcheck.ts`, `window.__holdcheck`).
   - `?look=fight` holds the club in its fight lighting; `?extra=heavy` adds a heavy by the staff door
     (`?cam=cam-heavy`); `?still` hides the click-to-fight veil (for screenshots without the bot).
   - `?fx=clean` starts with Effects on Clean (also in the pause menu): no rain near the camera, no
@@ -129,6 +132,16 @@ input log. Bullet time is a time scale on it.
     strafe / run, Shootdodge -> Prone_Idle -> Prone_GetUp, Land_Roll, Hit_Small, Reload, cover crouch,
     four deaths). `milady.gun.glb` is the same set as the source the Miladys are retargeted from.
     Pistol grip offsets per hand: `src/anim/grips.ts`.
+  - **How he holds the guns.** Every gun sits in the palm at the clip set's grip and is never turned
+    inside the fist. The pistols and SMGs aim with the arms and a bend of the wrist. The long guns (the
+    shotgun, #250's AK) are shouldered as the long-gun clips hold them (`src/anim/hold.ts`): the game
+    places the gun (turned about the butt onto the crosshair, or a low ready when he is not shooting:
+    muzzle down and out, the chest turned a little to his right) and both hands are solved onto it
+    every frame with two-bone arm IK (`src/anim/ik.ts`): the right hand on the grip, the left on the
+    pump or handguard, riding the clips' pump rack and shell feed. The AK's mag change is a scripted
+    left-hand path. While a long gun is out the shoulder camera sits further out to his right, closer
+    and lower (`LONG_CAM` in `src/app/CameraView.tsx`); the crosshair still marks exactly where shots
+    go.
   - `public/audio/`: `sfx/`, `music/` (calm street + fight loops), `voices/narrator/` (the Radbro's
     low, tired noir voice-over), `voices/radbro/` (his grunts, breath and last words in the fight) and
     the two high Milady voices in `voices/goon_a|goon_b/`. `src/audio/sfx.ts` plays them;
@@ -150,6 +163,12 @@ input log. Bullet time is a time scale on it.
   (`RADPAYNE_MAX_S=620` gives it the time).
   `RADPAYNE_GPU=1` uses the machine's GPU (WebGL2); without it Chromium falls back to SwiftShader
   (very slow).
+- **Hold check:** with the dev server up, `RADPAYNE_CHROME_PROFILE=<throwaway dir> node tools/holdcheck.ts
+  http://localhost:4880 [rigs] [guns] [states]` walks every Radbro through stand, aim up / down, turn,
+  walk, back-pedal, strafe, run, fire, reload, jump, dive, prone, get-up and roll with each long gun. It
+  prints the grip error, the left palm's distance to the gun, the wrist bend, elbow flips and the gun's
+  visible pixels from the gameplay camera, and saves a gameplay shot and a close-up per state in
+  `.local/shots/hold/`.
 
 ## Use it
 
