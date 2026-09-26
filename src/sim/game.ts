@@ -60,7 +60,18 @@ export type KillCam = {
 /** loadout: extra weapons owned from the start (tests, dev ?loadout=); the base gun is always owned.
  *  base: that base gun (slot 1, never runs dry): the dual pistols, or the AK for #250.
  *  resume: start from a checkpoint saved in an earlier attempt (Game.saved). */
-export type GameOptions = { seed?: number; difficulty?: Difficulty; ai?: boolean; loadout?: WeaponId[]; base?: BaseWeapon; resume?: Resume };
+/** pockit: model numbers per enemy marker id (the page picks them: vrm/pockit.ts pickPockits); a goon
+ *  without one gets a seeded random number. */
+export type GameOptions = { seed?: number; difficulty?: Difficulty; ai?: boolean; loadout?: WeaponId[]; base?: BaseWeapon; resume?: Resume; pockit?: Readonly<Record<string, number>> };
+
+/** The Pockit goons of a level (goons and rushers without a fixed model), in marker order; `later` =
+ *  brought in by a spawn trigger (inactive at the start). */
+export function goonSlots(level: LevelData): Array<{ id: string; later: boolean }> {
+  const spawned = new Set(level.markers.filter(m => m.kind === "trigger" && m.data.action === "spawn" && typeof m.data.group === "string").map(m => m.data.group as string));
+  return level.markers
+    .filter(m => m.kind === "enemy" && ((m.data.kind as string | undefined) ?? "goon") !== "heavy" && ["goon", "rusher"].includes((m.data.kind as string | undefined) ?? "goon") && typeof m.data.milady !== "number")
+    .map(m => ({ id: m.id, later: typeof m.data.group === "string" && spawned.has(m.data.group) }));
+}
 
 /** What a checkpoint keeps (room 3's, after the security office): where he stands, who is down, which
  *  doors are open, what was picked up and fired, his guns and ammo, health, copium and the stats so far.
@@ -164,7 +175,7 @@ export class Game {
         const kindName = (m.data.kind as string | undefined) ?? "goon";
         if (kindName !== "goon" && kindName !== "rusher" && kindName !== "heavy") continue; // later kinds (the boss)
         const kind = kindName as EnemyKind;
-        const pick = kind === "heavy" ? 0 : typeof m.data.milady === "number" ? (m.data.milady as number) : 1 + Math.floor(hash01(this.seed, n, 0x6d, 0) * POCKIT_COUNT);
+        const pick = kind === "heavy" ? 0 : typeof m.data.milady === "number" ? (m.data.milady as number) : opts.pockit?.[m.id] ?? 1 + Math.floor(hash01(this.seed, n, 0x6d, 0) * POCKIT_COUNT);
         const gy = this.world.groundBelow(m.x, m.z, 0.3, m.y + 1);
         const e = makeEnemy(n, m.id, m.x, Number.isFinite(gy) ? gy : m.y, m.z, m.yaw, ENEMY[kind].hp, pick, typeof m.data.group === "string" ? m.data.group : "", kind);
         if (e.group && !spawned.has(e.group)) e.state = "idle";

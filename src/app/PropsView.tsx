@@ -9,6 +9,7 @@
 //  - the service elevator (fx "elevator" marker): its doors slide open at the room's exit, after the
 //    keycard beep and the bell, with the car's warm light behind them.
 // Each new run puts everything back (a checkpoint resume leaves a breached door lying in the office).
+import { assetUrl } from "./assets.ts";
 import { useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import {
@@ -105,7 +106,7 @@ export function PropsView({ s }: { s: Session }) {
       const box = level.boxes.find(b => b.node === t.data.door);
       if (!box) continue;
       if (!doorMat) {
-        const tex = loader.load("/textures/backrooms/door_office.webp");
+        const tex = loader.load(assetUrl("/textures/backrooms/door_office.webp"));
         tex.colorSpace = SRGBColorSpace;
         doorMat = new MeshStandardMaterial({ map: tex, roughness: 0.5 });
         doorMat.userData.rpOwn = true;
@@ -158,7 +159,7 @@ export function PropsView({ s }: { s: Session }) {
     let elevator: { leaves: Mesh[]; home: Vector3[]; along: Vector3; w: number; light: PointLight; openAt: number } | null = null;
     if (em) {
       const w = typeof em.data.w === "number" ? em.data.w : 2, h = typeof em.data.h === "number" ? em.data.h : 2.2;
-      const tex = loader.load("/textures/backrooms/elevator_doors.webp");
+      const tex = loader.load(assetUrl("/textures/backrooms/elevator_doors.webp"));
       tex.colorSpace = SRGBColorSpace;
       const mat = new MeshStandardMaterial({ map: tex, roughness: 0.35, metalness: 0.6 });
       mat.userData.rpOwn = true;

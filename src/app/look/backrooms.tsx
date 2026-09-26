@@ -18,8 +18,10 @@ import type { Session } from "../session.ts";
 import { FRAME, renderGate } from "../frame.ts";
 import { sfx } from "../../audio/sfx.ts";
 import { MarkerLights } from "./lights.tsx";
-import { CombatRead, enemyMaskPass, enemyOutline, neonDim } from "./read.tsx";
+import { CombatRead, enemyMaskPass, enemyOutline, syncMaskCamera, tagForMask, neonDim } from "./read.tsx";
 import { CameraKey, WORLD_UV, hostileEmissive, isActor, readTokens, type Tokens } from "./tokens.ts";
+import { useGfx, type Bloom } from "./gfx.ts";
+import { registerLook } from "./compile.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type N = any;
@@ -27,7 +29,8 @@ type N = any;
 /** Readability numbers. */
 export const BACKROOMS = {
   exposure: 1.25,
-  bloom: { strength: 0.28, radius: 0.2, threshold: 0.88 },
+  /** Bloom per graphics setting: subtle (the default) and a stronger glow for Bloom: Original. */
+  bloom: { subtle: { strength: 0.28, radius: 0.2, threshold: 0.88 }, original: { strength: 0.58, radius: 0.4, threshold: 0.72 } },
   fog: { color: "#15161a", density: 0.003 },
   background: "#050506",
   hemi: { sky: "#7c8290", ground: "#2a2622", intensity: 0.95 },
@@ -94,41 +97,61 @@ function Materials() {
   return null;
 }
 
-function Post({ low }: { low: boolean }) {
+function Post({ msaa, level }: { msaa: boolean; level: Bloom }) {
   const gl = useThree(s => s.gl) as unknown as WebGPURenderer;
   const scene = useThree(s => s.scene);
   const camera = useThree(s => s.camera);
-  const p = useMemo(() => {
+  const passes = useMemo(() => {
     const pipeline = new RenderPipeline(gl);
-    const scenePass: N = pass(scene, camera, { samples: low ? 0 : 4 });
+    const samples = msaa ? 4 : 0;
+    const scenePass: N = pass(scene, camera, { samples });
+    scenePass.renderTarget.samples = samples;
     const maskPass: N = enemyMaskPass(scene, camera, gl);
+    return { pipeline, scenePass, maskPass };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gl, scene, msaa]);
+  const bloomOn = level !== "off";
+  const bloomNode = useMemo(() => {
+    const { pipeline, scenePass, maskPass } = passes;
     const col: N = scenePass.getTextureNode("output");
-    const B = BACKROOMS.bloom;
-    const b: N = bloom(col, low ? B.strength * 0.7 : B.strength, B.radius, B.threshold);
-    b.setResolutionScale(low ? 0.25 : 0.5);
-    let c: N = col.rgb.add(b.rgb);
+    let c: N = col.rgb;
+    let b: N = null;
+    if (bloomOn) {
+      const B = BACKROOMS.bloom.subtle;
+      b = bloom(col, B.strength, B.radius, B.threshold);
+      b.setResolutionScale(0.5);
+      c = c.add(b.rgb);
+    }
     // fights at 3-16 m under flat light: a light far fill, the club's pink-red edge
     c = enemyOutline(c, maskPass, RIM_EDGE, 0.12, 0.35);
     c = neutralToneMapping(c, float(BACKROOMS.exposure));
     const v = smoothstep(0.5, 1.05, length(uv().sub(0.5).mul(vec2(1.0, 0.8))));
     c = c.mul(float(1).sub(v.mul(BACKROOMS.vignette)));
     pipeline.outputNode = vec4(c, 1);
-    return { pipeline, scenePass, maskPass };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gl, scene, low]);
-  useEffect(() => () => p.pipeline.dispose(), [p]);
+    pipeline.needsUpdate = true;
+    return b;
+  }, [passes, bloomOn]);
+  useEffect(() => {
+    if (!bloomNode) return;
+    const B = level === "original" ? BACKROOMS.bloom.original : BACKROOMS.bloom.subtle;
+    bloomNode.strength.value = B.strength;
+    bloomNode.radius.value = B.radius;
+    bloomNode.threshold.value = B.threshold;
+  }, [bloomNode, level]);
+  useEffect(() => () => passes.pipeline.dispose(), [passes]);
+  useEffect(() => registerLook(gl, scene, camera, passes, undefined, () => tagForMask(scene)), [gl, scene, camera, passes]);
   useFrame(st => {
-    p.scenePass.camera = st.camera;
-    p.maskPass.camera = st.camera;
+    passes.scenePass.camera = st.camera;
+    syncMaskCamera(passes.maskPass, st.camera);
     if (renderGate.skip) return; // a card hides the canvas: the last frame stays
-    p.pipeline.render();
+    passes.pipeline.render();
   }, 1);
   return null;
 }
 
-export function BackroomsLook({ level, s, lowQuality }: { level: LevelData; s?: Session; lowQuality?: boolean }) {
+export function BackroomsLook({ level, s }: { level: LevelData; s?: Session; lowQuality?: boolean }) {
   const scene = useThree(st => st.scene);
-  const low = !!lowQuality;
+  const gfx = useGfx();
   useEffect(() => {
     const prevBg = scene.backgroundNode, prevFog = scene.fogNode;
     scene.backgroundNode = color(BACKROOMS.background);
@@ -166,7 +189,7 @@ export function BackroomsLook({ level, s, lowQuality }: { level: LevelData; s?: 
       <MarkerLights level={level} />
       <Materials />
       {s && <CombatRead s={s} />}
-      <Post low={low} />
+      <Post msaa={gfx.msaa} level={gfx.bloom} />
     </>
   );
 }

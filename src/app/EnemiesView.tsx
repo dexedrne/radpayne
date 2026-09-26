@@ -21,7 +21,8 @@ import { MILADY_GRIP } from "../anim/grips.ts";
 import { MILADY_GAIT, RUN_FROM, clipSpeed, legsFor } from "../anim/gait.ts";
 import type { LoadedGoon } from "../vrm/pockit.ts";
 import { RETARGET_SOURCE, clipsPath, modelPath } from "./characters.ts";
-import { goonModel } from "./warmup.ts";
+import { frames, goonModel } from "./warmup.ts";
+import { warmObject } from "./look/compile.ts";
 import { aimGun, attachGun, makePistol, makeSmg, muzzleWorld } from "./guns.ts";
 import { FRAME } from "./frame.ts";
 import { useUi } from "../ui/store.ts";
@@ -78,6 +79,8 @@ type GoonView = {
   idleClip: string;
   /** Her model has been posed by a clip (until then it stays hidden behind the stand-in). */
   posed: boolean;
+  /** Her shaders are compiled (look/compile.ts): she is shown only then, never compiled in a frame. */
+  warm: boolean;
   /** Frames an alive, posed goon has spent with both upper arms at the bind pose (a T-pose). */
   tposeFrames: number;
 };
@@ -94,7 +97,7 @@ function makeView(e: Enemy, idleClip: string): GoonView {
   const standIn = si.root;
   root.add(standIn);
   const gun = e.weapon === "smg" ? makeSmg() : makePistol();
-  return { idx: e.idx, n: e.milady, root, standIn, si, gun, gunInHand: false, model: null, player: null, hit: null, clip: "", yaw: e.facing, legYaw: e.facing, back: false, flinch: 0, pain: 0, blinkT: -1, blinkAt: 1 + Math.random() * 3, deadShown: false, deathPlayed: false, deathTried: new Set(), deathFrames: 0, deathFallback: false, fallYaw: 0, loading: false, skip: e.kind === "heavy", rim: 1, idleClip, posed: false, tposeFrames: 0 };
+  return { idx: e.idx, n: e.milady, root, standIn, si, gun, gunInHand: false, model: null, player: null, hit: null, clip: "", yaw: e.facing, legYaw: e.facing, back: false, flinch: 0, pain: 0, blinkT: -1, blinkAt: 1 + Math.random() * 3, deadShown: false, deathPlayed: false, deathTried: new Set(), deathFrames: 0, deathFallback: false, fallYaw: 0, loading: false, skip: e.kind === "heavy", rim: 1, idleClip, posed: false, warm: false, tposeFrames: 0 };
 }
 
 /** Deterministic 0..1 per goon and attempt (death variant picks). */
@@ -126,9 +129,14 @@ export function EnemiesView({ s }: { s: Session }) {
         // shown only once a clip has posed her (the bones pass checks): never a frame of bind pose
         v.clip = "";
         v.posed = false;
+        v.warm = false;
         v.tposeFrames = 0;
         m.body.visible = false;
+        m.body.userData.rpWarm = true; // a room's hold warms her with the rest (compile.ts hidden)
         v.root.add(m.body);
+        // her shaders compile off the frame once the look's material rules have reached her (they walk
+        // the scene every 10 frames), before she is shown (a room's hold may have compiled her already)
+        void frames(12).then(() => (m.body.userData.rpWarmed ? undefined : warmObject(m.body))).then(() => { v.warm = true; });
         // the pistol into her right hand (VRM grip, scaled to her forearm; VRM0 is turned 180 deg)
         const hand = m.vrm.humanoid.getNormalizedBoneNode("rightHand");
         if (hand) {
@@ -312,7 +320,7 @@ export function EnemiesView({ s }: { s: Session }) {
         // is re-posed (her clip again, then the idle).
         const bind = ARMS.every(n => { const b = nb(n); return !b || Math.abs(b.quaternion.w) > 0.9994; });
         if (!v.posed) {
-          if (!bind || v.deathFallback) { v.posed = true; m.body.visible = true; v.standIn.visible = false; }
+          if ((!bind || v.deathFallback) && (v.warm || m.body.userData.rpWarmed)) { v.posed = true; m.body.visible = true; v.standIn.visible = false; }
         } else if (alive && bind && v.player) {
           if (++v.tposeFrames === 3) {
             const idle = pick(v.player, e.state === "idle" ? CLIPS.relaxed : CLIPS.idle);

@@ -3,22 +3,26 @@
 import { useAssetRuntime, type AssetRuntime } from "react-three-game";
 import { Material, MeshBasicMaterial, MeshStandardMaterial, type Mesh, type Object3D } from "three";
 import type { RadbroId } from "../ui/store.ts";
+import { assetExists, assetUrl } from "./assets.ts";
 
-export const modelPath = (id: RadbroId) => `/models/radbro${id}.glb`;
-export const clipsPath = (id: RadbroId) => `/models/radbro${id}.clips.glb`;
+// Every model path is its versioned URL (assets.ts): the asset runtime's keys, the fetch and the cache
+// all see the same string.
+export const modelPath = (id: RadbroId) => assetUrl(`/models/radbro${id}.glb`);
+export const clipsPath = (id: RadbroId) => assetUrl(`/models/radbro${id}.clips.glb`);
 /** Optional pistol clip pack (same rig, copied onto every Radbro by bone name). */
-export const gunClipsPath = (id: RadbroId) => `/models/radbro${id}.gun.glb`;
+export const gunClipsPath = (id: RadbroId) => assetUrl(`/models/radbro${id}.gun.glb`);
 
 /** Round-2 clip pack (same rig): the shotgun set, the heavy's stagger, the weapon swap. Optional. */
-export const r2ClipsPath = (id: RadbroId) => `/models/radbro${id}.r2.glb`;
+export const r2ClipsPath = (id: RadbroId) => assetUrl(`/models/radbro${id}.r2.glb`);
 
 /** The shooter clip set on the Radbro rig: the Miladys' retarget source (optional, loaded with the Radbro). */
-export const MILADY_CLIPS = "/models/milady.gun.glb";
-/** The rave's clips on the same rig (dances, the bar and the booths, startle / flee / cower, the DJ). */
-export const MILADY_R2 = "/models/milady.r2.glb";
+export const MILADY_CLIPS = assetUrl("/models/milady.gun.glb");
+/** The rave's clips on the same rig (dances, the bar and the booths, startle / flee / cower, the DJ).
+ *  Rooms 2+ only: loaded in the background once room 1 runs (loadLater). */
+export const MILADY_R2 = assetUrl("/models/milady.r2.glb");
 
 /** A rival heavy's model (a recoloured Radbro #652 / #723: it plays that Radbro's clip packs). */
-export const rivalPath = (model: string) => `/models/${model}.glb`;
+export const rivalPath = (model: string) => assetUrl(`/models/${model}.glb`);
 export const rivalBase = (model: string): RadbroId => (model === "rival723" ? "723" : "652");
 
 /** The Miladys' clips are retargeted from this Radbro's rig. */
@@ -59,7 +63,8 @@ export async function loadManifest(paths: string[], onProgress: (f: number) => v
 /** Optional file: resolves true when it loaded (a 404 is fine). */
 const optional = new Map<string, Promise<boolean>>();
 
-/** Loads a model that may be missing (HEAD first). Once per path: a second call shares the first load. */
+/** Loads a model that may be missing (the build's file list says; without one, a HEAD first). Once per
+ *  path: a second call shares the first load. */
 export function loadOptional(path: string): Promise<boolean> {
   let p = optional.get(path);
   if (!p) {
@@ -74,8 +79,12 @@ async function loadOptionalOnce(path: string): Promise<boolean> {
   if (!assets) return false;
   if (assets.getModel(path)) return true;
   try {
-    const head = await fetch(path, { method: "HEAD" });
-    if (!head.ok || !(head.headers.get("content-type") ?? "").includes("model") && !(head.headers.get("content-type") ?? "").includes("octet")) return false;
+    const known = assetExists(path.split("?")[0]);
+    if (known === false) return false;
+    if (known === null) {
+      const head = await fetch(path, { method: "HEAD" });
+      if (!head.ok || !(head.headers.get("content-type") ?? "").includes("model") && !(head.headers.get("content-type") ?? "").includes("octet")) return false;
+    }
     await assets.loadModel(path);
     return assets.getModel(path) !== null;
   } catch {

@@ -12,6 +12,10 @@
 // PlayPage starts the next room's warm-up once the room before it is clear (the walk to the door, the
 // ending panels or cutscene 2 run while it builds) and holds a room's start behind a short loading card
 // for whatever is still building (capped: a model that never comes keeps its stand-in).
+// The load audit: a room's start waits only for the goons that are there from the start (and the crowd,
+// the heavies' files, the textures); the ones a spawn trigger brings in later keep building during the
+// fight (their downloads come after the others, at low priority). The Pockit downloads themselves start
+// as soon as the level is read (prefetchGoons), not when the Radbro clip sources are in.
 import type { Object3D } from "three";
 import type { Session } from "./session.ts";
 import { MILADY_CLIPS, MILADY_R2, RETARGET_SOURCE, assetsRef, clipsPath, gunClipsPath, loadOptional, modelPath, r2ClipsPath, rivalBase, rivalPath } from "./characters.ts";
@@ -53,6 +57,23 @@ function enqueue<T>(job: () => Promise<T>): Promise<T> {
 
 const goonJobs = new WeakMap<Session, Map<number, Promise<LoadedGoon | null>>>();
 
+/** Start the room's Pockit downloads (once the level is read): the goons there from the start first,
+ *  then the ones a trigger brings in, at low priority. Resolves when the first ones are in. */
+export function prefetchGoons(s: Session): Promise<unknown> {
+  if (new URLSearchParams(location.search).get("milady") === "0") return Promise.resolve();
+  const goons = s.game.enemies.filter(e => e.kind !== "heavy");
+  const start = goons.filter(e => e.state !== "inactive").map(e => e.milady);
+  const later = goons.filter(e => e.state === "inactive").map(e => e.milady);
+  const first = Promise.allSettled(start.map(n => fetchPockit(n)));
+  void first.then(() => { for (const n of later) void fetchPockit(n, "low"); });
+  return first;
+}
+
+/** The rave's clip pack (rooms 2+: the crowd, the DJ's and the dancers' idles), loaded once. */
+function r2Clips(): Promise<boolean> {
+  return loadOptional(MILADY_R2);
+}
+
 /** The Radbro rigs carrying the Miladys' clips (null until the Radbro assets are in). */
 function goonSources(): Object3D[] | null {
   const a = assetsRef.current;
@@ -82,8 +103,9 @@ export function goonModel(s: Session, idx: number): Promise<LoadedGoon | null> |
   const n = e.milady;
   const t0 = performance.now();
   let dl = 0, b0 = 0;
-  const job = fetchPockit(n)
-    .then(got => { dl = performance.now() - t0; return got ? enqueue(() => { b0 = performance.now(); return buildGoon(n, sources, idle ? [idle] : [], breathe); }) : null; })
+  // an idle clip (the DJ, a dancer) comes from the rave's pack: that goon waits for it
+  const job = Promise.all([fetchPockit(n, e.state === "inactive" ? "low" : "auto"), idle ? r2Clips() : true])
+    .then(([got]) => { dl = performance.now() - t0; return got ? enqueue(() => { b0 = performance.now(); return buildGoon(n, goonSources() ?? sources, idle ? [idle] : [], breathe); }) : null; })
     .then(
       m => {
         if (!m) jobs.delete(idx);
@@ -109,15 +131,18 @@ export function crowdClipsFor(s: Session, n: number): string[] {
 
 /** The crowd template for model `n` with clips `want` (built once per page; failures retry later). */
 export function crowdModel(n: number, want: readonly string[]): Promise<CrowdModel | null> | null {
-  const source = assetsRef.current?.getModel(MILADY_R2) ?? null;
-  if (!source) return null;
+  if (!assetsRef.current) return null;
   const key = `${n}|${want.join(",")}`;
   const had = crowdJobs.get(key);
   if (had) return had;
   const t0 = performance.now();
   let dl = 0, b0 = 0;
-  const job = fetchPockit(n)
-    .then(got => { dl = performance.now() - t0; return got ? enqueue(() => { b0 = performance.now(); return buildCrowdModel(n, source, want, breathe); }) : null; })
+  const job = Promise.all([fetchPockit(n), r2Clips()])
+    .then(([got]) => {
+      dl = performance.now() - t0;
+      const source = assetsRef.current?.getModel(MILADY_R2) ?? null;
+      return got && source ? enqueue(() => { b0 = performance.now(); return buildCrowdModel(n, source, want, breathe); }) : null;
+    })
     .then(
       m => {
         if (!m) crowdJobs.delete(key);
@@ -139,7 +164,9 @@ export function crowdNumbers(s: Session): number[] {
 
 // ---- the room -----------------------------------------------------------------------------------------
 
-export type Warm = { total: number; done: number; promise: Promise<void> };
+/** total / done / promise: what the room's start waits for (the goons there from the start, the crowd,
+ *  the files); `later`: the goons a spawn trigger brings in (they build on during the fight). */
+export type Warm = { total: number; done: number; promise: Promise<void>; later: Promise<void> };
 const warms = new WeakMap<Session, Warm>();
 
 /** The rival heavies' files and the level's textures (network and the asset runtime's own parse). */
@@ -165,15 +192,18 @@ export function warmRoom(s: Session): Warm | null {
   if (had) return had;
   if (!goonSources()) return null;
   const jobs: Promise<unknown>[] = [];
+  const later: Promise<unknown>[] = [];
   const noMilady = new URLSearchParams(location.search).get("milady") === "0";
-  // the gang first (they fight), then the crowd (most-worn model first), then the files
-  const order = s.game.enemies.filter(e => e.kind !== "heavy").map(e => e.idx);
+  // the gang first (they fight: the ones there from the start, then the later ones), then the crowd
+  // (most-worn model first), then the files
+  const goons = s.game.enemies.filter(e => e.kind !== "heavy");
   if (!noMilady) {
-    for (const i of order) { const j = goonModel(s, i); if (j) jobs.push(j); }
+    for (const e of goons) if (e.state !== "inactive") { const j = goonModel(s, e.idx); if (j) jobs.push(j); }
+    for (const e of goons) if (e.state === "inactive") { const j = goonModel(s, e.idx); if (j) later.push(j); }
     for (const n of crowdNumbers(s)) { const j = crowdModel(n, crowdClipsFor(s, n)); if (j) jobs.push(j); }
   }
   jobs.push(...warmFiles(s));
-  const w: Warm = { total: jobs.length, done: 0, promise: Promise.resolve() };
+  const w: Warm = { total: jobs.length, done: 0, promise: Promise.resolve(), later: Promise.allSettled(later).then(() => undefined) };
   const t0 = performance.now();
   w.promise = Promise.all(jobs.map((j, k) => j.then(() => { w.done++; if (DEBUG) console.info(`[warm] ${s.roomId}: job ${k} done at ${Math.round(performance.now() - t0)} ms`); }, () => { w.done++; }))).then(() => undefined);
   warms.set(s, w);

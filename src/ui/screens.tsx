@@ -1,14 +1,15 @@
-// Title (Radbro pick, difficulty, effects, controls, credits), loading, pause + settings and results
+// Title (Radbro pick, difficulty, graphics preset, controls, credits), loading, pause + settings and results
 // screens: React DOM over the canvas in the noir-comic style (ink plates, cream captions, keycaps).
 // The canvas behind them is dimmed / blurred by PlayPage (canvasFx). Keyboard and gamepad work
 // everywhere (menu.ts); settings apply at once and persist.
 import "./hud/tokens.css";
 import { useEffect, useMemo, useState } from "react";
-import { RADBROS, setSetting, setVolume, store, useUi, type DmgColour, type HudSize, type Quality, type RadbroId, type Results, type ThreatMode } from "./store.ts";
+import { RADBROS, setSetting, setVolume, store, useUi, type DmgColour, type HudSize, type RadbroId, type Results, type ThreatMode } from "./store.ts";
 import { DIFFICULTY, type Difficulty } from "../sim/tuning.ts";
-import { setEffects, useFx, type Effects } from "../app/look/fx.ts";
+import { setGfx, setPreset, useGfx, type Bloom, type Preset, type Rain, type Reflections, type Res } from "../app/look/gfx.ts";
 import type { Session } from "../app/session.ts";
 import { Keycap } from "./hud/Keycap.tsx";
+import { assetUrl } from "../app/assets.ts";
 import { Caption } from "./hud/Caption.tsx";
 import { Seg, stepOption } from "./hud/Seg.tsx";
 import { Slider } from "./hud/Slider.tsx";
@@ -30,14 +31,29 @@ export const btn = (primary = false): React.CSSProperties => ({
 });
 
 const DIFFS: ReadonlyArray<readonly [Difficulty, string]> = (Object.keys(DIFFICULTY) as Difficulty[]).map(d => [d, DIFFICULTY[d].label.toUpperCase()] as const);
-const EFFECTS: ReadonlyArray<readonly [Effects, string]> = [["full", "FULL"], ["clean", "CLEAN"]];
-const QUALITY: ReadonlyArray<readonly [Quality, string]> = [["high", "HIGH"], ["low", "LOW"]];
+const PRESETS: ReadonlyArray<readonly [Preset, string]> = [["low", "LOW"], ["medium", "MEDIUM"], ["high", "HIGH"], ["cinematic", "CINEMATIC"]];
+const PRESETS_SHORT: ReadonlyArray<readonly [Preset, string]> = [["low", "LOW"], ["medium", "MED"], ["high", "HIGH"], ["cinematic", "CINEMA"]];
+const BLOOMS: ReadonlyArray<readonly [Bloom, string]> = [["off", "OFF"], ["subtle", "SUBTLE"], ["original", "ORIGINAL"]];
+const REFLS: ReadonlyArray<readonly [Reflections, string]> = [["off", "OFF"], ["soft", "SOFT"], ["sharp", "SHARP"]];
+const RAINS: ReadonlyArray<readonly [Rain, string]> = [["off", "OFF"], ["thin", "THIN"], ["light", "LIGHT"]];
+const RESES: ReadonlyArray<readonly [`${Res}`, string]> = [["50", "50%"], ["75", "75%"], ["100", "100%"]];
 const SIZES: ReadonlyArray<readonly [HudSize, string]> = [["s", "S"], ["m", "M"], ["l", "L"]];
 const THREATS: ReadonlyArray<readonly [ThreatMode, string]> = [["all", "ALL"], ["shooting", "SHOOTING"], ["off", "OFF"]];
 const DMG: ReadonlyArray<readonly [DmgColour, string]> = [["red", "RED"], ["yellow", "YELLOW"], ["white", "WHITE"]];
 const DMG_SW: Record<DmgColour, string> = { red: "#ff3148", yellow: "#ffd23f", white: "#ffffff" };
 const ONOFF: ReadonlyArray<readonly ["on" | "off", string]> = [["on", "ON"], ["off", "OFF"]];
-const EFFECTS_NOTE = "Clean: no bloom, no rain in front of the lens, a plain wet road instead of mirror puddles. You see who's shooting.";
+/** What each preset looks like (the title and the settings say it the same way). */
+export const PRESET_NOTES: Record<Preset | "custom", string> = {
+  low: "low: no bloom, no mirror, a drizzle. fastest.",
+  medium: "medium: soft glow, a wet road, thin rain.",
+  high: "high: soft glow, soft reflections, thin rain.",
+  cinematic: "cinematic: the original glow, sharp mirror puddles, thin rain.",
+  custom: "custom: your own mix.",
+};
+const NOTES = {
+  mix: "Original bloom / sharp reflections: the first night's look. Light rain: a drizzle.",
+  outlines: "Goon outlines, gold vs red fire: in every setting.",
+};
 
 export const CONTROLS: Array<[string[], string]> = [
   [["W", "A", "S", "D"], "move"], [["MOUSE"], "aim"], [["LMB"], "fire"], [["RMB", "Q"], "bullet time"], [["SHIFT"], "shootdodge"],
@@ -75,13 +91,13 @@ function useFontsReady(): boolean {
 // ---- title ---------------------------------------------------------------------------------------
 
 /** The title's focus rows, top to bottom (↑↓ / Tab / D-pad move, ←→ change, Enter / A plays from any). */
-const TITLE_ROWS = ["radbro", "difficulty", "effects", "play"] as const;
+const TITLE_ROWS = ["radbro", "difficulty", "graphics", "play"] as const;
 type TitleRow = (typeof TITLE_ROWS)[number];
 
 export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean }) {
   const radbro = useUi(s => s.radbro);
   const diff = useUi(s => s.difficulty);
-  const effects = useFx(s => s.effects);
+  const preset = useGfx(s => s.preset);
   const fonts = useFontsReady();
   const go = ready && fonts;
   const [row, setRow] = useState<TitleRow>("radbro");
@@ -97,7 +113,7 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
         const i = RADBROS.findIndex(r => r.id === radbro);
         pick(RADBROS[(i + d + RADBROS.length) % RADBROS.length].id);
       } else if (row === "difficulty") setSetting("difficulty", stepOption(DIFFS, diff, d));
-      else if (row === "effects") setEffects(stepOption(EFFECTS, effects, d));
+      else if (row === "graphics") setPreset(stepOption(PRESETS, preset === "custom" ? "high" : preset, d));
       return;
     }
     return false;
@@ -111,7 +127,7 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
         <div className={`rp-cards rp-focusrow${row === "radbro" ? " focus" : ""}`} {...focus("radbro")}>
           {RADBROS.map(r => (
             <button key={r.id} type="button" onClick={() => pick(r.id)} data-testid={`pick-${r.id}`} className={`rp-panel rp-card${radbro === r.id ? " on" : ""}`} style={radbro === r.id ? { borderColor: r.color } : undefined}>
-              <img src={`/ui/radbro${r.id}.webp`} alt="" style={radbro === r.id ? { borderBottomColor: r.color } : undefined} />
+              <img src={assetUrl(`/ui/radbro${r.id}.webp`)} alt="" style={radbro === r.id ? { borderBottomColor: r.color } : undefined} />
               <div className="who">
                 <div className="id" style={{ color: r.color }}>RADBRO {r.name}</div>
                 <div className="d">{r.blurb}</div>
@@ -121,9 +137,9 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
         </div>
         <div className="rp-row">
           <div className={`grp rp-focusrow${row === "difficulty" ? " focus" : ""}`} {...focus("difficulty")} data-testid="title-difficulty"><span className="h">DIFFICULTY</span><Seg value={diff} options={DIFFS} onChange={d => setSetting("difficulty", d)} /></div>
-          <div className={`grp rp-focusrow${row === "effects" ? " focus" : ""}`} {...focus("effects")} data-testid="title-effects"><span className="h">EFFECTS</span><Seg value={effects} options={EFFECTS} onChange={setEffects} /></div>
+          <div className={`grp rp-focusrow${row === "graphics" ? " focus" : ""}`} {...focus("graphics")} data-testid="title-graphics"><span className="h">GRAPHICS</span><Seg value={preset as Preset} options={PRESETS_SHORT} onChange={setPreset} /></div>
           <div className="grp" style={{ maxWidth: 330, font: "700 17px/1.3 var(--type)", opacity: 0.7, alignSelf: "flex-end" }}>
-            {effects === "clean" ? "clean: no bloom, no rain on the lens. you see who's shooting." : "full: the rain, the bloom, the mirror puddles."}
+            {PRESET_NOTES[preset]}{preset === "custom" ? "" : " the rest: pause menu."}
           </div>
           <button type="button" className={`rp-mbtn primary rp-play${row === "play" ? " sel" : ""}`} onClick={onPlay} disabled={!go} data-testid="play" {...focus("play")}>
             {go ? "PLAY" : "LOADING…"}{go && <span className="k">ENTER</span>}
@@ -196,7 +212,7 @@ type Row = { id: string; section?: string; name: string; control: React.ReactNod
 
 function useSettingRows(tab: Tab): Row[] {
   const ui = useUi();
-  const effects = useFx(s => s.effects);
+  const gfx = useGfx();
   return useMemo((): Row[] => {
     const seg = <T extends string>(id: string, section: string | undefined, name: string, value: T, options: ReadonlyArray<readonly [T, string]>, set: (v: T) => void, extra?: Partial<Row>, swatch?: Partial<Record<T, string>>): Row => ({
       id, section, name, control: <Seg value={value} options={options} onChange={set} swatch={swatch} />,
@@ -210,8 +226,12 @@ function useSettingRows(tab: Tab): Row[] {
       step: dir => setVolume(k, ui.vol[k] + dir * 5),
     });
     if (tab === "display") return [
-      seg("fx", "PICTURE", "Effects", effects, EFFECTS, setEffects, { note: EFFECTS_NOTE }),
-      seg("quality", undefined, "Quality", ui.quality, QUALITY, v => setSetting("quality", v)),
+      seg("preset", "GRAPHICS", "Preset", gfx.preset as Preset, PRESETS, setPreset, { note: PRESET_NOTES[gfx.preset] }),
+      seg("bloom", undefined, "Bloom", gfx.bloom, BLOOMS, v => setGfx("bloom", v)),
+      seg("reflections", undefined, "Reflections", gfx.reflections, REFLS, v => setGfx("reflections", v)),
+      seg("rain", undefined, "Rain", gfx.rain, RAINS, v => setGfx("rain", v), { note: NOTES.mix }),
+      seg("res", undefined, "Resolution", `${gfx.res}` as `${Res}`, RESES, v => setGfx("res", Number(v) as Res)),
+      { id: "outlines", name: "Outlines", control: <span className="rp-fixed">ALWAYS ON</span>, note: NOTES.outlines },
       seg("hudSize", "HUD", "HUD size", ui.hudSize, SIZES, v => setSetting("hudSize", v)),
       seg("threats", undefined, "Threat markers", ui.threats, THREATS, v => setSetting("threats", v)),
       seg("dmgColour", undefined, "Damage colour", ui.dmgColour, DMG, v => setSetting("dmgColour", v), undefined, DMG_SW),
@@ -239,7 +259,7 @@ function useSettingRows(tab: Tab): Row[] {
         step: () => setSetting("muted", !ui.muted), activate: () => setSetting("muted", !ui.muted),
       },
     ];
-  }, [tab, ui, effects]);
+  }, [tab, ui, gfx]);
 }
 
 function Settings({ tab, setTab, focus, setFocus, active }: { tab: Tab; setTab: (t: Tab) => void; focus: number; setFocus: (i: number) => void; active: boolean }) {
@@ -252,7 +272,7 @@ function Settings({ tab, setTab, focus, setFocus, active }: { tab: Tab; setTab: 
       {rows.map((r, i) => (
         <div key={r.id} style={{ display: "contents" }}>
           {r.section && <h3>{r.section}</h3>}
-          <div className={`rp-set${active && i === focus ? " focus" : ""}`} onMouseEnter={() => setFocus(i)} onClick={() => setFocus(i)}>
+          <div className={`rp-set${active && i === focus ? " focus" : ""}`} onMouseEnter={() => setFocus(i)} onClick={() => setFocus(i)} ref={active && i === focus ? el => el?.scrollIntoView({ block: "nearest" }) : undefined}>
             <div className="name">{r.name}</div>
             <div>{r.control}</div>
           </div>
@@ -388,7 +408,7 @@ export function ResultsScreen({ onRetry, onTitle }: { onRetry: () => void; onTit
       <div className="rp-dim" style={{ background: "rgba(5,6,12,0.45)" }} />
       <div className="rp-page rp-z">
         <div className="rp-panel rp-portrait" style={{ borderColor: bro.color }}>
-          <img src={`/ui/radbro${bro.id}.webp`} alt="" />
+          <img src={assetUrl(`/ui/radbro${bro.id}.webp`)} alt="" />
           <div className="who">
             <div className="id" style={{ color: bro.color }}>RADBRO {bro.name}</div>
             <div className="d">{bro.blurb}</div>

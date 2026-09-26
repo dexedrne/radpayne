@@ -2,6 +2,13 @@
 // CDN, parsed per goon, lit, scaled so the Head bone sits where the sim's hit skeleton expects it, and
 // given the Radbro clips retargeted onto their rig. Never blocks the game: a goon shows a stand-in
 // until its model is ready and keeps it when the fetch fails.
+// Loading (the load audit): the files are fetched straight from prnth's repo at runtime (they are not
+// part of this one), ~1.5 MB each. The downloads start when the room's level is read (page open for
+// room 1), the goons that are there from the start first and the ones a trigger brings in after them
+// at low priority. The bytes of the pinned commit never change, so they are kept in the browser's
+// Cache Storage (radpayne-pockit-<sha>, at most CACHE_MAX models) and a repeat visit reads them from
+// disk; each visit's gang is mostly girls already in that cache plus a couple of new faces
+// (pickPockits), so the gang still changes from visit to visit.
 import { AnimationClip, AnimationUtils, Group, Vector3, type Material, type Mesh, type Object3D } from "three";
 import { MeshStandardNodeMaterial } from "three/webgpu";
 import type { VRM } from "@pixiv/three-vrm";
@@ -16,6 +23,10 @@ export const POCKIT_SHA = "8009d19eb16815e2f5e39f0fb7adaac69cf691c8";
 const STALL_MS = 10_000;
 /** Hard cap per mirror. */
 const MAX_MS = 45_000;
+/** Models kept in Cache Storage (~1.5 MB each). */
+const CACHE_MAX = 40;
+const CACHE_NAME = `radpayne-pockit-${POCKIT_SHA.slice(0, 8)}`;
+export { FRESH_MIN, pickPockits } from "./picks.ts";
 
 export const pockitUrls = (n: number) => [
   `https://raw.githubusercontent.com/prnthh/Pockit/${POCKIT_SHA}/web/${n}.vrm`,
@@ -24,8 +35,53 @@ export const pockitUrls = (n: number) => [
 
 const bytes = new Map<number, Promise<{ buf: ArrayBuffer; url: string } | null>>();
 
+/** The model's canonical cache key (whatever mirror served it). */
+const cacheKey = (n: number) => pockitUrls(n)[0];
+
+async function openCache(): Promise<Cache | null> {
+  try {
+    return typeof caches === "undefined" ? null : await caches.open(CACHE_NAME);
+  } catch {
+    return null; // private mode, blocked storage, an http origin
+  }
+}
+
+/** Model numbers already in the browser cache (oldest first). */
+export async function cachedPockits(): Promise<number[]> {
+  const c = await openCache();
+  if (!c) return [];
+  try {
+    return (await c.keys()).map(r => Number(/\/(\d+)\.vrm$/.exec(r.url)?.[1])).filter(n => Number.isFinite(n) && n > 0);
+  } catch {
+    return [];
+  }
+}
+
+async function fromCache(n: number): Promise<ArrayBuffer | null> {
+  const c = await openCache();
+  if (!c) return null;
+  try {
+    const r = await c.match(cacheKey(n));
+    return r ? await r.arrayBuffer() : null;
+  } catch {
+    return null;
+  }
+}
+
+async function toCache(n: number, buf: ArrayBuffer): Promise<void> {
+  const c = await openCache();
+  if (!c) return;
+  try {
+    await c.put(cacheKey(n), new Response(buf.slice(0), { headers: { "content-type": "application/octet-stream" } }));
+    const keys = await c.keys();
+    for (const k of keys.slice(0, Math.max(0, keys.length - CACHE_MAX))) await c.delete(k);
+  } catch {
+    /* quota: fine, next visit downloads it again */
+  }
+}
+
 /** One mirror: streamed, aborted on a stall or the hard cap. Throws with the reason. */
-async function download(url: string): Promise<ArrayBuffer> {
+async function download(url: string, priority: RequestPriority = "auto"): Promise<ArrayBuffer> {
   const ctl = new AbortController();
   let why = "";
   const cap = setTimeout(() => { why = `over ${MAX_MS / 1000} s`; ctl.abort(); }, MAX_MS);
@@ -35,7 +91,7 @@ async function download(url: string): Promise<ArrayBuffer> {
     stall = setTimeout(() => { why = `stalled for ${STALL_MS / 1000} s`; ctl.abort(); }, STALL_MS);
   };
   try {
-    const r = await fetch(url, { mode: "cors", signal: ctl.signal });
+    const r = await fetch(url, { mode: "cors", signal: ctl.signal, priority });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     alive();
     if (!r.body) return await r.arrayBuffer();
@@ -61,15 +117,19 @@ async function download(url: string): Promise<ArrayBuffer> {
   }
 }
 
-/** Start (once per number) the download of a model: every mirror in turn, each failure logged. A
- *  failed number is forgotten, so a later call tries again. */
-export function fetchPockit(n: number): Promise<{ buf: ArrayBuffer; url: string } | null> {
+/** Start (once per number) the download of a model: the browser cache first, then every mirror in
+ *  turn, each failure logged. A failed number is forgotten, so a later call tries again. */
+export function fetchPockit(n: number, priority: RequestPriority = "auto"): Promise<{ buf: ArrayBuffer; url: string } | null> {
   let p = bytes.get(n);
   if (p) return p;
   p = (async () => {
+    const hit = await fromCache(n);
+    if (hit) return { buf: hit, url: cacheKey(n) };
     for (const url of pockitUrls(n)) {
       try {
-        return { buf: await download(url), url };
+        const buf = await download(url, priority);
+        void toCache(n, buf);
+        return { buf, url };
       } catch (e) {
         console.info(`[milady] #${n}: ${new URL(url).host} failed (${e instanceof Error ? e.message : String(e)})`);
       }

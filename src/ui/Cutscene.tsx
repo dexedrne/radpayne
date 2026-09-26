@@ -11,7 +11,8 @@
 // A caption appears when its line starts (with its voice), never before; a panel's `maxW` (fraction of
 // the width) and `size` (font scale) keep a long caption off the faces next to the painted box.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { narrate, sampleDuration, samplesReady, stopNarration } from "../audio/sfx.ts";
+import { narrate, sampleDuration, samplesFor, stopNarration } from "../audio/sfx.ts";
+import { assetUrl } from "../app/assets.ts";
 import { Keycap } from "./hud/Keycap.tsx";
 import { usePadConnected, usePadInput, type MenuAction } from "./menu.ts";
 import "./hud/tokens.css";
@@ -33,9 +34,9 @@ const TONES: Record<string, string> = {
   guns: "radial-gradient(ellipse at 40% 50%, rgba(255,200,120,0.35), transparent 50%), linear-gradient(135deg, #0a0a10, #1c1410)",
 };
 
-function Art({ p, zoom }: { p: Panel; zoom: boolean }) {
+function Art({ p, zoom, load = true }: { p: Panel; zoom: boolean; load?: boolean }) {
   const style: React.CSSProperties = { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transformOrigin: "60% 45%", animation: zoom ? "rp-push 14s ease-out forwards" : undefined };
-  if (p.image) return <img src={p.image} alt="" style={style} draggable={false} />;
+  if (p.image && load) return <img src={p.image} alt="" style={style} draggable={false} />;
   return <div style={{ ...style, background: TONES[p.tone ?? "street"] ?? TONES.street }} />;
 }
 
@@ -65,8 +66,14 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
     setI(at.current);
   }, [data, finish]);
 
-  // the narrator's voice files (decoded after the PLAY gesture); start the panels once they are in
-  useEffect(() => { let live = true; void samplesReady(3500).then(() => { if (live) setReady(true); }); return () => { live = false; }; }, []);
+  // this cutscene's voice files (decoded after the PLAY gesture); start the panels once they are in
+  useEffect(() => {
+    let live = true;
+    const keys = data.panels.flatMap(p => p.lines.filter(l => l.audio).map(l => `voices/${l.speaker ?? "narrator"}/${l.audio}`));
+    void samplesFor(keys, 3500).then(() => { if (live) setReady(true); });
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // read the panel's lines one after another, then turn the page
   useEffect(() => {
@@ -128,7 +135,8 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
       <div style={{ display: "flex", gap: 8 }}>
         {data.panels.map((q, k) => (
           <div key={k} style={{ position: "relative", width: 58, height: 39, overflow: "hidden", border: `2px solid ${k === i ? "#ff3fa8" : "#2a2a30"}`, opacity: k <= i ? 1 : 0.35 }}>
-            <Art p={q} zoom={false} />
+            {/* panels further ahead show their tone until the next one is up (a skip wastes no bandwidth) */}
+            <Art p={q} zoom={false} load={k <= i + 1} />
           </div>
         ))}
       </div>
@@ -141,14 +149,40 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
 
 const audioLen = (line: string, speaker = "narrator") => sampleDuration(`voices/${speaker}/${line}`);
 
-export async function loadCutscene(id: string): Promise<CutsceneData | null> {
-  try {
-    const r = await fetch(`/cutscenes/${id}.json`);
-    if (!r.ok) return null;
-    const d = (await r.json()) as CutsceneData;
-    for (const im of d.panels.map(p => p.image).filter(Boolean) as string[]) { const img = new Image(); img.src = im; }
-    return d;
-  } catch {
-    return null;
+const cutscenes = new Map<string, Promise<CutsceneData | null>>();
+
+/** A cutscene's panels (fetched once; the image URLs are versioned, assets.ts). */
+function fetchCutscene(id: string): Promise<CutsceneData | null> {
+  let p = cutscenes.get(id);
+  if (!p) {
+    p = (async () => {
+      try {
+        const r = await fetch(assetUrl(`/cutscenes/${id}.json`));
+        if (!r.ok) return null;
+        const d = (await r.json()) as CutsceneData;
+        for (const q of d.panels) if (q.image) q.image = assetUrl(q.image);
+        return d;
+      } catch {
+        return null;
+      }
+    })();
+    p.then(d => { if (!d) cutscenes.delete(id); }, () => cutscenes.delete(id));
+    cutscenes.set(id, p);
   }
+  return p;
+}
+
+export async function loadCutscene(id: string): Promise<CutsceneData | null> {
+  const d = await fetchCutscene(id);
+  // the first two panels now; each later one while the panel before it is read (the strip asks for it)
+  if (d) for (const im of d.panels.slice(0, 2).map(p => p.image).filter(Boolean) as string[]) { const img = new Image(); img.src = im; }
+  return d;
+}
+
+/** Warm a cutscene ahead of time at low priority (the title: cutscene 1's first `panels` panels; the
+ *  rest load with the strip when it opens). */
+export function prefetchCutscene(id: string, panels = Infinity): void {
+  void fetchCutscene(id).then(d => {
+    for (const im of (d?.panels ?? []).slice(0, panels).map(p => p.image).filter(Boolean) as string[]) void fetch(im, { priority: "low" }).catch(() => undefined);
+  });
 }

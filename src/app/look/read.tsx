@@ -21,8 +21,8 @@
 import { useEffect, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
-  AdditiveBlending, BufferAttribute, BufferGeometry, Color, DoubleSide, Layers, Mesh, Sphere, Vector3, Vector4,
-  type Camera, type Material, type Object3D, type PerspectiveCamera, type Scene,
+  AdditiveBlending, BufferAttribute, BufferGeometry, Color, DoubleSide, Layers, Mesh, PerspectiveCamera, Sphere, Vector3, Vector4,
+  type Camera, type Material, type Object3D, type Scene,
 } from "three";
 import { MeshBasicNodeMaterial, MeshStandardNodeMaterial, type PassNode, type WebGPURenderer } from "three/webgpu";
 import {
@@ -127,8 +127,20 @@ function tag(o: Object3D, goon: Vector4 | null, actor: boolean, player = false):
   for (const c of o.children) tag(c, g, a, me);
 }
 
-/** The enemy mask pass: r = goon coverage (+ hit flash), g = firing flash, b = distance (m). */
+/** Tag the whole scene for the mask pass now (the shader warm-up needs the layers before the next
+ *  periodic walk: models mounted a frame ago). */
+export function tagForMask(scene: Object3D): void {
+  goonRoots.clear();
+  tag(scene, null, false);
+}
+
+/** The enemy mask pass: r = goon coverage (+ hit flash), g = firing flash, b = distance (m). It has
+ *  its own camera, kept on the view camera every frame (syncMaskCamera): a render list of its own, so
+ *  its shaders can be built ahead (look/compile.ts) without the scene pass's lights leaking into them. */
 export function enemyMaskPass(scene: Scene, camera: Camera, gl: WebGPURenderer): PassNode {
+  const own = new PerspectiveCamera();
+  syncCamera(own, camera);
+  camera = own;
   const mat = new MeshBasicNodeMaterial();
   mat.fog = false;
   const m: N = userData("rpMask", "vec4");
@@ -157,6 +169,21 @@ export function enemyMaskPass(scene: Scene, camera: Camera, gl: WebGPURenderer):
     }
   };
   return p;
+}
+
+function syncCamera(to: PerspectiveCamera, from: Camera): void {
+  from.updateMatrixWorld();
+  from.matrixWorld.decompose(to.position, to.quaternion, to.scale);
+  const f = from as PerspectiveCamera;
+  if (f.isPerspectiveCamera) { to.fov = f.fov; to.aspect = f.aspect; to.near = f.near; to.far = f.far; to.zoom = f.zoom; }
+  to.projectionMatrix.copy(from.projectionMatrix);
+  to.projectionMatrixInverse.copy(from.projectionMatrixInverse);
+  to.updateMatrixWorld();
+}
+
+/** Per frame, before the render: the mask pass's camera onto the view camera. */
+export function syncMaskCamera(maskPass: PassNode, camera: Camera): void {
+  syncCamera((maskPass as N).camera as PerspectiveCamera, camera);
 }
 
 /** Composites the goon outline / fill / flashes onto the HDR image (before tone mapping). `edge` swaps
@@ -248,7 +275,7 @@ class Quads {
     g.setIndex(idx);
     g.boundingSphere = new Sphere(new Vector3(), 1e6);
     g.setDrawRange(0, 0);
-    const m = new MeshBasicNodeMaterial({ transparent: true, depthWrite: false, blending: AdditiveBlending, side: DoubleSide });
+    const m = new MeshBasicNodeMaterial({ transparent: true, depthWrite: false, blending: AdditiveBlending, side: DoubleSide, forceSinglePass: true });
     m.fog = false;
     m.userData.rpOwn = true;
     const q: N = uv();

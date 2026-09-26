@@ -37,6 +37,8 @@
 .rp-seg button { font: 400 21px/1 var(--display); letter-spacing: 2px; padding: 8px 14px 6px; border: 2px solid rgba(243, 234, 216, 0.45); color: rgba(243, 234, 216, 0.75); background: transparent; margin: 0 -2px 0 0; cursor: pointer; display: inline-flex; align-items: center; }
 .rp-seg button.on { background: var(--paper); color: var(--ink); border-color: var(--paper); position: relative; z-index: 1; }
 .rp-seg button:focus-visible { outline: 2px solid var(--pink); outline-offset: 1px; }
+/* a setting that is not a choice (Outlines: always on): drawn like a selected segment, no hover */
+.rp-fixed { display: inline-block; font: 400 21px/1 var(--display); letter-spacing: 2px; padding: 8px 14px 6px; border: 2px solid var(--paper); background: var(--paper); color: var(--ink); }
 .rp-seg .sw { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--ink); margin-right: 6px; box-sizing: border-box; }
 .rp-slider { display: flex; align-items: center; gap: 14px; }
 .rp-slider .track { position: relative; width: 260px; height: 8px; border: 2px solid var(--ink); outline: 1px solid rgba(243, 234, 216, 0.45); background: rgba(243, 234, 216, 0.12); cursor: pointer; }
@@ -212,7 +214,9 @@
 .rp-mbtn:disabled { opacity: 0.5; cursor: default; }
 .rp-mbtn:focus { outline-offset: 0; }
 .rp-confirm { font-size: 20px; }
-.rp-settings { width: 660px; padding: 0 24px 18px; display: flex; flex-direction: column; gap: 4px; }
+.rp-settings { width: 660px; padding: 0 24px 18px; display: flex; flex-direction: column; gap: 4px; max-height: calc(100vh - 32px); overflow-y: auto; }
+/* on a short screen the panel scrolls; its rows keep their height (they never squeeze over each other) */
+.rp-settings .rp-set, .rp-settings h3, .rp-settings .rp-tabs, .rp-settings .rp-foot-hint { flex-shrink: 0; }
 .rp-tabs { display: flex; margin: 0 -24px 8px; border-bottom: 3px solid var(--paper); }
 .rp-tabs button { flex: 1; text-align: center; font: 400 24px/1 var(--display); letter-spacing: 3px; padding: 14px 0 10px; color: rgba(243, 234, 216, 0.6); background: transparent; border: 0; cursor: pointer; }
 .rp-tabs button.on { background: var(--paper); color: var(--ink); }

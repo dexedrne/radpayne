@@ -91,7 +91,8 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
     Neon near a goon on screen dims, and everything past the fight (~46 m) is dimmer.
   - Gunfire has one colour code: gold / white is yours (flashes, bullets, where your shots land),
     red is theirs (muzzle flashes, tracers, bullets). Their misses kick up only dull grit.
-  - Rain, bloom and puddle reflections stay subtle; the pause menu's Effects: Clean turns them off.
+  - Rain, bloom and puddle reflections stay subtle by default. The goon outlines and the gold vs red
+    gunfire stay on in every graphics setting.
   - The rave has no rain and no reflections, a thin haze and a gentle bloom. The lasers fade out
     around the crosshair and switch off with the first shot, when the LED floor and wall dim and
     warm work lights come up. Armed girls get a thin pink-red rim; the crowd is desaturated, holds
@@ -100,6 +101,21 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
     the pink-red rim and outline. The outline never draws over the player's own body.
   - The final-kill cam keeps posts, pillars and steam away from its lens; when the bullet's path runs
     through steam it skips the chase and holds on the victim.
+- **Graphics settings** (pause menu, Display; the preset is on the title too), saved in the browser:
+  - Presets: Low (no bloom, no puddle reflections, a light drizzle, 75 % resolution, no MSAA), Medium
+    (subtle bloom, a plain wet road, thin rain; the default on the WebGL2 fallback), High (subtle bloom,
+    soft reflections, thin rain; the default with WebGPU) and Cinematic (the original bloom and the sharp
+    half-res mirror puddles, thin rain).
+  - Or one control at a time: Bloom (Off / Subtle / Original), Reflections (Off / Soft / Sharp), Rain
+    (Off / Thin / Light: a drizzle; never denser than the thin default) and Resolution (50-100 %).
+  - Changing one applies at once. Turning the puddle mirror on or off recompiles the street's shaders
+    in the background, so the picture holds for a moment.
+- **Loading:** the title only needs the page. The room's shaders compile in the background while the
+  title is up (the street fades in behind it), and PLAY works at once. The Radbro files, the gang's
+  models and the sounds load behind the title and cutscene 1; the loading card before a room shows
+  what it is still waiting for. The later rooms' sounds and clips load while room 1 plays. Files in
+  `public/` are fetched by content-hashed URLs and cached for good (`vercel.json`); the Pockit models are
+  kept in the browser's cache, and each visit's gang mixes girls already there with a couple of new ones.
 - **Dev URL flags:**
   - `?room=<id>` loads a level file.
   - `?skip` skips the title and the cutscenes (`&cutscene` plays cutscene 1 anyway, `&ending` the
@@ -111,15 +127,15 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
   - `?markers` shows the level markers.
   - `?milady=0` uses stand-ins instead of the Pockit models.
   - `?webgl2` forces the WebGL2 renderer.
-  - `?q=low` switches to low quality.
+  - `?gfx=low|medium|high|cinematic` picks a graphics preset for one page load (`?q=low` = Low).
   - `?cam=<camera marker>` holds the camera on a shot (room 1: `cam-wide`, `cam-club`, `cam-canyon`;
     room 2: `cam-floor`, `cam-dj`; room 3: `cam-hall`, `cam-store`, `cam-door`, `cam-office`,
     `cam-manager`, `cam-lobby`).
   - `?loadout=shotgun,smgs` starts with those weapons (the last one in hand).
   - `?look=fight` holds the club in its fight lighting; `?extra=heavy` adds a heavy by the staff door
     (`?cam=cam-heavy`); `?still` hides the click-to-fight veil (for screenshots without the bot).
-  - `?fx=clean` starts with Effects on Clean (also in the pause menu): no rain near the camera, no
-    bloom, a plain wet sheen instead of the puddle reflections. Works in production builds too.
+  - `?fx=clean` picks the Low preset for one page load (`?fx=full`: High). Works in production builds
+    too.
 
 The simulation runs at a fixed 120 Hz and is deterministic for a given level, seed, difficulty and
 input log. Bullet time is a time scale on it.
@@ -169,4 +185,6 @@ your own thing.
   permission. They load at runtime from one pinned commit and are not part of this repo.
 - Radbros #652, #4764, #2564 and #723 are dexedrne's own, used with permission from the Radbro Webring
   dev. The models come from RadRun.
+- Fonts: Bebas Neue by Dharma Type and Courier Prime by the Courier Prime Project Authors, under the
+  SIL Open Font License 1.1 (the licences are next to the files in `public/fonts`).
 - By [@dexedrne](https://x.com/dexedrne).

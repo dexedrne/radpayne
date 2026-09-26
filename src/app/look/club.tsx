@@ -16,6 +16,7 @@
 // its own look (CrowdView: desaturated, 0.12 lift, cyan glow sticks, no rim).
 // Lasers: at most 12 additive hairline beams (6 on Low), opacity <= 0.2, faded out within ~12 % of the
 // screen width around the crosshair, so a beam never crosses the aim point at full strength.
+import { assetUrl } from "../assets.ts";
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
@@ -34,8 +35,10 @@ import { FRAME, renderGate } from "../frame.ts";
 import { clubPulse } from "../../audio/sfx.ts";
 import { useUi } from "../../ui/store.ts";
 import { MarkerLights } from "./lights.tsx";
-import { CombatRead, enemyMaskPass, enemyOutline, neonDim, readFx } from "./read.tsx";
+import { CombatRead, enemyMaskPass, enemyOutline, syncMaskCamera, tagForMask, neonDim, readFx } from "./read.tsx";
 import { CameraKey, HOSTILE_RIM, WORLD_UV, hostileEmissive, isActor, readTokens, type Tokens } from "./tokens.ts";
+import { useGfx, type Bloom } from "./gfx.ts";
+import { registerLook } from "./compile.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type N = any;
@@ -43,7 +46,8 @@ type N = any;
 /** Readability numbers (plan section 8). */
 export const CLUB = {
   exposure: 1.3,
-  bloom: { strength: 0.3, radius: 0.25, threshold: 0.85 },
+  /** Bloom per graphics setting: subtle (the default) and a stronger glow for Bloom: Original. */
+  bloom: { subtle: { strength: 0.3, radius: 0.25, threshold: 0.85 }, original: { strength: 0.62, radius: 0.45, threshold: 0.7 } },
   fog: { color: "#1a1420", density: 0.008 },
   background: "#050407",
   hemi: { party: { sky: "#3b2c58", ground: "#150d1a", intensity: 0.7 }, fight: { sky: "#8a8290", ground: "#2e2628", intensity: 1.12 } },
@@ -197,7 +201,7 @@ function makeLaserMesh(n: number): { mesh: Mesh; pos: Float32Array; col: Float32
   g.setAttribute("uv", new BufferAttribute(uvs, 2));
   g.setIndex(idx);
   g.boundingSphere = new Sphere(new Vector3(), 1e6);
-  const m = new MeshBasicNodeMaterial({ transparent: true, depthWrite: false, blending: AdditiveBlending, side: DoubleSide });
+  const m = new MeshBasicNodeMaterial({ transparent: true, depthWrite: false, blending: AdditiveBlending, side: DoubleSide, forceSinglePass: true });
   m.fog = false;
   m.userData.rpOwn = true;
   const q: N = uv();
@@ -316,7 +320,7 @@ function MirrorBall({ level, s }: { level: LevelData; s: Session }) {
   const m = level.markers.find(k => k.kind === "fx" && k.data.fx === "mirrorball");
   const ball = useMemo(() => {
     if (!m) return null;
-    const tex = new TextureLoader().load("/textures/club/mirrorball_tiles.webp");
+    const tex = new TextureLoader().load(assetUrl("/textures/club/mirrorball_tiles.webp"));
     tex.wrapS = tex.wrapT = RepeatWrapping;
     tex.repeat.set(6, 3);
     const mat = new MeshStandardMaterial({ map: tex, roughness: 0.12, metalness: 0.8, emissive: new Color(0.12, 0.1, 0.14), emissiveMap: tex });
@@ -331,20 +335,32 @@ function MirrorBall({ level, s }: { level: LevelData; s: Session }) {
 }
 
 // ------------------------------------------------------------------ render pipeline
-function ClubPost({ low }: { low: boolean }) {
+function ClubPost({ msaa, level }: { msaa: boolean; level: Bloom }) {
   const gl = useThree(s => s.gl) as unknown as WebGPURenderer;
   const scene = useThree(s => s.scene);
   const camera = useThree(s => s.camera);
-  const p = useMemo(() => {
+  const passes = useMemo(() => {
     const pipeline = new RenderPipeline(gl);
-    const scenePass: N = pass(scene, camera, { samples: low ? 0 : 4 });
+    const samples = msaa ? 4 : 0;
+    const scenePass: N = pass(scene, camera, { samples });
+    scenePass.renderTarget.samples = samples;
     const maskPass: N = enemyMaskPass(scene, camera, gl);
+    return { pipeline, scenePass, maskPass };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gl, scene, msaa]);
+  const bloomOn = level !== "off";
+  const bloomNode = useMemo(() => {
+    const { pipeline, scenePass, maskPass } = passes;
     const col: N = scenePass.getTextureNode("output");
-    const B = CLUB.bloom;
-    // only the HDR emitters bloom (threshold 0.85), gently: halos stay small, no body hides in one
-    const b: N = bloom(col, low ? B.strength * 0.7 : B.strength, B.radius, B.threshold);
-    b.setResolutionScale(low ? 0.25 : 0.5);
-    let c: N = col.rgb.add(b.rgb);
+    let c: N = col.rgb;
+    let b: N = null;
+    if (bloomOn) {
+      // only the HDR emitters bloom (threshold 0.85), gently: halos stay small, no body hides in one
+      const B = CLUB.bloom.subtle;
+      b = bloom(col, B.strength, B.radius, B.threshold);
+      b.setResolutionScale(0.5);
+      c = c.add(b.rgb);
+    }
     // the room is small (fights at 5-25 m): a lighter far fill than the street's, or a girl by the
     // bar turns into a glowing pink cut-out
     c = enemyOutline(c, maskPass, RIM_EDGE, 0.14, 0.4);
@@ -352,23 +368,32 @@ function ClubPost({ low }: { low: boolean }) {
     const v = smoothstep(0.5, 1.05, length(uv().sub(0.5).mul(vec2(1.0, 0.8))));
     c = c.mul(float(1).sub(v.mul(CLUB.vignette)));
     pipeline.outputNode = vec4(c, 1);
-    return { pipeline, scenePass, maskPass };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gl, scene, low]);
-  useEffect(() => () => p.pipeline.dispose(), [p]);
+    pipeline.needsUpdate = true;
+    return b;
+  }, [passes, bloomOn]);
+  useEffect(() => {
+    if (!bloomNode) return;
+    const B = level === "original" ? CLUB.bloom.original : CLUB.bloom.subtle;
+    bloomNode.strength.value = B.strength;
+    bloomNode.radius.value = B.radius;
+    bloomNode.threshold.value = B.threshold;
+  }, [bloomNode, level]);
+  useEffect(() => () => passes.pipeline.dispose(), [passes]);
+  useEffect(() => registerLook(gl, scene, camera, passes, undefined, () => tagForMask(scene)), [gl, scene, camera, passes]);
   useFrame(st => {
-    p.scenePass.camera = st.camera;
-    p.maskPass.camera = st.camera;
+    passes.scenePass.camera = st.camera;
+    syncMaskCamera(passes.maskPass, st.camera);
     if (renderGate.skip) return; // a card hides the canvas: the last frame stays
-    p.pipeline.render();
+    passes.pipeline.render();
   }, 1);
   return null;
 }
 
 // ------------------------------------------------------------------ the look
-export function ClubLook({ level, s, lowQuality }: { level: LevelData; s?: Session; lowQuality?: boolean }) {
+export function ClubLook({ level, s }: { level: LevelData; s?: Session; lowQuality?: boolean }) {
   const scene = useThree(st => st.scene);
-  const low = !!lowQuality;
+  const gfx = useGfx();
+  const low = !gfx.msaa; // the Low preset: fewer lasers and moving lights
   useEffect(() => {
     const prevBg = scene.backgroundNode, prevFog = scene.fogNode;
     scene.backgroundNode = color(CLUB.background);
@@ -418,7 +443,7 @@ export function ClubLook({ level, s, lowQuality }: { level: LevelData; s?: Sessi
       <MirrorBall level={level} s={s!} />
       <Lasers level={level} low={low} />
       {s && <CombatRead s={s} />}
-      <ClubPost low={low} />
+      <ClubPost msaa={gfx.msaa} level={gfx.bloom} />
     </>
   );
 }

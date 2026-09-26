@@ -11,19 +11,23 @@
 //    vignette. Sky gradient + exponential fog thinned with height (towers poke out of the haze).
 //  - Rain streaks around the camera, drips off awnings and fire escapes, steam from the manholes. All
 //    of it runs on a world clock that follows the sim's timeScale: bullet time slows the rain too.
-//  - Quality Low: reflector at an eighth resolution, bloom at quarter res and weaker, less than half
-//    the rain, no MSAA.
+//  - Graphics settings (gfx.ts): Bloom off / subtle / original (the first preview's 0.85 glow), Reflections
+//    off (a plain wet sheen) / soft (quarter-res, blurred, dimmed) / sharp (the first preview's half-res
+//    mirror puddles), Rain off / thin / light (never denser than 2,600 thin streaks), MSAA per preset.
+//    Soft vs sharp and the bloom levels are uniforms (no recompile); turning the mirror on or off, or
+//    MSAA, rebuilds shaders behind the render gate (compile.ts).
 //  - Readability first (READ below): the fight must read through the mood. Characters get a camera
 //    key light and a small self-lift so they never sink into the dark; the rain clears out near the
 //    camera and thins in the middle of the screen; bloom only takes the HDR neon / lamps; puddle
 //    reflections are soft-clipped and kept dimmer than the characters; the big shop windows are
-//    toned down; vignette and blue grade are light. Effects "clean" (fx.ts) goes further: no rain
-//    near the camera, no bloom, a plain wet sheen instead of reflections.
+//    toned down; vignette and blue grade are light. The readability layer (read.tsx) is on in every
+//    graphics preset.
 //  - The fight is 23-46 m out, so read.tsx adds a combat layer on top: a warm outline and a far fill
 //    on every visible live goon (post), red enemy fire that lights up the shooter, gold player tracers
 //    from the muzzle, and impact / hit glows that keep a minimum size downrange. The steam plumes fade
 //    where they sit on a line of sight to a goon, and the puddles only reflect from ~4-12 m out (the
 //    lamps no longer mirror as hot blobs at the player's feet).
+import { assetUrl } from "../assets.ts";
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
@@ -33,7 +37,7 @@ import {
 import { MeshBasicNodeMaterial, MeshStandardNodeMaterial, RenderPipeline, type WebGPURenderer } from "three/webgpu";
 import {
   Fn, abs, attribute, cameraPosition, clamp, color, cross, densityFogFactor, dot, float, floor, fog, fract, hash, length, luminance,
-  materialColor, materialRoughness, max, mix, mx_noise_float, neutralToneMapping, normalView, normalWorld, normalize, pass,
+  materialColor, materialReference, materialRoughness, max, mix, mx_noise_float, neutralToneMapping, normalView, normalWorld, normalize, pass,
   positionLocal, positionViewDirection, positionWorld, pow, reflector, saturate, screenUV, sin, smoothstep,
   texture, uniform, uniformArray, uv, varying, vec2, vec3, vec4,
 } from "three/tsl";
@@ -43,8 +47,9 @@ import type { Session } from "../session.ts";
 import { FRAME, renderGate } from "../frame.ts";
 import { clubPulse } from "../../audio/sfx.ts";
 import { MarkerLights } from "./lights.tsx";
-import { useFx } from "./fx.ts";
-import { COMBAT, CombatRead, enemyMaskPass, enemyOutline, neonDim } from "./read.tsx";
+import { RAIN, useGfx, type Bloom, type Reflections } from "./gfx.ts";
+import { registerLook } from "./compile.ts";
+import { COMBAT, CombatRead, enemyMaskPass, enemyOutline, syncMaskCamera, tagForMask, neonDim } from "./read.tsx";
 import { CameraKey, WORLD_UV, isActor, readTokens, type Tokens } from "./tokens.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,7 +59,6 @@ type N = any; // TSL node graphs: the three typings are too narrow for chained s
 const SKY = { horizon: "#2f2638", mid: "#151829", zenith: "#05060b" };
 const FOG_COLOR = "#211e2e";
 const FOG_DENSITY = 0.0046; // light: the whole street stays clear, only the far blocks and skyline haze
-const RAIN_HIGH = 2600, RAIN_LOW = 1000;
 
 /** Readability tuning: the one place to trade mood for a clear view of the fight. */
 const READ = {
@@ -69,13 +73,20 @@ const READ = {
   /** Big low-gain emitters are dimmed so they stop pulling the eye: the shop windows (gain ~1) a lot,
    *  the skyline's windows (1.5) a little; neon and lamps (2.2+) keep their full gain. */
   softGlow: [[1.2, 0.45], [2, 0.75]],
-  bloom: { strength: 0.2, radius: 0.3, threshold: 1.05 },
-  /** Reflection gain in the puddles and on the damp street, after a soft clip (no hot lamp blobs).
-   *  near: metres from the camera over which reflections and gloss come in (the overhead lamps mirror
-   *  right at the player's feet, the bottom of the frame: kept at nearGain there, rougher puddles). */
-  refl: { puddle: 0.3, damp: 0.09, clip: 0.7, near: [4, 12], nearGain: 0.25, nearRough: 0.68 },
-  /** Rain: fully clear within near.x m of the camera, full from near.y; thinner in the screen centre. */
-  rainNear: { full: [4, 7], clean: [10, 15] },
+  /** Bloom per graphics setting: subtle (the default: only the HDR neon / lamps / tracers, never a lit
+   *  character or a wall) and the first preview's original glow. */
+  bloom: { subtle: { strength: 0.2, radius: 0.3, threshold: 1.05 }, original: { strength: 0.85, radius: 0.55, threshold: 0.62 } },
+  /** Reflections per graphics setting. soft (the default): the mirror at quarter res, blurred even in the
+   *  puddles, gain after a soft clip (no hot lamp blobs), faded over `near` metres from the camera (the
+   *  overhead lamps mirror right at the player's feet, the bottom of the frame: nearGain there, rougher
+   *  puddles). sharp: the first preview's half-res mirror puddles (no clip, no near fade). */
+  refl: {
+    soft: { res: 0.25, blur: [5.2, 2.2], puddle: 0.3, damp: 0.09, clip: 0.7, near: [4, 12], nearGain: 0.25, nearRough: 0.68, puddleRough: 0.45, ripple: [0.022, 0.15] },
+    sharp: { res: 0.5, blur: [4.2, 0], puddle: 1.0, damp: 0.3, clip: 0, near: [0, 0.001], nearGain: 1, nearRough: 0, puddleRough: 0.07, ripple: [0.014, 0.12] },
+  },
+  /** Rain: fully clear within near.x m of the camera, full from near.y (thin = the default streaks, light
+   *  = the drizzle, clear further out); thinner in the screen centre. */
+  rainNear: { thin: [4, 7], light: [10, 15] },
   rainCentre: 0.3,
   vignette: 0.2,
   steam: 0.12,
@@ -91,16 +102,37 @@ export const streetFx = {
   flicker: uniform(1),
   blink: uniform(1),
   /** Rain fades in between these distances from the camera (m). */
-  rainNear0: uniform(READ.rainNear.full[0] as number),
-  rainNear1: uniform(READ.rainNear.full[1] as number),
+  rainNear0: uniform(READ.rainNear.thin[0] as number),
+  rainNear1: uniform(READ.rainNear.thin[1] as number),
 };
+
+/** The puddle mirror's look (soft vs sharp are these values, not different shaders). */
+const S0 = READ.refl.soft;
+const reflFx = {
+  blurFar: uniform(S0.blur[0] as number), blurPuddle: uniform(S0.blur[1] as number),
+  gainDamp: uniform(S0.damp as number), gainPuddle: uniform(S0.puddle as number), clipInv: uniform(1 / S0.clip),
+  near0: uniform(S0.near[0] as number), near1: uniform(S0.near[1] as number), nearGain: uniform(S0.nearGain as number),
+  nearRough: uniform(S0.nearRough as number), puddleRough: uniform(S0.puddleRough as number),
+  ripple: uniform(S0.ripple[0] as number), rippleBase: uniform(S0.ripple[1] as number),
+};
+function setReflections(r: Reflections): void {
+  const v = r === "sharp" ? READ.refl.sharp : READ.refl.soft;
+  reflFx.blurFar.value = v.blur[0]; reflFx.blurPuddle.value = v.blur[1];
+  reflFx.gainDamp.value = v.damp; reflFx.gainPuddle.value = v.puddle; reflFx.clipInv.value = v.clip > 0 ? 1 / v.clip : 0;
+  reflFx.near0.value = v.near[0]; reflFx.near1.value = v.near[1]; reflFx.nearGain.value = v.nearGain;
+  reflFx.nearRough.value = v.nearRough; reflFx.puddleRough.value = v.puddleRough;
+  reflFx.ripple.value = v.ripple[0]; reflFx.rippleBase.value = v.ripple[1];
+}
 
 // ------------------------------------------------------------------ level material rules
 // (the tokens, the world-space UV rule, the actor test and the camera key are shared: tokens.ts)
 const tokens = readTokens;
+/** A material's gain is a per-material uniform (userData.rpGain), not a constant in its shader: the
+ *  33 token-named street materials share a handful of shaders instead of one each. */
+const GAIN: N = materialReference("userData.rpGain", "float");
+const gainOf = (t: Tokens) => { const soft = READ.softGlow.find(([below]) => t.k < below); return soft ? t.k * soft[1] : t.k; };
 function gain(t: Tokens): N {
-  const soft = READ.softGlow.find(([below]) => t.k < below);
-  let g: N = float(soft ? t.k * soft[1] : t.k);
+  let g: N = GAIN;
   if (t.pulse) g = g.mul(mix(0.72, 1.45, streetFx.pulse));
   if (t.flicker) g = g.mul(streetFx.flicker);
   if (t.blink) g = g.mul(streetFx.blink);
@@ -143,8 +175,8 @@ function makeGround(puddles: Texture, clean = false): Ground {
   const fres = mix(0.28, 1.0, pow(float(1).sub(ndv), 3));
   const col = materialColor.rgb.mul(mix(mix(0.62, 0.45, damp), 0.1, puddle));
   // near the camera (the bottom of the frame) the street is only damp: no lamp hot spots at the feet
-  const nearK = smoothstep(READ.refl.near[0], READ.refl.near[1], length(positionWorld.xz.sub(cameraPosition.xz)));
-  const roughness = mix(max(materialRoughness, READ.refl.nearRough), materialRoughness.mul(mix(1.0, 0.45, puddle)), nearK); // glossy, but no pin-sharp lamp / flash hotspots
+  const nearK = smoothstep(reflFx.near0, reflFx.near1, length(positionWorld.xz.sub(cameraPosition.xz)));
+  const roughness = mix(max(materialRoughness, reflFx.nearRough), materialRoughness.mul(mix(float(1.0), reflFx.puddleRough, puddle)), nearK); // glossy, but no pin-sharp lamp / flash hotspots (soft)
   const ripple = vec3(0.45, 0.5, 0.6).mul(rip.z.mul(puddle).mul(0.018));
   if (clean) {
     // the night sky's cool sheen on the wet street, strongest in the puddles and at grazing angles
@@ -158,20 +190,25 @@ function makeGround(puddles: Texture, clean = false): Ground {
   const base = refl.reflector;
   const update = base.updateBefore.bind(base);
   base.updateBefore = (frame: N) => {
+    // the shader warm-up compiles the mirror's own context separately (compile.ts): no render here
+    if (frame?.renderer?._isPreCompiling) return;
     const hidden: Material[] = [];
     for (const m of mats) if (m.visible) { m.visible = false; hidden.push(m); }
     try { return update(frame); } finally { for (const m of hidden) m.visible = true; }
   };
   refl.target.rotateX(-Math.PI / 2);
   refl.target.position.y = 0.003; // just above the street so curb / paint undersides never reflect
-  refl.uvNode = refl.uvNode.add(rip.xy.mul(0.022).mul(puddle.add(0.15)));
-  refl.levelNode = mix(float(5.2), float(2.2), puddle); // soft even in the puddles: wet, not a mirror
-  // soft clip: lamps and neon reflect as coloured smears, never as hot blobs brighter than a goon
+  refl.uvNode = refl.uvNode.add(rip.xy.mul(reflFx.ripple).mul(puddle.add(reflFx.rippleBase)));
+  refl.levelNode = mix(reflFx.blurFar, reflFx.blurPuddle, puddle); // soft: blurred even in the puddles (wet, not a mirror); sharp: a mirror in the puddles
+  // soft clip: lamps and neon reflect as coloured smears, never as hot blobs brighter than a goon (sharp: no clip)
   const r: N = refl.rgb;
-  const clipped = r.div(luminance(r).div(READ.refl.clip).add(1));
-  const emissive = clipped.mul(mix(READ.refl.damp, READ.refl.puddle, puddle)).mul(fres).mul(up).mul(mix(READ.refl.nearGain, 1, nearK)).add(ripple);
+  const clipped = r.div(luminance(r).mul(reflFx.clipInv).add(1));
+  const emissive = clipped.mul(mix(reflFx.gainDamp, reflFx.gainPuddle, puddle)).mul(fres).mul(up).mul(mix(reflFx.nearGain, float(1), nearK)).add(ripple);
   return { id: ++groundIds, refl, color: vec4(col, 1), roughness, emissive, mats };
 }
+
+/** A wet material's reflection gain (its k), per material. */
+const WET: N = materialReference("userData.rpWet", "float");
 
 function isLevelMaterial(m: Material): m is MeshStandardNodeMaterial | MeshBasicNodeMaterial {
   return m.constructor === MeshStandardNodeMaterial || m.constructor === MeshBasicNodeMaterial;
@@ -191,6 +228,8 @@ function applyRules(m: Material, ground: Ground | null): void {
   ground?.mats.delete(m);
   m.colorNode = null;
   if (std) { std.emissiveNode = null; std.roughnessNode = null; }
+  m.userData.rpGain = gainOf(t);
+  m.userData.rpWet = t.k;
   if (t.kind === "glow") m.colorNode = materialColor.mul(gain(t)).mul(neonDim("glow"));
   else if (t.kind === "lit" && std) {
     const d: N = materialColor.rgb;
@@ -198,7 +237,7 @@ function applyRules(m: Material, ground: Ground | null): void {
   } else if (t.kind === "wet" && std && ground) {
     std.colorNode = ground.color;
     std.roughnessNode = ground.roughness;
-    std.emissiveNode = ground.emissive.mul(t.k);
+    std.emissiveNode = ground.emissive.mul(WET);
     ground.mats.add(m);
   }
   m.needsUpdate = true;
@@ -271,6 +310,9 @@ function rng(seed: number): () => number {
 }
 function particleMesh(g: BufferGeometry, m: Material, order: number): Mesh {
   m.userData.rpOwn = true; // the level-material rules leave it alone
+  // camera-facing quads: one pass for both faces (the same picture, half the draws, and one shader
+  // pipeline per context that the warm-up can build ahead: compile.ts)
+  m.forceSinglePass = true;
   const mesh = new Mesh(g, m);
   mesh.frustumCulled = false;
   mesh.renderOrder = order;
@@ -280,7 +322,7 @@ function particleMesh(g: BufferGeometry, m: Material, order: number): Mesh {
 /** Rain streaks in a box that follows the camera (wrapped per streak), falling with the world clock. */
 function makeRain(): Mesh {
   const r = rng(1234567);
-  const g = quads(RAIN_HIGH, () => ({ seed: [r(), r(), r()] }), { seed: 3 });
+  const g = quads(RAIN.max, () => ({ seed: [r(), r(), r()] }), { seed: 3 });
   const m = new MeshBasicNodeMaterial({ transparent: true, depthWrite: false, blending: AdditiveBlending, side: DoubleSide });
   m.fog = false;
   const seed: N = attribute("seed", "vec3"), corner: N = attribute("corner", "vec2");
@@ -419,56 +461,81 @@ function clearSteam(mesh: Mesh, s: Session, camera: Object3D, dt: number): void 
 const smooth = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
 // ------------------------------------------------------------------ render pipeline
-function StreetPost({ low, clean }: { low: boolean; clean: boolean }) {
+/** The passes (rebuilt only for the renderer or MSAA) and the output graph (rebuilt when bloom goes on /
+ *  off; its strength, radius and threshold are live). Registers its render contexts for the shader
+ *  warm-up (compile.ts): the scene pass, the puddle mirror's target and the goon mask pass. */
+function StreetPost({ msaa, level, ground }: { msaa: boolean; level: Bloom; ground: Ground }) {
   const gl = useThree(s => s.gl) as unknown as WebGPURenderer;
   const scene = useThree(s => s.scene);
   const camera = useThree(s => s.camera);
-  const p = useMemo(() => {
+  const passes = useMemo(() => {
     const pipeline = new RenderPipeline(gl);
-    const scenePass: N = pass(scene, camera, { samples: low ? 0 : 4 });
+    const samples = msaa ? 4 : 0;
+    const scenePass: N = pass(scene, camera, { samples });
+    scenePass.renderTarget.samples = samples; // set up with the output graph too; the warm-up needs it now
     const maskPass: N = enemyMaskPass(scene, camera, gl);
+    return { pipeline, scenePass, maskPass };
+    // the pass camera is re-read every frame; rebuild only for the renderer / MSAA
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gl, scene, msaa]);
+  const bloomOn = level !== "off";
+  const bloomNode = useMemo(() => {
+    const { pipeline, scenePass, maskPass } = passes;
     const col: N = scenePass.getTextureNode("output");
     let hdr: N = col.rgb;
-    if (!clean) {
-      // high threshold: only the HDR neon / lamps / tracers bloom, never a lit character or a wall
-      const B = READ.bloom;
-      const b: N = bloom(col, low ? B.strength * 0.7 : B.strength, B.radius, B.threshold);
-      b.setResolutionScale(low ? 0.25 : 0.5);
+    let b: N = null;
+    if (bloomOn) {
+      const B = READ.bloom.subtle;
+      b = bloom(col, B.strength, B.radius, B.threshold);
+      b.setResolutionScale(0.5);
       hdr = hdr.add(b.rgb);
     }
     // a light cool tint on the shadows and mids; the bright neon / lamps keep their own colour
     const l = luminance(hdr);
     let c: N = mix(hdr.mul(vec3(0.92, 0.97, 1.1)), hdr, smoothstep(0.05, 0.55, l));
     c = c.add(vec3(0.004, 0.005, 0.008));
-    c = enemyOutline(c, maskPass); // the goons read at range (read.tsx)
+    c = enemyOutline(c, maskPass); // the goons read at range (read.tsx), whatever the graphics settings
     c = neutralToneMapping(c, float(READ.exposure));
     const v = smoothstep(0.45, 1.05, length(uv().sub(0.5).mul(vec2(1.0, 0.8))));
     c = c.mul(float(1).sub(v.mul(READ.vignette)));
     pipeline.outputNode = vec4(c, 1);
-    return { pipeline, scenePass, maskPass };
-    // the pass camera is re-read every frame; rebuild only for the renderer / quality / effects
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gl, scene, low, clean]);
-  useEffect(() => () => p.pipeline.dispose(), [p]);
+    pipeline.needsUpdate = true;
+    return b;
+  }, [passes, bloomOn]);
+  useEffect(() => {
+    if (!bloomNode) return;
+    const B = level === "original" ? READ.bloom.original : READ.bloom.subtle;
+    bloomNode.strength.value = B.strength;
+    bloomNode.radius.value = B.radius;
+    bloomNode.threshold.value = B.threshold;
+  }, [bloomNode, level]);
+  useEffect(() => () => passes.pipeline.dispose(), [passes]);
+  useEffect(() => registerLook(gl, scene, camera, passes, cam => {
+    const refl = ground.refl?.reflector;
+    if (!refl) return [];
+    const vc = refl.getVirtualCamera(cam);
+    return [{ name: "mirror", target: refl.getRenderTarget(vc), camera: vc, depth: 2, hide: ground.mats }];
+  }, () => tagForMask(scene)), [gl, scene, camera, passes, ground]);
   useFrame(st => {
-    p.scenePass.camera = st.camera;
-    p.maskPass.camera = st.camera;
+    passes.scenePass.camera = st.camera;
+    syncMaskCamera(passes.maskPass, st.camera);
     if (renderGate.skip) return; // a card hides the canvas: the last frame stays
-    p.pipeline.render();
+    passes.pipeline.render();
   }, 1); // a positive priority: this frame callback renders instead of R3F
   return null;
 }
 
 // ------------------------------------------------------------------ the look
-export function StreetLook({ level, s, lowQuality }: { level: LevelData; s?: Session; lowQuality?: boolean }) {
+export function StreetLook({ level, s }: { level: LevelData; s?: Session; lowQuality?: boolean }) {
   const scene = useThree(st => st.scene);
-  const clean = useFx(st => st.effects) === "clean";
+  const gfx = useGfx();
+  const mirror = gfx.reflections !== "off";
   const puddles = useMemo(() => {
-    const t = new TextureLoader().load("/textures/puddles.webp");
+    const t = new TextureLoader().load(assetUrl("/textures/puddles.webp"));
     t.wrapS = t.wrapT = RepeatWrapping;
     return t;
   }, []);
-  const ground = useMemo(() => makeGround(puddles, clean), [puddles, clean]);
+  const ground = useMemo(() => makeGround(puddles, !mirror), [puddles, mirror]);
   useEffect(() => {
     const refl = ground.refl;
     if (!refl) return;
@@ -479,12 +546,15 @@ export function StreetLook({ level, s, lowQuality }: { level: LevelData; s?: Ses
       setTimeout(() => refl.dispose?.(), 1000);
     };
   }, [scene, ground]);
-  useEffect(() => { if (ground.refl) ground.refl.reflector.resolutionScale = lowQuality ? 0.125 : 0.25; }, [ground, lowQuality]);
   useEffect(() => {
-    const near = clean ? READ.rainNear.clean : READ.rainNear.full;
+    setReflections(gfx.reflections);
+    if (ground.refl) ground.refl.reflector.resolutionScale = gfx.reflections === "sharp" ? READ.refl.sharp.res : READ.refl.soft.res;
+  }, [ground, gfx.reflections]);
+  useEffect(() => {
+    const near = gfx.rain === "light" ? READ.rainNear.light : READ.rainNear.thin;
     streetFx.rainNear0.value = near[0];
     streetFx.rainNear1.value = near[1];
-  }, [clean]);
+  }, [gfx.rain]);
 
   // sky gradient + height-thinned fog
   useEffect(() => {
@@ -498,7 +568,10 @@ export function StreetLook({ level, s, lowQuality }: { level: LevelData; s?: Ses
   }, [scene]);
 
   const rain = useMemo(() => makeRain(), []);
-  useEffect(() => { rain.geometry.setDrawRange(0, (lowQuality ? RAIN_LOW : RAIN_HIGH) * (clean ? 3 : 6)); }, [rain, lowQuality, clean]);
+  useEffect(() => {
+    rain.visible = gfx.rain !== "off";
+    rain.geometry.setDrawRange(0, (gfx.rain === "light" ? RAIN.light : RAIN.thin) * 6); // 6 indices per streak
+  }, [rain, gfx.rain]);
   const drips = useMemo(() => makeDrips(level.markers.filter(m => m.kind === "fx" && m.data.fx === "drip")), [level]);
   const steam = useMemo(() => makeSteam(level.markers.filter(m => m.kind === "fx" && m.data.fx === "steam")), [level]);
   useEffect(() => () => { for (const x of [rain, drips, steam]) if (x) { x.geometry.dispose(); (x.material as Material).dispose(); } }, [rain, drips, steam]);
@@ -541,7 +614,7 @@ export function StreetLook({ level, s, lowQuality }: { level: LevelData; s?: Ses
       {drips && <primitive object={drips} />}
       {steam && <primitive object={steam} />}
       {s && <CombatRead s={s} />}
-      <StreetPost low={!!lowQuality} clean={clean} />
+      <StreetPost msaa={gfx.msaa} level={gfx.bloom} ground={ground} />
     </>
   );
 }

@@ -22,6 +22,7 @@ import type { CrowdModel } from "../vrm/crowdModel.ts";
 import { MILADY_R2 } from "./characters.ts";
 import { FRAME } from "./frame.ts";
 import { useUi } from "../ui/store.ts";
+import { useGfx } from "./look/gfx.ts";
 import { CROWD } from "../sim/tuning.ts";
 import { crowdClipsFor, crowdModel, crowdNumbers } from "./warmup.ts";
 import { CROWD_LOOK, animateStandIn, makeStandIn, type StandIn } from "./standIn.ts";
@@ -70,7 +71,7 @@ const k01 = (i: number, salt: number) => { const x = Math.sin(i * 12.9898 + salt
 export function CrowdView({ s }: { s: Session }) {
   const assets = useAssetRuntime();
   const version = useUi(st => st.assetsVersion);
-  const low = useUi(st => st.quality) === "low";
+  const low = !useGfx(g => g.msaa); // the Low preset: every other girl
   // the crowd is the same on every attempt of a room (same level, same seed): build it once per session
   const people = useMemo(() => s.game.crowd.people, [s]);
   const source = version > 0 ? assets.getModel(MILADY_R2) : null;

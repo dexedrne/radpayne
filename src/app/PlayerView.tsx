@@ -166,6 +166,8 @@ function makeRig(id: RadbroId, src: Object3D, pack: Object3D | null, gunPack: Ob
   if (bones.rHand) attachGun(shotgun, bones.rHand, grips.right, 1, [SHOTGUN_THICK_PLAYER, SHOTGUN_THICK_PLAYER, SHOTGUN_SCALE[id]]);
   if (bones.rHand) attachGun(ak, bones.rHand, grips.right, 1, [SHOTGUN_THICK_PLAYER, SHOTGUN_THICK_PLAYER, SHOTGUN_SCALE[id]]);
   for (const g of [...smgs, shotgun, ak]) g.visible = false;
+  // the guns he has not drawn yet are compiled with the room anyway (look/compile.ts: hidden models)
+  for (const g of [...guns, ...smgs, shotgun, ak]) g.userData.rpWarm = true;
   // additive hit flinch (no root translation) and the upper-body reload layer
   const gunClips = clipsOf(gunPack);
   let hit: AnimationAction | null = null;

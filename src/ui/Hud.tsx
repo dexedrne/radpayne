@@ -7,7 +7,7 @@
 import "./hud/tokens.css";
 import { useUi } from "./store.ts";
 import type { Session } from "../app/session.ts";
-import { useFx } from "../app/look/fx.ts";
+import { useGfx } from "../app/look/gfx.ts";
 import { roomText } from "./rooms.ts";
 import { BottomLeft } from "./hud/BottomLeft.tsx";
 import { AmmoPanel } from "./hud/AmmoPanel.tsx";
@@ -45,7 +45,8 @@ export function Hud({ s: sProp, paused = false }: { s?: Session | null; paused?:
   const s = sProp ?? hudSession.current;
   const h = useUi(st => st.hud);
   const deadAt = useUi(st => st.deadAt);
-  const clean = useFx(st => st.effects) === "clean";
+  // no bloom: the HUD's own glows come back in CSS, the speed lines and halftone go (the old Effects: Clean)
+  const clean = useGfx(g => g.bloom) === "off";
   const now = performance.now();
   const cap = useCaptions(h, now);
   if (paused) return <div className="rp-hud" style={{ zIndex: 31 }}><TopLeft style={{ opacity: 0.9 }} /></div>;

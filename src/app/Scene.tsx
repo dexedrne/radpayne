@@ -17,14 +17,21 @@ import { AssetsBridge } from "./characters.ts";
 import { RoomLook } from "./look/index.tsx";
 import { DebugView } from "./DebugView.tsx";
 import { HudFrame } from "../ui/hud/HudFrame.tsx";
+import { backendIs, dprFor, useGfx } from "./look/gfx.ts";
+import { shareShaders } from "./look/shaderShare.ts";
+import type { WebGPURenderer } from "three/webgpu";
 
 const FORCE_WEBGL = new URLSearchParams(location.search).has("webgl2");
+/** ?noshare: every object its own shaders again (look/shaderShare.ts off: the A/B check). */
+const NO_SHARE = new URLSearchParams(location.search).has("noshare");
 
 
-/** Pending asset loads -> the UI store. */
+/** The scene's pending asset loads (the level's textures, the models): the shader warm-up waits for
+ *  them (a texture arriving changes its material's shader). */
+export const scenePending = { n: 0 };
 function LoadBridge() {
   const pending = useScenePendingLoads();
-  useEffect(() => { useUi.setState({ load: { ...useUi.getState().load, progress: pending ? 0.5 : 1 } }); }, [pending]);
+  useEffect(() => { scenePending.n = pending; }, [pending]);
   return null;
 }
 
@@ -44,25 +51,30 @@ export function playPrefab(level: Prefab): Prefab {
   };
 }
 
-export function Scene({ s, onPhase, lowQuality, bootRef }: { s: Session; onPhase: (p: string) => void; lowQuality: boolean; bootRef?: (ready: boolean) => void }) {
+export function Scene({ s, onPhase, bootRef }: { s: Session; onPhase: (p: string) => void; bootRef?: (ready: boolean) => void }) {
   const prefab = useMemo(() => playPrefab(s.prefab as Prefab), [s]);
-  const glConfig = useMemo(() => ({ antialias: !lowQuality, ...(FORCE_WEBGL ? { forceWebGL: true } : {}) }), [lowQuality]);
+  // the canvas is made once: its own antialiasing does nothing for a post-processed frame (the scene
+  // pass has its own MSAA per graphics preset), so it never changes with the settings
+  const glConfig = useMemo(() => ({ antialias: false, ...(FORCE_WEBGL ? { forceWebGL: true } : {}) }), []);
+  const res = useGfx(g => g.res);
   const booted = useRef(false);
   return (
     <GameCanvas
       flat
-      dpr={lowQuality ? 1 : [1, 1.75]}
+      dpr={dprFor(res, typeof devicePixelRatio === "number" ? devicePixelRatio : 1)}
       glConfig={glConfig}
       onCreated={st => {
         const be = (st.gl as unknown as { backend?: { isWebGPUBackend?: boolean; isWebGLBackend?: boolean } }).backend;
         const name = be?.isWebGPUBackend ? "WebGPU" : be?.isWebGLBackend ? "WebGL2" : "unknown";
         useUi.setState({ backend: name });
+        backendIs(name === "WebGL2");
+        if (!NO_SHARE) shareShaders(st.gl as unknown as WebGPURenderer); // one program per material + buffer layout, not per object
         if (import.meta.env.MODE !== "production") Object.assign(window, { __gl: st.gl, __scene: st.scene }); // dev probe
         console.info("[radpayne] renderer:", name);
         if (!booted.current) { booted.current = true; bootRef?.(true); }
       }}
     >
-      <RoomLook level={s.level} s={s} lowQuality={lowQuality} />
+      <RoomLook level={s.level} s={s} />
       <PrefabRoot data={prefab}>
         <AssetsBridge />
         <LoadBridge />

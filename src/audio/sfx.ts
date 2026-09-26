@@ -12,6 +12,7 @@
 // Room 3: the office room tone with the club's kick through the wall, the breach (the door bursting in,
 // slowed with the world), the glass wall, a failing tube now and then, the keycard and the elevator.
 import { engine, live, sfxOn, voiceOn, whenCreated, type Engine } from "./engine.ts";
+import { assetUrl } from "../app/assets.ts";
 
 /** Files under public/audio (no extension). Keys are the paths. */
 const FILES = [
@@ -37,29 +38,104 @@ const FILES = [
   ...["alert_1", "spotted_1", "spotted_2", "advance_1", "taunt_1", "reload_1", "hit_1", "hit_2", "stagger_1", "death_1"].map(k => `voices/heavy/${k}`),
 ] as const;
 
-const buffers = new Map<string, AudioBuffer>();
-let loading: Promise<void> | null = null;
+/**
+ * Load order (the load audit: all 149 files, 7 MB, used to load at PLAY and cutscene 1 waited for every
+ * one of them): "cs1" (cutscene 1's four narrator lines) -> "room" (room 1's sounds and voices: its start
+ * waits for these) -> "music" (the calm loop; it fades in when it lands) and "fight" (the fight loop),
+ * both after the music gate (setMusicGate: the gang's downloads, which the room's start waits for) ->
+ * "later" (rooms 2-3 and cutscene 2: loadLaterSamples(), once room 1 runs, at low priority). A file not
+ * named in LATER is a room-1 file (a new sound is never silent in room 1 for being unlisted).
+ */
+export type SampleGroup = "cs1" | "room" | "music" | "fight" | "later";
+const LATER = [
+  /^music\/(rave_club|fight_rave|backrooms_calm)$/,
+  /^voices\/(crowd|pa|heavy)\//,
+  /^voices\/narrator\/(r2_|r3_|cs2_)/,
+  /^voices\/goon_[ab]\/(charge_|cs2_)/,
+  /^voices\/radbro\/breach$/,
+  /^sfx\/(shotgun_|record_scratch|door_|keycard_|elevator_|crowd_|office_room_tone|fluorescent_|glass_wall|impact_(wood|bottle|drywall|speaker|screen|body_heavy)|heavy_step|footsteps_hard|dive_land_floor|shell_casing_floor)/,
+];
+export function sampleGroup(k: string): SampleGroup {
+  if (/^voices\/narrator\/cs1_/.test(k)) return "cs1";
+  if (k === "music/fight_tense") return "fight";
+  if (k === "music/street_calm") return "music";
+  return LATER.some(re => re.test(k)) ? "later" : "room";
+}
 
-/** Decode every file once (starts on the first call after the context exists). */
+const buffers = new Map<string, AudioBuffer>();
+/** One load per file (resolves when it is decoded or has failed). */
+const loads = new Map<string, Promise<void>>();
+let loading: Promise<void> | null = null;
+let laterStarted = false;
+/** Room 1's music waits for this (at most MUSIC_GATE_MS): the downloads the room's start needs first. */
+let musicGate: Promise<unknown> = Promise.resolve();
+const MUSIC_GATE_MS = 20_000;
+export function setMusicGate(p: Promise<unknown>): void {
+  musicGate = p;
+}
+
+function loadKey(e: Engine, k: string, priority: RequestPriority = "auto"): Promise<void> {
+  let p = loads.get(k);
+  if (!p) {
+    p = (async () => {
+      try {
+        const r = await fetch(assetUrl(`/audio/${k}.mp3`), { priority });
+        if (!r.ok) return;
+        buffers.set(k, await e.ac.decodeAudioData(await r.arrayBuffer()));
+        if (k.startsWith("music/")) musicLoaded(k);
+      } catch {
+        /* a missing file is a silent sound */
+      }
+    })();
+    loads.set(k, p);
+  }
+  return p;
+}
+
+const group = (g: SampleGroup) => (FILES as readonly string[]).filter(k => sampleGroup(k) === g);
+
+/** Decode room 1's files once (starts on the first call after the context exists): cutscene 1's lines,
+ *  then the room's sounds, then the fight loop. Resolves when those are in. */
 export function loadSamples(): Promise<void> {
   if (loading) return loading;
   loading = new Promise<void>(resolve => {
     whenCreated(e => {
-      void Promise.all(FILES.map(async k => {
-        try {
-          const r = await fetch(`/audio/${k}.mp3`);
-          if (!r.ok) return;
-          buffers.set(k, await e.ac.decodeAudioData(await r.arrayBuffer()));
-        } catch {
-          /* a missing file is a silent sound */
-        }
-      })).then(() => resolve());
+      void (async () => {
+        await Promise.all(group("cs1").map(k => loadKey(e, k)));
+        await Promise.all(group("room").map(k => loadKey(e, k)));
+        await Promise.race([musicGate.catch(() => undefined), new Promise(r => setTimeout(r, MUSIC_GATE_MS))]);
+        await Promise.all(group("music").map(k => loadKey(e, k)));
+        await Promise.all(group("fight").map(k => loadKey(e, k)));
+        resolve();
+      })();
     });
   });
   return loading;
 }
 
-/** Wait for the samples, at most `ms`. */
+/** Rooms 2-3 and cutscene 2 (low priority, once room 1 runs). */
+export function loadLaterSamples(): void {
+  if (laterStarted) return;
+  laterStarted = true;
+  void loadSamples();
+  whenCreated(e => { for (const k of group("later")) void loadKey(e, k, "low"); });
+}
+
+/** Wait (at most `ms`) for these files (keys as in FILES; others load on demand, low priority). */
+export async function samplesFor(keys: readonly string[], ms = 4000): Promise<boolean> {
+  void loadSamples();
+  const e = engine();
+  const ps = keys.map(k => loads.get(k) ?? (e && (FILES as readonly string[]).includes(k) ? loadKey(e, k, "low") : Promise.resolve()));
+  await Promise.race([Promise.all(ps), new Promise(r => setTimeout(r, ms))]);
+  return keys.every(k => buffers.has(k));
+}
+
+/** Wait (at most `ms`) for a group (cs1: cutscene 1's lines; room: room 1's sounds). */
+export function groupReady(g: SampleGroup, ms = 4000): Promise<boolean> {
+  return samplesFor(group(g), ms);
+}
+
+/** Wait for room 1's files (loadSamples), at most `ms`. */
 export async function samplesReady(ms = 4000): Promise<boolean> {
   const p = loadSamples();
   await Promise.race([p, new Promise(r => setTimeout(r, ms))]);
@@ -487,10 +563,24 @@ const MUSIC: Record<string, MusicSet> = {
   backrooms: { calm: "music/backrooms_calm", fight: "music/fight_tense", calmGain: 0.85, fightGain: 0.95 },
 };
 
+/** The cue asked for last (a track that was still loading then comes in when it lands). */
+let wantCue: MusicCue | undefined;
+let wantRoom = cueRoom;
+function musicLoaded(key: string): void {
+  if (wantCue === undefined) return;
+  const set = MUSIC[wantRoom] ?? MUSIC.street;
+  if (key !== set.calm && key !== set.fight) return;
+  const c = wantCue;
+  cue = null;
+  setMusic(c, wantRoom);
+}
+
 /** Music per room (`room` = the level's room.music): the calm loop, the fight loop, or silence; crossfades. */
 export function setMusic(c: MusicCue, room = cueRoom): void {
   const e = live();
   const set = MUSIC[room] ?? MUSIC.street;
+  wantCue = c;
+  wantRoom = room;
   if (!e || (c === cue && room === cueRoom)) return;
   // another room's music out
   if (room !== cueRoom) for (const [k, o] of Object.entries(MUSIC)) if (k !== room) for (const key of [o.calm, o.fight]) if (key !== set.calm && key !== set.fight) fade(loops.get(key) ?? null, 0, 0.8);

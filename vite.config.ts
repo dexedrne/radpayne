@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import crypto from "node:crypto";
 
 /**
  * Dev-only: POST /__radpayne/save?room=<id> writes public/levels/<id>.json (the editor's Save) and
@@ -47,9 +48,33 @@ function devSave(): Plugin {
   };
 }
 
-export default defineConfig({
+/** Content hashes of the runtime files in public/ (src/app/assets.ts appends them as ?v=): a changed
+ *  file gets a new URL, so vercel.json can serve versioned URLs as immutable. */
+function assetHashes(root: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  const walk = (dir: string) => {
+    if (!fs.existsSync(dir)) return;
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else out["/" + path.relative(path.join(root, "public"), p).split(path.sep).join("/")] = crypto.createHash("sha1").update(fs.readFileSync(p)).digest("hex").slice(0, 10);
+    }
+  };
+  for (const d of ["models", "audio", "textures", "cutscenes", "ui", "levels"]) walk(path.join(root, "public", d));
+  return out;
+}
+
+export default defineConfig(({ command }) => ({
   plugins: [react(), devSave()],
+  // dev: no hashes (the editor saves levels while the page is open); build: every public runtime file
+  define: { __ASSET_V__: command === "build" ? JSON.stringify(assetHashes(import.meta.dirname)) : "undefined" },
+  resolve: {
+    alias: [
+      // react-three-game's SoundManager makes an AudioContext at import; the game never uses it
+      { find: /^.*\/helpers\/SoundManager(\.js)?$/, replacement: path.join(import.meta.dirname, "src/stubs/r3gSound.ts") },
+    ],
+  },
   server: { port: 4880, strictPort: false },
   preview: { port: 4881 },
   build: { chunkSizeWarningLimit: 4000 },
-});
+}));

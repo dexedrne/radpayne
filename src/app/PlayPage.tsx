@@ -10,22 +10,35 @@
 // next room's level file does not exist yet ("to be continued").
 // Dev / test builds: ?bot plays the room by itself (smoke test), ?room=<id> picks a level file,
 // ?seed=N fixes the seed, ?skip skips the title and the cutscene.
+// Loading (the load audit, AUDIT.md): the title needs only the page and the level; PLAY is live at once.
+// The room's shaders are compiled off the critical frame (look/compile.ts) while the title is up: the
+// room does not render until they are (the title sits on the dark page, the street fades in). The
+// Radbro files load behind the title, the gang's Pockit downloads start as the level is read, the sounds
+// load in order (cutscene 1's lines, room 1, the fight loop; rooms 2-3 once room 1 runs) and the rave's
+// clip pack after room 1 starts. A room's start (holdRoom) waits for what it needs, with the progress
+// on the loading card: the Radbro, the gang that is there from the start, their shaders, the sounds.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Session } from "./session.ts";
 import { Scene } from "./Scene.tsx";
 import { assetsRef, loadManifest, manifestFor, loadOptional, gunClipsPath, r2ClipsPath, MILADY_CLIPS, MILADY_R2 } from "./characters.ts";
+import { assetUrl } from "./assets.ts";
+import { goonSlots } from "../sim/game.ts";
+import { cachedPockits, pickPockits } from "../vrm/pockit.ts";
+import { warmLook } from "./look/compile.ts";
+import { useGfx } from "./look/gfx.ts";
+import { scenePending } from "./Scene.tsx";
 import { readLevel } from "../world/level.ts";
-import { baseWeaponOf, useUi } from "../ui/store.ts";
+import { baseWeaponOf, useUi, type RadbroId } from "../ui/store.ts";
 import { Hud, canvasFx } from "../ui/Hud.tsx";
 import { UiEffects } from "../ui/hud/UiEffects.tsx";
 import { FightPrompt, Loading, Pause, ResultsScreen, Title, layer } from "../ui/screens.tsx";
-import { Cutscene, loadCutscene, type CutsceneData } from "../ui/Cutscene.tsx";
+import { Cutscene, loadCutscene, prefetchCutscene, type CutsceneData } from "../ui/Cutscene.tsx";
 import { attachDom } from "../input/input.ts";
 import { setMuted, unlockAudio } from "../audio/engine.ts";
-import { loadSamples, samplesReady, setFootsteps, setHeartbeat, setMusic, stopNarration, stopRoomAudio } from "../audio/sfx.ts";
+import { groupReady, loadLaterSamples, loadSamples, setFootsteps, setHeartbeat, setMusic, setMusicGate, stopNarration, stopRoomAudio } from "../audio/sfx.ts";
 import { Bot } from "../sim/bot.ts";
 import type { WeaponId } from "../combat/weapons.ts";
-import { awaitRoom, frames, roomWarm, warmRoom } from "./warmup.ts";
+import { awaitRoom, frames, prefetchGoons, roomWarm, warmRoom } from "./warmup.ts";
 import { renderGate } from "./frame.ts";
 import { roomText } from "../ui/rooms.ts";
 
@@ -50,20 +63,72 @@ const LOADOUT = (DEV ? params.get("loadout") ?? "" : "").split(",").filter((w): 
 /** Dev: ?botgun=shotgun|smgs keeps the bot on that weapon while it has rounds (the gun view checks). */
 const BOT_GUN = DEV ? (params.get("botgun") as WeaponId | null) : null;
 const newBot = () => { const b = new Bot(3.5, 0.3, BOT_DEMO); b.only = BOT_GUN; return b; };
-/** ?q=low: low quality for this page load only (headless smoke runs). */
-if (params.get("q") === "low") useUi.setState({ quality: "low" });
 const SEED = params.has("seed") ? Number(params.get("seed")) >>> 0 : (Math.random() * 2 ** 31) >>> 0;
 /** The longest a room's start waits for its models (then it goes on: a model still missing is a stand-in girl). */
 const HOLD_CAP_MS = 20_000;
-/** The room renders behind the loading card for its last frames (the new materials compile there). */
+/** The room renders behind the loading card for its last frames (the post chain settles there). */
 let compiling = false;
-const gate = (screen: string) => { renderGate.skip = screen === "cutscene" || (screen === "loading" && !compiling); };
+const gate = (screen: string) => { renderGate.card = screen === "cutscene" || (screen === "loading" && !compiling); };
+/** The first room holds its render until its shaders are compiled (taken when the page mounts, released
+ *  by the title's warm-up). */
+let bootHold = false;
+const takeBoot = () => { if (!bootHold) { bootHold = true; renderGate.warming++; } return true; };
+const releaseBoot = () => { if (bootHold) { bootHold = false; renderGate.warming--; } };
+const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+/** Hold the room's render, let what just mounted settle (the look's material rules walk the scene every
+ *  10 frames), compile every shader off the frame, let go. */
+async function warmScene(onProgress?: (f: number) => void, settle = 3): Promise<void> {
+  renderGate.warming++;
+  try {
+    await frames(settle);
+    await warmLook({ onProgress });
+  } finally {
+    renderGate.warming--;
+  }
+}
+
+/** The room's level textures, through the asset runtime the scene uses (a texture that lands later
+ *  changes its material's shader: the warm-up waits for them, not for the Radbro's files). */
+async function levelTextures(s: Session): Promise<void> {
+  for (let i = 0; i < 50 && !assetsRef.current; i++) await wait(50);
+  const a = assetsRef.current;
+  if (!a) return;
+  const mats = (s.prefab as { materials?: Record<string, { texture?: unknown; normalMapTexture?: unknown }> }).materials ?? {};
+  const urls = new Set<string>();
+  for (const m of Object.values(mats)) for (const t of [m.texture, m.normalMapTexture]) if (typeof t === "string") urls.add(t);
+  await Promise.race([Promise.allSettled([...urls].map(u => a.loadTexture(u))), wait(10_000)]);
+  for (let i = 0; i < 120 && scenePending.n > 0 && [...urls].some(u => !a.getTexture(u)); i++) await frames(1);
+}
+
+/** The picked Radbro's files into the HTTP cache from the first moment (versioned URLs, cached for good),
+ *  and the Draco decoder they need: the asset runtime only asks once the canvas is up. */
+function preloadRadbro(id: RadbroId): void {
+  for (const p of [...manifestFor(id), gunClipsPath(id), r2ClipsPath(id), MILADY_CLIPS]) if (p.includes("?v=")) void fetch(p, { priority: "high" }).then(r => r.blob(), () => undefined).catch(() => undefined);
+  for (const f of ["draco_wasm_wrapper.js", "draco_decoder.wasm"]) void fetch(`https://www.gstatic.com/draco/v1/decoders/${f}`).then(r => r.blob(), () => undefined).catch(() => undefined);
+}
+preloadRadbro(useUi.getState().radbro);
+
+/** After room 1 starts: rooms 2-3's sounds, the rave's clip pack, the ending panels (low priority). */
+let laterLoads = false;
+function loadLater(): void {
+  if (laterLoads) return;
+  laterLoads = true;
+  loadLaterSamples();
+  void loadOptional(MILADY_R2);
+  prefetchCutscene("e1");
+}
+/** Model numbers used this visit (a later room's gang gets other girls). */
+const usedPockits = new Set<number>();
+const hashId = (id: string) => { let h = 2166136261; for (const c of id) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
 
 const canvasEl = () => document.querySelector("canvas");
 
 /** A room's session (`exact`: null when its level file does not exist). */
 async function loadRoom(id: string, exact = false, current = true): Promise<Session> {
   const { id: got, prefab } = await fetchRoom(id, exact);
+  // the level's textures by their versioned URLs (assets.ts: cached for good, a new file a new URL)
+  for (const m of Object.values((prefab as { materials?: Record<string, { texture?: unknown }> }).materials ?? {})) if (typeof m.texture === "string") m.texture = assetUrl(m.texture);
   const level = readLevel(prefab as Parameters<typeof readLevel>[0]);
   for (const w of level.warnings) console.info(`[level] ${w}`);
   if (EXTRA.includes("heavy")) {
@@ -71,7 +136,13 @@ async function loadRoom(id: string, exact = false, current = true): Promise<Sess
     level.markers.push({ kind: "enemy", id: "dev-heavy", x: 12, y: 0, z: -12.6, yaw: 0, ...m, data: { kind: "heavy", model: EXTRA.includes("723") ? "rival723" : "rival652" } });
     level.markers.push({ kind: "camera", id: "cam-heavy", x: 11.2, y: 1.7, z: -6.2, yaw: 0, ...m, data: { at: [12, 1.1, -12.6] } });
   }
-  const s = new Session(level, prefab, got, { seed: SEED, difficulty: useUi.getState().difficulty, base: baseWeaponOf(useUi.getState().radbro), ...(LOADOUT.length ? { loadout: LOADOUT } : {}) });
+  // the gang: mostly girls already in the browser's cache, a couple of new faces (vrm/pockit.ts)
+  const pockit = pickPockits(goonSlots(level), (SEED ^ hashId(got)) >>> 0, await cachedPockits(), usedPockits);
+  for (const n of Object.values(pockit)) usedPockits.add(n);
+  const s = new Session(level, prefab, got, { seed: SEED, difficulty: useUi.getState().difficulty, base: baseWeaponOf(useUi.getState().radbro), pockit, ...(LOADOUT.length ? { loadout: LOADOUT } : {}) });
+  // their downloads start now, not when the Radbro files are in; room 1's music waits for them
+  const gang = prefetchGoons(s);
+  if (current && got === "room1") setMusicGate(gang);
   console.info(`[radpayne] room ${got} ("${level.room.name}"): ${level.boxes.length} colliders, ${level.markers.length} markers, seed ${SEED}`);
   if (current) (window as unknown as { __session?: Session }).__session = s;
   return s;
@@ -82,7 +153,8 @@ async function loadRoom(id: string, exact = false, current = true): Promise<Sess
 async function fetchRoom(id: string, exact = false): Promise<{ id: string; prefab: unknown }> {
   for (const f of exact ? [id] : [id, "greybox"]) {
     try {
-      const r = await fetch(`/levels/${f}.json?v=${Date.now()}`);
+      // dev: never cached (the editor saves while the page is open); a build: the versioned URL
+      const r = await fetch(DEV ? `/levels/${f}.json?v=${Date.now()}` : assetUrl(`/levels/${f}.json`));
       if (!r.ok || !(r.headers.get("content-type") ?? "").includes("json")) continue;
       return { id: f, prefab: await r.json() };
     } catch {
@@ -103,8 +175,10 @@ export default function PlayPage() {
   const seenAfter = useRef(new Set<string>());
   const screen = useUi(s => s.screen);
   const radbro = useUi(s => s.radbro);
-  const quality = useUi(s => s.quality);
   const muted = useUi(s => s.muted);
+  useState(takeBoot);
+  /** The room is on screen behind the title (its shaders compiled): the canvas fades in. */
+  const [roomLive, setRoomLive] = useState(false);
   const sensitivity = useUi(s => s.sensitivity);
   const invertY = useUi(s => s.invertY);
   const locked = useUi(s => s.locked);
@@ -125,18 +199,54 @@ export default function PlayPage() {
     loadRoom(ROOM).then(s => setSession(s), e => useUi.setState({ load: { progress: 0, label: "", error: String(e) } }));
   }, []);
 
-  // models for the picked Radbro (+ the Milady retarget source), in the background from the title
+  // the room's shaders compile off the frame as soon as its level and textures are in (the Radbro's
+  // files and the gang download meanwhile); the room renders once they are (the title's street fades
+  // in). Again for every new session (the next room behind its cards, the title's room after a run).
+  useEffect(() => {
+    if (!canvasReady || !session) return;
+    let live = true;
+    // back on the title from a later room: the canvas fades out rather than hold that room's last frame
+    if (useUi.getState().screen === "title") setRoomLive(false);
+    renderGate.warming++;
+    void (async () => {
+      try {
+        await levelTextures(session);
+        // a room's start waiting on it (holdRoom's "shaders" step) shows its progress
+        await warmScene(f => { const u = useUi.getState(); if (u.screen === "loading" && u.load.label.endsWith("shaders")) useUi.setState({ load: { ...u.load, progress: 0.6 + 0.3 * f } }); }, 12);
+      } finally {
+        renderGate.warming--;
+        releaseBoot();
+      }
+      if (!live) return;
+      setRoomLive(true);
+      prefetchCutscene("c1", 1); // the first panel, low priority (the strip loads the rest when it opens)
+    })();
+    return () => { live = false; };
+  }, [canvasReady, session]);
+
+  // models for the picked Radbro (+ the Milady retarget source), in the background from the title; his
+  // rig's shaders compile off the frame while the room's render is held
   useEffect(() => {
     if (!canvasReady) return;
     let live = true;
     const tryLoad = async () => {
-      for (let i = 0; i < 50 && !assetsRef.current; i++) await new Promise(r => setTimeout(r, 50));
+      for (let i = 0; i < 50 && !assetsRef.current; i++) await wait(50);
       const failed = await loadManifest(manifestFor(radbro), f => { if (useUi.getState().screen === "loading") useUi.setState({ load: { progress: f, label: "radbro", error: null } }); });
-      await Promise.all([loadOptional(gunClipsPath(radbro)), loadOptional(r2ClipsPath(radbro)), loadOptional(MILADY_CLIPS), loadOptional(MILADY_R2)]);
+      // his pistol clips, the shotgun set (a Radbro whose own gun is a long gun holds it with it) and the
+      // Miladys' shooter clips; the rave's pack (rooms 2+) loads once room 1 runs (loadLater)
+      await Promise.all([loadOptional(gunClipsPath(radbro)), loadOptional(r2ClipsPath(radbro)), loadOptional(MILADY_CLIPS)]);
       if (!live) return;
       if (failed) { useUi.setState({ load: { progress: 0, label: "", error: failed } }); return; }
-      useUi.setState(s => ({ assetsVersion: s.assetsVersion + 1 }));
-      setModelsReady(true);
+      // his rig mounts with the new models: held until it is compiled (the room's own shaders are
+      // compiled by then, or are being: one warm-up at a time)
+      renderGate.warming++;
+      try {
+        useUi.setState(s => ({ assetsVersion: s.assetsVersion + 1 }));
+        setModelsReady(true);
+        await warmScene();
+      } finally {
+        renderGate.warming--;
+      }
     };
     setModelsReady(false);
     void tryLoad();
@@ -144,6 +254,14 @@ export default function PlayPage() {
   }, [canvasReady, radbro]);
 
   useEffect(() => { setMuted(muted); }, [muted]);
+
+  // a graphics change that rebuilds shaders (the puddle mirror on / off, MSAA): the room's render holds
+  // (from this very call, before any frame) while they compile off the frame
+  useEffect(() => useGfx.subscribe((g, prev) => {
+    if ((g.reflections !== "off") === (prev.reflections !== "off") && g.msaa === prev.msaa) return;
+    renderGate.warming++;
+    void frames(4).then(() => warmLook()).finally(() => { renderGate.warming--; });
+  }), []);
   useEffect(() => { if (session) { session.input.sensitivity = sensitivity; session.input.invertY = invertY; } }, [session, sensitivity, invertY]);
 
   // input + pointer lock
@@ -192,6 +310,7 @@ export default function PlayPage() {
     if (!session) return;
     await holdRoom(session);
     useUi.setState({ screen: "play" });
+    loadLater();
     setPadFight(false);
     session.input.flush();
     session.stepper.reset();
@@ -200,28 +319,42 @@ export default function PlayPage() {
     lock();
   }, [session]);
 
-  /** A room's start waits behind the loading card for its models (built ahead by the warm-up, usually
-   *  already done), then a few frames render behind the card so the new materials compile there. */
+  /** A room's start waits behind the loading card (with its progress) for what it needs: the Radbro, the
+   *  gang that is there from the start (built ahead by the warm-up, usually already done: the later ones
+   *  keep building in the fight), every shader compiled off the frame (look/compile.ts, the models not
+   *  shown yet included) and the room's sounds; then a few frames render behind the card. */
   async function holdRoom(s: Session): Promise<void> {
-    if (roomWarm(s) && shown.current.has(s)) return;
+    if (useUi.getState().assetsVersion > 0 && roomWarm(s) && shown.current.has(s)) return;
     const t0 = performance.now();
     const label = roomText(s.roomId, s.level.room).label.toLowerCase();
+    const card = (progress: number, what: string) => useUi.setState({ screen: "loading", load: { progress, label: what ? `${label} · ${what}` : label, error: null } });
+    if (!useUi.getState().assetsVersion) {
+      card(0, "radbro");
+      for (let i = 0; i < 400 && !useUi.getState().assetsVersion; i++) await wait(50);
+    }
     if (!roomWarm(s)) {
-      useUi.setState({ screen: "loading", load: { progress: 0, label, error: null } });
-      await awaitRoom(s, HOLD_CAP_MS, f => useUi.setState({ load: { progress: f, label, error: null } }));
+      card(0.1, "the gang");
+      await awaitRoom(s, HOLD_CAP_MS, f => card(0.1 + 0.5 * f, "the gang"));
     }
     if (!shown.current.has(s)) {
       shown.current.add(s);
-      if (useUi.getState().screen !== "loading") useUi.setState({ screen: "loading", load: { progress: 1, label, error: null } });
-      // the models mount and pose (a few frames), then the room renders a few frames behind the card:
-      // its shaders compile there, not in the fight
-      await frames(3);
+      card(0.6, "shaders");
+      // the models mount (hidden until posed) and the look's material rules reach them, then every
+      // shader compiles off the frame
+      await frames(12);
       const tf = performance.now();
+      await warmLook({ hidden: true, onProgress: f => card(0.6 + 0.3 * f, "shaders") });
+      card(0.9, "sounds");
+      // room 1's own sounds; a later room's (already loading since room 1 started; a dev ?room= start
+      // asks for them here)
+      if (s.roomId !== "room1") loadLaterSamples();
+      await groupReady(s.roomId === "room1" ? "room" : "later", 6000);
+      // a few frames behind the card: the post chain, anything that changed since
       compiling = true;
       gate("loading");
-      await frames(8);
+      await frames(3);
       compiling = false;
-      console.info(`[radpayne] ${s.roomId}: first frames ${Math.round(performance.now() - tf)} ms`);
+      console.info(`[radpayne] ${s.roomId}: shaders + first frames ${Math.round(performance.now() - tf)} ms`);
     }
     console.info(`[radpayne] ${s.roomId}: held ${Math.round(performance.now() - t0)} ms for its models`);
   }
@@ -238,9 +371,10 @@ export default function PlayPage() {
     if (!session) return;
     unlockAudio();
     void loadSamples();
-    useUi.setState({ screen: "loading", load: { progress: modelsReady ? 1 : 0, label: "radbro", error: null } });
-    for (let i = 0; i < 400 && !useUi.getState().assetsVersion; i++) await new Promise(r => setTimeout(r, 50));
-    await samplesReady(4000); // the first barks and the room's opening line need their files
+    // straight to cutscene 1 once its lines are in (the room's files load under the panels; the room's
+    // start waits for the rest: holdRoom)
+    useUi.setState({ screen: "loading", load: { progress: 0, label: "", error: null } });
+    await groupReady("cs1", 4000);
     session.restart({ difficulty: useUi.getState().difficulty, base: baseWeaponOf(useUi.getState().radbro) });
     session.bot = BOT ? newBot() : null;
     session.paused = true;
@@ -250,7 +384,7 @@ export default function PlayPage() {
       if (c) { setCut({ data: c, then: () => void startPlay() }); useUi.setState({ screen: "cutscene" }); void loadSamples().then(() => setMusic("calm")); return; }
     }
     void startPlay();
-  }, [session, modelsReady, startPlay]);
+  }, [session, startPlay]);
 
   // ?skip / ?bot: straight in once the models are there
   const autoStarted = useRef(false);
@@ -354,7 +488,7 @@ export default function PlayPage() {
     stopNarration();
     stopRoomAudio(true);
     useUi.setState({ screen: "title" });
-    // the title idles in the first room
+    // the title idles in the first room (its level mounts again: the session effect warms it)
     if (session.roomId !== ROOM) void loadRoom(ROOM).then(s => setSession(s));
     else session.restart({ resume: undefined });
   };
@@ -362,9 +496,11 @@ export default function PlayPage() {
   return (
     <>
       <div ref={filterRef} style={{ position: "fixed", inset: 0, transition: "filter 0.15s" }} onMouseDown={() => { if (padFight && screen === "play" && !locked) lock(); }}>
-        {session && <Scene s={session} onPhase={onPhase} lowQuality={quality === "low"} bootRef={setCanvasReady} />}
+        <div style={{ position: "absolute", inset: 0, opacity: roomLive || screen !== "title" ? 1 : 0, transition: "opacity 0.9s ease-out" }}>
+          {session && <Scene s={session} onPhase={onPhase} bootRef={setCanvasReady} />}
+        </div>
       </div>
-      {screen === "title" && <Title onPlay={() => void play()} ready={!!session && modelsReady} />}
+      {screen === "title" && <Title onPlay={() => void play()} ready={!!session} />}
       {screen === "loading" && <Loading />}
       {screen === "cutscene" && cut && <Cutscene key={cut.data.id} data={cut.data} onDone={() => { const then = cut.then; setCut(null); then(); }} />}
       {screen === "play" && <Hud />}
