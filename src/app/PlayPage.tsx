@@ -15,7 +15,7 @@ import { Session } from "./session.ts";
 import { Scene } from "./Scene.tsx";
 import { assetsRef, loadManifest, manifestFor, loadOptional, gunClipsPath, r2ClipsPath, MILADY_CLIPS, MILADY_R2 } from "./characters.ts";
 import { readLevel } from "../world/level.ts";
-import { useUi } from "../ui/store.ts";
+import { baseWeaponOf, useUi } from "../ui/store.ts";
 import { Hud, canvasFx } from "../ui/Hud.tsx";
 import { UiEffects } from "../ui/hud/UiEffects.tsx";
 import { FightPrompt, Loading, Pause, ResultsScreen, Title, layer } from "../ui/screens.tsx";
@@ -71,7 +71,7 @@ async function loadRoom(id: string, exact = false, current = true): Promise<Sess
     level.markers.push({ kind: "enemy", id: "dev-heavy", x: 12, y: 0, z: -12.6, yaw: 0, ...m, data: { kind: "heavy", model: EXTRA.includes("723") ? "rival723" : "rival652" } });
     level.markers.push({ kind: "camera", id: "cam-heavy", x: 11.2, y: 1.7, z: -6.2, yaw: 0, ...m, data: { at: [12, 1.1, -12.6] } });
   }
-  const s = new Session(level, prefab, got, { seed: SEED, difficulty: useUi.getState().difficulty, ...(LOADOUT.length ? { loadout: LOADOUT } : {}) });
+  const s = new Session(level, prefab, got, { seed: SEED, difficulty: useUi.getState().difficulty, base: baseWeaponOf(useUi.getState().radbro), ...(LOADOUT.length ? { loadout: LOADOUT } : {}) });
   console.info(`[radpayne] room ${got} ("${level.room.name}"): ${level.boxes.length} colliders, ${level.markers.length} markers, seed ${SEED}`);
   if (current) (window as unknown as { __session?: Session }).__session = s;
   return s;
@@ -241,7 +241,7 @@ export default function PlayPage() {
     useUi.setState({ screen: "loading", load: { progress: modelsReady ? 1 : 0, label: "radbro", error: null } });
     for (let i = 0; i < 400 && !useUi.getState().assetsVersion; i++) await new Promise(r => setTimeout(r, 50));
     await samplesReady(4000); // the first barks and the room's opening line need their files
-    session.restart({ difficulty: useUi.getState().difficulty });
+    session.restart({ difficulty: useUi.getState().difficulty, base: baseWeaponOf(useUi.getState().radbro) });
     session.bot = BOT ? newBot() : null;
     session.paused = true;
     if (!seenCutscene.current && (!SKIP || CUTSCENE)) {

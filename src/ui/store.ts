@@ -4,15 +4,17 @@
 import { create } from "zustand";
 import type { Difficulty } from "../sim/tuning.ts";
 import type { Stats } from "../sim/game.ts";
-import type { WeaponId } from "../combat/weapons.ts";
+import type { BaseWeapon, WeaponId } from "../combat/weapons.ts";
 
-export type RadbroId = "652" | "4764" | "2564" | "723" | "3171";
-export const RADBROS: Array<{ id: RadbroId; name: string; blurb: string; color: string }> = [
+export type RadbroId = "652" | "4764" | "2564" | "723" | "3171" | "250";
+/** weapon: the base gun he carries (slot 1) when it is not the dual pistols. */
+export const RADBROS: Array<{ id: RadbroId; name: string; blurb: string; color: string; weapon?: BaseWeapon }> = [
   { id: "652", name: "#652", blurb: "the original. he has been here before.", color: "#ff3d7f" },
   { id: "4764", name: "#4764", blurb: "brought a katana to a gunfight. also guns.", color: "#3ff0ff" },
   { id: "2564", name: "#2564", blurb: "GHOST. you won't see him. they won't either.", color: "#b8c4ff" },
   { id: "723", name: "#723", blurb: "cowboy. this street ain't big enough.", color: "#ffb03f" },
   { id: "3171", name: "#3171", blurb: "wears a halo. isn't one.", color: "#ffdc4a" },
+  { id: "250", name: "#250", blurb: "rad to the bone. brought his own rifle.", color: "#ff5a3c", weapon: "ak" },
 ];
 
 export type Screen = "title" | "loading" | "cutscene" | "play" | "paused" | "results";
@@ -186,3 +188,6 @@ export function pushHurt(h: Hurt): void {
     return { hurts: [...rest, h].slice(-4) };
   });
 }
+
+/** The base gun a Radbro starts every fight with. */
+export const baseWeaponOf = (id: RadbroId): BaseWeapon => RADBROS.find(r => r.id === id)?.weapon ?? "pistols";

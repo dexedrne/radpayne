@@ -8,7 +8,7 @@ import { alertGoon, onGoonDeath, setState } from "../ai/goon.ts";
 import { stepEnemy } from "../ai/enemies.ts";
 import { HB_HEAD, HB_MULT, HB_TORSO, aimPoint, makeCapsules } from "../combat/hitboxes.ts";
 import { HIT_ACTOR, HIT_NONE, HIT_WORLD, makeTraceHit, trace, type HitActor, type TraceHit } from "../combat/trace.ts";
-import { PICKUPS, SLOT_ORDER, SWAP_TIME, WEAPONS, makeWeapon, startReload, stepWeapon, triggerWeapon, type WeaponId } from "../combat/weapons.ts";
+import { PICKUPS, SLOT_ORDER, SWAP_TIME, WEAPONS, makeWeapon, slotOf, startReload, stepWeapon, triggerWeapon, type BaseWeapon, type WeaponId } from "../combat/weapons.ts";
 import type { LevelData, Marker } from "../world/level.ts";
 import { makeEnemy, makePlayer, type Enemy, type EnemyKind, type Player } from "./actors.ts";
 import { aimDir } from "./aim.ts";
@@ -57,9 +57,10 @@ export type KillCam = {
   headshot: boolean;
 };
 
-/** loadout: extra weapons owned from the start (tests, dev ?loadout=); the pistols are always owned.
+/** loadout: extra weapons owned from the start (tests, dev ?loadout=); the base gun is always owned.
+ *  base: that base gun (slot 1, never runs dry): the dual pistols, or the AK for #250.
  *  resume: start from a checkpoint saved in an earlier attempt (Game.saved). */
-export type GameOptions = { seed?: number; difficulty?: Difficulty; ai?: boolean; loadout?: WeaponId[]; resume?: Resume };
+export type GameOptions = { seed?: number; difficulty?: Difficulty; ai?: boolean; loadout?: WeaponId[]; base?: BaseWeapon; resume?: Resume };
 
 /** What a checkpoint keeps (room 3's, after the security office): where he stands, who is down, which
  *  doors are open, what was picked up and fired, his guns and ammo, health, copium and the stats so far.
@@ -151,7 +152,7 @@ export class Game {
     const spawn = level.markers.find(m => m.kind === "spawn");
     const sx = spawn?.x ?? 0, sz = spawn?.z ?? 0;
     const sy = this.world.groundBelow(sx, sz, PLAYER.radius, (spawn?.y ?? 0) + 1);
-    this.player = makePlayer(sx, Number.isFinite(sy) ? sy : 0, sz, spawn?.yaw ?? 0);
+    this.player = makePlayer(sx, Number.isFinite(sy) ? sy : 0, sz, spawn?.yaw ?? 0, opts.base ?? "pistols");
     this.checkpoint = { x: sx, y: this.player.y, z: sz, facing: spawn?.yaw ?? 0 };
     let n = 0;
     const drops = (level.room.drops ?? {}) as Record<string, string>;
@@ -411,16 +412,16 @@ export class Game {
     this.emit({ type: "bt", on });
   }
 
-  /** Slot 1..3, or 8 / 9 = previous / next owned weapon (wheel, bumper). */
+  /** Slot 1..3 (1 = the base gun), or 8 / 9 = previous / next owned weapon (wheel, bumper). */
   private switchWeapon(slot: number): void {
     const p = this.player;
+    const owned = SLOT_ORDER.filter(w => p.owned.includes(w));
+    let id: WeaponId | undefined;
     if (slot >= 8) {
-      const owned = SLOT_ORDER.filter(w => p.owned.includes(w));
       const i = owned.indexOf(p.weapon.id);
-      slot = SLOT_ORDER.indexOf(owned[(i + (slot === 9 ? 1 : owned.length - 1)) % owned.length]) + 1;
-    }
-    const id = SLOT_ORDER[slot - 1];
-    if (!id || !p.owned.includes(id) || p.weapon.id === id) return;
+      id = owned[(i + (slot === 9 ? 1 : owned.length - 1)) % owned.length];
+    } else id = owned.find(w => slotOf(w) === slot);
+    if (!id || p.weapon.id === id) return;
     const w = p.arsenal[id] ?? (p.arsenal[id] = makeWeapon(id));
     // the clock resets: a reload in progress is dropped, the new gun comes up after SWAP_TIME
     p.weapon.reloadT = 0;

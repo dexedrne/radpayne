@@ -5,6 +5,7 @@ import type { Player } from "./actors.ts";
 import type { InputFrame } from "./types.ts";
 import type { World } from "./world.ts";
 import { DODGE, DODGE_GRAVITY, PLAYER } from "./tuning.ts";
+import { isLongGun } from "../combat/weapons.ts";
 import { PITCH_MAX, PITCH_MIN, SHOULDER, facingOfAim } from "./aim.ts";
 
 export const PM_JUMP = 1;
@@ -224,8 +225,8 @@ export function pivotOf(p: Player, out: { x: number; y: number; z: number }, wor
 /** Muzzle of hand 0 (right) / 1 (left) for the current stance. */
 export function muzzleOf(p: Player, hand: number, out: { x: number; y: number; z: number }): { x: number; y: number; z: number } {
   const c = Math.cos(p.yaw), s = Math.sin(p.yaw);
-  // the shotgun is shouldered on the right: one muzzle, farther out
-  const long = p.weapon.id === "shotgun";
+  // the long guns (shotgun, AK) are carried on the right: one muzzle, farther out
+  const long = isLongGun(p.weapon.id);
   const side = long ? 0.14 : hand === 0 ? 0.22 : -0.22;
   const lying = p.mode === "dive" || p.mode === "prone";
   const up = lying ? (p.mode === "dive" ? 0.7 : 0.5) : p.mode === "roll" || p.mode === "getup" ? 0.9 : long ? 1.3 : 1.22;

@@ -4,10 +4,10 @@
 // the low-health heal prompt, out of copium, a dry gun, a weapon pickup. A prompt goes at once when
 // its reason does (the can is drunk, the health is back, the gun is switched).
 import { useUi, type Hud } from "../store.ts";
-import { SLOT_ORDER, type WeaponId } from "../../combat/weapons.ts";
+import { slotOf, type WeaponId } from "../../combat/weapons.ts";
 import { NUDGE_HOLD, OBJECTIVE_HOLD, captionBudget } from "./logic.ts";
 
-const NAMES: Record<WeaponId, string> = { pistols: "the pistols", shotgun: "the shotgun", smgs: "the smgs" };
+const NAMES: Record<WeaponId, string> = { pistols: "the pistols", ak: "the ak", shotgun: "the shotgun", smgs: "the smgs" };
 
 type Nudge = { text: string; at: number };
 /** Why a nudge is up: heal / dry / empty last only while their condition holds; a pickup runs its 4 s. */
@@ -34,11 +34,11 @@ export function useNudge(h: Hud, now: number): Nudge | null {
   if (empty && !s.empty) {
     // the next owned gun that still has rounds (the pistols never run dry)
     const other = h.owned.find(w => w !== h.weaponId && (h.ammo?.[w] ?? 1) > 0);
-    fire("empty", other ? `dry. switch to ${NAMES[other]}. [${SLOT_ORDER.indexOf(other) + 1}]` : "dry. nothing left to shoot.");
+    fire("empty", other ? `dry. switch to ${NAMES[other]}. [${slotOf(other)}]` : "dry. nothing left to shoot.");
   }
   s.empty = empty;
   const got = h.owned.find(w => !s.owned.includes(w));
-  if (got) fire("pickup", `picked up ${NAMES[got]}. [${SLOT_ORDER.indexOf(got) + 1}]`);
+  if (got) fire("pickup", `picked up ${NAMES[got]}. [${slotOf(got)}]`);
   s.owned = h.owned;
   const n = s.nudge;
   if (n && (now - n.at >= NUDGE_HOLD || n.why !== "pickup" && !s[n.why])) s.nudge = null;

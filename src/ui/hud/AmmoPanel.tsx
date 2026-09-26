@@ -45,11 +45,11 @@ function Slim({ live, low }: { live: boolean; low: boolean }) {
 
 function Row({ hand, n, size, kind }: { hand: string; n: number; size: number; kind: WeaponId }) {
   const lo = rowLow(n);
-  const Icon = kind === "shotgun" ? Shell : kind === "smgs" ? Slim : Bullet;
+  const Icon = kind === "shotgun" ? Shell : kind === "smgs" || kind === "ak" ? Slim : Bullet;
   return (
     <div className="row">
       <span className={`hand${lo ? " lo" : ""}`}>{hand}</span>
-      <div className={`rp-bul${kind === "smgs" ? " slim" : ""}`}>
+      <div className={`rp-bul${kind === "smgs" || kind === "ak" ? " slim" : ""}`}>
         {Array.from({ length: size }, (_, i) => <Icon key={i} live={i < n} low={lo} />)}
       </div>
     </div>

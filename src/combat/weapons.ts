@@ -4,7 +4,9 @@
 // before the new gun fires and cancels a reload in progress. Pickups: a weapon the first time (a full
 // magazine + its reserve), then ammo (see PICKUPS).
 
-export type WeaponId = "pistols" | "shotgun" | "smgs";
+export type WeaponId = "pistols" | "ak" | "shotgun" | "smgs";
+/** The gun a Radbro always carries (slot 1, infinite reserve): the dual pistols, or #250's AK. */
+export type BaseWeapon = "pistols" | "ak";
 
 export type WeaponDef = {
   id: WeaponId;
@@ -34,6 +36,9 @@ export const WEAPONS: Record<WeaponId, WeaponDef> = {
   // semi-auto: the pump is the animation (Shotgun_Fire racks it inside the 0.8 s). The plan's 6 deg
   // and 3 deg are the full cones: one blast kills a goon at 6 m, a handful of pellets land at 12 m
   shotgun: { id: "shotgun", name: "Shotgun", mag: 6, hands: 1, damage: 14, pellets: 8, interval: 0.8, spread: 3 * DEG, reload: 2, reserve: 24, auto: false, reserveMax: 48 },
+  // #250's rifle, instead of the pistols: shouldered two-handed, a touch more damage per second than the
+  // pistols at range but a wider cone on full auto and a slower mag change; never runs dry (a base gun)
+  ak: { id: "ak", name: "AK", mag: 30, hands: 1, damage: 30, pellets: 1, interval: 0.1, spread: 0.9 * DEG, reload: 2.2, reserve: Infinity, auto: true, reserveMax: Infinity },
   smgs: { id: "smgs", name: "Dual SMGs", mag: 30, hands: 2, damage: 14, pellets: 1, interval: 0.06, spread: 1.5 * DEG, reload: 1.8, reserve: 180, auto: true, reserveMax: 360 },
 };
 
@@ -48,7 +53,12 @@ export const PICKUPS: Record<string, { weapon?: WeaponId; ammo: WeaponId; amount
   smgs_ammo: { ammo: "smgs", amount: 30 },
 };
 
-export const SLOT_ORDER: WeaponId[] = ["pistols", "shotgun", "smgs"];
+/** Sort order of owned guns (the base gun first). Only one base gun is ever owned, so it is slot 1. */
+export const SLOT_ORDER: WeaponId[] = ["pistols", "ak", "shotgun", "smgs"];
+/** Number key / tab of a weapon: 1 = the base gun, 2 = shotgun, 3 = SMGs. */
+export const slotOf = (id: WeaponId): number => (id === "pistols" || id === "ak" ? 1 : id === "shotgun" ? 2 : 3);
+/** Carried with both hands on one gun (the long-gun clip set, one muzzle). */
+export const isLongGun = (id: string): boolean => id === "shotgun" || id === "ak";
 
 export type WeaponState = {
   id: WeaponId;

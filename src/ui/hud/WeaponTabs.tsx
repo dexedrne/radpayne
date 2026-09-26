@@ -1,14 +1,14 @@
-// Weapon tabs: 1 PISTOLS · 2 SHOTGUN · 3 SMGS. Current = paper fill, owned = ink plate, not owned =
+// Weapon tabs: 1 PISTOLS (or #250's AK) · 2 SHOTGUN · 3 SMGS. Current = paper fill, owned = ink plate, not owned =
 // a dashed "3 ———". The new current tab pops on a switch; a dry gun (no ammo, no reserve) gets a
 // red underline, the one in hand and any other owned one (`ammo`: rounds left per owned gun).
-import { SLOT_ORDER, type WeaponId } from "../../combat/weapons.ts";
+import type { WeaponId } from "../../combat/weapons.ts";
 
-const SHORT: Record<WeaponId, string> = { pistols: "PISTOLS", shotgun: "SHOTGUN", smgs: "SMGS" };
+const SHORT: Record<WeaponId, string> = { pistols: "PISTOLS", ak: "AK", shotgun: "SHOTGUN", smgs: "SMGS" };
 
 export function WeaponTabs({ current, owned, dry, ammo }: { current: WeaponId; owned: WeaponId[]; dry: boolean; ammo?: Partial<Record<WeaponId, number>> }) {
   return (
     <div className="rp-slots">
-      {SLOT_ORDER.map((id, i) => {
+      {([owned.includes("ak") ? "ak" : "pistols", "shotgun", "smgs"] as WeaponId[]).map((id, i) => {
         const has = owned.includes(id);
         const cur = id === current;
         const out = cur ? dry : has && (ammo?.[id] ?? 1) <= 0;

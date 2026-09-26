@@ -1,6 +1,6 @@
 // Player and enemy state (plain data; the systems live in sim/player.ts, ai/goon.ts and sim/game.ts).
 import { makeHitActor, type HitActor } from "../combat/trace.ts";
-import { makeWeapon, type WeaponId, type WeaponState } from "../combat/weapons.ts";
+import { makeWeapon, type BaseWeapon, type WeaponId, type WeaponState } from "../combat/weapons.ts";
 import { HEAVY_SCALE, PLAYER } from "./tuning.ts";
 
 export type PlayerMode = "normal" | "dive" | "prone" | "getup" | "roll" | "dead";
@@ -45,13 +45,13 @@ export type Player = {
   moveWZ: number;
 };
 
-export function makePlayer(x: number, y: number, z: number, facing: number): Player {
+export function makePlayer(x: number, y: number, z: number, facing: number, base: BaseWeapon = "pistols"): Player {
   const yaw = facing - Math.PI;
-  const pistols = makeWeapon("pistols");
+  const gun = makeWeapon(base);
   return {
     x, y, z, vx: 0, vy: 0, vz: 0, grounded: true, mode: "normal", modeT: 0, dirX: 0, dirZ: 1, rollOnLand: false, dodgeCooldown: 0,
     yaw, pitch: 0, facing, health: PLAYER.maxHealth, copium: PLAYER.startCopium, healLeft: 0,
-    weapon: pistols, owned: ["pistols"], arsenal: { pistols }, pivotUp: 1.55, speed: 0,
+    weapon: gun, owned: [base], arsenal: { [base]: gun }, pivotUp: 1.55, speed: 0,
     hit: makeHitActor("radbro", 0), moveWX: 0, moveWZ: 0,
   };
 }

@@ -191,7 +191,7 @@ let smgLast = 0;
 let smgTailFor: ReturnType<typeof setTimeout> | null = null;
 
 export const sfx = {
-  /** A shot: `weapon` picks the sound (pistols / shotgun / SMGs, the gang's pistol / smg / shotgun). */
+  /** A shot: `weapon` picks the sound (pistols / AK / shotgun / SMGs, the gang's pistol / smg / shotgun). */
   shot(player: boolean, dist = 0, pan = 0, weapon = "pistols"): void {
     const e = sfxOn();
     if (!e) return;
@@ -206,6 +206,17 @@ export const sfx = {
         play(e, "sfx/shotgun_pump", { gain: 0.55, at: t + 0.3 / rate });
         play(e, variant(["sfx/shotgun_shell_drop", "sfx/shotgun_shell_drop_2"]), { gain: 0.28, pan: 0.35, at: t + (0.62 + Math.random() * 0.15) / rate });
       }
+      return;
+    }
+    if (weapon === "ak") {
+      // no rifle sample: the pistol crack pitched down for weight, an SMG layer under it for the body
+      if (smgVoices >= 6) return;
+      smgVoices++;
+      const src = play(e, variant(SHOTS), { gain: g * 0.95, pan: p, rate: r * 0.78 });
+      if (src) src.onended = () => { smgVoices = Math.max(0, smgVoices - 1); };
+      else smgVoices--;
+      play(e, variant(SMG), { gain: g * 0.45, pan: p, rate: r * 0.82 });
+      if (player && Math.random() < 0.45) play(e, variant(indoor ? CASINGS_FLOOR : CASINGS), { gain: 0.18, at: t + (0.26 + Math.random() * 0.2) / rate, pan: 0.3 });
       return;
     }
     if (weapon === "smgs" || weapon === "smg") {

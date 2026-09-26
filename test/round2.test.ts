@@ -6,7 +6,7 @@ import { SHOULDER } from "../src/sim/aim.ts";
 import { Game } from "../src/sim/game.ts";
 import { Bot } from "../src/sim/bot.ts";
 import { DT, ENEMY, HEAVY, RUSHER, TIME } from "../src/sim/tuning.ts";
-import { SLOT_ORDER, SWAP_TIME, WEAPONS, makeWeapon, stepWeapon, triggerWeapon } from "../src/combat/weapons.ts";
+import { SLOT_ORDER, SWAP_TIME, slotOf, WEAPONS, makeWeapon, stepWeapon, triggerWeapon } from "../src/combat/weapons.ts";
 import { HB_TORSO, aimPoint, makeCapsules } from "../src/combat/hitboxes.ts";
 import { emptyInput, type GameEvent, type InputFrame } from "../src/sim/types.ts";
 import { boxNode, level, markerNode } from "./helpers.ts";
@@ -153,7 +153,8 @@ test("pickups: the weapon the first time, then ammo; slots and the wheel switch;
   let firstShot = -1;
   for (let i = 0; i < 120 && firstShot < 0; i++) { g.step(inp); if (g.drain().some(e => e.type === "shot")) firstShot = i; }
   assert.ok(firstShot * DT >= SWAP_TIME - 0.05, `fired ${firstShot * DT} s after the switch`);
-  assert.equal(SLOT_ORDER.join(), "pistols,shotgun,smgs");
+  assert.equal(SLOT_ORDER.join(), "pistols,ak,shotgun,smgs");
+  assert.deepEqual(SLOT_ORDER.map(slotOf), [1, 1, 2, 3], "the base gun (pistols or #250's AK) is key 1");
 });
 
 // a rusher 30 m out down a long room, the player at the origin
