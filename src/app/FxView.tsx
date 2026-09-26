@@ -270,7 +270,7 @@ export function FxView({ s }: { s: Session }) {
           const f = fx.flashes.spawn(0.05);
           f.p.copy(from);
           f.v.set(0, 0, 0);
-          f.s = (me ? 0.34 : 0.3) * (e.weapon === "shotgun" ? 1.35 : e.weapon === "smgs" || e.weapon === "smg" ? 0.8 : 1);
+          f.s = (me ? 0.34 : 0.3) * (e.weapon === "shotgun" ? 1.35 : e.weapon === "ak" ? 1.15 : e.weapon === "smgs" || e.weapon === "smg" ? 0.8 : 1);
           const c = me ? GUNFIRE.player : GUNFIRE.enemy;
           fx.flashes.mesh.setColorAt(fx.flashes.last, col.setRGB(c[0], c[1], c[2]));
           if (fx.flashes.mesh.instanceColor) fx.flashes.mesh.instanceColor.needsUpdate = true;

@@ -6,6 +6,8 @@
 //     reach of the chibi Radbros), which makes it a toy stick from across the room, so it is attached
 //     with a NON-uniform scale: length x the grip scale, cross-sections a little over true size
 //     (SHOTGUN_THICK): the grip, the pump point and the muzzle are all along z and stay put.
+//   makeAk(): #250's AK in the shotgun's frame (grip at the origin, handguard where the pump is, muzzle as
+//     far out), so the long-gun clips and the left hand's reach fit it unchanged; attached like the shotgun.
 //   makeSmg(): a compact machine pistol with the magazine in the grip; the pistol grips fit it as is.
 import { BoxGeometry, CylinderGeometry, Group, Mesh, MeshStandardMaterial, Quaternion, Vector3, type Object3D } from "three";
 import type { Grip } from "../anim/grips.ts";
@@ -68,6 +70,75 @@ export function makeShotgun(): Group {
   g.userData.rpGun = true;
   g.userData.muzzle = SHOTGUN_MUZZLE;
   g.userData.pump = pump;
+  g.traverse(o => { o.frustumCulled = false; });
+  return g;
+}
+
+/** The AK's muzzle (the shotgun's reach) and its handguard centre (where the left hand holds it). */
+export const AK_MUZZLE = new Vector3(0, 0.06, 0.68);
+export const AK_HANDGUARD = SHOTGUN_PUMP;
+// dark parkerized steel lifted for the night street, red-brown wood, the orange bakelite mag: an AK
+// silhouette that reads from the shoulder camera
+const akSteel = new MeshStandardMaterial({ color: "#5f646d", roughness: 0.42, metalness: 0.3, emissive: "#2a2d33" });
+const akWood = new MeshStandardMaterial({ color: "#8a4322", roughness: 0.55, metalness: 0.05, emissive: "#2a1208" });
+const akMagMat = new MeshStandardMaterial({ color: "#b8562a", roughness: 0.5, metalness: 0.05, emissive: "#3a170a" });
+const akReceiver = new BoxGeometry(0.052, 0.07, 0.3);
+const akCover = new BoxGeometry(0.046, 0.022, 0.26);
+const akGrip = new BoxGeometry(0.032, 0.1, 0.045);
+const akGuard = new BoxGeometry(0.01, 0.028, 0.07);
+const akHand = new BoxGeometry(0.05, 0.05, 0.19);
+const akGas = new CylinderGeometry(0.012, 0.012, 0.2, 8);
+const akBarrel = new CylinderGeometry(0.011, 0.011, 0.2, 8);
+const akBrake = new CylinderGeometry(0.015, 0.015, 0.04, 8);
+const akSight = new BoxGeometry(0.01, 0.045, 0.012);
+const akMag = new BoxGeometry(0.03, 0.052, 0.048);
+const akStock = new BoxGeometry(0.04, 0.07, 0.28);
+const akButt = new BoxGeometry(0.044, 0.12, 0.03);
+
+/** #250's AK-47 (see AK_MUZZLE / AK_HANDGUARD). */
+export function makeAk(): Group {
+  const g = new Group();
+  const receiver = new Mesh(akReceiver, akSteel);
+  receiver.position.set(0, 0.045, 0.1);
+  const cover = new Mesh(akCover, akSteel);
+  cover.position.set(0, 0.09, 0.09);
+  const grip = new Mesh(akGrip, akWood);
+  grip.rotation.x = 0.3;
+  const guard = new Mesh(akGuard, akSteel);
+  guard.position.set(0, 0.0, 0.06);
+  const hand = new Mesh(akHand, akWood);
+  hand.position.copy(AK_HANDGUARD);
+  const gas = new Mesh(akGas, akWood);
+  gas.rotation.x = Math.PI / 2;
+  gas.position.set(0, 0.085, 0.38);
+  const barrel = new Mesh(akBarrel, akSteel);
+  barrel.rotation.x = Math.PI / 2;
+  barrel.position.set(0, 0.06, 0.58);
+  const brake = new Mesh(akBrake, akSteel);
+  brake.rotation.x = Math.PI / 2;
+  brake.position.set(0, 0.06, 0.66);
+  const sight = new Mesh(akSight, akSteel);
+  sight.position.set(0, 0.088, 0.6);
+  // the banana mag: three short segments curving forward under the receiver, in front of the guard
+  // (short: the gun is attached 1.55x over true height for the shoulder camera, the mag with it)
+  const mag = new Group();
+  for (let i = 0; i < 3; i++) {
+    const m = new Mesh(akMag, akMagMat);
+    m.position.set(0, -0.045 * i - 0.018, 0.016 * i * i + 0.008 * i);
+    m.rotation.x = -0.3 * i;
+    mag.add(m);
+  }
+  mag.position.set(0, -0.005, 0.15);
+  const stock = new Mesh(akStock, akWood);
+  stock.rotation.x = -0.12;
+  stock.position.set(0, 0.03, -0.14);
+  const butt = new Mesh(akButt, akSteel);
+  butt.rotation.x = -0.12;
+  butt.position.set(0, 0.01, -0.28);
+  g.add(receiver, cover, grip, guard, hand, gas, barrel, brake, sight, mag, stock, butt);
+  g.userData.rpGun = true;
+  g.userData.muzzle = AK_MUZZLE;
+  g.userData.mag = mag;
   g.traverse(o => { o.frustumCulled = false; });
   return g;
 }

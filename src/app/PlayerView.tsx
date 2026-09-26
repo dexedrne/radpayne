@@ -11,7 +11,8 @@
 // body, the fire / reload as upper-body layers that rack the pump, but rides at his right hip (the
 // clips shoulder it under his big head, end-on to the camera, where it did not read): the barrel swung
 // up onto the crosshair, the left hand on the pump. Weapon_Swap plays on a switch; the guns change
-// hands at its "swap" point (0.23 s).
+// hands at its "swap" point (0.23 s). #250's AK rides the same long-gun set and hip carry (left hand on
+// the handguard, the reload layer for the mag change); its shots kick the muzzle up instead of a pump.
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useAssetRuntime } from "react-three-game";
@@ -23,11 +24,11 @@ import { CLIPS, SHOTGUN_CLIPS, UPPER_BODY, aimLimb, deathFor, findBone, pick, ro
 import { RADBRO_GRIPS, SHOTGUN_SCALE } from "../anim/grips.ts";
 import { RADBRO_GAIT, RUN_FROM, clipSpeed, legsFor } from "../anim/gait.ts";
 import { clipsPath, gunClipsPath, lightUp, modelPath, r2ClipsPath } from "./characters.ts";
-import { SHOTGUN_PUMP, SHOTGUN_RACK, SHOTGUN_THICK, aimGun, attachGun, makePistol, makeShotgun, makeSmg, muzzleWorld } from "./guns.ts";
+import { AK_HANDGUARD, SHOTGUN_PUMP, SHOTGUN_RACK, SHOTGUN_THICK, aimGun, attachGun, makeAk, makePistol, makeShotgun, makeSmg, muzzleWorld } from "./guns.ts";
 import { useUi, type RadbroId } from "../ui/store.ts";
 import { FRAME } from "./frame.ts";
 import { TIME } from "../sim/tuning.ts";
-import { WEAPONS } from "../combat/weapons.ts";
+import { WEAPONS, isLongGun } from "../combat/weapons.ts";
 import { SHOULDER, wrapAngle } from "../sim/aim.ts";
 import { camView } from "./CameraView.tsx";
 
@@ -82,6 +83,7 @@ type Rig = {
   guns: [Group, Group];
   smgs: [Group, Group];
   shotgun: Group;
+  ak: Group;
   hit: AnimationAction | null;
   reload: AnimationAction | null;
   /** Upper-body layers of the round-2 pack (null without it). */
@@ -155,13 +157,15 @@ function makeRig(id: RadbroId, src: Object3D, pack: Object3D | null, gunPack: Ob
   const guns: [Group, Group] = [makePistol(true), makePistol(true)];
   const smgs: [Group, Group] = [makeSmg(), makeSmg()];
   const shotgun = makeShotgun();
+  const ak = makeAk();
   const grips = RADBRO_GRIPS[id];
   if (bones.rHand) attachGun(guns[0], bones.rHand, grips.right, 1, GUN_SCALE);
   if (bones.lHand) attachGun(guns[1], bones.lHand, grips.left, 1, GUN_SCALE);
   if (bones.rHand) attachGun(smgs[0], bones.rHand, grips.right, 1, SMG_SCALE);
   if (bones.lHand) attachGun(smgs[1], bones.lHand, grips.left, 1, SMG_SCALE);
   if (bones.rHand) attachGun(shotgun, bones.rHand, grips.right, 1, [SHOTGUN_THICK_PLAYER, SHOTGUN_THICK_PLAYER, SHOTGUN_SCALE[id]]);
-  for (const g of [...smgs, shotgun]) g.visible = false;
+  if (bones.rHand) attachGun(ak, bones.rHand, grips.right, 1, [SHOTGUN_THICK_PLAYER, SHOTGUN_THICK_PLAYER, SHOTGUN_SCALE[id]]);
+  for (const g of [...smgs, shotgun, ak]) g.visible = false;
   // additive hit flinch (no root translation) and the upper-body reload layer
   const gunClips = clipsOf(gunPack);
   let hit: AnimationAction | null = null;
@@ -188,12 +192,12 @@ function makeRig(id: RadbroId, src: Object3D, pack: Object3D | null, gunPack: Ob
   const sgFire = upperLayer(player.mixer, r2, "Shotgun_Fire", "Shotgun_Fire_upper");
   const sgReload = upperLayer(player.mixer, r2, "Shotgun_Reload", "Shotgun_Reload_upper");
   const swap = upperLayer(player.mixer, r2, "Weapon_Swap", "Weapon_Swap_upper");
-  return { id, root, model, player, materials, guns, smgs, shotgun, bones, hit, reload, sgFire, sgReload, swap };
+  return { id, root, model, player, materials, guns, smgs, shotgun, ak, bones, hit, reload, sgFire, sgReload, swap };
 }
 
-/** The guns in his hands for a weapon (the shotgun's muzzle serves both "hands"). */
+/** The guns in his hands for a weapon (a long gun's muzzle serves both "hands"). */
 function handGuns(rig: Rig, w: string): Group[] {
-  return w === "shotgun" ? [rig.shotgun, rig.shotgun] : w === "smgs" ? rig.smgs : rig.guns;
+  return w === "shotgun" ? [rig.shotgun, rig.shotgun] : w === "ak" ? [rig.ak, rig.ak] : w === "smgs" ? rig.smgs : rig.guns;
 }
 
 export function PlayerView({ s }: { s: Session }) {
@@ -225,7 +229,7 @@ export function PlayerView({ s }: { s: Session }) {
       }
       if (e.type === "hurt" && e.target === -1 && e.hp > 0 && rig.hit) rig.hit.reset().setEffectiveWeight(0.9).play();
       if (e.type === "reload") {
-        const lay = w === "shotgun" && rig.sgReload ? rig.sgReload : rig.reload;
+        const lay = isLongGun(w) && rig.sgReload ? rig.sgReload : rig.reload;
         if (lay) {
           const d = lay.getClip().duration;
           lay.reset().setEffectiveTimeScale(d / WEAPONS[w].reload).setEffectiveWeight(0).play();
@@ -259,7 +263,7 @@ export function PlayerView({ s }: { s: Session }) {
     if (r.run !== s.run) {
       r.run = s.run; r.clip = ""; r.mode = ""; r.legYaw = p.facing; r.bodyYaw = p.facing; r.jumpHold = false; r.reloadW = 0; r.back = false;
       r.shown = p.weapon.id; r.swapTo = ""; r.swapT = -1; r.swapW = 0; r.fireW = 0;
-      pl.force(pick(pl, (p.weapon.id === "shotgun" ? SHOTGUN_CLIPS : CLIPS).idle), 0);
+      pl.force(pick(pl, (isLongGun(p.weapon.id) ? SHOTGUN_CLIPS : CLIPS).idle), 0);
       rig.hit?.stop();
       rig.reload?.stop();
       rig.sgFire?.stop();
@@ -272,7 +276,7 @@ export function PlayerView({ s }: { s: Session }) {
       if (r.swapT >= SWAP_AT && r.shown !== r.swapTo) { r.shown = r.swapTo; r.clip = ""; }
       if (r.swapT >= 0.47) r.swapT = -1;
     } else if (r.shown !== p.weapon.id) { r.shown = p.weapon.id; r.clip = ""; }
-    const C = r.shown === "shotgun" ? SHOTGUN_CLIPS : CLIPS;
+    const C = isLongGun(r.shown) ? SHOTGUN_CLIPS : CLIPS;
     // mode entries: the dive chain, the roll, the get-up, death
     if (p.mode !== r.mode) {
       const prev = r.mode;
@@ -356,7 +360,7 @@ export function PlayerView({ s }: { s: Session }) {
     const dt = Math.min(rawDelta, 0.1);
     const reloading = s.game.player.weapon.reloadT > 0 && m === "normal";
     r.reloadW += ((reloading ? 1 : 0) - r.reloadW) * Math.min(1, 12 * dt);
-    const sg = r.shown === "shotgun" && !!rig.sgReload;
+    const sg = isLongGun(r.shown) && !!rig.sgReload;
     rig.reload?.setEffectiveWeight(sg ? 0 : 2.4 * r.reloadW);
     rig.sgReload?.setEffectiveWeight(sg ? 1.6 * r.reloadW : 0);
     // the shotgun's fire layer (kick + pump) only while standing; the swap layer rises fast, then lets go
@@ -395,7 +399,8 @@ export function PlayerView({ s }: { s: Session }) {
     tmp.aim.set(t.x, t.y, t.z);
     const armK = r.armW * (1 - r.swapW);
     const held = handGuns(rig, r.shown);
-    if (r.shown === "shotgun") {
+    if (isLongGun(r.shown)) {
+      const lg = r.shown === "ak" ? rig.ak : rig.shotgun;
       // the hip carry: shouldered (the clips' hold) the gun sits under his big head and points away
       // from the shoulder camera, end-on: it did not read. So it rides at his right hip, the barrel
       // swung up onto the crosshair point (aimGun below), the left hand on the pump; the reload keeps it
@@ -408,10 +413,19 @@ export function PlayerView({ s }: { s: Session }) {
         const hip = SG_AXIS.copy(sh).addScaledVector(fwd, SHOTGUN_HIP.forward).addScaledVector(tmp.side, SHOTGUN_HIP.out).addScaledVector(UP, -SHOTGUN_HIP.down);
         aimLimb(B.rArm, B.rHand, hip, armK * (1 - 0.25 * r.reloadW));
       }
-      aimGun(rig.shotgun, alive ? tmp.aim : null, armK * (1 - 0.85 * r.reloadW), SHOTGUN_HIP.aimMax);
+      aimGun(lg, alive ? tmp.aim : null, armK * (1 - 0.85 * r.reloadW), SHOTGUN_HIP.aimMax);
+      if (r.shown === "ak") {
+        // muzzle climb: each shot tips the barrel up about its grip, the right forearm rides it a little
+        r.recoil[0] = Math.max(0, r.recoil[0] - dt * 18 * Math.max(g.timeScale, 0.3));
+        if (r.recoil[0] > 0 && alive) {
+          lg.rotateX(-0.09 * r.recoil[0]);
+          rotateBoneWorld(B.rFore, tmp.side, 0.06 * r.recoil[0]);
+          lg.updateMatrixWorld(true);
+        }
+      }
       if (alive && armK > 0.01) {
-        rig.shotgun.updateMatrixWorld(true);
-        aimLimb(B.lArm, B.lHand, rig.shotgun.localToWorld(SG_DIR.copy(SHOTGUN_PUMP)), armK * (1 - 0.7 * r.reloadW) * (1 - r.fireW * 0.4));
+        lg.updateMatrixWorld(true);
+        aimLimb(B.lArm, B.lHand, lg.localToWorld(SG_DIR.copy(r.shown === "ak" ? AK_HANDGUARD : SHOTGUN_PUMP)), armK * (1 - 0.7 * r.reloadW) * (1 - r.fireW * 0.4));
       }
     } else {
       // each arm aims a little outside the crosshair point (akimbo), scaled with the distance
@@ -432,9 +446,10 @@ export function PlayerView({ s }: { s: Session }) {
     rig.guns.forEach(gun => { gun.visible = r.shown === "pistols"; });
     rig.smgs.forEach(gun => { gun.visible = r.shown === "smgs"; });
     rig.shotgun.visible = r.shown === "shotgun";
-    if (r.shown !== "shotgun") {
+    rig.ak.visible = r.shown === "ak";
+    if (!isLongGun(r.shown)) {
       held.forEach((gun, h) => aimGun(gun, alive ? tmp.aim : null, armK * (1 - (h === 1 ? 0.9 : 0.5) * r.reloadW), 0.75));
-    } else {
+    } else if (r.shown === "shotgun") {
       // (aimed above, with the carry) rack the pump: back and forward at the clip's pumpBack (fire 0.30 s, reload 1.60 s)
       const pump = rig.shotgun.userData.pump as Object3D;
       const f = rig.sgFire && r.fireW > 0.05 ? rackAt(rig.sgFire.time, 0.3) : 0;
@@ -458,7 +473,7 @@ export function PlayerView({ s }: { s: Session }) {
       r.faded = fade < 1;
     }
     rig.model.visible = fade > HIDE_BELOW;
-    if (fade <= 0.6) for (const gun of [...rig.guns, ...rig.smgs, rig.shotgun]) gun.visible = false;
+    if (fade <= 0.6) for (const gun of [...rig.guns, ...rig.smgs, rig.shotgun, rig.ak]) gun.visible = false;
   }, FRAME.bones);
 
   if (!rig) return null;

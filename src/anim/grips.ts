@@ -24,11 +24,13 @@ export const RADBRO_GRIPS: Record<RadbroId, HandGrips> = {
     right: { p: [0.0036, 0.0598, 0.02], q: [-0.64543, -0.20661, -0.21927, 0.70189] },
     left: { p: [-0.0032, 0.0604, 0.0197], q: [-0.64715, 0.20687, 0.21108, 0.70274] },
   },
-  // #3171 (added 2026-09-25): no Aim_Idle clip yet (he has no .gun.glb pack), so this can't be measured
-  // for real - copied from #723 (closest build) as a placeholder. Re-measure once his gun pack exists.
   "3171": {
-    right: { p: [-0.0032, 0.0635, 0.0181], q: [-0.62562, -0.29789, -0.26924, 0.66885] },
-    left: { p: [0.0036, 0.0645, 0.0176], q: [-0.62981, 0.29629, 0.25727, 0.67035] },
+    right: { p: [0.007, 0.0584, 0.0213], q: [-0.6471, -0.15724, -0.19067, 0.72124] },
+    left: { p: [-0.0056, 0.0606, 0.0221], q: [-0.64284, 0.15385, 0.16594, 0.73181] },
+  },
+  "250": {
+    right: { p: [-0.0031, 0.0657, 0.0168], q: [-0.652, -0.2489, -0.18213, 0.69266] },
+    left: { p: [0.0021, 0.0642, 0.0169], q: [-0.65307, 0.24427, 0.18762, 0.69183] },
   },
 };
 
@@ -40,5 +42,4 @@ export const MILADY_GRIP: HandGrips & { forearm: number } = {
 
 /** The shotgun's attach scale per Radbro (round-2 clip manifest grips.shotgun.RightHand.scale): the
  *  shouldered pump gun at the reach of each chibi's arms. The right-hand grip is the pistol's. */
-// #3171: no round-2 pack yet either - placeholder at #723's scale, same reasoning as the grip above.
-export const SHOTGUN_SCALE: Record<RadbroId, number> = { "652": 0.72, "723": 0.72, "2564": 0.64, "4764": 0.72, "3171": 0.72 };
+export const SHOTGUN_SCALE: Record<RadbroId, number> = { "652": 0.72, "723": 0.72, "2564": 0.64, "4764": 0.72, "3171": 0.7, "250": 0.72 };

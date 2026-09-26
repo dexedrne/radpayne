@@ -15,9 +15,10 @@ export const RADBRO_GAIT: Record<RadbroId, Gait> = {
   "4764": { run: 3.07, walk: 0.54 },
   "2564": { run: 2.79, walk: 0.51 },
   "723": { run: 3.12, walk: 0.57 },
-  // #3171 (added 2026-09-25): not yet measured on his own rig - defaulted to #723's numbers (closest
-  // build, same 1.8 m rig height). Re-measure from his Run_02/Casual_Walk once he has an Aim_Run pack.
-  "3171": { run: 3.12, walk: 0.57 },
+  // #3171 / #250: their shooter-clip manifest speeds (Aim_Run / Aim_Walk_Fwd, a different foot measure)
+  // scaled by the other four's mean ratio to these numbers (run x2.18, walk x1.08; each within 4%)
+  "3171": { run: 2.89, walk: 0.52 },
+  "250": { run: 3.28, walk: 0.59 },
 };
 
 /** The Miladys' clips come from #723's rig; scale by her leg length (hips height) against #723's. */

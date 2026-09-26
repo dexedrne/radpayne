@@ -6,7 +6,7 @@
 // At a locked breach door (room 3) it dives through when it is within 4 m and heading for it.
 // Used by the Node smoke test and the browser's ?bot mode (same input frames -> same result).
 import { HB_HEAD, HB_TORSO, aimPoint, makeCapsules } from "../combat/hitboxes.ts";
-import { PICKUPS, SLOT_ORDER, WEAPONS, ammoLeft, type WeaponId } from "../combat/weapons.ts";
+import { PICKUPS, WEAPONS, ammoLeft, slotOf, type WeaponId } from "../combat/weapons.ts";
 import { insideTrigger, type Game } from "./game.ts";
 import { pivotOf } from "./player.ts";
 import { emptyInput, type InputFrame } from "./types.ts";
@@ -185,7 +185,8 @@ export class Bot {
     const p = g.player;
     if (this.swapCd > 0 || p.owned.length < 2 || p.weapon.reloadT > 0 && ammoLeft(p.weapon) > 0) return;
     const has = (id: WeaponId) => p.owned.includes(id) && ammoLeft(p.arsenal[id]!) > 0;
-    const want: WeaponId = this.only && has(this.only) ? this.only : dist < 9 && has("shotgun") ? "shotgun" : has("smgs") ? "smgs" : has("shotgun") && dist < 14 ? "shotgun" : "pistols";
-    if (want !== p.weapon.id) { f.slot = SLOT_ORDER.indexOf(want) + 1; this.swapCd = 1.5; }
+    const base = p.owned[0];
+    const want: WeaponId = this.only && has(this.only) ? this.only : dist < 9 && has("shotgun") ? "shotgun" : base === "ak" ? base : has("smgs") ? "smgs" : has("shotgun") && dist < 14 ? "shotgun" : base;
+    if (want !== p.weapon.id) { f.slot = slotOf(want); this.swapCd = 1.5; }
   }
 }
