@@ -28,7 +28,7 @@ import { FRAME } from "./frame.ts";
 import { sfxKey } from "../audio/sfx.ts";
 
 const own = <T extends { userData: Record<string, unknown> }>(m: T): T => { m.userData.rpOwn = true; return m; };
-const glowMat = (c: string, opacity = 1) => own(new MeshBasicMaterial({ color: new Color(c), transparent: opacity < 1, opacity, blending: opacity < 1 ? AdditiveBlending : undefined, depthWrite: opacity >= 1, toneMapped: false, side: DoubleSide }));
+const glowMat = (c: string, opacity = 1) => own(new MeshBasicMaterial({ color: new Color(c), transparent: opacity < 1, opacity, ...(opacity < 1 ? { blending: AdditiveBlending } : {}), depthWrite: opacity >= 1, toneMapped: false, side: DoubleSide }));
 const UP = new Vector3(0, 1, 0);
 
 export function Chapter2View({ s }: { s: Session }) {
