@@ -5,7 +5,7 @@ a Milady gang's rave in bullet time: dual pistols, slow motion, shootdodges, and
 
 > they took everything I had. I went back for it.
 
-**Status:** chapter 1, complete (third round). The chapter plays start to finish: title, the comic-panel
+**Status:** chapter 1, complete (third round); chapter 2 playable on placeholder art and voices. The chapter plays start to finish: title, the comic-panel
 cutscene with the narrator, then room 1, the rainy Manhattan street outside CLUB MILADY (puddle
 reflections, neon bloom, rain that slows in bullet time). Clear the Milady goons, watch the last bullet
 land, walk to the club door, and the ending panels take you inside: room 2, the rave. The dance floor is
@@ -20,6 +20,22 @@ unfinished floor they pry the doors open onto), a rival heavy drops through the 
 and the cables snap before the last stop. Cutscene 3 is the penthouse and the call; room 5 is the boss,
 Madame Pockit, in her big oxblood coat: three phases, her adds through two doors, heart grenades, a
 chandelier over the rug. Cutscene 4 brings the bag back. TO BE CONTINUED, then the chapter's results.
+
+**Chapter 2: Keeping Score.** Madame Pockit's phone rings on the marble; whoever calls lives higher up.
+After chapter 1's results, CHAPTER 2 starts it (and once chapter 1 is cleared on this browser, the title
+has a chapter select). Its intro cutscene, then room 6, the tower's roof in the storm: a helicopter off
+the edge sweeps the roof with its searchlight (standing in it, they aim better; shoot the lamp out and it
+leaves) and lowers two squads onto the helipad on ropes (shoot them on the way down); snipers on the water
+tower and the billboard. Over a glass bridge to room 7, the sky garden under glass: the walkway over the
+koi pit cracks and gives way. Room 8, the private airship a mile up: the cargo door blows and the hold
+pulls everything toward the sky (run against it; the girls go out). Room 9, the counting floor above the
+clouds: shutters cut the floor in two (the way round is the catwalk) and the lights go out. Room 10, the
+vault at sunrise: the Countess, who keeps the score, three phases (her rifle's white laser tell: move or
+dive; shooting her while she aims hurts her more, and enough breaks her aim; red security beams sweep the
+floor from phase 2: dive under the high one, jump the low one), her girls through two lifts, her last
+stand. Every cutscene is rhymed; the panels and voices are placeholders for now (painted tones and
+captions): `docs/chapter2-assets.md` lists what is still to make. Each room hides three secrets, a gold
+Webring pin and an egg.
 
 **The arsenal:** every hostile drops the gun she carried, and guns lie in the rooms from the first street
 on: the hand cannon, a sawed-off, an assault rifle, a sniper rifle with a scope, frag grenades, #4764's
@@ -161,6 +177,18 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
     fire, melee and grenades; `egg` markers (`{egg, interact?}`) are drawn by `src/app/EggsView.tsx`.
     The rooms' additions live in `tools/levels/arsenal.ts` (the room tools apply them; `node
     tools/arsenal-levels.ts` patches the JSONs in place, idempotently).
+  - Chapter 2 (`node tools/room6.ts` .. `room10.ts`, on `tools/levels/kit2.ts`: cover points around the
+    boxes meant as cover, waypoint grids, stairs with rails): a room's `stage` (`src/sim/stage.ts`,
+    `src/sim/ch2/*`: `roof` the searchlight and rope `drops`, `garden` the glass that gives way, `airship`
+    the cargo door, `counting` the shutters and the blackout, `vault` the Countess's room: its lifts'
+    `waves`, the beams, the gate `lock`) starts its set pieces from trigger markers with action `setpiece`
+    and a `cue`. `maxRise` (a room with floors above each other: no auto-link across more height; stairs
+    link explicitly), a waypoint's `solo`. The enemy kind `countess` is the boss (`src/ai/countess.ts`,
+    her numbers and the set pieces' in `src/sim/tuning2.ts`). The looks are `src/app/look/sky.tsx`, the
+    moving parts `src/app/Chapter2View.tsx`, the lines `src/app/chapter2Lines.ts`, the cutscenes
+    `node tools/chapter2-script.ts` (it writes `public/cutscenes/ch2a..ch2f.json` and the assets list).
+    `node tools/ch2bot.ts [rooms] [seeds] [difficulty]`: the bot through each room (clear time, deaths,
+    health lost, the set pieces that fired).
   - Round 3: a room's `later: [groups]` makes those groups wait unseen until the room's own mechanism
     brings them in. Room 4 (`node tools/room4.ts`) has `ride` in its settings (`src/sim/ride.ts`): the
     car (`car`, `hatch`) and the steps, legs (`t` seconds; `roof` + `group`: the heavy through the
