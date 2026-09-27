@@ -6,9 +6,9 @@
       "image": "/cutscenes/c1/panel_1.webp",
       "tone": "phone",
       "box": [0.031, 0.036, 0.234, 0.093],
-      "dur": 7.3,
+      "dur": 8.3,
       "lines": [
-        { "audio": "cs1_01", "text": "the rug came quietly. the screen said zero. i watched it for an hour. it didn't change its mind." }
+        { "audio": "cs1_01", "text": "the rug came quiet. the screen went to nothing. i stared at it an hour, like it owed me something." }
       ],
       "maxW": 0.37,
       "size": 0.9
@@ -17,9 +17,9 @@
       "image": "/cutscenes/c1/panel_2.webp",
       "tone": "street",
       "box": [0.025, 0.037, 0.193, 0.107],
-      "dur": 6.7,
+      "dur": 8.0,
       "lines": [
-        { "audio": "cs1_02", "text": "manhattan, 2 a.m. three days of rain. every trail ended under the same pink light." }
+        { "audio": "cs1_02", "text": "manhattan, two a.m., three days of rain. every trail i followed ended in the same pink stain." }
       ],
       "maxW": 0.265,
       "size": 0.82
@@ -28,12 +28,14 @@
       "image": "/cutscenes/c1/panel_3.webp",
       "tone": "club",
       "box": [0.019, 0.028, 0.167, 0.078],
-      "dur": 11.2,
+      "dur": 15.3,
       "lines": [
-        { "audio": "cs1_03", "text": "club milady. three girls on the door, smiling like they'd been expecting me. one had my bag." },
-        { "audio": "cs1_bag", "speaker": "goon_b", "text": "\"was this yours?\"" },
-        { "audio": "cs1_list", "speaker": "goon_a", "text": "\"you're off the list.\"" }
+        { "audio": "cs1_03", "text": "club milady. three girls on the door, all smiles. one had my bag, like she'd had it a while." },
+        { "audio": "cs1_bag", "speaker": "goon_b", "text": "\"was this yours? not anymore!\"" },
+        { "audio": "cs1_list", "speaker": "goon_a", "text": "\"you're not on the list. you won't be missed.\"" }
       ],
+      "maxW": 0.6,
+      "size": 0.82,
       "push": 1.02
     },
     {
@@ -42,7 +44,7 @@
       "box": [0.013, 0.028, 0.221, 0.111],
       "dur": 8.6,
       "lines": [
-        { "audio": "cs1_04", "text": "a pistol and a sword. no plan past the door. it's a simple way to live. it doesn't last long." }
+        { "audio": "cs1_04", "text": "a pistol, a sword, and no plan past the door. it's a simple way to live, till it isn't anymore." }
       ],
       "maxW": 0.36,
       "size": 0.82

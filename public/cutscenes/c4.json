@@ -10,10 +10,10 @@
       "lines": [
         {
           "audio": "cs4_01",
-          "text": "she went down like a curtain at the end of a show. the bag was lighter than i remembered. it always is."
+          "text": "she fell like a curtain when the last song ends. the bag was lighter than i remembered. so are friends."
         }
       ],
-      "dur": 8.3
+      "dur": 7.6
     },
     {
       "image": "/cutscenes/c4/panel_2.webp",
@@ -22,10 +22,10 @@
       "lines": [
         {
           "audio": "cs4_02",
-          "text": "her phone kept ringing. whoever was calling was higher up than any penthouse."
+          "text": "her phone kept ringing on the marble floor. whoever was calling lived higher up, and wanted more."
         }
       ],
-      "dur": 5.4
+      "dur": 8.7
     },
     {
       "image": "/cutscenes/c4/panel_3.webp",
@@ -34,10 +34,10 @@
       "lines": [
         {
           "audio": "cs4_03",
-          "text": "i checked the screen. it didn't say zero anymore. somewhere above all of it, somebody was already counting."
+          "text": "i checked the screen. it wasn't zero anymore. somewhere above it all, somebody was already keeping score."
         }
       ],
-      "dur": 8.3
+      "dur": 8.8
     }
   ]
 }

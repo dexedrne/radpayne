@@ -10,10 +10,10 @@
       "lines": [
         {
           "audio": "cs2_01",
-          "text": "the dj was gone. the record kept spinning for nobody. glitter and brass all over the floor."
+          "text": "the dj was gone, the record still turning. glitter and brass on the floor, and the smoke machine burning."
         }
       ],
-      "dur": 7.3
+      "dur": 9.9
     },
     {
       "image": "/cutscenes/c2/panel_2.webp",
@@ -22,10 +22,10 @@
       "lines": [
         {
           "audio": "cs2_02",
-          "text": "up past the lights, behind the glass: my bag, going up. it always goes up for somebody else."
+          "text": "past the lights, behind the glass, my bag was on the rise. it always goes up for somebody else. no surprise."
         }
       ],
-      "dur": 7.7
+      "dur": 10.1
     },
     {
       "image": "/cutscenes/c2/panel_3.webp",
@@ -34,15 +34,18 @@
       "lines": [
         {
           "audio": "cs2_03",
-          "text": "the girl from the door. she'd kept the key and lost her nerve."
+          "text": "the girl from the door had the key and none of her nerve. she knew the way up. she knew what she'd deserve."
         },
         {
           "audio": "cs2_bouncer",
           "speaker": "goon_b",
-          "text": "\"top floor. she's waiting for you.\""
+          "text": "\"top floor, cutie. she's waiting for you. go on up. she'll know what to do.\""
         }
       ],
-      "dur": 8.8
+      "dur": 15.7,
+      "maxW": 0.62,
+      "size": 0.82,
+      "push": 1.02
     },
     {
       "image": "/cutscenes/c2/panel_4.webp",
@@ -51,10 +54,10 @@
       "lines": [
         {
           "audio": "cs2_04",
-          "text": "back here the music thinned out. back here they kept the other radbros. the ones who sold early."
+          "text": "back here the bass went thin and low. back here they kept the other radbros. the ones who sold too early. the ones who let it go."
         }
       ],
-      "dur": 7.9
+      "dur": 9.8
     }
   ]
 }
