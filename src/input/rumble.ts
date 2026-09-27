@@ -1,5 +1,6 @@
 // Pad vibration, light: his shots (a heavier kick for the big guns), hits on him, the landings, a melee
-// that connects, a frag going off, a round off #4764's blade and his guard breaking. Dual-rumble through gamepad.vibrationActuator where the browser has
+// that connects, a frag going off, a round off #4764's blade and his guard breaking; his hits landing
+// (rumbleOfHit: a light tick, a sharp headshot, a firm kill; played by the hit feel, app/HitFeelView.tsx). Dual-rumble through gamepad.vibrationActuator where the browser has
 // it; nothing where it does not. The page plays it only with Vibration on and the pad in use.
 import { PLAYER_ID, type GameEvent } from "../sim/types.ts";
 
@@ -34,7 +35,10 @@ export function rumbleOf(e: GameEvent): Rumble | null {
   }
 }
 
-type Actuator = { playEffect?: (type: string, p: Record<string, number>) => Promise<unknown> };
+/** A landed hit of his (app/hitfeel.ts groups them; `k` = Hit feedback's strength, 0 = none). */
+export { rumbleOfHit } from "../app/hitfeel.ts";
+
+type Actuator ={ playEffect?: (type: string, p: Record<string, number>) => Promise<unknown> };
 
 /** Play it on this pad (no-op without a dual-rumble actuator). */
 export function playRumble(gp: Gamepad | null, r: Rumble): void {
