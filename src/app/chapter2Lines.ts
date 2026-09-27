@@ -92,7 +92,7 @@ export const CH2_ROOMS = {
   room8: {
     number: 3, of: 5, chapter: CH, label: "THE AIRSHIP",
     objective: "clear the ship. it's going where she is.",
-    objectiveClear: "the gangway, at the bow.",
+    objectiveClear: "the aft stair. she was docking.",
     killcamLine: "last one. a long way down.",
     clearLine: "the ship turned for the last tower. she was expecting me.",
     pauseLine: "chapter 2: keeping score. the airship, a mile up.",
