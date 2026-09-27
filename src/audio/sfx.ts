@@ -129,7 +129,7 @@ export type SampleGroup = "cs1" | "room" | "music" | "fight" | "later";
 const LATER = [
   /^music\/(rave_club|fight_rave|backrooms_calm)$/,
   /^voices\/(crowd|pa|heavy)\//,
-  /^voices\/narrator\/(r2_|r3_|cs2_)/,
+  /^voices\/narrator\/(r2_|r3_(?!shotgun$|smgs$)|cs2_)/, // the shotgun / SMG pickup lines can fire in room 1 now
   /^voices\/goon_[ab]\/(charge_|cs2_)/,
   /^voices\/radbro\/breach$/,
   /^sfx\/(shotgun_tail_(club|backrooms)|record_scratch|door_|keycard_|elevator_|crowd_|office_room_tone|fluorescent_|glass_wall|impact_(wood|bottle|drywall|speaker|screen|body_heavy)|heavy_step|footsteps_hard|dive_land_floor|shell_casing_floor)/,
