@@ -80,7 +80,7 @@ test("gamepad: Cross on the fight prompt starts the room before the steps, and t
 test("gamepad: the console layout (every button -> its action, held buttons once)", () => {
   const cases: Array<[number, (f: InputFrame) => unknown, unknown]> = [
     [BTN.cross, f => f.jump, true], [BTN.circle, f => f.melee, true], [BTN.square, f => f.reload, true], [BTN.triangle, f => f.throw, true],
-    [BTN.r1, f => f.dodge, true], [BTN.r3, f => f.bt, true], [BTN.l3, f => f.bt, true], [BTN.l1, f => f.slot, 9],
+    [BTN.r1, f => f.dodge, true], [BTN.r3, f => f.bt, true], [BTN.l3, f => f.bt, true], [BTN.l1, f => f.cover, true],
     [BTN.right, f => f.slot, 9], [BTN.left, f => f.slot, 8], [BTN.up, f => f.copium, true], [BTN.down, f => f.interact, true],
   ];
   for (const [i, get, want] of cases) withPad(b => {
@@ -396,5 +396,32 @@ test("gamepad: a stick that rests past the dead zone (drift) does not keep the p
     pad.axes = [0, 0, 0.4, 0];
     l.poll(1 / 60);
     assert.equal(useDevice.getState().device, "pad");
+  });
+});
+
+test("cover keys: C takes cover; in cover the right mouse pops out while held (Q stays bullet time); L2 is the pad's pop", () => {
+  const l = new InputLatch();
+  l.press("KeyC");
+  let f = { ...l.consume() };
+  assert.equal(f.cover, true);
+  assert.equal({ ...l.consume() }.cover, false, "an edge");
+  l.mouseDown(2);
+  f = { ...l.consume() };
+  assert.equal(f.bt, true, "out of cover: right mouse is bullet time");
+  l.mouseUp(2);
+  l.coverMode = true;
+  l.mouseDown(2);
+  f = { ...l.consume() };
+  assert.equal(f.bt, false, "in cover: no bullet time on the right mouse");
+  assert.equal(f.aim, true, "held: aim (pop out)");
+  l.mouseUp(2);
+  assert.equal({ ...l.consume() }.aim, false);
+  l.press("KeyQ");
+  assert.equal({ ...l.consume() }.bt, true, "Q still toggles it");
+  withPad(b => {
+    const k = new InputLatch();
+    b[BTN.l2].value = 0.8; b[BTN.l2].pressed = true;
+    k.poll(1 / 60);
+    assert.equal({ ...k.consume() }.aim, true);
   });
 });

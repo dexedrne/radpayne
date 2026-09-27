@@ -77,7 +77,7 @@ export class Bot {
     const f = this.frame;
     const p = g.player;
     f.fire = f.bt = f.dodge = f.jump = f.reload = f.copium = f.skip = false;
-    f.melee = f.throw = f.interact = f.zoom = f.guard = false;
+    f.melee = f.throw = f.interact = f.zoom = f.guard = f.cover = f.aim = false;
     f.slot = 0;
     f.moveX = f.moveY = 0;
     f.yaw = p.yaw;

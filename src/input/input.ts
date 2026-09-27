@@ -4,7 +4,9 @@
 // the same frame as the keys (a recorded log replays the same whatever played it); its layout is
 // pad.ts's: L2 aims (steadier, the aim assist's pull; the scope with the sniper), R2 fires (analog, with
 // hysteresis), R1 dives, R3 / L3 bullet time, Cross jumps, Square reloads (or uses what is in reach),
-// Triangle throws, Circle strikes, L1 / d-pad left-right change the gun, d-pad up copium, down use.
+// Triangle throws, Circle strikes, L1 takes cover (sim/cover.ts; in cover L2 pops out), the d-pad's
+// left-right change the gun, up copium, down use. On the keys C is cover, and in cover the right mouse
+// pops out (held) instead of toggling bullet time (Q still does).
 // #4764's katana: the melee button (F / Circle) held is his guard, a tap the cut (the sim decides which
 // from the held level in the frame, `guard`).
 import { PITCH_MAX, PITCH_MIN } from "../sim/aim.ts";
@@ -44,7 +46,9 @@ export class InputLatch {
   rmb = false;
   /** What drove the aim last: the mouse / keys or the pad (the assist is the pad's only). */
   via: "kbm" | "pad" = "kbm";
-  private edges = { bt: false, dodge: false, jump: false, reload: false, copium: false, skip: false, slot: 0, melee: false, throw: false, interact: false };
+  private edges = { bt: false, dodge: false, jump: false, reload: false, copium: false, skip: false, slot: 0, melee: false, throw: false, interact: false, cover: false };
+  /** In cover (the game sets it): right mouse pops him out while held instead of toggling bullet time. */
+  coverMode = false;
   private pad = { lx: 0, ly: 0, fire: false, l2: 0, active: false, start: false, a: false, circle: false, prev: [] as boolean[], sticks: [0, 0, 0, 0] };
   readonly frame: InputFrame = emptyInput();
   /** Any key / button this frame (skips cutscenes and the kill cam). */
@@ -73,6 +77,7 @@ export class InputLatch {
       case "KeyF": this.edges.melee = true; break;
       case "KeyG": this.edges.throw = true; break;
       case "KeyE": this.edges.interact = true; break;
+      case "KeyC": this.edges.cover = true; break;
     }
   }
   release(code: string): void {
@@ -84,7 +89,7 @@ export class InputLatch {
     this.anyPress = true;
     this.edges.skip = true;
     if (button === 0) this.lmb = true;
-    if (button === 2) { this.rmb = true; if (!this.zoomMode) this.edges.bt = true; }
+    if (button === 2) { this.rmb = true; if (!this.zoomMode && !this.coverMode) this.edges.bt = true; }
   }
   mouseUp(button: number): void {
     if (button === 0) this.lmb = false;
@@ -154,7 +159,8 @@ export class InputLatch {
     if (hit(BTN.triangle)) this.edges.throw = true;
     if (hit(BTN.circle)) this.edges.melee = true;
     pd.circle = !!now[BTN.circle];
-    if (hit(BTN.l1) || hit(BTN.right)) this.edges.slot = 9;
+    if (hit(BTN.l1)) this.edges.cover = true;
+    if (hit(BTN.right)) this.edges.slot = 9;
     if (hit(BTN.left)) this.edges.slot = 8;
     if (hit(BTN.up)) this.edges.copium = true;
     if (hit(BTN.down)) this.edges.interact = true;
@@ -197,10 +203,11 @@ export class InputLatch {
     f.fire = this.lmb || this.pad.fire;
     f.zoom = this.zoomMode && (this.rmb || this.pad.l2 >= 0.3);
     f.guard = this.keys.has("KeyF") || this.pad.circle;
+    f.aim = this.rmb || this.pad.l2 >= 0.3;
     const e = this.edges;
     f.bt = e.bt; f.dodge = e.dodge; f.jump = e.jump; f.reload = e.reload; f.copium = e.copium; f.skip = e.skip; f.slot = e.slot;
-    f.melee = e.melee; f.throw = e.throw; f.interact = e.interact;
-    e.bt = e.dodge = e.jump = e.reload = e.copium = e.skip = e.melee = e.throw = e.interact = false;
+    f.melee = e.melee; f.throw = e.throw; f.interact = e.interact; f.cover = e.cover;
+    e.bt = e.dodge = e.jump = e.reload = e.copium = e.skip = e.melee = e.throw = e.interact = e.cover = false;
     e.slot = 0;
     return f;
   }
@@ -208,7 +215,7 @@ export class InputLatch {
   /** Drop pending edges (e.g. the click that locked the pointer must not fire). */
   flush(): void {
     const e = this.edges;
-    e.bt = e.dodge = e.jump = e.reload = e.copium = e.skip = e.melee = e.throw = e.interact = false;
+    e.bt = e.dodge = e.jump = e.reload = e.copium = e.skip = e.melee = e.throw = e.interact = e.cover = false;
     e.slot = 0;
     this.anyPress = false;
   }

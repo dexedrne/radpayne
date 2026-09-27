@@ -8,7 +8,8 @@
 //  Milady (Pockit VRM, scaled so the Head bone sits at MILADY_HEAD_BONE): Hips ~1.05, neck ~1.52.
 
 export type BodyType = "radbro" | "milady";
-export type Stance = "stand" | "crouch" | "dive" | "prone" | "dead";
+/** cover: tucked down behind low cover (lower than a crouch: the head under a waist-high top). */
+export type Stance = "stand" | "crouch" | "cover" | "dive" | "prone" | "dead";
 
 export const MILADY_HEAD_BONE = 1.6;
 
@@ -22,7 +23,7 @@ export const HB_NAMES = ["head", "torso", "legL", "legR"] as const;
 export const HB_MULT = [3, 1, 0.75, 0.75] as const;
 
 type Seg = { a: [number, number, number]; b: [number, number, number]; r: number };
-type Skeleton = { stand: Seg[]; crouch: Seg[]; /** lying along +z from the hips, y = 0 axis */ lying: Seg[] };
+type Skeleton = { stand: Seg[]; crouch: Seg[]; cover: Seg[]; /** lying along +z from the hips, y = 0 axis */ lying: Seg[] };
 
 const sph = (p: [number, number, number], r: number): Seg => ({ a: p, b: p, r });
 const cap = (a: [number, number, number], b: [number, number, number], r: number): Seg => ({ a, b, r });
@@ -31,11 +32,13 @@ export const SKELETONS: Record<BodyType, Skeleton> = {
   radbro: {
     stand: [sph([0, 1.4, 0.03], 0.27), cap([0, 0.8, 0], [0, 1.06, 0], 0.2), cap([0.1, 0.12, 0], [0.09, 0.66, 0], 0.11), cap([-0.1, 0.12, 0], [-0.09, 0.66, 0], 0.11)],
     crouch: [sph([0, 1.02, 0.14], 0.27), cap([0, 0.5, 0], [0, 0.74, 0.08], 0.2), cap([0.12, 0.1, 0.16], [0.1, 0.44, 0], 0.11), cap([-0.12, 0.1, 0.16], [-0.1, 0.44, 0], 0.11)],
+    cover: [sph([0, 0.74, 0.2], 0.27), cap([0, 0.36, 0], [0, 0.56, 0.12], 0.2), cap([0.12, 0.08, 0.2], [0.1, 0.34, 0], 0.11), cap([-0.12, 0.08, 0.2], [-0.1, 0.34, 0], 0.11)],
     lying: [sph([0, 0, 0.78], 0.27), cap([0, 0, 0], [0, 0, 0.34], 0.2), cap([0.1, 0, -0.08], [0.1, 0, -0.66], 0.11), cap([-0.1, 0, -0.08], [-0.1, 0, -0.66], 0.11)],
   },
   milady: {
     stand: [sph([0, 1.74, 0.02], 0.17), cap([0, 1.0, 0], [0, 1.44, 0], 0.19), cap([0.1, 0.1, 0], [0.1, 0.95, 0], 0.1), cap([-0.1, 0.1, 0], [-0.1, 0.95, 0], 0.1)],
     crouch: [sph([0, 1.14, 0.14], 0.17), cap([0, 0.6, 0], [0, 0.98, 0.1], 0.19), cap([0.12, 0.1, 0.18], [0.1, 0.56, 0], 0.1), cap([-0.12, 0.1, 0.18], [-0.1, 0.56, 0], 0.1)],
+    cover: [sph([0, 0.84, 0.2], 0.17), cap([0, 0.42, 0], [0, 0.68, 0.12], 0.19), cap([0.12, 0.08, 0.2], [0.1, 0.4, 0], 0.1), cap([-0.12, 0.08, 0.2], [-0.1, 0.4, 0], 0.1)],
     lying: [sph([0, 0, 0.72], 0.17), cap([0, 0, 0], [0, 0, 0.44], 0.19), cap([0.1, 0, -0.05], [0.1, 0, -0.85], 0.1), cap([-0.1, 0, -0.05], [-0.1, 0, -0.85], 0.1)],
   },
 };
@@ -67,7 +70,7 @@ export function poseHitboxes(body: BodyType, p: Pose, out: Capsule[]): boolean {
   if (p.stance === "dead") return false;
   const sk = SKELETONS[body];
   const lying = p.stance === "dive" || p.stance === "prone";
-  const segs = lying ? sk.lying : p.stance === "crouch" ? sk.crouch : sk.stand;
+  const segs = lying ? sk.lying : p.stance === "crouch" ? sk.crouch : p.stance === "cover" ? sk.cover : sk.stand;
   const c = Math.cos(p.yaw), s = Math.sin(p.yaw);
   const k = p.scale ?? 1;
   for (let i = 0; i < HB_COUNT; i++) {

@@ -11,6 +11,7 @@
 import type { World } from "./world.ts";
 import { PLAYER } from "./tuning.ts";
 import type { Cover } from "../ai/graph.ts";
+import type { Player } from "./actors.ts";
 
 export const COVER = {
   /** Sample spacing along a face (m). */
@@ -255,4 +256,165 @@ export function coverReport(world: World, graph: { nodes: Array<{ id: string; x:
     ai: pts.length, aiReach: pts.filter(c => graph.nearest(c.x, c.y, c.z) >= 0).length,
     coverage: graph.nodes.length ? 1 - bare.length / graph.nodes.length : 1, within, bare,
   };
+}
+
+// ---- his cover: taking it, sliding, popping out, the dash, the vault ---------------------------------
+
+
+export const COVER_MOVE = {
+  /** Slide speed along it (hidden / popped up over low cover). */
+  slide: 2.4,
+  slidePop: 1.3,
+  /** Up / out and back (his clock). */
+  popTime: 0.14,
+  /** Pushing away from it this long (real s) leaves it. */
+  awayHold: 0.12,
+  /** Taking cover: straight onto a segment within `takeNear` m; a run to one in view up to `takeFar` m.
+   *  In cover, the dash to the marked spot: `dashMin`..`dashMax` m, inside `cone` (cos) of the view. */
+  takeNear: 1.5,
+  takeFar: 6.5,
+  dashMin: 2.0,
+  dashMax: 14,
+  cone: Math.cos((24 * Math.PI) / 180),
+  /** The run to cover (his clock), low; given up after this long. */
+  dash: 6.6,
+  dashGiveUp: 3.0,
+  /** A high edge's hide spot is taken when the marked spot is within this of it. */
+  edgeSnap: 2.5,
+  /** Blind fire: the extra cone (radians) on every round from behind it. */
+  blind: 0.09,
+  /** The vault (real s, like the dive) and how high over the top his feet go. */
+  vaultTime: 0.5,
+  vaultClear: 0.25,
+} as const;
+
+/** The u range he hides in: an open edge keeps him COVER.hideIn inside its corner. */
+export function hideRange(s: CoverSeg): [number, number] {
+  let lo = openA(s) ? Math.max(0, s.cornerA + COVER.hideIn) : 0;
+  let hi = openB(s) ? Math.min(s.len, s.cornerB - COVER.hideIn) : s.len;
+  if (lo > hi) lo = hi = (lo + hi) / 2;
+  return [lo, hi];
+}
+
+/** Where the view (from x, z along fx, fz) meets the segment's standing line, clamped to it. */
+function aimU(s: CoverSeg, x: number, z: number, fx: number, fz: number): number {
+  // solve x + fx t = ax + tx u, z + fz t = az + tz u for u
+  const den = fx * s.tz - fz * s.tx;
+  if (Math.abs(den) < 1e-6) return segNearest(s, x, z).u;
+  const u = (fx * (z - s.az) - fz * (x - s.ax)) / den;
+  return u < 0 ? 0 : u > s.len ? s.len : u;
+}
+
+/** Where on a segment he would take it: the hide range, and a high one's edge when one is near. */
+function spotOn(s: CoverSeg, u: number): number {
+  const [lo, hi] = hideRange(s);
+  let k = u < lo ? lo : u > hi ? hi : u;
+  if (s.high) {
+    const da = openA(s) ? Math.abs(k - lo) : Infinity, db = openB(s) ? Math.abs(k - hi) : Infinity;
+    if (Math.min(da, db) <= COVER_MOVE.edgeSnap) k = da <= db ? lo : hi;
+  }
+  return k;
+}
+
+export type CoverTarget = { seg: number; u: number; x: number; z: number; dash: boolean };
+
+/** The cover a press would take (not in cover: one within reach, else one in view; in cover: the marked
+ *  spot in view to dash to). A cover that protects toward the view wins. Null: none. */
+export function findTarget(world: World, segs: CoverSeg[], p: Player): CoverTarget | null {
+  const inCover = p.cover >= 0;
+  const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);
+  let best: CoverTarget | null = null, bs = Infinity;
+  const pt = { x: 0, z: 0 };
+  for (const s of segs) {
+    if (s.id === p.cover || Math.abs(s.y - p.y) > 0.45 || !segLive(world, s)) continue;
+    const faces = -(s.nx * fx + s.nz * fz);
+    const near = segNearest(s, p.x, p.z);
+    // behind it already (on its standing side), within reach: straight on
+    const side = (p.x - s.ax) * s.nx + (p.z - s.az) * s.nz;
+    if (!inCover && near.d <= COVER_MOVE.takeNear && side > -0.2) {
+      const score = near.d - 0.6 * faces;
+      if (score < bs) { const u = spotOn(s, near.u); segPoint(s, u, pt); bs = score; best = { seg: s.id, u, x: pt.x, z: pt.z, dash: Math.hypot(pt.x - p.x, pt.z - p.z) > 0.3 }; }
+      continue;
+    }
+    if (faces < -0.2) continue;
+    const u = spotOn(s, aimU(s, p.x, p.z, fx, fz));
+    segPoint(s, u, pt);
+    const vx = pt.x - p.x, vz = pt.z - p.z, d = Math.hypot(vx, vz);
+    if (d < (inCover ? COVER_MOVE.dashMin : COVER_MOVE.takeNear) || d > (inCover ? COVER_MOVE.dashMax : COVER_MOVE.takeFar)) continue;
+    const cos = (vx * fx + vz * fz) / d;
+    if (cos < COVER_MOVE.cone) continue;
+    const score = 1.5 + d * 0.25 + (1 - cos) * 20;
+    if (score >= bs) continue;
+    // a straight run (knee high: low cover in the way is in the way)
+    if (!world.clear(p.x, p.y + 0.45, p.z, pt.x, s.y + 0.45, pt.z, false)) continue;
+    bs = score;
+    best = { seg: s.id, u, x: pt.x, z: pt.z, dash: true };
+  }
+  return best;
+}
+
+/** Into cover at u (in its hide range). */
+export function attachCover(s: CoverSeg, p: Player, u: number): void {
+  const [lo, hi] = hideRange(s);
+  p.cover = s.id;
+  p.coverU = u < lo ? lo : u > hi ? hi : u;
+  p.coverPop = 0;
+  p.coverAway = 0;
+  p.coverEnd = 0;
+  p.dashSeg = -1;
+  p.dashT = 0;
+}
+
+export function leaveCover(p: Player): void {
+  p.cover = -1;
+  p.coverPop = 0;
+  p.coverEnd = 0;
+  p.coverAway = 0;
+  p.dashSeg = -1;
+  p.dashT = 0;
+}
+
+/** The open edge he is at (high cover): -1 its start, +1 its end, 0 none; at a narrow post with both in
+ *  reach, the one on the side the view turns to. */
+export function edgeAt(s: CoverSeg, u: number, yaw: number): number {
+  if (!s.high) return 0;
+  const [lo, hi] = hideRange(s);
+  const a = openA(s) && u <= lo + 0.2, b = openB(s) && u >= hi - 0.2;
+  if (a && b) return (-Math.sin(yaw) * s.tx - Math.cos(yaw) * s.tz) >= 0 ? 1 : -1;
+  return a ? -1 : b ? 1 : 0;
+}
+
+/** Where he stands this step: the hide spot, or out past the corner by the pop (high edge). */
+export function coverSpot(s: CoverSeg, p: Player, out: { x: number; z: number }): { x: number; z: number } {
+  let u = p.coverU;
+  if (p.coverEnd !== 0) {
+    const c = p.coverEnd < 0 ? s.cornerA - COVER.popOut : s.cornerB + COVER.popOut;
+    u += (c - u) * p.coverPop;
+  }
+  out.x = s.ax + s.tx * u;
+  out.z = s.az + s.tz * u;
+  return out;
+}
+
+/** Hidden behind low (or not quite tall) cover: tucked down. */
+export const tucked = (s: CoverSeg, p: Player): boolean => (!s.high || !s.tall) && p.coverPop < 0.5;
+
+/** The vault's landing past low cover from the standing spot (x, z), or null (too high, no room, a
+ *  different floor, no headroom over it). */
+export function vaultLanding(world: World, s: CoverSeg, x: number, z: number): { x: number; y: number; z: number } | null {
+  if (s.high || s.top > COVER.vaultMax) return null;
+  const topY = s.y + s.top;
+  for (let k = COVER.off + 0.5; k <= COVER.off + COVER.vaultReach + 1e-6; k += 0.1) {
+    const lx = x - s.nx * k, lz = z - s.nz * k;
+    const gy = world.groundBelow(lx, lz, 0.2, topY - 0.3);
+    if (!Number.isFinite(gy) || Math.abs(gy - s.y) > 0.5) continue;
+    if (!fits(world, lx, gy, lz, PLAYER.height)) continue;
+    // past the obstacle: looking back at knee height it is there
+    const back = world.raycast(lx, gy + 0.45, lz, s.nx, 0, s.nz, k, false);
+    if (!back) continue;
+    const mx = x - s.nx * (k / 2), mz = z - s.nz * (k / 2);
+    if (world.ceilingAbove(mx, mz, 0.3, topY + 0.1) - topY < PLAYER.height * 0.8) return null;
+    return { x: lx, y: gy, z: lz };
+  }
+  return null;
 }

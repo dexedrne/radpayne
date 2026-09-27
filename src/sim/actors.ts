@@ -3,7 +3,8 @@ import { makeHitActor, type HitActor } from "../combat/trace.ts";
 import { makeWeapon, type BaseWeapon, type WeaponId, type WeaponState } from "../combat/weapons.ts";
 import { GUARD, HEAVY_SCALE, MADAME, PLAYER } from "./tuning.ts";
 
-export type PlayerMode = "normal" | "dive" | "prone" | "getup" | "roll" | "dead";
+/** vault: over low cover (sim/cover.ts; scripted, real time like the dive). */
+export type PlayerMode = "normal" | "dive" | "prone" | "getup" | "roll" | "vault" | "dead";
 
 export type Player = {
   x: number;
@@ -74,6 +75,23 @@ export type Player = {
   shoveT: number;
   shoveX: number;
   shoveZ: number;
+  /** Cover (sim/cover.ts): the segment he is in (-1 none), where along it he hides (u), how far he is
+   *  popped out (0 hidden .. 1 up / out, his clock), the open edge he is at (-1 its start, +1 its end, 0
+   *  none), real seconds he has pushed away from it. */
+  cover: number;
+  coverU: number;
+  coverPop: number;
+  coverEnd: number;
+  coverAway: number;
+  /** A dash to the marked cover: its segment (-1 none), the spot's u, seconds running. */
+  dashSeg: number;
+  dashU: number;
+  dashT: number;
+  /** The vault over low cover: from (x, y, z) to (x, y, z), the obstacle's top. */
+  vault: { x0: number; y0: number; z0: number; x1: number; y1: number; z1: number; top: number };
+  /** The shoulder the pivot (and the camera) sits over: +1 right .. -1 left (eased; an open edge on his
+   *  left in cover takes it left). */
+  shoulder: number;
 };
 
 export function makePlayer(x: number, y: number, z: number, facing: number, base: BaseWeapon = "pistols"): Player {
@@ -86,6 +104,8 @@ export function makePlayer(x: number, y: number, z: number, facing: number, base
     hit: makeHitActor("radbro", 0), moveWX: 0, moveWZ: 0,
     grenades: 0, throwT: 0, meleeT: 0, meleeDone: true, zoom: false, zoomBlock: false, banked: 0, lastInSlot: {},
     guard: false, guardT: 0, guardIdle: 99, guardMeter: GUARD.max, guardBroken: 0, guardLock: false, parryOk: false, guardHeld: false, guardPress: -1, shoveT: 0, shoveX: 0, shoveZ: 0,
+    cover: -1, coverU: 0, coverPop: 0, coverEnd: 0, coverAway: 0, dashSeg: -1, dashU: 0, dashT: 0,
+    vault: { x0: 0, y0: 0, z0: 0, x1: 0, y1: 0, z1: 0, top: 0 }, shoulder: 1,
   };
 }
 

@@ -14,7 +14,8 @@ import { makeEnemy, makePlayer, type Enemy, type EnemyKind, type EnemyWeapon, ty
 import { aimDir } from "./aim.ts";
 import { Crowd } from "./crowd.ts";
 import { Fnv1a, Rand, hash01 } from "./math.ts";
-import { PM_DIVE, PM_GETUP, PM_JUMP, PM_LAND, PM_PRONE, muzzleOf, pivotOf, stepPlayer } from "./player.ts";
+import { PM_COVER_IN, PM_COVER_OUT, PM_DIVE, PM_DUCK, PM_GETUP, PM_JUMP, PM_LAND, PM_POP, PM_PRONE, PM_VAULT, muzzleOf, pivotOf, stepPlayer } from "./player.ts";
+import { COVER_MOVE, attachCover, coverOf, findTarget, leaveCover, tucked, type CoverSeg, type CoverTarget } from "./cover.ts";
 import { AI, BREACH, CHECKPOINT_MIN_HEALTH, DIFFICULTY, DODGE, DT, ENEMY, ENEMY_ARMS, GRENADE, GUARD, HEAVY, HEAVY_SCALE, KILLCAM, MADAME, MAX_RANGE, MELEE, METER, PLAYER, PROJECTILE_SPEED, RUSHER, TIME, USE, type Difficulty } from "./tuning.ts";
 import { PLAYER_ID, type GameEvent, type InputFrame, type V3 } from "./types.ts";
 import { World, circleRectOverlap, type Box } from "./world.ts";
@@ -204,6 +205,10 @@ export class Game {
   readonly broken: string[] = [];
   /** Hit points left per breakable node. */
   private readonly breakHp = new Map<string, number>();
+  /** The room's cover, derived from its colliders (sim/cover.ts), and what a cover press would take now
+   *  (the HUD marks it). */
+  readonly cover: CoverSeg[];
+  coverTarget: CoverTarget | null = null;
 
   constructor(level: LevelData, opts: GameOptions = {}) {
     this.level = level;
@@ -215,6 +220,7 @@ export class Game {
     this.secrets = level.markers.filter(m => m.kind === "secret");
     this.rng = new Rand(this.seed ^ 0x5eed);
     this.world = new World(level.boxes);
+    this.cover = coverOf(this.world);
     this.graph = new Graph(level.markers, this.world);
     const spawn = level.markers.find(m => m.kind === "spawn");
     const sx = spawn?.x ?? 0, sz = spawn?.z ?? 0;
@@ -435,6 +441,7 @@ export class Game {
       if (inp.slot > 0) this.switchWeapon(inp.slot);
       if (inp.reload && p.meleeT <= 0 && !p.guard && startReload(p.weapon)) this.emit({ type: "reload", hand: 0 });
       if (inp.copium) this.useCopium();
+      if (inp.cover && p.mode === "normal") this.pressCover();
       if (inp.dodge && p.mode === "normal" && p.dodgeCooldown <= 0) {
         const before = this.meter;
         if (this.meter > 0) this.meter = Math.max(0, this.meter - METER.dodgeCost);
@@ -448,7 +455,15 @@ export class Game {
     if (p.zoom && (p.weapon.reloadT > 0 || p.mode !== "normal" || p.weapon.id !== "sniper")) p.zoomBlock = true;
     const zoom = inControl && !!pin.zoom && !p.zoomBlock && p.weapon.id === "sniper" && p.mode === "normal" && p.weapon.reloadT <= 0 && p.meleeT <= 0 && !p.guard;
     if (zoom !== p.zoom) { p.zoom = zoom; this.emit({ type: "zoom", on: zoom }); }
-    const pm = stepPlayer(this.world, p, pin, DT, pdt);
+    const pm = stepPlayer(this.world, p, pin, DT, pdt, this.cover);
+    if (pm & (PM_COVER_IN | PM_COVER_OUT | PM_POP | PM_DUCK | PM_VAULT)) {
+      const high = p.cover >= 0 && !!this.cover[p.cover]?.high;
+      if (pm & PM_COVER_OUT) this.emit({ type: "cover", what: "out", high: false });
+      if (pm & PM_VAULT) this.emit({ type: "cover", what: "vault", high: false });
+      if (pm & PM_COVER_IN) this.emit({ type: "cover", what: "in", high });
+      if (pm & PM_POP) this.emit({ type: "cover", what: "pop", high });
+      if (pm & PM_DUCK) this.emit({ type: "cover", what: "duck", high });
+    }
     if (pm & PM_DIVE) this.emit({ type: "dodge" });
     if (pm & PM_JUMP) this.emit({ type: "jump" });
     if (pm & PM_LAND) this.emit({ type: "land", prone: (pm & PM_PRONE) !== 0 });
@@ -466,6 +481,8 @@ export class Game {
 
     // aim + weapon; E, the melee and the throw go where he aims this step
     this.updateAim();
+    // the cover a press would take next (the HUD marks it)
+    this.coverTarget = inControl && p.mode === "normal" && p.dashSeg < 0 && p.grounded ? findTarget(this.world, this.cover, p) : null;
     if (inControl && p.mode !== "dead") {
       if (inp.interact) this.interact();
       // #4764's melee button is the guard while held (stepGuard: a tap cuts on the release); a press that
@@ -674,6 +691,40 @@ export class Game {
     p.healLeft = PLAYER.copiumHeal;
     this.stats.copiumUsed++;
     this.emit({ type: "copium" });
+  }
+
+  /** C / LB: out of cover, take the marked cover (at once when it is right here, else a run to it); in
+   *  cover, the dash to the marked spot, or out of it when nothing is marked; running to one, stop. */
+  private pressCover(): void {
+    const p = this.player;
+    if (p.dashSeg >= 0) { leaveCover(p); this.emit({ type: "cover", what: "out", high: false }); return; }
+    const t = this.coverTarget;
+    if (!t) {
+      if (p.cover >= 0) { leaveCover(p); this.emit({ type: "cover", what: "out", high: false }); }
+      return;
+    }
+    const s = this.cover[t.seg];
+    if (p.cover >= 0) leaveCover(p);
+    if (!t.dash) {
+      attachCover(s, p, t.u);
+      p.vx = p.vz = 0;
+      this.emit({ type: "cover", what: "in", high: s.high });
+      return;
+    }
+    p.dashSeg = t.seg;
+    p.dashU = t.u;
+    p.dashT = 0;
+    this.emit({ type: "cover", what: "dash", high: s.high });
+  }
+
+  /** How high the gang looks for him (LOS): the shoulder pivot, or his tucked head behind low cover. */
+  private losUp(): number {
+    const p = this.player;
+    if (p.cover >= 0) {
+      const s = this.cover[p.cover];
+      if (s && tucked(s, p)) return 0.8;
+    }
+    return p.pivotUp;
   }
 
   private fireTrigger(t: Trigger): void {
@@ -1194,6 +1245,9 @@ export class Game {
     const p = this.player;
     const def = WEAPONS[p.weapon.id];
     const m = muzzleOf(p, hand, this.v3);
+    // from behind cover without popping out: blind fire, the gun held up over it or round its edge
+    const cs = p.cover >= 0 ? this.cover[p.cover] : null;
+    const blind = !!cs && p.coverPop < 0.7 && this.blindMuzzle(cs, hand, m);
     // muzzle -> aim point, then the weapon spread
     let dx = this.aimPoint.x - m.x, dy = this.aimPoint.y - m.y, dz = this.aimPoint.z - m.z;
     let l = Math.sqrt(dx * dx + dy * dy + dz * dz);
@@ -1206,11 +1260,28 @@ export class Game {
       const ex = e.x - p.x, ez = e.z - p.z;
       if (ex * ex + ez * ez < AI.hearing * AI.hearing) alertGoon(this, e, 0.15);
     }
-    const cone = p.zoom ? def.zoomSpread : def.spread;
+    const cone = (p.zoom ? def.zoomSpread : def.spread) + (blind ? COVER_MOVE.blind : 0);
     for (let k = 0; k < def.pellets; k++) {
       const s = this.spread(dx, dy, dz, cone);
       this.shoot(0, PLAYER_ID, hand, m.x, m.y, m.z, s.x, s.y, s.z, def.damage, def.id, k, def.pierce);
     }
+  }
+
+  /** Blind fire's muzzle: over the top of low cover, or out round the open edge of high cover (the
+   *  hands only); false (the normal muzzle) mid-wall or when he aims away from it. */
+  private blindMuzzle(s: CoverSeg, hand: number, m: V3): boolean {
+    const p = this.player;
+    const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);
+    if (fx * -s.nx + fz * -s.nz < 0.1) return false;
+    const side = hand === 0 ? 0.12 : -0.12;
+    if (!s.high) {
+      m.x = p.x - s.nx * 0.2 + s.tx * side; m.z = p.z - s.nz * 0.2 + s.tz * side; m.y = s.y + s.top + 0.12;
+      return true;
+    }
+    if (p.coverEnd === 0) return false;
+    const c = p.coverEnd < 0 ? s.cornerA - 0.22 : s.cornerB + 0.22;
+    m.x = s.ax + s.tx * c - s.nx * 0.12; m.z = s.az + s.tz * c - s.nz * 0.12; m.y = p.y + 1.25 + side * 0.3;
+    return true;
   }
 
   /** Enemy fires at the player (accuracy falls off with distance and the player's speed). */
@@ -1263,7 +1334,7 @@ export class Game {
   /** Can the enemy's gun see the player (no wall between muzzle height and the body)? */
   canShoot(e: Enemy): boolean {
     const p = this.player;
-    return this.world.clear(e.x, e.y + ENEMY[e.kind].muzzleUp, e.z, p.x, p.y + p.pivotUp * 0.75, p.z, true);
+    return this.world.clear(e.x, e.y + ENEMY[e.kind].muzzleUp, e.z, p.x, p.y + this.losUp() * 0.75, p.z, true);
   }
 
   /** Line of sight + view cone (unless already alerted) + range. */
@@ -1282,7 +1353,7 @@ export class Game {
       if ((fx * dx + fz * dz) / d < G.fov) return false;
     }
     const eyeY = e.y + (e.crouch ? 1.1 : e.kind === "heavy" ? 1.45 * HEAVY_SCALE : 1.65);
-    return this.world.clear(e.x, eyeY, e.z, p.x, p.y + Math.max(0.5, p.pivotUp - 0.2), p.z, true);
+    return this.world.clear(e.x, eyeY, e.z, p.x, p.y + Math.max(0.5, this.losUp() - 0.2), p.z, true);
   }
 
   /** Tell alertable friends nearby. */
@@ -1632,6 +1703,7 @@ export class Game {
     h.i32(this.projectiles.length).i32(this.breached.length).f64(this.breachSlow);
     for (const b of this.projectiles) h.f64(b.x).f64(b.y).f64(b.z);
     h.i32(p.guard ? 1 : 0).i32(p.guardLock ? 1 : 0).f64(p.guardT).f64(p.guardMeter).f64(p.guardBroken).f64(p.shoveT).f64(this.guardHoldUntil);
+    h.i32(p.cover).f64(p.coverU).f64(p.coverPop).i32(p.coverEnd).i32(p.dashSeg).f64(p.shoulder).f64(p.pivotUp);
     h.i32(p.grenades).i32(p.banked).f64(p.meleeT).i32(p.zoom ? 1 : 0).i32(this.found.length).i32(this.opened.length).i32(this.broken.length).i32(this.grenadesLive.length);
     for (const gr of this.grenadesLive) h.f64(gr.x).f64(gr.y).f64(gr.z).f64(gr.fuse);
     this.ride?.hashInto(h);
@@ -1662,7 +1734,7 @@ export function insideTrigger(t: Marker, x: number, y: number, z: number): boole
   return Math.abs(lx) <= t.hx && Math.abs(lz) <= t.hz && Math.abs(y - t.y) <= Math.max(t.hy, 1.5);
 }
 
-const frozen: InputFrame = { moveX: 0, moveY: 0, yaw: 0, pitch: 0, fire: false, bt: false, dodge: false, jump: false, reload: false, copium: false, slot: 0, skip: false, melee: false, throw: false, interact: false, zoom: false, guard: false };
+const frozen: InputFrame = { moveX: 0, moveY: 0, yaw: 0, pitch: 0, fire: false, bt: false, dodge: false, jump: false, reload: false, copium: false, slot: 0, skip: false, melee: false, throw: false, interact: false, zoom: false, guard: false, cover: false, aim: false };
 /** Outside control (kill cam, results) the player keeps the aim but does nothing else. */
 function FROZEN_INPUT(_inp: InputFrame, p: Player): InputFrame {
   frozen.yaw = p.yaw;
