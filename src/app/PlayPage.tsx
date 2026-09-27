@@ -17,6 +17,7 @@ import { Scene } from "./Scene.tsx";
 import { assetsRef, loadManifest, manifestFor, loadOptional, gunClipsPath, r2ClipsPath, MILADY_CLIPS, MILADY_R2 } from "./characters.ts";
 import { readLevel } from "../world/level.ts";
 import { baseWeaponOf, useUi } from "../ui/store.ts";
+import { WEAPONS } from "../combat/weapons.ts";
 import { Hud, canvasFx } from "../ui/Hud.tsx";
 import { UiEffects } from "../ui/hud/UiEffects.tsx";
 import { FightPrompt, Loading, Pause, ResultsScreen, Title, layer } from "../ui/screens.tsx";
@@ -29,6 +30,7 @@ import type { WeaponId } from "../combat/weapons.ts";
 import { awaitRoom, frames, roomWarm, warmRoom } from "./warmup.ts";
 import { renderGate } from "./frame.ts";
 import { HOLDCHECK, HoldScript, holdDev } from "./dev/holdcheck.ts";
+import { TOUR, TourDriver } from "./dev/tour.ts";
 import { RADBROS } from "../ui/store.ts";
 import { roomText } from "../ui/rooms.ts";
 
@@ -51,13 +53,15 @@ const ROOM = params.get("room") ?? "room1";
 const EXTRA = DEV ? params.get("extra") ?? "" : "";
 /** Dev: ?still hides the "click to fight" veil (camera-marker screenshots without the bot). */
 const STILL = DEV && params.has("still");
-/** Dev: ?loadout=shotgun,smgs owns those weapons from the start (the last one in hand). */
-const LOADOUT = HOLDCHECK && HOLDCHECK !== "pistols" ? [HOLDCHECK] : (DEV ? params.get("loadout") ?? "" : "").split(",").filter((w): w is WeaponId => w === "shotgun" || w === "smgs");
+/** Dev: ?loadout=shotgun,sniper owns those weapons from the start (the last one in hand; any weapon id);
+ *  ?grenades=N starts with N frags. */
+const LOADOUT = HOLDCHECK && HOLDCHECK !== "pistols" ? [HOLDCHECK] : (DEV ? params.get("loadout") ?? "" : "").split(",").filter((w): w is WeaponId => w in WEAPONS && w !== "pistols" && w !== "ak");
+const GRENADES = DEV ? Number(params.get("grenades") ?? 0) || 0 : 0;
 /** Dev: ?botgun=shotgun|smgs keeps the bot on that weapon while it has rounds (the gun view checks). */
 const BOT_GUN = DEV ? (params.get("botgun") as WeaponId | null) : null;
 const newBot = () => { const b = new Bot(3.5, 0.3, BOT_DEMO); b.only = BOT_GUN; return b; };
 /** The page's driver: the bot, the hold check's script, or the player. */
-const driver = () => (HOLDCHECK ? new HoldScript() : BOT ? newBot() : null);
+const driver = (s: Session) => (HOLDCHECK ? new HoldScript() : BOT && TOUR ? new TourDriver(newBot(), s) : BOT ? newBot() : null);
 const AUTO = BOT || !!HOLDCHECK;
 /** ?q=low: low quality for this page load only (headless smoke runs). */
 if (params.get("q") === "low") useUi.setState({ quality: "low" });
@@ -84,7 +88,7 @@ async function loadRoom(id: string, exact = false, current = true): Promise<Sess
     level.markers.push({ kind: "enemy", id: "dev-heavy", x: 12, y: 0, z: -12.6, yaw: 0, ...m, data: { kind: "heavy", model: EXTRA.includes("723") ? "rival723" : "rival652" } });
     level.markers.push({ kind: "camera", id: "cam-heavy", x: 11.2, y: 1.7, z: -6.2, yaw: 0, ...m, data: { at: [12, 1.1, -12.6] } });
   }
-  const s = new Session(level, prefab, got, { seed: SEED, difficulty: useUi.getState().difficulty, base: baseWeaponOf(useUi.getState().radbro), ...(LOADOUT.length ? { loadout: LOADOUT } : {}), ...(HOLDCHECK ? { ai: false } : {}) });
+  const s = new Session(level, prefab, got, { seed: SEED, difficulty: useUi.getState().difficulty, base: baseWeaponOf(useUi.getState().radbro), katana: useUi.getState().radbro === "4764", ...(LOADOUT.length ? { loadout: LOADOUT } : {}), ...(GRENADES ? { grenades: GRENADES } : {}), ...(HOLDCHECK ? { ai: false } : {}) });
   console.info(`[radpayne] room ${got} ("${level.room.name}"): ${level.boxes.length} colliders, ${level.markers.length} markers, seed ${SEED}`);
   if (current) (window as unknown as { __session?: Session }).__session = s;
   return s;
@@ -254,8 +258,8 @@ export default function PlayPage() {
     useUi.setState({ screen: "loading", load: { progress: modelsReady ? 1 : 0, label: "radbro", error: null } });
     for (let i = 0; i < 400 && !useUi.getState().assetsVersion; i++) await new Promise(r => setTimeout(r, 50));
     await samplesReady(4000); // the first barks and the room's opening line need their files
-    session.restart({ difficulty: useUi.getState().difficulty, base: baseWeaponOf(useUi.getState().radbro) });
-    session.bot = driver();
+    session.restart({ difficulty: useUi.getState().difficulty, base: baseWeaponOf(useUi.getState().radbro), katana: useUi.getState().radbro === "4764" });
+    session.bot = driver(session);
     if (HOLDCHECK) {
       const hp = session.game.player;
       holdDev.session = session;
@@ -280,7 +284,7 @@ export default function PlayPage() {
   /** The next room's session takes over the canvas and play goes straight on (the bot too). */
   const enterRoom = useCallback(async (ns: Session) => {
     stopRoomAudio(false);
-    ns.bot = driver();
+    ns.bot = driver(ns);
     ns.paused = true;
     (window as unknown as { __session?: Session }).__session = ns;
     setSession(ns);
@@ -312,7 +316,7 @@ export default function PlayPage() {
       setHeartbeat(false);
       setFootsteps(0);
       const g = session.game;
-      const results = { cleared: phase === "done", stats: { ...g.stats }, room: session.roomId, difficulty: g.difficulty, radbro: useUi.getState().radbro };
+      const results = { cleared: phase === "done", stats: { ...g.stats }, room: session.roomId, difficulty: g.difficulty, radbro: useUi.getState().radbro, pins: useUi.getState().hud.pins };
       // room 3 holds the last frame while the elevator opens (room.exitHold seconds)
       const hold = phase === "done" && typeof session.level.room.exitHold === "number" ? session.level.room.exitHold * 1000 : 0;
       const show = () => { if (hold) setTimeout(() => useUi.setState({ screen: "results", results }), hold); else useUi.setState({ screen: "results", results }); };
@@ -362,7 +366,7 @@ export default function PlayPage() {
     if (!session) return;
     // from the room's last checkpoint when it has one (room 3: after the security office)
     session.restart({ difficulty: useUi.getState().difficulty, resume: session.game.saved ?? undefined });
-    session.bot = driver();
+    session.bot = driver(session);
     void startPlay();
   };
   const toTitle = () => {

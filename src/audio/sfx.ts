@@ -623,3 +623,175 @@ export function crowdVoice(line: string, dist: number, pan: number, pitch = 1): 
   src.onended = () => { crowdVoices = Math.max(0, crowdVoices - 1); };
   return true;
 }
+
+// ---- the arsenal (appended block: arsenal spec section 8) ------------------------------------------
+// Its own files and loader (decoded once the context exists), sharing the buffer map and play(): world
+// sounds go through the same bus, so bullet time pitches and filters them. A missing file falls back to
+// the round-1 / round-2 samples pitched for the gun, so the game is never silent. The secret chime, the
+// pin tick, the arcade jingle and the figurine's squeak are procedural and "in his head" (no bullet-time
+// pitch, no low-pass).
+
+const ARSENAL_FILES = [
+  "handcannon_shot", "handcannon_shot_2", "handcannon_shot_3", "handcannon_mag_out", "handcannon_mag_in", "handcannon_slide",
+  "sawedoff_shot", "sawedoff_shot_2", "sawedoff_open", "sawedoff_shells_out", "sawedoff_shell_in", "sawedoff_close",
+  "sniper_shot", "sniper_shot_2", "sniper_bolt", "scope_in", "scope_out",
+  "grenade_pin", "grenade_throw", "grenade_bounce", "grenade_bounce_2", "grenade_explode", "grenade_explode_2",
+  "katana_draw", "katana_slash", "katana_slash_2", "katana_hit", "melee_swing", "melee_hit", "melee_hit_2",
+  "plywood_break", "secret_door",
+  "meow_happy", "meow_happy_2", "meow_happy_3", "meow_sulky", "meow_sulky_2", "meow_sulky_3",
+].map(k => `sfx/${k}`);
+
+whenCreated(e => {
+  for (const k of ARSENAL_FILES) {
+    void (async () => {
+      try {
+        const r = await fetch(`/audio/${k}.mp3`);
+        if (!r.ok) return;
+        buffers.set(k, await e.ac.decodeAudioData(await r.arrayBuffer()));
+      } catch {
+        /* a missing file falls back (see pick) */
+      }
+    })();
+  }
+});
+
+/** The loaded variants of `base` (base, base_2, base_3), else the fallback keys. */
+function pick(base: string, fallback: readonly string[] = []): { keys: string[]; own: boolean } {
+  const own = [base, `${base}_2`, `${base}_3`].map(k => `sfx/${k}`).filter(k => buffers.has(k));
+  return own.length ? { keys: own, own: true } : { keys: [...fallback], own: false };
+}
+
+/** One sound "in his head": straight to the SFX volume, never pitched or muffled by bullet time. */
+function headTone(e: Engine, t: number, dur: number, f: number, gain: number, type: OscillatorType = "triangle"): void {
+  const o = e.ac.createOscillator();
+  o.type = type;
+  o.frequency.setValueAtTime(f, t);
+  const g = e.ac.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(gain, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0006, t + dur);
+  o.connect(g).connect(e.sfxGain);
+  o.start(t);
+  o.stop(t + dur + 0.05);
+}
+
+export const sfxArsenal = {
+  /** The new guns' shots (the player's and the gang's): hand cannon, sawed-off, sniper. */
+  shot(weapon: string, player: boolean, dist = 0, pan = 0): void {
+    const e = sfxOn();
+    if (!e) return;
+    const g = player ? 0.9 : 0.6 * att(dist);
+    const p = player ? 0 : pan * 0.8;
+    const r = rate * (player ? 1 : 0.95 + Math.random() * 0.08);
+    const t = e.ac.currentTime;
+    if (weapon === "handcannon") {
+      const s = pick("handcannon_shot", SHOTGUN);
+      play(e, variant(s.keys), { gain: g, pan: p, rate: s.own ? r : r * 0.72 });
+      if (!s.own) play(e, variant(SHOTS), { gain: g * 0.7, pan: p, rate: r * 0.6 });
+      if (player) play(e, variant(indoor ? CASINGS_FLOOR : CASINGS), { gain: 0.25, at: t + (0.35 + Math.random() * 0.2) / rate, pan: 0.3 });
+    } else if (weapon === "sawedoff") {
+      const s = pick("sawedoff_shot", SHOTGUN);
+      play(e, variant(s.keys), { gain: g * 1.05, pan: p, rate: s.own ? r : r * 0.86 });
+    } else if (weapon === "sniper") {
+      const s = pick("sniper_shot", SHOTGUN);
+      play(e, variant(s.keys), { gain: g, pan: p, rate: s.own ? r : r * 1.2 });
+      if (!s.own) play(e, variant(SHOTS), { gain: g * 0.8, pan: p, rate: r * 0.7 });
+      // the bolt after each round (1.1 s between shots on his clock)
+      if (player) { const b = pick("sniper_bolt", ["sfx/shotgun_pump"]); play(e, variant(b.keys), { gain: 0.5, at: t + 0.45 / rate }); }
+    }
+  },
+  /** The new guns' reloads over `dur` real seconds. */
+  reload(weapon: string, dur: number): void {
+    const e = sfxOn();
+    if (!e) return;
+    const t = e.ac.currentTime;
+    const at = (k: string, f: number, fb: string, gain = 0.6) => { const s = pick(k, [fb]); play(e, variant(s.keys), { gain, at: t + dur * f }); };
+    if (weapon === "handcannon") {
+      at("handcannon_mag_out", 0, "sfx/reload_mag_out");
+      at("handcannon_mag_in", 0.5, "sfx/reload_mag_in");
+      at("handcannon_slide", 0.82, "sfx/reload_slide");
+    } else if (weapon === "sawedoff") {
+      at("sawedoff_open", 0, "sfx/reload_mag_out");
+      at("sawedoff_shells_out", 0.2, "sfx/shotgun_shell_drop", 0.4);
+      at("sawedoff_shell_in", 0.5, "sfx/shotgun_shell_in", 0.5);
+      at("sawedoff_shell_in", 0.66, "sfx/shotgun_shell_in", 0.5);
+      at("sawedoff_close", 0.88, "sfx/reload_slide");
+    } else if (weapon === "sniper") {
+      at("sniper_bolt", 0, "sfx/reload_slide", 0.5);
+      for (const f of [0.25, 0.4, 0.55, 0.7]) at("sawedoff_shell_in", f, "sfx/shotgun_shell_in", 0.35);
+      at("sniper_bolt", 0.86, "sfx/reload_slide", 0.5);
+    }
+  },
+  /** Grenades: the pin + throw, a bounce, the blast (by distance), a pickup. */
+  grenade(kind: "throw" | "bounce" | "explode" | "pickup", dist = 0, pan = 0, speed = 3): void {
+    const e = sfxOn();
+    if (!e) return;
+    const t = e.ac.currentTime;
+    if (kind === "throw") {
+      play(e, variant(pick("grenade_pin", ["sfx/dry_fire"]).keys), { gain: 0.6 });
+      play(e, variant(pick("grenade_throw", ["sfx/dive_whoosh"]).keys), { gain: 0.5, at: t + 0.12 / rate });
+    } else if (kind === "bounce") {
+      play(e, variant(pick("grenade_bounce", ["sfx/impact_metal", "sfx/impact_metal_2"]).keys), { gain: Math.min(0.7, 0.2 + speed * 0.08) * att(dist), pan });
+    } else if (kind === "explode") {
+      const s = pick("grenade_explode", ["sfx/door_breach"]);
+      play(e, variant(s.keys), { gain: 1.0 * Math.max(0.25, att(dist * 0.6)), pan: pan * 0.6, rate: s.own ? rate : rate * 0.6 });
+      if (!s.own) play(e, variant(SHOTGUN), { gain: 0.9 * att(dist * 0.6), pan: pan * 0.6, rate: rate * 0.5 });
+    } else play(e, "sfx/ammo_pickup", { gain: 0.7 });
+  },
+  /** Melee: the swing (katana draw-cut / a strike), and the hit when it lands. */
+  melee(kind: "katana" | "strike", hit: boolean): void {
+    const e = sfxOn();
+    if (!e) return;
+    if (!hit) {
+      if (kind === "katana") {
+        play(e, variant(pick("katana_draw", ["sfx/dive_whoosh"]).keys), { gain: 0.5 });
+        play(e, variant(pick("katana_slash", ["sfx/dive_whoosh"]).keys), { gain: 0.7, at: e.ac.currentTime + 0.06 / rate });
+      } else play(e, variant(pick("melee_swing", ["sfx/dive_whoosh"]).keys), { gain: 0.6 });
+      return;
+    }
+    if (kind === "katana") play(e, variant(pick("katana_hit", ["sfx/impact_body", "sfx/impact_body_2"]).keys), { gain: 0.8 });
+    else play(e, variant(pick("melee_hit", ["sfx/impact_body_heavy"]).keys), { gain: 0.8 });
+  },
+  /** The scope glass in / out. */
+  zoom(on: boolean): void {
+    const e = sfxOn();
+    if (!e) return;
+    const s = pick(on ? "scope_in" : "scope_out", []);
+    if (s.keys.length) play(e, variant(s.keys), { gain: 0.45, rate: 1, dest: e.sfxGain });
+    else headTone(e, e.ac.currentTime, 0.06, on ? 2600 : 1900, 0.03, "square");
+  },
+  /** A secret found: three soft notes of a minor arpeggio over 0.35 s; a pin adds a small metal tick. */
+  secret(pin: boolean): void {
+    const e = sfxOn();
+    if (!e) return;
+    const t = e.ac.currentTime;
+    if (!pin) [440, 523.25, 659.25].forEach((f, i) => headTone(e, t + i * 0.11, 0.42, f, 0.07));
+    else { headTone(e, t, 0.08, 3100, 0.035, "square"); headTone(e, t + 0.05, 0.25, 1567.98, 0.04, "sine"); }
+  },
+  /** A secret door giving way, a breakable breaking. */
+  door(): void {
+    const e = sfxOn();
+    if (e) play(e, variant(pick("secret_door", ["sfx/door_open"]).keys), { gain: 0.7 });
+  },
+  breakIt(surface: string, dist = 0, pan = 0): void {
+    const e = sfxOn();
+    if (!e) return;
+    if (surface === "glass") play(e, "sfx/glass_wall_shatter", { gain: 0.8 * att(dist), pan });
+    else play(e, variant(pick("plywood_break", ["sfx/door_breach"]).keys), { gain: 0.8 * att(dist), pan });
+  },
+  /** George. */
+  meow(mood: "happy" | "sulky", dist = 0, pan = 0): void {
+    const e = sfxOn();
+    if (!e) return;
+    const s = pick(mood === "happy" ? "meow_happy" : "meow_sulky", []);
+    if (s.keys.length) play(e, variant(s.keys), { gain: 0.8 * att(dist), pan, rate: 1 });
+  },
+  /** The eggs: the cabinet's jingle, the figurine's squeak (procedural). */
+  egg(kind: "arcade" | "squeak"): void {
+    const e = sfxOn();
+    if (!e) return;
+    const t = e.ac.currentTime;
+    if (kind === "arcade") [523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5].forEach((f, i) => headTone(e, t + i * 0.09, 0.12, f, 0.05, "square"));
+    else { headTone(e, t, 0.09, 1800, 0.04, "sine"); headTone(e, t + 0.07, 0.12, 2400, 0.035, "sine"); }
+  },
+};

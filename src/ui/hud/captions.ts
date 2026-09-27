@@ -13,14 +13,14 @@ const NAMES: Record<WeaponId, string> = {
 
 type Nudge = { text: string; at: number };
 /** Why a nudge is up: heal / dry / empty last only while their condition holds; a pickup runs its 4 s. */
-type Why = "heal" | "dry" | "empty" | "pickup";
+type Why = "heal" | "dry" | "empty" | "pickup" | "secret";
 
 // module state, not component state: the HUD unmounts while paused and an episode must not replay
-const s = { run: -1, heal: false, dry: false, empty: false, owned: [] as WeaponId[], nudge: null as (Nudge & { why: Why }) | null };
+const s = { run: -1, heal: false, dry: false, empty: false, owned: [] as WeaponId[], secrets: 0, pins: 0, zoomHint: false, nudge: null as (Nudge & { why: Why }) | null };
 
 /** Nudge episodes (edge-triggered): returns the latest nudge while it is fresh and still true. */
 export function useNudge(h: Hud, now: number): Nudge | null {
-  if (s.run !== h.run) { s.run = h.run; s.heal = s.dry = s.empty = false; s.owned = h.owned; s.nudge = null; }
+  if (s.run !== h.run) { s.run = h.run; s.heal = s.dry = s.empty = false; s.owned = h.owned; s.secrets = h.secrets; s.pins = h.pins.length; s.nudge = null; }
   const fire = (why: Why, text: string) => { s.nudge = { text, at: now, why }; };
   const alive = h.health > 0 && !h.killcam;
   const low = alive && h.health <= 25;
@@ -42,8 +42,15 @@ export function useNudge(h: Hud, now: number): Nudge | null {
   const got = h.owned.find(w => !s.owned.includes(w));
   if (got) fire("pickup", `picked up ${NAMES[got]}. [${slotOf(got)}]`);
   s.owned = h.owned;
+  // the sniper's first draw: how to scope
+  if (h.weaponId === "sniper" && !s.zoomHint) { s.zoomHint = true; fire("pickup", "hold right mouse: scope."); }
+  // secrets and pins
+  if (h.secrets > s.secrets) fire("secret", h.secrets >= h.secretsTotal && h.secretsTotal > 1 ? "all three." : `a secret. ${h.secrets} of ${h.secretsTotal}.`);
+  s.secrets = h.secrets;
+  if (h.pins.length > s.pins) fire("secret", `a pin. radbro #${h.pins[h.pins.length - 1]}.`);
+  s.pins = h.pins.length;
   const n = s.nudge;
-  if (n && (now - n.at >= NUDGE_HOLD || n.why !== "pickup" && !s[n.why])) s.nudge = null;
+  if (n && (now - n.at >= NUDGE_HOLD || n.why !== "pickup" && n.why !== "secret" && !s[n.why])) s.nudge = null;
   return s.nudge ? { text: s.nudge.text, at: s.nudge.at } : null;
 }
 

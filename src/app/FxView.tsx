@@ -10,7 +10,9 @@
 // Particles age on world time, so bullet time slows them with everything else.
 // Round 2: a shotgun blast is one flash for its 8 pellets, and its pellets fly as thinner, shorter
 // streaks than a pistol round (8 of them must not cover the screen); the heavies bleed a slightly
-// bigger puff; weapon and ammo pickups (placed or dropped at a body) show as the gun / a box of rounds.
+// bigger puff. The pickups (placed or dropped at a body) moved to PickupsView.tsx (arsenal spec 2.2).
+/** Muzzle flash size per weapon (one flash per blast). */
+const FLASH_K: Record<string, number> = { shotgun: 1.35, sawedoff: 1.45, handcannon: 1.5, sniper: 1.35, ak: 1.15, rifle: 1.15, smgs: 0.8, smg: 0.8 };
 import { useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import {
@@ -23,7 +25,6 @@ import type { Session } from "./session.ts";
 import type { GameEvent } from "../sim/types.ts";
 import { playerMuzzles } from "./PlayerView.tsx";
 import { enemyMuzzles } from "./EnemiesView.tsx";
-import { makeShotgun, makeSmg } from "./guns.ts";
 import { FRAME } from "./frame.ts";
 import { useUi } from "../ui/store.ts";
 import { lookOwns } from "./look/fx.ts";
@@ -217,46 +218,6 @@ export function FxView({ s }: { s: Session }) {
     return out;
   }, []);
 
-  // pickups follow the game's list (rebuilt on restart; drops at a body are added as they land)
-  const pickupMesh = (item: string): Group => {
-    const g = new Group();
-    if (item === "shotgun") {
-      const gun = makeShotgun();
-      gun.scale.set(1.2, 1.2, 0.8);
-      gun.rotation.set(0, 0, Math.PI / 2);
-      g.add(gun);
-    } else if (item === "smgs") {
-      const a = makeSmg(), b = makeSmg();
-      a.scale.setScalar(1.3); b.scale.setScalar(1.3);
-      a.position.x = -0.07; b.position.x = 0.07; b.rotation.y = 0.5;
-      g.add(a, b);
-    } else if (item === "shotgun_ammo" || item === "smgs_ammo") {
-      const box = new Mesh(fx.boxGeo, item === "shotgun_ammo" ? fx.ammoMat.shotgun : fx.ammoMat.smgs);
-      const top = new Mesh(fx.capGeo, fx.brass);
-      top.scale.set(0.6, 0.5, 0.6);
-      top.position.y = 0.08;
-      g.add(box, top);
-    } else {
-      const can = new Mesh(fx.canGeo, fx.canMat);
-      const cap = new Mesh(fx.capGeo, fx.capMat);
-      cap.position.y = 0.16;
-      g.add(can, cap);
-    }
-    g.userData.item = item;
-    return g;
-  };
-  const syncPickups = () => {
-    for (const g of fx.pickups.values()) fx.group.remove(g);
-    fx.pickups.clear();
-    for (const k of s.game.pickups) {
-      const g = pickupMesh(k.item);
-      g.position.set(k.x, k.y + 0.35, k.z);
-      fx.group.add(g);
-      fx.pickups.set(k.id, g);
-    }
-    fx.pickupN = s.game.pickups.length;
-  };
-
   useEffect(() => {
     const tmpA = new Vector3(), tmpB = new Vector3();
     const onEvent = (e: GameEvent) => {
@@ -270,7 +231,7 @@ export function FxView({ s }: { s: Session }) {
           const f = fx.flashes.spawn(0.05);
           f.p.copy(from);
           f.v.set(0, 0, 0);
-          f.s = (me ? 0.34 : 0.3) * (e.weapon === "shotgun" ? 1.35 : e.weapon === "ak" ? 1.15 : e.weapon === "smgs" || e.weapon === "smg" ? 0.8 : 1);
+          f.s = (me ? 0.34 : 0.3) * (FLASH_K[e.weapon] ?? 1);
           const c = me ? GUNFIRE.player : GUNFIRE.enemy;
           fx.flashes.mesh.setColorAt(fx.flashes.last, col.setRGB(c[0], c[1], c[2]));
           if (fx.flashes.mesh.instanceColor) fx.flashes.mesh.instanceColor.needsUpdate = true;
@@ -355,9 +316,7 @@ export function FxView({ s }: { s: Session }) {
     if (fx.run !== s.run) {
       fx.run = s.run;
       for (const p of [fx.tracers, fx.bullets, fx.trails, fx.heads, fx.flashes, fx.blood, fx.mist, fx.sparks, fx.holes, fx.splats]) p.clear();
-      syncPickups();
     }
-    if (fx.pickupN !== g.pickups.length) syncPickups(); // a drop landed
     // tracers: a 4 m streak racing from the muzzle to the hit
     {
       const P = fx.tracers;
@@ -402,7 +361,7 @@ export function FxView({ s }: { s: Session }) {
         // fades out inside ~3 m of the lens (his own bullets leave the muzzle right in front of it)
         const near = Math.min(1, Math.max(0, (vd.set(b.x, b.y, b.z).distanceTo(camPos) - 1.2) / 1.8));
         // shotgun pellets: small heads and short, thin streaks (8 of them in the air at once)
-        const pellet = b.weapon === "shotgun";
+        const pellet = b.weapon === "shotgun" || b.weapon === "sawedoff";
         put(b.x, b.y, b.z, b.dx, b.dy, b.dz, Math.min(pellet ? 1.6 : 5, travelled), b.shooter === -1 ? GUNFIRE.player : GUNFIRE.enemy, pellet ? 0.1 : 0.24, near * (pellet ? 0.45 : 1));
       }
       const k = g.killcam;
@@ -515,17 +474,8 @@ export function FxView({ s }: { s: Session }) {
       });
       P.mesh.instanceMatrix.needsUpdate = true;
     }
-    // pickups bob and spin; hidden when taken
-    const t = g.realTime;
-    for (const k of g.pickups) {
-      const m = fx.pickups.get(k.id);
-      if (!m) continue;
-      m.visible = !k.taken;
-      m.position.y = k.y + 0.35 + Math.sin(t * 2.2 + k.x) * 0.06;
-      m.rotation.y = t * 1.6;
-      m.rotation.z = 0.35;
-    }
     // exit marker
+    const t = g.realTime;
     const ex = g.level.markers.find(m => m.kind === "exit") ?? g.triggers.find(m => m.data.action === "exit");
     fx.exit.visible = !!ex && g.phase === "clear";
     if (ex && fx.exit.visible) { fx.exit.position.set(ex.x, ex.y + 2.3 + Math.sin(t * 3) * 0.15, ex.z); fx.exit.rotation.y = t * 2; }

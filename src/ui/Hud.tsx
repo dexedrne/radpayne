@@ -12,6 +12,7 @@ import { roomText } from "./rooms.ts";
 import { BottomLeft } from "./hud/BottomLeft.tsx";
 import { AmmoPanel } from "./hud/AmmoPanel.tsx";
 import { WeaponTabs } from "./hud/WeaponTabs.tsx";
+import { ScopeOverlay } from "./hud/ScopeOverlay.tsx";
 import { RoomTag, Tally } from "./hud/Tally.tsx";
 import { Objective } from "./hud/Objective.tsx";
 import { Crosshair } from "./hud/Crosshair.tsx";
@@ -61,6 +62,7 @@ export function Hud({ s: sProp, paused = false }: { s?: Session | null; paused?:
       <div className={`rp-fxroot${clean ? " rp-clean" : ""}`} data-testid="screen-fx">
         <ScreenFx h={h} dead={dead} />
       </div>
+      {h.zoom && !kc && !dead && <ScopeOverlay />}
       {s && <DamageLayer s={s} />}
       {s && <ThreatLayer s={s} />}
       <div className={`rp-hud${kc ? " kc" : ""}${dead ? " dead" : ""}${clean ? " rp-clean" : ""}`} data-testid="hud">
@@ -72,7 +74,7 @@ export function Hud({ s: sProp, paused = false }: { s?: Session | null; paused?:
           <WeaponTabs current={h.weaponId} owned={h.owned} dry={total === 0 && h.reserve <= 0} ammo={h.ammo} last={h.lastInSlot} />
           <AmmoPanel mags={h.mags} magSize={h.magSize} hands={h.hands} reloading={h.reloading} weapon={h.weapon} weaponId={h.weaponId} reserve={h.reserve} />
         </div>
-        {!kc && !dead && <Crosshair now={now} />}
+        {!kc && !dead && !h.zoom && <Crosshair now={now} />}
       </div>
       <KillcamOverlay on={kc} progress={h.killcamProgress} timeScale={h.timeScale} line={line} />
     </>

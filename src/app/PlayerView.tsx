@@ -27,11 +27,11 @@ import { RADBRO_GRIPS, SHOTGUN_SCALE } from "../anim/grips.ts";
 import { LONG_GUN_GEOM, LongGunHold, READY } from "../anim/hold.ts";
 import { RADBRO_GAIT, RUN_FROM, clipSpeed, legsFor } from "../anim/gait.ts";
 import { clipsPath, gunClipsPath, lightUp, modelPath, r2ClipsPath } from "./characters.ts";
-import { SHOTGUN_PUMP, SHOTGUN_RACK, aimHand, attachGun, makeAk, makePistol, makeShotgun, makeSmg, muzzleWorld } from "./guns.ts";
+import { SHOTGUN_PUMP, SHOTGUN_RACK, aimHand, attachGun, makeAk, makeGrenade, makeHandCannon, makeKatana, makePistol, makeSawedOff, makeShotgun, makeSmg, makeSniper, muzzleWorld } from "./guns.ts";
 import { useUi, type RadbroId } from "../ui/store.ts";
 import { FRAME } from "./frame.ts";
-import { TIME } from "../sim/tuning.ts";
-import { WEAPONS, isLongGun } from "../combat/weapons.ts";
+import { MELEE, TIME } from "../sim/tuning.ts";
+import { WEAPONS, isLongGun, isOneHand } from "../combat/weapons.ts";
 import { SHOULDER, wrapAngle } from "../sim/aim.ts";
 import { camView } from "./CameraView.tsx";
 import { holdDev } from "./dev/holdcheck.ts";
@@ -47,7 +47,17 @@ const SWAP_AT = 0.23;
 const SHOTGUN_THICK_PLAYER = 1.55;
 /** His long guns run this much further ahead of the pump / handguard (gun space, before the length
  *  scale): the front reaches past his shoulder into the clear zone below-left of the crosshair. */
-const PLAYER_FRONT = { shotgun: 0.13, ak: 0.12 } as const;
+const PLAYER_FRONT = { shotgun: 0.13, ak: 0.12, sniper: 0.1 } as const;
+/** The one-handed guns' size over true scale, and their recoil at the elbow (rad). */
+const ONE_HAND = { handcannon: { scale: 1.25, kick: 0.45 }, sawedoff: { scale: 1.2, kick: 0.4 } } as const;
+/** The melee's arm arc (his frame: right, up, forward from the chest, metres) from its start to its end,
+ *  the share of the swing spent cutting, the spine's turn over it (rad). */
+const SWING = {
+  katana: { from: [0.55, 0.55, 0.35], to: [-0.55, -0.35, 0.55], cut: 0.4, twist: [-0.6, 0.4] },
+  strike: { from: [0.45, 0.25, 0.25], to: [-0.25, -0.05, 0.6], cut: 0.35, twist: [-0.45, 0.35] },
+} as const;
+/** The throw's left-hand arc (his frame, from the chest): back and up, then out forward; seconds. */
+const THROW = { from: [-0.35, 0.5, -0.25], to: [-0.1, 0.55, 0.75], time: 0.4 } as const;
 const DEG = Math.PI / 180;
 /** The long-gun hold's numbers (arsenal spec 1.2-1.4). */
 const HOLD: { aimMax: number; aimMaxLying: number; pitch: readonly [number, number]; aimedFor: number; toAimed: number; toReady: number; cant: number; ikIn: number; ikOut: number; aimTwist: number } = {
@@ -111,6 +121,7 @@ const CROSSHAIR_FADE = 0.36;
 const HEAD_R = 0.36;
 const HEAD_UP = 0.25;
 
+const smooth = (k: number) => k * k * (3 - 2 * k);
 const vHead = new Vector3();
 const vRight = new Vector3(), vFwd = new Vector3(), vPath = new Vector3(), vA = new Vector3(), vB = new Vector3();
 const box = new Box3();
@@ -139,6 +150,13 @@ type Rig = {
   smgs: [Group, Group];
   shotgun: Group;
   ak: Group;
+  /** The arsenal: the one-handed guns, the long ones (the rifle is an AK), the katana, a frag. */
+  handcannon: Group;
+  sawedoff: Group;
+  sniper: Group;
+  rifle: Group;
+  katana: Group;
+  grenade: Group;
   hit: AnimationAction | null;
   reload: AnimationAction | null;
   /** Upper-body layers of the round-2 pack (null without it). */
@@ -232,7 +250,17 @@ function makeRig(id: RadbroId, src: Object3D, pack: Object3D | null, gunPack: Ob
   if (bones.lHand) attachGun(smgs[1], bones.lHand, grips.left, 1, SMG_SCALE);
   if (bones.rHand) attachGun(shotgun, bones.rHand, grips.right, 1, [SHOTGUN_THICK_PLAYER, SHOTGUN_THICK_PLAYER, SHOTGUN_SCALE[id]]);
   if (bones.rHand) attachGun(ak, bones.rHand, grips.right, 1, [SHOTGUN_THICK_PLAYER, SHOTGUN_THICK_PLAYER, SHOTGUN_SCALE[id]]);
-  for (const g of [...smgs, shotgun, ak]) g.visible = false;
+  const handcannon = makeHandCannon(), sawedoff = makeSawedOff(), sniper = makeSniper(PLAYER_FRONT.sniper), rifle = makeAk(PLAYER_FRONT.ak);
+  const katana = makeKatana(), grenade = makeGrenade();
+  if (bones.rHand) {
+    attachGun(handcannon, bones.rHand, grips.right, 1, ONE_HAND.handcannon.scale);
+    attachGun(sawedoff, bones.rHand, grips.right, 1, ONE_HAND.sawedoff.scale);
+    attachGun(sniper, bones.rHand, grips.right, 1, [SHOTGUN_THICK_PLAYER, SHOTGUN_THICK_PLAYER, SHOTGUN_SCALE[id]]);
+    attachGun(rifle, bones.rHand, grips.right, 1, [SHOTGUN_THICK_PLAYER, SHOTGUN_THICK_PLAYER, SHOTGUN_SCALE[id]]);
+    attachGun(katana, bones.rHand, grips.right, 1, 1);
+  }
+  if (bones.lHand) attachGun(grenade, bones.lHand, grips.left, 1, 1.3);
+  for (const g of [...smgs, shotgun, ak, handcannon, sawedoff, sniper, rifle, katana, grenade]) g.visible = false;
   // additive hit flinch (no root translation) and the upper-body reload layer
   const gunClips = clipsOf(gunPack);
   let hit: AnimationAction | null = null;
@@ -279,17 +307,23 @@ function makeRig(id: RadbroId, src: Object3D, pack: Object3D | null, gunPack: Ob
   const base = [...player.clips.values()].map(clip => ({ clip, long: /^(Shotgun_|Heavy_Stagger)/.test(clip.name) && clip.name !== "Shotgun_Prone_GetUp", run: clip.name === "Shotgun_Run" }));
   const pose: Rig["pose"] = [];
   model.traverse(o => { if ((o as Bone).isBone) pose.push({ bone: o as Bone, q: o.quaternion.clone(), p: o.position.clone() }); });
-  return { id, root, model, player, materials, guns, smgs, shotgun, ak, bones, hit, reload, sgFire, sgReload, swap, hold, base, pose };
+  return { id, root, model, player, materials, guns, smgs, shotgun, ak, handcannon, sawedoff, sniper, rifle, katana, grenade, bones, hit, reload, sgFire, sgReload, swap, hold, base, pose };
 }
 
-/** The guns in his hands for a weapon (a long gun's muzzle serves both "hands"). */
-function handGuns(rig: Rig, w: string): Group[] {
-  return w === "shotgun" ? [rig.shotgun, rig.shotgun] : w === "ak" ? [rig.ak, rig.ak] : w === "smgs" ? rig.smgs : rig.guns;
+/** The one gun of a single-gun weapon (the long guns, the one-handed ones). */
+function oneGun(rig: Rig, w: string): Group | null {
+  return w === "shotgun" ? rig.shotgun : w === "ak" ? rig.ak : w === "rifle" ? rig.rifle : w === "sniper" ? rig.sniper : w === "handcannon" ? rig.handcannon : w === "sawedoff" ? rig.sawedoff : null;
 }
+/** The guns in his hands for a weapon (a single gun's muzzle serves both "hands"). */
+function handGuns(rig: Rig, w: string): Group[] {
+  const one = oneGun(rig, w);
+  return one ? [one, one] : w === "smgs" ? rig.smgs : rig.guns;
+}
+const allGuns = (rig: Rig): Group[] => [...rig.guns, ...rig.smgs, rig.shotgun, rig.ak, rig.handcannon, rig.sawedoff, rig.sniper, rig.rifle];
 
 /** Dev hold check: the shown gun's screen box and muzzle point (px), and the flat mask for the pixel count. */
 function holdCheckView(rig: Rig, gun: Group, cam: Camera, size: { width: number; height: number }): void {
-  const all = [...rig.guns, ...rig.smgs, rig.shotgun, rig.ak];
+  const all = allGuns(rig);
   for (const g of all) {
     g.traverse(o => {
       const m = o as Mesh;
@@ -330,7 +364,9 @@ export function PlayerView({ s }: { s: Session }) {
     /** The long-gun hold: IK weight, low-ready weight, seconds since his last shot (the player's clock), recoil. */
     ikW: 0, readyW: 1, sinceShot: 99, lgRecoil: 0, posed: false,
     /** Lying with a long gun (dive / prone, eased): the roll onto his left side. */
-    lieW: 0 });
+    lieW: 0,
+    /** Seconds since the last throw (the left hand's lob), the melee swing's twist this frame. */
+    throwT: 99 });
   const tmp = useMemo(() => ({ aim: new Vector3(), side: new Vector3(), a: new Vector3(), q: new Quaternion() }), []);
 
   useEffect(() => {
@@ -348,9 +384,11 @@ export function PlayerView({ s }: { s: Session }) {
         else r.recoil[e.hand] = 1;
       }
       if (e.type === "hurt" && e.target === -1 && e.hp > 0 && rig.hit) rig.hit.reset().setEffectiveWeight(0.9).play();
+      if (e.type === "throw") r.throwT = 0;
       if (e.type === "reload") {
-        // the shotgun's authored feed; the AK's mag change is a left-hand path on the hold (no layer)
-        const lay = w === "shotgun" ? rig.sgReload : w === "ak" ? null : rig.reload;
+        // the shotgun's authored feed (the sniper's rounds go in the same way); the AK's (and the rifle's)
+        // mag change is a left-hand path on the hold (no layer)
+        const lay = w === "shotgun" || w === "sniper" ? rig.sgReload : w === "ak" || w === "rifle" ? null : rig.reload;
         if (lay) {
           const d = lay.getClip().duration;
           lay.reset().setEffectiveTimeScale(d / WEAPONS[w].reload).setEffectiveWeight(0).play();
@@ -383,7 +421,7 @@ export function PlayerView({ s }: { s: Session }) {
     const pos = s.renderP;
     if (r.run !== s.run) {
       r.run = s.run; r.clip = ""; r.mode = ""; r.legYaw = p.facing; r.bodyYaw = p.facing; r.jumpHold = false; r.reloadW = 0; r.back = false;
-      r.shown = p.weapon.id; r.swapTo = ""; r.swapT = -1; r.swapW = 0; r.fireW = 0; r.ikW = 1; r.readyW = 1; r.sinceShot = 99; r.lgRecoil = 0;
+      r.shown = p.weapon.id; r.swapTo = ""; r.swapT = -1; r.swapW = 0; r.fireW = 0; r.ikW = 1; r.readyW = 1; r.sinceShot = 99; r.lgRecoil = 0; r.throwT = 99;
       pl.force(pick(pl, (isLongGun(p.weapon.id) ? SHOTGUN_CLIPS : CLIPS).idle), 0);
       rig.hit?.stop();
       rig.reload?.stop();
@@ -484,7 +522,7 @@ export function PlayerView({ s }: { s: Session }) {
     r.reloadW += ((reloading ? 1 : 0) - r.reloadW) * Math.min(1, 12 * dt);
     const long = isLongGun(r.shown);
     rig.reload?.setEffectiveWeight(long ? 0 : 2.4 * r.reloadW);
-    rig.sgReload?.setEffectiveWeight(r.shown === "shotgun" ? 1.6 * r.reloadW : 0);
+    rig.sgReload?.setEffectiveWeight(r.shown === "shotgun" || r.shown === "sniper" ? 1.6 * r.reloadW : 0);
     // the shotgun's fire layer (kick + pump) only while standing; the swap layer rises fast, then lets go
     const fireOn = !!rig.sgFire && rig.sgFire.isRunning() && m === "normal" && r.shown === "shotgun";
     r.fireW += ((fireOn ? 1 : 0) - r.fireW) * Math.min(1, 20 * dt);
@@ -554,11 +592,28 @@ export function PlayerView({ s }: { s: Session }) {
       const f = tmp.a.set(0, 0, 1).applyQuaternion(rig.root.quaternion);
       rotateBoneWorld(LIE.spine ? B.spine02 : B.hips, f, -LIE.roll * r.lieW);
     }
+    // the melee swing (the sim's clock): 0..1 through it, the cut's share, a bump weight; the chest turns
+    // through the cut (right to left); the throw's lob with the left hand
+    const M = g.katana ? MELEE.katana : MELEE.strike;
+    const sw = g.katana ? SWING.katana : SWING.strike;
+    const mu = p.meleeT > 0 && alive ? 1 - p.meleeT / M.time : -1;
+    const cutK = mu < 0 ? 0 : smooth(Math.min(1, mu / sw.cut));
+    const meleeW = mu < 0 ? 0 : Math.sin(Math.PI * Math.min(1, mu));
+    const meleeTwist = (sw.twist[0] + (sw.twist[1] - sw.twist[0]) * cutK) * meleeW;
+    r.throwT += s.paused ? 0 : dt * Math.max(g.timeScale, TIME.playerInBulletTime);
+    const tu = r.throwT / THROW.time;
+    const throwW = tu < 1 && alive ? Math.sin(Math.PI * tu) : 0;
+    const fwdX = Math.sin(p.facing), fwdZ = Math.cos(p.facing), rtX = -Math.cos(p.facing), rtZ = Math.sin(p.facing);
+    /** A point in his frame off the chest bone (right, up, forward). */
+    const offChest = (o: readonly number[], out: Vector3) => {
+      if (B.spine) B.spine.getWorldPosition(out); else out.set(s.renderP.x, s.renderP.y + 1.1, s.renderP.z);
+      return out.set(out.x + rtX * o[0] + fwdX * o[2], out.y + o[1], out.z + rtZ * o[0] + fwdZ * o[2]);
+    };
     if (alive && normal) {
       // spine twist back toward the aim, and a little pitch with it (more with a long gun: the chest
       // carries the shouldered gun onto the aim, the hold only corrects the rest); the low ready turns
       // the chest a little to his right (the gun goes out from his body, where the camera sees it)
-      const twist = r.twist - (long ? READY.twist * ready + HOLD.aimTwist * (1 - ready) * (1 - reloadK) : 0);
+      const twist = r.twist - (long ? READY.twist * ready + HOLD.aimTwist * (1 - ready) * (1 - reloadK) : 0) + meleeTwist;
       if (Math.abs(twist) > 1e-3) {
         rotateBoneWorld(B.spine02, UP, twist * 0.3);
         rotateBoneWorld(B.spine01, UP, twist * 0.3);
@@ -579,9 +634,15 @@ export function PlayerView({ s }: { s: Session }) {
     rig.smgs.forEach(gun => { gun.visible = r.shown === "smgs"; });
     rig.shotgun.visible = r.shown === "shotgun";
     rig.ak.visible = r.shown === "ak";
+    rig.rifle.visible = r.shown === "rifle";
+    rig.sniper.visible = r.shown === "sniper";
+    rig.handcannon.visible = r.shown === "handcannon";
+    rig.sawedoff.visible = r.shown === "sawedoff";
+    const oneHand = isOneHand(r.shown);
     if (long && rig.hold?.sampled) {
-      const lg = r.shown === "ak" ? rig.ak : rig.shotgun;
-      const geom = LONG_GUN_GEOM[r.shown === "ak" ? "ak" : "shotgun"];
+      const lg = oneGun(rig, r.shown) ?? rig.shotgun;
+      const akLike = r.shown === "ak" || r.shown === "rifle";
+      const geom = LONG_GUN_GEOM[akLike ? "ak" : r.shown === "sniper" ? "sniper" : "shotgun"];
       // both hands stay on the gun through everything but death (in at a swap, out as he falls)
       const ikWant = alive ? 1 : 0;
       r.ikW += (ikWant - r.ikW) * Math.min(1, dt / (ikWant ? HOLD.ikIn : HOLD.ikOut));
@@ -589,13 +650,13 @@ export function PlayerView({ s }: { s: Session }) {
       if (holdDev.on && holdDev.tweak.ik !== undefined) ik = holdDev.tweak.ik;
       // recoil: the shotgun's fire layer kicks it when standing; the AK (and a shot from a dive) here
       r.lgRecoil = Math.max(0, r.lgRecoil - dt / 0.12 * Math.max(g.timeScale, 0.3));
-      const recoil = r.shown === "ak" ? 0.6 * r.lgRecoil : r.lgRecoil;
+      const recoil = akLike ? 0.6 * r.lgRecoil : r.shown === "sniper" ? 1.3 * r.lgRecoil : r.lgRecoil;
       // the AK's mag change: a scripted left-palm path over the reload, the gun tipped toward it
       let leftPath: { local: Vector3; world: Vector3; mix: number; w: number } | null = null;
       let tiltDown = 0, tiltRoll = 0, magRide = false;
       const mag = lg.userData.mag as Object3D | undefined;
       if (mag) { mag.visible = true; mag.position.copy(AK_MAG_AT); }
-      if (r.shown === "ak" && p.weapon.reloadT > 0 && alive) {
+      if (akLike && p.weapon.reloadT > 0 && alive) {
         const u = Math.min(1, Math.max(0, 1 - p.weapon.reloadT / WEAPONS.ak.reload));
         const bump = Math.sin(Math.PI * Math.min(1, u / 0.9));
         tiltDown = 0.3 * bump;
@@ -619,6 +680,19 @@ export function PlayerView({ s }: { s: Session }) {
           if (u >= 0.3 && u < 0.55) mag.visible = false;
           magRide = (u >= 0.12 && u < 0.3) || (u >= 0.55 && u < 0.85);
         }
+      } else if (throwW > 0) {
+        // the grenade: the left hand leaves the gun for the lob and comes back (the right keeps it)
+        const k = smooth(Math.min(1, tu / 0.6));
+        offChest([THROW.from[0] + (THROW.to[0] - THROW.from[0]) * k, THROW.from[1] + (THROW.to[1] - THROW.from[1]) * k, THROW.from[2] + (THROW.to[2] - THROW.from[2]) * k], vB);
+        leftPath = { local: vPath.set(0, 0, 0.37), world: vB, mix: 1, w: throwW };
+      }
+      if (r.shown === "sniper") {
+        // the bolt: back and home after each round (0.35-0.85 s on his clock)
+        const bolt = rig.sniper.userData.bolt as Object3D;
+        const bu = (r.sinceShot - 0.35) / 0.5;
+        const back = bu > 0 && bu < 1 ? Math.sin(Math.PI * bu) : 0;
+        bolt.position.z = 0.02 - 0.07 * back;
+        bolt.rotation.z = 0.9 * Math.min(1, back * 2);
       }
       const out = rig.hold.solve({
         gun: lg,
@@ -655,7 +729,7 @@ export function PlayerView({ s }: { s: Session }) {
       }
       if (holdDev.on) {
         // the reload's authored part: the left hand leaves the gun on purpose (the shotgun's feed up to 1.45 s, the AK's path)
-        const exempt = (r.shown === "shotgun" && r.reloadW > 0.02 && !!rig.sgReload && rig.sgReload.time < 1.5) || (!!leftPath && leftPath.w > 0.02) || r.swapW > 0.02 || !alive;
+        const exempt = ((r.shown === "shotgun" || r.shown === "sniper") && r.reloadW > 0.02 && !!rig.sgReload && rig.sgReload.time < 1.5) || (!!leftPath && leftPath.w > 0.02) || r.swapW > 0.02 || !alive;
         Object.assign(holdDev.last, { grip: out.gripErr, left: out.leftErr, bend: Math.max(out.bendL, out.bendR), flip: out.flipL || out.flipR, reach: Math.max(out.reachL, out.reachR), slide: out.slide, shift: out.shift, exempt, ik, ready, long: longShare });
         holdDev.record({ ...holdDev.last });
       }
@@ -669,15 +743,34 @@ export function PlayerView({ s }: { s: Session }) {
       const rOff = tmp.a.copy(tmp.side).multiplyScalar(0.07 + Math.tan(spread[0]) * reach).add(tmp.aim).clone();
       const lOff = tmp.a.copy(tmp.side).multiplyScalar(-(0.07 + Math.tan(spread[1]) * reach)).add(tmp.aim);
       aimLimb(B.rArm, B.rHand, rOff, armK * (1 - 0.6 * r.reloadW));
-      aimLimb(B.lArm, B.lHand, lOff, armK * (1 - 0.95 * r.reloadW));
-      // recoil: a quick kick up at the elbow (the SMGs kick a little less, but faster)
-      const kick = r.shown === "smgs" ? 0.16 : 0.3;
+      // the one-handed guns (hand cannon, sawed-off): the left arm drops to a guard below and ahead of
+      // the left shoulder; the pistols' left arm aims its own gun; a throw lobs with the left hand
+      if (oneHand && B.lArm) {
+        B.lArm.getWorldPosition(vA);
+        vA.set(vA.x + fwdX * 0.15, vA.y - 0.25, vA.z + fwdZ * 0.15);
+        aimLimb(B.lArm, B.lHand, vA, armK * (1 - 0.95 * r.reloadW));
+      } else aimLimb(B.lArm, B.lHand, lOff, armK * (1 - 0.95 * r.reloadW) * (1 - throwW));
+      if (throwW > 0) {
+        const k = smooth(Math.min(1, tu / 0.6));
+        aimLimb(B.lArm, B.lHand, offChest([THROW.from[0] + (THROW.to[0] - THROW.from[0]) * k, THROW.from[1] + (THROW.to[1] - THROW.from[1]) * k, THROW.from[2] + (THROW.to[2] - THROW.from[2]) * k], vB), throwW);
+      }
+      // recoil: a quick kick up at the elbow (the SMGs kick a little less, but faster; the hand cannon hard)
+      const kick = r.shown === "smgs" ? 0.16 : oneHand ? ONE_HAND[r.shown as keyof typeof ONE_HAND].kick : 0.3;
       for (const h of [0, 1] as const) {
-        r.recoil[h] = Math.max(0, r.recoil[h] - dt * 14 * Math.max(g.timeScale, 0.3));
+        r.recoil[h] = Math.max(0, r.recoil[h] - dt * (oneHand ? 9 : 14) * Math.max(g.timeScale, 0.3));
         if (r.recoil[h] > 0 && alive) rotateBoneWorld(h === 0 ? B.rFore : B.lFore, tmp.side, kick * r.recoil[h]);
       }
       // the wrists bend the guns onto the crosshair point; the guns stay in the palms at their grips
-      held.forEach((gun, h) => aimHand(h === 0 ? B.rHand : B.lHand, gun, alive ? tmp.aim : null, armK * (1 - (h === 1 ? 0.9 : 0.5) * r.reloadW), 0.75));
+      if (oneHand) aimHand(B.rHand, held[0], alive ? tmp.aim : null, armK * (1 - 0.5 * r.reloadW), 0.75);
+      else held.forEach((gun, h) => aimHand(h === 0 ? B.rHand : B.lHand, gun, alive ? tmp.aim : null, armK * (1 - (h === 1 ? 0.9 : 0.5) * r.reloadW), 0.75));
+      // the left gun dips out of the way of a throw
+      if (throwW > 0.05 && !oneHand) held[1].visible = false;
+      if (r.shown === "handcannon") (rig.handcannon.userData.slide as Object3D).position.z = 0.12 - 0.05 * r.recoil[0];
+      if (r.shown === "sawedoff") {
+        // the barrels hinge down through the reload (break, 2 out, 2 in, shut)
+        const u = p.weapon.reloadT > 0 ? 1 - p.weapon.reloadT / WEAPONS.sawedoff.reload : 0;
+        (rig.sawedoff.userData.barrels as Object3D).rotation.x = u > 0 ? 0.65 * Math.sin(Math.PI * Math.min(1, u / 0.95)) : 0;
+      }
       if (holdDev.on) {
         const clipQ = (bone: Bone | undefined) => rig.pose.find(x => x.bone === bone)?.q;
         const qr = clipQ(B.rHand), ql = clipQ(B.lHand);
@@ -686,6 +779,16 @@ export function PlayerView({ s }: { s: Session }) {
         holdDev.record({ ...holdDev.last });
       }
     }
+    // the melee: the right arm cuts along an arc (#4764 draws his katana, the guns wait); a long gun's
+    // strike is the chest's turn with both hands on it
+    rig.katana.visible = g.katana && meleeW > 0.02;
+    if (rig.katana.visible) for (const gun of allGuns(rig)) gun.visible = false;
+    if (meleeW > 0 && (!long || g.katana)) {
+      const a = sw.from, b = sw.to;
+      aimLimb(B.rArm, B.rHand, offChest([a[0] + (b[0] - a[0]) * cutK, a[1] + (b[1] - a[1]) * cutK, a[2] + (b[2] - a[2]) * cutK], vB), meleeW);
+      if (rig.katana.visible) aimHand(undefined, rig.katana, null, 0);
+    }
+    rig.grenade.visible = throwW > 0 && tu < 0.3;
     held.forEach((gun, h) => muzzleWorld(gun, playerMuzzles[h]));
     B.head?.getWorldPosition(playerHead);
     B.spine?.getWorldPosition(playerChest);
@@ -703,8 +806,8 @@ export function PlayerView({ s }: { s: Session }) {
       fadeTree(rig.model, fade);
       r.faded = fade < 1;
     }
-    rig.model.visible = fade > HIDE_BELOW;
-    if (fade <= 0.6) for (const gun of [...rig.guns, ...rig.smgs, rig.shotgun, rig.ak]) gun.visible = false;
+    rig.model.visible = fade > HIDE_BELOW && !p.zoom;
+    if (fade <= 0.6 || p.zoom) for (const gun of [...allGuns(rig), rig.katana, rig.grenade]) gun.visible = false;
     if (holdDev.on) {
       holdCheckView(rig, held[0], state.camera, state.size);
       (holdDev as unknown as { rig: Rig }).rig = rig;

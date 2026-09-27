@@ -309,7 +309,7 @@ export function CombatRead({ s }: { s: Session }) {
             const to = new Vector3(e.ex, e.ey, e.ez);
             if (to.distanceTo(from) > 60) to.sub(from).setLength(60).add(from);
             // shotgun pellets: hairline tracers at half the strength (8 at once must not cover the screen)
-            const k = e.weapon === "shotgun" ? 0.45 : 1;
+            const k = e.weapon === "shotgun" || e.weapon === "sawedoff" ? 0.45 : 1;
             push({ kind: "tracer", a: from, b: to, max: me ? 0.14 : 0.2, world: false, col: scaled(me ? COMBAT.player : COMBAT.enemy, (me ? 1.8 : 2.4) * k), px: (me ? 1.5 : 2.2) * (k < 1 ? 0.6 : 1), minD: 0, enemy: !me });
           }
           break;

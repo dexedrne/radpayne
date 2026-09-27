@@ -20,7 +20,7 @@ import { UPPER_BODY, deathFor, findBone, pick, rotateBoneWorld } from "../anim/r
 import { RADBRO_GRIPS, SHOTGUN_SCALE } from "../anim/grips.ts";
 import { RADBRO_GAIT } from "../anim/gait.ts";
 import { clipsPath, gunClipsPath, lightUp, r2ClipsPath, rivalBase, rivalPath } from "./characters.ts";
-import { SHOTGUN_PUMP, SHOTGUN_RACK, SHOTGUN_THICK, attachGun, makeShotgun, muzzleWorld } from "./guns.ts";
+import { SHOTGUN_PUMP, SHOTGUN_RACK, SHOTGUN_THICK, attachGun, makeHandCannon, makeShotgun, muzzleWorld } from "./guns.ts";
 import { hostileEmissive, setHostileRim } from "./look/tokens.ts";
 import { MeshStandardNodeMaterial } from "three/webgpu";
 import { enemyMuzzles } from "./EnemiesView.tsx";
@@ -105,9 +105,11 @@ function makeHeavy(e: Enemy, src: Object3D, pack: Object3D | null, gunPack: Obje
     fade: 0.18,
     policy: name => ({ xz: name.startsWith("Death_") || name === "Heavy_Stagger" ? "keep" : "pin", y: "keep" }),
   });
-  const shotgun = makeShotgun();
+  // the pump gun, or the manager's hand cannon (in the right hand at the pistol grip)
+  const cannon = e.weapon === "handcannon";
+  const shotgun = cannon ? makeHandCannon() : makeShotgun();
   const hand = findBone(model, "RightHand");
-  if (hand) attachGun(shotgun, hand, RADBRO_GRIPS[base].right, 1, [SHOTGUN_THICK, SHOTGUN_THICK, SHOTGUN_SCALE[base]]);
+  if (hand) attachGun(shotgun, hand, RADBRO_GRIPS[base].right, 1, cannon ? 1.3 : [SHOTGUN_THICK, SHOTGUN_THICK, SHOTGUN_SCALE[base]]);
   let hit: AnimationAction | null = null;
   const hc = clipsOf(gunPack).find(c => c.name === "Hit_Small");
   if (hc) {
@@ -207,6 +209,8 @@ export function HeavyView({ s }: { s: Session }) {
       const rimWant = e.state === "dead" && !e.deathHold ? 0 : 1;
       if (r.rim !== rimWant) { r.rim = rimWant > r.rim ? 1 : Math.max(0, r.rim - dt / 0.6); setHostileRim(r.root, r.rim); }
       const pl = r.player;
+      // down, his gun is the pickup lying by him
+      r.shotgun.visible = e.state !== "dead" || !e.drop;
       if (e.state === "dead") {
         if (!r.deadShown && !e.deathHold) {
           r.deadShown = true;
@@ -276,10 +280,10 @@ export function HeavyView({ s }: { s: Session }) {
           rotateBoneWorld(r.spine, V.axis.normalize(), ang);
         }
       }
-      const pump = r.shotgun.userData.pump as Object3D;
+      const pump = r.shotgun.userData.pump as Object3D | undefined;
       const t = r.fire && r.fireW > 0.05 ? r.fire.time : -1;
       const u = t >= 0 ? (t - 0.3) / 0.1 : -1;
-      pump.position.z = SHOTGUN_PUMP.z - SHOTGUN_RACK * (u > 0 && u < 2 ? (u < 1 ? u : 2 - u) : 0);
+      if (pump) pump.position.z = SHOTGUN_PUMP.z - SHOTGUN_RACK * (u > 0 && u < 2 ? (u < 1 ? u : 2 - u) : 0);
       r.shotgun.updateMatrixWorld(true);
       if (enemyMuzzles[r.idx]) muzzleWorld(r.shotgun, enemyMuzzles[r.idx]);
       // the tell: a faint red laser from the muzzle to whatever it meets on the way to his chest

@@ -4,6 +4,7 @@
 // everywhere (menu.ts); settings apply at once and persist.
 import "./hud/tokens.css";
 import { useEffect, useMemo, useState } from "react";
+import { loadPins } from "./pins.ts";
 import { RADBROS, setSetting, setVolume, store, useUi, type DmgColour, type HudSize, type Quality, type RadbroId, type Results, type ThreatMode } from "./store.ts";
 import { DIFFICULTY, type Difficulty } from "../sim/tuning.ts";
 import { setEffects, useFx, type Effects } from "../app/look/fx.ts";
@@ -41,7 +42,8 @@ const EFFECTS_NOTE = "Clean: no bloom, no rain in front of the lens, a plain wet
 
 export const CONTROLS: Array<[string[], string]> = [
   [["W", "A", "S", "D"], "move"], [["MOUSE"], "aim"], [["LMB"], "fire"], [["RMB", "Q"], "bullet time"], [["SHIFT"], "shootdodge"],
-  [["SPACE"], "jump low cover"], [["R"], "reload"], [["H"], "copium"], [["1", "2", "3"], "weapon (or wheel)"], [["ESC"], "pause"], [["M"], "mute"],
+  [["SPACE"], "jump low cover"], [["R"], "reload"], [["H"], "copium"], [["1", "5"], "weapon (again: its twin; or wheel)"], [["F"], "melee"], [["G"], "grenade"],
+  [["E"], "use"], [["RMB"], "scope (sniper, hold)"], [["ESC"], "pause"], [["M"], "mute"],
 ];
 
 function KeyList({ className }: { className: string }) {
@@ -382,7 +384,9 @@ export function ResultsScreen({ onRetry, onTitle }: { onRetry: () => void; onTit
   const stats: Array<[string, string, boolean?]> = [
     [fmtTime(s.time), "time", r.cleared && best.isBest], [String(s.kills), "kills"], [String(s.headshots), "headshots"], [`${acc}%`, "accuracy"],
     [String(Math.round(s.damageTaken)), "damage taken"], [String(s.copiumUsed), "copium used"], [`${s.btTime.toFixed(1)} s`, "bullet time"], [String(s.dodges), "shootdodges"],
+    ...(s.secretsTotal ? [[`${s.secrets ?? 0}/${s.secretsTotal}`, "secrets"] as [string, string]] : []),
   ];
+  const have = loadPins();
   return (
     <div className="rp-layer" data-testid="results">
       <div className="rp-dim" style={{ background: "rgba(5,6,12,0.45)" }} />
@@ -417,6 +421,18 @@ export function ResultsScreen({ onRetry, onTitle }: { onRetry: () => void; onTit
                 <div className="k">{k}</div>
               </div>
             ))}
+          </div>
+          <div className="rp-pins" data-testid="pins">
+            {RADBROS.map(b => {
+              const got = have.includes(b.id);
+              return (
+                <div key={b.id} className={`pin${got ? " got" : ""}`} style={{ borderColor: b.color, background: got ? b.color : "transparent" }} title={`#${b.id}`}>
+                  {got && <img src={`/ui/radbro${b.id}.webp`} alt="" />}
+                  {r.pins?.includes(b.id) && <span className="new">NEW</span>}
+                </div>
+              );
+            })}
+            <span className="total">PINS {RADBROS.filter(b => have.includes(b.id)).length}/{RADBROS.length}</span>
           </div>
           <div className="rp-rbtns">
             <button type="button" className="rp-mbtn primary" onClick={onRetry} data-testid="retry">{r.cleared ? "PLAY AGAIN" : "RETRY"}<span className="k">ENTER</span></button>

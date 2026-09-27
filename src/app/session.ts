@@ -88,6 +88,8 @@ export class Session {
 
   /** One rendered frame: poll input, run the fixed steps, dispatch events, interpolate. */
   frame(delta: number): void {
+    // the sniper in hand: right mouse / LT hold the scope
+    this.input.zoomMode = this.game.player.weapon.id === "sniper";
     this.input.poll(Math.min(delta, 0.1));
     if (this.input.padStart) this.onPadStart?.();
     if (this.input.padA) this.onPadA?.();

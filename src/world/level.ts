@@ -51,8 +51,9 @@ export type RoomSettings = {
 };
 
 /** A collider that opens on E (Data {secretDoor: id, open: "swing" | "slide", hinge?: "left" | "right",
- *  slide?: [dx, dz] metres}): the sim takes it out, the props view swings / slides its mesh. */
-export type SecretDoor = { node: string; id: string; open: "swing" | "slide"; hinge: string; slide: [number, number] };
+ *  slide?: [dx, dz] metres, mesh?: a decor node that moves with it}): the sim takes it out, the secrets
+ *  view swings / slides its mesh. */
+export type SecretDoor = { node: string; id: string; open: "swing" | "slide"; hinge: string; slide: [number, number]; mesh: string };
 /** A collider that breaks (Data {breakable: hp, secret?: secret marker id, drop?: item, amount?}). */
 export type Breakable = { node: string; hp: number; secret: string; drop: string; amount: number };
 
@@ -144,7 +145,7 @@ export function readLevel(prefab: Prefabish): LevelData {
           boxes.push(makeBox(boxes.length, node.id, xf.x, xf.y, xf.z, sx, sy, sz, xf.yaw, surface, data.shootThrough === true));
           if (typeof data.secretDoor === "string") {
             const sl = Array.isArray(data.slide) ? (data.slide as number[]) : [0, 0];
-            doors.push({ node: node.id, id: data.secretDoor, open: data.open === "slide" ? "slide" : "swing", hinge: typeof data.hinge === "string" ? data.hinge : "left", slide: [sl[0] ?? 0, sl[1] ?? 0] });
+            doors.push({ node: node.id, id: data.secretDoor, open: data.open === "slide" ? "slide" : "swing", hinge: typeof data.hinge === "string" ? data.hinge : "left", slide: [sl[0] ?? 0, sl[1] ?? 0], mesh: typeof data.mesh === "string" ? data.mesh : "" });
           }
           if (typeof data.breakable === "number") {
             breakables.push({ node: node.id, hp: data.breakable, secret: typeof data.secret === "string" ? data.secret : "", drop: typeof data.drop === "string" ? data.drop : "", amount: typeof data.amount === "number" ? data.amount : 0 });

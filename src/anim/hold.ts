@@ -55,9 +55,11 @@ export type LongGunGeom = {
   muzzle: [number, number, number];
 };
 
-export const LONG_GUN_GEOM: Record<"shotgun" | "ak", LongGunGeom> = {
+export const LONG_GUN_GEOM: Record<"shotgun" | "ak" | "sniper", LongGunGeom> = {
   shotgun: { butt: [0, 0.04, -0.32], rail: [0.33, 0.46], slideTo: 0.25, muzzle: [0, 0.07, 0.8] },
   ak: { butt: [0, 0.01, -0.28], rail: [0.31, 0.49], slideTo: 0.25, muzzle: [0, 0.06, 0.8] },
+  // the sniper sits in the shotgun's frame (the clips' hands fit it); only its muzzle reaches further
+  sniper: { butt: [0, 0.04, -0.32], rail: [0.33, 0.46], slideTo: 0.25, muzzle: [0, 0.07, 0.9] },
 };
 
 /** The clips' left palm on the pump, in gun space at the clip's uniform gun scale (round-2 manifest

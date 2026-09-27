@@ -7,7 +7,7 @@ import type { Session } from "./session.ts";
 import { useUi } from "../ui/store.ts";
 import { FRAME } from "./frame.ts";
 import { WEAPONS } from "../combat/weapons.ts";
-import { setAmbience, setClubBass, setCrowd, setFootsteps, setHeartbeat, setIndoor, setMusic, setNeonBuzz, setRoomTone, setTimeScaleAudio, sfx, voiceLog } from "../audio/sfx.ts";
+import { setAmbience, setClubBass, setCrowd, setFootsteps, setHeartbeat, setIndoor, setMusic, setNeonBuzz, setRoomTone, setTimeScaleAudio, sfx, sfxArsenal, voiceLog } from "../audio/sfx.ts";
 import { audioState } from "../audio/engine.ts";
 import { Director } from "./director.ts";
 import { PLAYER, TIME } from "../sim/tuning.ts";
@@ -15,8 +15,12 @@ import { PLAYER, TIME } from "../sim/tuning.ts";
 import { pushHurt } from "../ui/store.ts";
 import { roomLabel, roomText } from "../ui/rooms.ts";
 import { SLOT_ORDER, ammoLeft, type WeaponId } from "../combat/weapons.ts";
+import { addPin } from "../ui/pins.ts";
 import type { Player } from "../sim/actors.ts";
 import { METER } from "../sim/tuning.ts";
+
+/** Guns with their own sounds in the arsenal block (the rifle plays the AK's). */
+const ARSENAL_GUNS = new Set(["handcannon", "sawedoff", "sniper"]);
 
 declare global {
   interface Window {
@@ -57,7 +61,9 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
       case "shot": {
         const player = e.shooter === -1;
         const w = where(e.ox, e.oz);
-        if (e.pellet === 0) sfx.shot(player, player ? 0 : w.dist, w.pan, e.weapon);
+        // the arsenal's guns have their own sounds; the rifle is the AK's
+        if (e.pellet === 0 && ARSENAL_GUNS.has(e.weapon)) sfxArsenal.shot(e.weapon, player, player ? 0 : w.dist, w.pan);
+        else if (e.pellet === 0) sfx.shot(player, player ? 0 : w.dist, w.pan, e.weapon === "rifle" ? "ak" : e.weapon);
         if (!player && p.mode !== "dead") {
           // a near miss past his head: closest approach of the shot line to the head
           const hx = p.x, hy = p.y + 1.55, hz = p.z;
@@ -93,6 +99,7 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
       case "killcam": if (e.on) useUi.setState({ lastKillPhoto: null }); break;
       case "reload": {
         const d = WEAPONS[p.weapon.id].reload / Math.max(g.timeScale, TIME.playerInBulletTime);
+        if (ARSENAL_GUNS.has(p.weapon.id)) { sfxArsenal.reload(p.weapon.id, d); break; }
         if (p.weapon.id === "shotgun") sfx.reloadShotgun(d); else sfx.reload(d);
         break;
       }
@@ -103,8 +110,25 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
       case "dodge": sfx.dodge(); setHeartbeat(true); break;
       case "land": sfx.land(); if (!g.bulletTime) setHeartbeat(false); break;
       case "copium": sfx.copium(); break;
-      case "pickup": if (e.item === "copium") sfx.pickup(); else sfx.weaponPickup(e.item.endsWith("_ammo")); break;
+      case "pickup":
+        if (e.item === "pin") {
+          if (e.pin) { addPin(e.pin); useUi.setState(u => ({ hud: { ...u.hud, pins: [...u.hud.pins, e.pin!] } })); }
+          sfxArsenal.secret(true);
+        } else if (e.item === "copium") sfx.pickup();
+        else if (e.item === "grenade") sfxArsenal.grenade("pickup");
+        else sfx.weaponPickup(e.item.endsWith("_ammo"));
+        break;
       case "roomClear": setHeartbeat(false); break;
+      // the arsenal and the secrets
+      case "throw": sfxArsenal.grenade("throw"); break;
+      case "bounce": { const w = where(e.x, e.z); sfxArsenal.grenade("bounce", w.dist, w.pan, e.speed); break; }
+      case "explode": { const w = where(e.x, e.z); sfxArsenal.grenade("explode", w.dist, w.pan); break; }
+      case "melee": sfxArsenal.melee(e.kind, e.phase === "hit" && e.hits > 0); break;
+      case "zoom": sfxArsenal.zoom(e.on); break;
+      case "secret": sfxArsenal.secret(false); break;
+      case "open": sfxArsenal.door(); break;
+      case "break": { const w = where(e.x, e.z); sfxArsenal.breakIt(e.surface, w.dist, w.pan); break; }
+      case "interact": if (e.egg === "george") sfxArsenal.meow("happy"); else if (e.egg === "cabinet") sfxArsenal.egg("arcade"); else if (e.egg === "figurine") sfxArsenal.egg("squeak"); break;
       case "playerDead": setHeartbeat(false); useUi.setState({ deadAt: performance.now() }); break;
     }
   }), [s, director]);
@@ -115,7 +139,7 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
       hudRun.current = s.run;
       objective.current = { text: "", at: 0 };
       heavySteps.current = [];
-      useUi.setState(u => ({ deadAt: 0, hurts: [], hud: { ...u.hud, refill: null, btRefusedAt: 0, objective: "", objectiveAt: 0, run: s.run } }));
+      useUi.setState(u => ({ deadAt: 0, hurts: [], hud: { ...u.hud, refill: null, btRefusedAt: 0, objective: "", objectiveAt: 0, run: s.run, pins: [] } }));
     }
     meterSeen.current = s.game.meter;
     s.frame(delta);

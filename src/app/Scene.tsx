@@ -13,6 +13,10 @@ import { CrowdView } from "./CrowdView.tsx";
 import { PropsView } from "./PropsView.tsx";
 import { CameraView, CAMERA_NODE, FOV } from "./CameraView.tsx";
 import { FxView } from "./FxView.tsx";
+import { PickupsView } from "./PickupsView.tsx";
+import { ArsenalFx } from "./ArsenalFx.tsx";
+import { EggsView } from "./EggsView.tsx";
+import { SecretsView } from "./SecretsView.tsx";
 import { AssetsBridge } from "./characters.ts";
 import { RoomLook } from "./look/index.tsx";
 import { DebugView } from "./DebugView.tsx";
@@ -73,6 +77,10 @@ export function Scene({ s, onPhase, lowQuality, bootRef }: { s: Session; onPhase
         <CrowdView s={s} />
         <PropsView s={s} />
         <FxView s={s} />
+        <PickupsView s={s} />
+        <ArsenalFx s={s} />
+        <EggsView s={s} />
+        <SecretsView s={s} />
         <CameraView s={s} />
         <DebugView s={s} />
         <HudFrame s={s} />

@@ -326,7 +326,22 @@ function MirrorBall({ level, s }: { level: LevelData; s: Session }) {
     return mesh;
   }, [m]);
   useEffect(() => () => { if (ball) { ball.geometry.dispose(); (ball.material as MeshStandardMaterial).map?.dispose(); (ball.material as Material).dispose(); } }, [ball]);
-  useFrame((_, raw) => { if (ball) ball.rotation.y += Math.min(raw, 0.1) * 0.5 * (s.paused ? 1 : s.game.timeScale); }, FRAME.fx);
+  // the arsenal's secret: one shot through its breakable (a box round it) and it falls on world time,
+  // shattering on the dance floor (the glitter is ArsenalFx's); a new run hangs it back up
+  const fall = useMemo(() => ({ run: -1, v: 0, on: false }), []);
+  useEffect(() => s.on(e => { if (e.type === "break" && ball && Math.hypot(e.x - ball.position.x, e.z - ball.position.z) < 0.6) { fall.on = true; fall.v = 0; } }), [s, ball, fall]);
+  useFrame((_, raw) => {
+    if (!ball || !m) return;
+    const wdt = Math.min(raw, 0.1) * (s.paused ? 0 : s.game.timeScale);
+    if (fall.run !== s.run) { fall.run = s.run; fall.on = s.game.broken.length > 0 && s.level.breakables.some(b => s.game.broken.includes(b.node)); ball.visible = !fall.on; ball.position.y = m.y; }
+    if (fall.on && ball.visible) {
+      fall.v += 9.8 * wdt;
+      ball.position.y -= fall.v * wdt;
+      ball.rotation.x += wdt * 3;
+      if (ball.position.y < 0.45) ball.visible = false;
+    }
+    ball.rotation.y += Math.min(raw, 0.1) * 0.5 * (s.paused ? 1 : s.game.timeScale);
+  }, FRAME.fx);
   return ball ? <primitive object={ball} /> : null;
 }
 

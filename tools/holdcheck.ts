@@ -168,7 +168,7 @@ for (const r of rows) {
     if (s.flips > 0) why.push(`${s.flips} elbow flips`);
   }
   // the pixel targets are the long guns' (the one-handed guns are small by nature)
-  const long = r.gun === "shotgun" || r.gun === "ak";
+  const long = r.gun === "shotgun" || r.gun === "ak" || r.gun === "rifle" || r.gun === "sniper";
   if (long && r.state === "idle" && r.px < LIMIT.readyPx) why.push(`ready ${r.px} px`);
   // shouldered: shooting, in bullet time, in the dive and prone
   if (long && AIMED.has(r.state) && r.px < LIMIT.aimedPx) why.push(`aimed ${r.px} px`);

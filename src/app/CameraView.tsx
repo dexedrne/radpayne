@@ -27,6 +27,7 @@ import { KC, planKillcam, type KcPlan } from "./killcam.ts";
 import { isLongGun } from "../combat/weapons.ts";
 import { holdDev } from "./dev/holdcheck.ts";
 import { holdView, playerChest } from "./PlayerView.tsx";
+import { blastShake } from "./ArsenalFx.tsx";
 
 export const CAMERA_NODE = "rp-camera";
 /** Dev builds: ?cam=<id of a "camera" marker> holds the camera on that shot (data.at = look-at point). */
@@ -43,6 +44,8 @@ export const LONG_CAM_LYING = { right: 0.2, arm: -0.55, up: 0.3, getup: 0, in: 0
  *  out when a wall pulls the camera into his head or slides the pivot in). */
 export const camView = { arm: SHOULDER.arm as number, right: SHOULDER.right as number, baseRight: SHOULDER.right as number };
 const FOV_BT = 60;
+/** The sniper's scope: the lens at the sim's pivot, looking down the aim ray (the crosshair is exact). */
+export const FOV_SCOPE = 17;
 export function CameraView({ s }: { s: Session }) {
   const prefab = usePrefab();
   const tmp = useMemo(() => ({
@@ -120,7 +123,7 @@ export function CameraView({ s }: { s: Session }) {
       dx /= l; dy /= l; dz /= l;
       const hl = Math.hypot(dx, dz) || 1;
       const hx = dx / hl, hz = dz / hl, sx = hz, sz = -hx; // horizontal shot direction and its side
-      if (f < 1 && pl.chase) {
+      if (f < 1 && pl.chase && k.chase !== false) {
         tmp.eye.set(bx - dx * 0.9 + sx * pl.side, by - dy * 0.9 + pl.lift, bz - dz * 0.9 + sz * pl.side);
         tmp.at.set(bx + dx * 2, by + dy * 2, bz + dz * 2);
         tmp.orbit = 0;
@@ -133,6 +136,16 @@ export function CameraView({ s }: { s: Session }) {
         tmp.at.set(pl.kx, ey + KC.atY, pl.kz);
         fovWant = KC.fov;
       }
+      camView.arm = SHOULDER.arm;
+    } else if (p.zoom) {
+      // scoped: the eye on the sim's pivot, along the aim ray; the body is hidden (PlayerView)
+      tmp.plan = null;
+      const r = s.renderP;
+      const d = aimDir(p.yaw, p.pitch, tmp.d);
+      const right = shoulderRight(g.world, p), c = Math.cos(p.yaw), sn = Math.sin(p.yaw);
+      tmp.eye.set(r.x + c * right, r.y + p.pivotUp, r.z - sn * right);
+      tmp.at.set(tmp.eye.x + d.x * 10, tmp.eye.y + d.y * 10, tmp.eye.z + d.z * 10);
+      fovWant = FOV_SCOPE;
       camView.arm = SHOULDER.arm;
     } else {
       tmp.plan = null;
@@ -168,10 +181,10 @@ export function CameraView({ s }: { s: Session }) {
       const aimWant = Math.min(80, Math.max(3, Math.hypot(ap.x - sx0, ap.y - by, ap.z - sz0)));
       tmp.aimT += (aimWant - tmp.aimT) * Math.min(1, 10 * dt);
       tmp.at.set(sx0 + d.x * tmp.aimT, by + d.y * tmp.aimT, sz0 + d.z * tmp.aimT);
-      // hit kick
+      // hit kick, and a blast's shake by its distance
       tmp.kick = Math.max(0, tmp.kick - dt * 6);
-      if (tmp.kick > 0) {
-        const j = tmp.kick * 0.06;
+      if (tmp.kick > 0 || blastShake.k > 0) {
+        const j = tmp.kick * 0.06 + blastShake.k * 0.12;
         tmp.eye.x += (Math.random() - 0.5) * j; tmp.eye.y += (Math.random() - 0.5) * j;
       }
     }
@@ -187,7 +200,9 @@ export function CameraView({ s }: { s: Session }) {
       cam.position.copy(tmp.eye);
       cam.quaternion.setFromRotationMatrix(tmp.m);
     }
-    tmp.fov += (fovWant - tmp.fov) * Math.min(1, 8 * dt);
+    // the scope snaps in (a tiny ease), the rest glides; look sensitivity follows the view's width
+    tmp.fov += (fovWant - tmp.fov) * Math.min(1, (p.zoom || fovWant === FOV_SCOPE ? 30 : 8) * dt);
+    s.input.fovK = p.zoom ? Math.tan((tmp.fov * Math.PI) / 360) / Math.tan((FOV * Math.PI) / 360) : 1;
     if (cam instanceof PerspectiveCamera && Math.abs(cam.fov - tmp.fov) > 0.01) {
       cam.fov = tmp.fov;
       cam.updateProjectionMatrix();

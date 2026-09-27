@@ -1,4 +1,4 @@
-// Dev hold check (arsenal spec 1.7): ?holdcheck=<shotgun|ak|pistols|smgs>&radbro=<id> starts the room
+// Dev hold check (arsenal spec 1.7): ?holdcheck=<any weapon id>&radbro=<id> starts the room
 // with that gun in hand, no gang, no crowd, and drives the player from a script instead of the input
 // (stand, walk, back-pedal, strafe, run, fire, reload, turns, aim up / down, jump, dive -> prone ->
 // get-up, dive into a roll). PlayerView measures the hold every frame into `holdDev.stats[state]`:
@@ -11,14 +11,14 @@
 // box). Window hook: window.__holdcheck. Development builds only.
 import type { Game } from "../../sim/game.ts";
 import { emptyInput, type InputFrame } from "../../sim/types.ts";
-import type { WeaponId } from "../../combat/weapons.ts";
+import { WEAPONS, type WeaponId } from "../../combat/weapons.ts";
 import type { Session } from "../session.ts";
 import { DT } from "../../sim/tuning.ts";
 
 const DEV = import.meta.env.MODE !== "production";
 const params = new URLSearchParams(location.search);
 const HC = DEV ? params.get("holdcheck") : null;
-export const HOLDCHECK: WeaponId | null = HC === "shotgun" || HC === "ak" || HC === "pistols" || HC === "smgs" ? HC : null;
+export const HOLDCHECK: WeaponId | null = HC && HC in WEAPONS ? (HC as WeaponId) : null;
 
 export type HoldStats = { frames: number; grip: number; left: number; bend: number; flips: number; reach: number; slide: number; shift: number };
 export type HoldView = "game" | "side" | "right" | "front" | "back";

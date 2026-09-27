@@ -141,7 +141,7 @@ export class Bot {
           const k = g.pickups[i];
           const d = PICKUPS[k.item];
           // not the secrets, nothing up a climb, nothing it cannot take
-          if (k.taken || !d || k.secret || k.y > p.y + 1.2 || !g.canTake(k.item)) continue;
+          if (k.taken || !d || k.secret || k.behind || k.y > p.y + 1.2 || !g.canTake(k.item)) continue;
           const dd = (k.x - p.x) ** 2 + (k.z - p.z) ** 2;
           if (dd < kd) { kd = dd; tx = k.x; tz = k.z; key = 700 + i; }
         }

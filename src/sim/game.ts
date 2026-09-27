@@ -87,8 +87,9 @@ export type Stats = { kills: number; headshots: number; shots: number; hits: num
 
 /** wait: real seconds the player has stood in it (the breach door's fallback); prompted: its hint was given. */
 type Trigger = Marker & { fired: boolean; wait: number; prompted: boolean };
-/** pin: a Radbro Webring pin's Radbro id; secret: it lies inside a secret (the bot leaves it). */
-export type Pickup = { id: string; item: string; amount: number; x: number; y: number; z: number; taken: boolean; pin?: string; secret?: boolean };
+/** pin: a Radbro Webring pin's Radbro id; secret: it lies inside a secret (the bot leaves it); behind: a
+ *  secret door or breakable's node id it waits behind (not taken until that is out of the world). */
+export type Pickup = { id: string; item: string; amount: number; x: number; y: number; z: number; taken: boolean; pin?: string; secret?: boolean; behind?: string };
 
 export class Game {
   readonly level: LevelData;
@@ -213,6 +214,7 @@ export class Game {
         // copium scales with the difficulty; weapons and ammo do not
         const pk: Pickup = { id: m.id, item, amount: item === "copium" ? Math.max(1, Math.floor(base * this.diff.copium)) : base, x: m.x, y: m.y, z: m.z, taken: false };
         if (typeof m.data.pin === "string") pk.pin = m.data.pin;
+        if (typeof m.data.behind === "string") pk.behind = m.data.behind;
         this.pickups.push(pk);
       } else if (m.kind === "trigger") this.triggers.push({ ...m, fired: false, wait: 0, prompted: false });
     }
@@ -346,9 +348,6 @@ export class Game {
       if (inp.slot > 0) this.switchWeapon(inp.slot);
       if (inp.reload && p.meleeT <= 0 && startReload(p.weapon)) this.emit({ type: "reload", hand: 0 });
       if (inp.copium) this.useCopium();
-      if (inp.interact) this.interact();
-      if (inp.melee) this.startMelee();
-      if (inp.throw) this.throwGrenade();
       if (inp.dodge && p.mode === "normal" && p.dodgeCooldown <= 0) {
         const before = this.meter;
         if (this.meter > 0) this.meter = Math.max(0, this.meter - METER.dodgeCost);
@@ -378,8 +377,13 @@ export class Game {
       p.health = Math.min(PLAYER.maxHealth, p.health + add);
     }
 
-    // aim + weapon
+    // aim + weapon; E, the melee and the throw go where he aims this step
     this.updateAim();
+    if (inControl && p.mode !== "dead") {
+      if (inp.interact) this.interact();
+      if (inp.melee) this.startMelee();
+      if (inp.throw) this.throwGrenade();
+    }
     const w = p.weapon;
     if (stepWeapon(w, pdt)) this.emit({ type: "reloaded" });
     // the melee (his clock): the hit resolves at the wind-up
@@ -413,7 +417,7 @@ export class Game {
     // pickups + triggers
     if (inControl && p.mode !== "dead") {
       for (const k of this.pickups) {
-        if (k.taken) continue;
+        if (k.taken || (k.behind && !this.world.off.has(k.behind))) continue;
         const dx = k.x - p.x, dz = k.z - p.z, dy = k.y - p.y;
         if (dx * dx + dz * dz > PLAYER.pickupRadius ** 2 || dy > 2 || dy < -1) continue;
         if (k.item === "copium") {
