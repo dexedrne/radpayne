@@ -7,19 +7,19 @@ import assert from "node:assert/strict";
 import { Director, type DirectorIO } from "../src/app/director.ts";
 import { Session } from "../src/app/session.ts";
 import { useUi } from "../src/ui/store.ts";
-import { room2, room3 } from "./helpers.ts";
+import { room2, room3, room5 } from "./helpers.ts";
 import type { GameEvent } from "../src/sim/types.ts";
 
 type Call = { at: number; kind: string; line: string; len: number };
 
 /** A fake audio + clock: every voice returns a fixed length; `until(ms)` advances time in 50 ms frames. */
-function rig(roomId: "room2" | "room3") {
-  const lvl = roomId === "room2" ? room2() : room3();
+function rig(roomId: "room2" | "room3" | "room5") {
+  const lvl = roomId === "room2" ? room2() : roomId === "room3" ? room3() : room5();
   const s = new Session(lvl, {}, roomId, { seed: 1 });
   let t = 0;
   const timers: Array<{ at: number; fn: () => void }> = [];
   const calls: Call[] = [];
-  const LEN: Record<string, number> = { narrate: 4.0, pa: 2.0, heavy: 1.0, bark: 0.8 };
+  const LEN: Record<string, number> = { narrate: 4.0, pa: 2.0, heavy: 1.0, bark: 0.8, world: 1.2 };
   const rec = (kind: string, line: string) => { const len = LEN[kind] ?? 0.5; calls.push({ at: t, kind, line, len }); return len; };
   const io: DirectorIO = {
     now: () => t,
@@ -31,6 +31,7 @@ function rig(roomId: "room2" | "room3") {
     bark: (_v, k) => rec("bark", k),
     radbro: l => { rec("radbro", l); return 0.5; },
     crowdVoice: () => true,
+    worldVoice: key => rec("world", key),
   };
   const d = new Director(s, io);
   const until = (ms: number) => {
@@ -137,4 +138,48 @@ test("director: the breach hint goes the moment he is through (on screen, or sti
   q.until(12_000);
   assert.ok(q.calls.some(c => c.kind === "narrate" && c.line === "r3_breach"));
   assert.equal(useUi.getState().subtitle.hint, "");
+});
+
+test("director: Madame Pockit's lines never play after her fall, nor out of their moment; the narrator's last-stand line plays first", () => {
+  const r = rig("room5");
+  const g = r.s.game;
+  const b = g.boss!;
+  const her = g.enemies[b.idx];
+  b.started = true;
+  r.until(500);
+  // the last stand: the narrator's line, then hers once the air is clear
+  b.lastStand = 1;
+  r.ev({ type: "boss", what: "lastStand" } as unknown as GameEvent);
+  r.until(9000);
+  const nar = r.calls.find(c => c.kind === "narrate" && c.line === "r5_laststand");
+  const hers = r.calls.find(c => c.kind === "world" && c.line === "madame/last_stand");
+  assert.ok(nar, "the narrator's last-stand line plays");
+  assert.ok(hers && hers.at >= nar!.at + nar!.len * 1000, "hers after it");
+  // a stagger line held behind the narrator, then she falls: it is dropped; her fall line plays
+  const q = rig("room5");
+  const qb = q.s.game.boss!;
+  const qher = q.s.game.enemies[qb.idx];
+  qb.started = true;
+  q.until(500);
+  q.ev({ type: "boss", what: "rug" } as unknown as GameEvent); // the narrator's chandelier hint takes the air
+  q.until(700);
+  q.ev({ type: "boss", what: "stagger" } as unknown as GameEvent);
+  q.until(900);
+  qher.state = "dead";
+  q.ev({ type: "boss", what: "down" } as unknown as GameEvent);
+  q.until(12_000);
+  const w = q.calls.filter(c => c.kind === "world").map(c => c.line);
+  assert.ok(!w.includes("madame/stagger_1"), `no line after her fall (${w.join(", ")})`);
+  assert.ok(w.includes("madame/down_1"), "her fall line");
+  // the coat is off: a stagger is not "my coat!"
+  const c = rig("room5");
+  const cb = c.s.game.boss!;
+  cb.started = true;
+  cb.coat = false;
+  c.until(9000);
+  c.ev({ type: "boss", what: "stagger" } as unknown as GameEvent);
+  c.until(12_000);
+  const cw = c.calls.filter(x => x.kind === "world").map(x => x.line);
+  assert.ok(!cw.includes("madame/stagger_1") && cw.includes("madame/hit_2"), cw.join(", "));
+  void her;
 });

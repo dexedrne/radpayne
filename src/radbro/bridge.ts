@@ -31,7 +31,7 @@ type Target = { postMessage(message: unknown, targetOrigin: string): void };
 export const RADPAYNE: GameInfo = {
   game: "radpayne",
   title: "RadPayne",
-  objective: "Shoot your way through the Milady gang's club in bullet time: clear every room, then walk to the door.",
+  objective: "Shoot your way through the Milady gang's club and up to Madame Pockit's penthouse in bullet time: clear every room, then walk to the door.",
   hint: "Hold right button or Q for bullet time; kills refill the meter. Shift dives in slow motion.",
   // One control per entry, no commas inside one (the portal's play guide takes a comma-separated list).
   controls: [

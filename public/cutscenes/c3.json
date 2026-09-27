@@ -1,0 +1,70 @@
+{
+  "id": "c3",
+  "title": "Chapter 1: Rugged",
+  "music": "penthouse",
+  "panels": [
+    {
+      "image": "/cutscenes/c3/panel_1.webp",
+      "tone": "street",
+      "box": [0.019, 0.027, 0.193, 0.081],
+      "lines": [
+        {
+          "audio": "cs3_01",
+          "text": "the top floor. marble, glass, and the whole city under it, lit up like it was for sale."
+        }
+      ],
+      "dur": 8.1
+    },
+    {
+      "image": "/cutscenes/c3/panel_2.webp",
+      "tone": "phone",
+      "box": [0.02, 0.027, 0.167, 0.078],
+      "lines": [
+        {
+          "audio": "cs3_02",
+          "text": "she was waiting for me. my bag was in her lap, like a cat."
+        },
+        {
+          "audio": "cs3_m1",
+          "speaker": "madame",
+          "text": "\"you came all this way for one little bag? that's so sweet.\""
+        }
+      ],
+      "dur": 10.3
+    },
+    {
+      "image": "/cutscenes/c3/panel_3.webp",
+      "tone": "phone",
+      "box": [0.021, 0.033, 0.201, 0.082],
+      "lines": [
+        {
+          "audio": "cs3_m2",
+          "speaker": "madame",
+          "text": "\"everybody gets rugged, sweetie. it's nothing personal.\""
+        },
+        {
+          "audio": "cs3_03",
+          "text": "the call wasn't coming from far away."
+        }
+      ],
+      "dur": 6.7
+    },
+    {
+      "image": "/cutscenes/c3/panel_4.webp",
+      "tone": "guns",
+      "box": [0.022, 0.032, 0.197, 0.087],
+      "lines": [
+        {
+          "audio": "cs3_m3",
+          "speaker": "madame",
+          "text": "\"let's play, cutie.\""
+        },
+        {
+          "audio": "cs3_04",
+          "text": "she smiled like she'd already won. they always do, right up until they don't."
+        }
+      ],
+      "dur": 7.5
+    }
+  ]
+}

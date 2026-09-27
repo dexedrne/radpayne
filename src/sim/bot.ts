@@ -8,6 +8,7 @@
 import { HB_HEAD, HB_TORSO, aimPoint, makeCapsules } from "../combat/hitboxes.ts";
 import { PICKUPS, SLOT_ORDER, WEAPONS, ammoLeft, slotOf, type WeaponId } from "../combat/weapons.ts";
 import { insideTrigger, type Game } from "./game.ts";
+import { bossAim, grenadeEscape } from "./boss.ts";
 import { pivotOf } from "./player.ts";
 import { emptyInput, type InputFrame } from "./types.ts";
 
@@ -17,6 +18,12 @@ export class Bot {
   private readonly piv = { x: 0, y: 0, z: 0 };
   private path: Array<{ x: number; z: number }> = [];
   private pathFor = -2;
+  /** Room 5: her wind-ups seen (the bot goes for every other one, as a player who is watching her
+   *  might: the rest get thrown, and it runs out of their rings). */
+  private winds = 0;
+  private windOn = false;
+  /** Pickups with no way to them right now (behind the car's shut doors): world time to try again. */
+  private noWay = new Map<number, number>();
   private repath = 0;
   private dodgeCd = 0;
   private strafe = 1;
@@ -87,7 +94,23 @@ export class Bot {
     for (const e of g.enemies) if (e.state === "peek" || e.state === "engage" || (e.state === "move" && e.sees)) shooting++;
 
     this.lost = best >= 0 ? 0 : this.lost + 1 / 120;
-    if (best >= 0) {
+    // room 5: a shot worth more than any girl (the grenade in her hand, the chandelier's chain over her)
+    let special = g.boss ? bossAim(g) : null;
+    const windOn = !!g.boss?.wind;
+    if (windOn && !this.windOn) this.winds++;
+    this.windOn = windOn;
+    if (windOn && this.winds % 2 === 0) special = null;
+    if (special && g.world.clear(piv.x, piv.y, piv.z, special.x, special.y, special.z, true)) {
+      const dx = special.x - piv.x, dy = special.y - piv.y, dz = special.z - piv.z;
+      const yaw = Math.atan2(-dx, -dz), pitch = Math.asin(dy / (Math.hypot(dx, dy, dz) || 1));
+      this.turn(f, yaw, pitch);
+      let dyaw = yaw - f.yaw;
+      while (dyaw > Math.PI) dyaw -= 2 * Math.PI;
+      while (dyaw < -Math.PI) dyaw += 2 * Math.PI;
+      f.fire = Math.abs(dyaw) < 0.015 && Math.abs(pitch - f.pitch) < 0.015;
+      if (!WEAPONS[p.weapon.id].auto) { f.fire = f.fire && !this.fired; this.fired = f.fire; }
+      this.lost = 0;
+    } else if (best >= 0) {
       const e = g.enemies[best];
       // the shotgun spreads: aim at the chest with it
       const part = bd < 14 * 14 && p.weapon.id !== "shotgun" ? HB_HEAD : HB_TORSO;
@@ -140,11 +163,13 @@ export class Bot {
         for (let i = 0; i < g.pickups.length; i++) {
           const k = g.pickups[i];
           const d = PICKUPS[k.item];
-          // not the secrets, nothing up a climb, nothing it cannot take
-          if (k.taken || !d || k.secret || k.behind || k.y > p.y + 1.2 || !g.canTake(k.item)) continue;
+          // not the secrets, nothing up a climb, nothing it cannot take, nowhere it found no way to lately
+          if (k.taken || !d || k.secret || k.behind || k.y > p.y + 1.2 || !g.canTake(k.item) || (this.noWay.get(i) ?? -1) > g.time) continue;
           const dd = (k.x - p.x) ** 2 + (k.z - p.z) ** 2;
           if (dd < kd) { kd = dd; tx = k.x; tz = k.z; key = 700 + i; }
         }
+        // room 4: a finished stop waits for him in the car
+        if (g.ride?.wantsIn(g)) { const c = g.ride.car; tx = (c[0] + c[2]) / 2; tz = (c[1] + c[3]) / 2; key = 600; }
         if (key < 0) {
           // nothing alive and awake: walk to the next trigger we have not fired (not the fallbacks)
           const t = g.triggers.find(tr => !tr.fired && tr.data.action !== "exit" && typeof tr.data.afterKills !== "number");
@@ -160,6 +185,8 @@ export class Bot {
             const n = g.graph.nearest(tx, 0, tz, false);
             const w = n >= 0 ? g.graph.nodes[n] : null;
             path = w ? g.graph.path(p.x, p.y, p.z, w.x, w.y, w.z) : null;
+            // a pickup with no way to it (a landing whose doors have shut): leave it for now
+            if (!path && key >= 700 && key < 700 + g.pickups.length) { this.noWay.set(key - 700, g.time + 5); this.pathFor = -2; this.repath = 0; }
           }
           this.path = path ?? [{ x: tx, z: tz }];
           this.pathFor = key;
@@ -189,6 +216,13 @@ export class Bot {
         if (this.stuckT > 1) { f.jump = true; this.sidestep = 0.6; this.stuckT = 0; this.repath = 0; this.strafe = -this.strafe; }
         if (this.sidestep > 0) { this.sidestep -= 1 / 120; f.moveX = this.strafe; }
       }
+    }
+    // out of a heart grenade's ring
+    const esc = g.boss ? grenadeEscape(g) : null;
+    if (esc && p.mode === "normal") {
+      const sy = Math.sin(f.yaw), cy = Math.cos(f.yaw);
+      f.moveY = esc.x * -sy + esc.z * -cy;
+      f.moveX = esc.x * cy - esc.z * sy;
     }
     if (p.health < 50 && p.copium > 0 && p.healLeft <= 0) f.copium = true;
     if (p.mode === "prone") f.moveY = 1;

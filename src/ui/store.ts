@@ -78,8 +78,10 @@ export type Hud = {
 /** One hit on the player: where the shooter stood (NaN = no shooter: a fall), when, how hard. */
 export type Hurt = { sx: number; sz: number; at: number; amount: number; shooter: number };
 
-/** pins: the pins picked up in this run (the results mark them NEW). */
-export type Results = { cleared: boolean; stats: Stats; room: string; difficulty: Difficulty; radbro: RadbroId; pins?: string[] };
+/** pins: the pins picked up in this run (the results mark them NEW). chapter: the last room of the
+ *  chapter was cleared (round 3: after cutscene 4): the totals of every room cleared this visit, and how
+ *  many rooms that was. */
+export type Results = { cleared: boolean; stats: Stats; room: string; difficulty: Difficulty; radbro: RadbroId; pins?: string[]; chapter?: { stats: Stats; rooms: number } };
 
 export type Quality = "high" | "low";
 export type HudSize = "s" | "m" | "l";

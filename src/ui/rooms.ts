@@ -3,6 +3,7 @@
 // objectiveClear, killcamLine, clearText, pauseLine, chapter, number); its `prompt` is the
 // objective once the room is clear. (`clearLine` in the level data is the narrator's voice line id,
 // so the results line is `clearText` there.) Unknown rooms fall back to the level's name.
+import { ROUND3_ROOMS } from "../app/round3Lines.ts";
 
 export type RoomText = {
   /** Room number in the chapter (the tag reads "ROOM n · LABEL"). */
@@ -29,6 +30,7 @@ export type RoomText = {
 export const RUGGED_LINE = "the street took this one. get up. the bag is still in there.";
 
 const ROOMS: Record<string, Partial<RoomText>> = {
+  ...ROUND3_ROOMS,
   room1: {
     number: 1,
     label: "OUTSIDE CLUB MILADY",

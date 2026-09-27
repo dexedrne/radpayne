@@ -186,7 +186,8 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
       const p = g.player;
       const moving = !s.paused && p.grounded && p.mode === "normal" ? Math.sqrt(p.vx * p.vx + p.vz * p.vz) / PLAYER.runSpeed : 0;
       setFootsteps(moving > 0.07 ? moving : 0);
-      const music = typeof room.music === "string" ? room.music : "street";
+      // (round 3: the room's own set, or the one the sim put over it: room 4 after the cables snap)
+      const music = g.music ?? (typeof room.music === "string" ? room.music : "street");
       if (music === "rave") {
         // the club's track until the first shot, the fight loop after it, the track back (quiet) once clear
         setMusic(g.firstShotAt < 0 ? "calm" : g.phase === "play" ? "fight" : "clear", "rave");

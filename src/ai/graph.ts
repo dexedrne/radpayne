@@ -29,6 +29,9 @@ export class Graph {
   readonly nodes: Waypoint[] = [];
   readonly covers: Cover[] = [];
   private readonly world: World;
+  /** Round 3: explicit links through a door (a waypoint's Data {door: collider id}): A* takes them only
+   *  while that door is out of the world (the elevator's landing doors, the penthouse's add doors). */
+  private readonly gates = new Map<number, string>();
 
   constructor(markers: Marker[], world: World) {
     this.world = world;
@@ -45,7 +48,12 @@ export class Graph {
     };
     wps.forEach((m, i) => {
       const links = m.data.links;
-      if (Array.isArray(links)) for (const l of links) { const j = byId.get(String(l)); if (j !== undefined) link(i, j); }
+      if (Array.isArray(links)) for (const l of links) {
+        const j = byId.get(String(l));
+        if (j === undefined) continue;
+        link(i, j);
+        if (typeof m.data.door === "string") this.gates.set(Math.min(i, j) * 65536 + Math.max(i, j), m.data.door);
+      }
     });
     wps.forEach((m, i) => {
       if (Array.isArray(m.data.links)) return;
@@ -105,6 +113,8 @@ export class Graph {
       const a = this.nodes[cur];
       for (const j of a.links) {
         if (closed[j]) continue;
+        const gate = this.gates.size ? this.gates.get(Math.min(cur, j) * 65536 + Math.max(cur, j)) : undefined;
+        if (gate && !this.world.off.has(gate)) continue; // that door is shut
         const b = this.nodes[j];
         const t = gScore[cur] + Math.sqrt((a.x - b.x) ** 2 + (a.z - b.z) ** 2);
         if (t < gScore[j]) { gScore[j] = t; came[j] = cur; open.add(j); }

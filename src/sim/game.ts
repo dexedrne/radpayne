@@ -15,9 +15,11 @@ import { aimDir } from "./aim.ts";
 import { Crowd } from "./crowd.ts";
 import { Fnv1a, Rand, hash01 } from "./math.ts";
 import { PM_DIVE, PM_GETUP, PM_JUMP, PM_LAND, PM_PRONE, muzzleOf, pivotOf, stepPlayer } from "./player.ts";
-import { AI, BREACH, CHECKPOINT_MIN_HEALTH, DIFFICULTY, DODGE, DT, ENEMY, ENEMY_ARMS, GRENADE, HEAVY, HEAVY_SCALE, KILLCAM, MAX_RANGE, MELEE, METER, PLAYER, PROJECTILE_SPEED, RUSHER, TIME, USE, type Difficulty } from "./tuning.ts";
+import { AI, BREACH, CHECKPOINT_MIN_HEALTH, DIFFICULTY, DODGE, DT, ENEMY, ENEMY_ARMS, GRENADE, HEAVY, HEAVY_SCALE, KILLCAM, MADAME, MAX_RANGE, MELEE, METER, PLAYER, PROJECTILE_SPEED, RUSHER, TIME, USE, type Difficulty } from "./tuning.ts";
 import { PLAYER_ID, type GameEvent, type InputFrame, type V3 } from "./types.ts";
 import { World, circleRectOverlap, type Box } from "./world.ts";
+import { Ride } from "./ride.ts";
+import { Boss } from "./boss.ts";
 
 export const POCKIT_COUNT = 3333;
 
@@ -80,10 +82,19 @@ export type Carry = { owned: WeaponId[]; weapon: WeaponId; ammo: Array<[WeaponId
 /** The Pockit goons of a level (goons and rushers without a fixed model), in marker order; `later` =
  *  brought in by a spawn trigger (inactive at the start). */
 export function goonSlots(level: LevelData): Array<{ id: string; later: boolean }> {
-  const spawned = new Set(level.markers.filter(m => m.kind === "trigger" && m.data.action === "spawn" && typeof m.data.group === "string").map(m => m.data.group as string));
+  const spawned = laterGroups(level);
   return level.markers
     .filter(m => m.kind === "enemy" && ((m.data.kind as string | undefined) ?? "goon") !== "heavy" && ["goon", "rusher"].includes((m.data.kind as string | undefined) ?? "goon") && typeof m.data.milady !== "number")
     .map(m => ({ id: m.id, later: typeof m.data.group === "string" && spawned.has(m.data.group) }));
+}
+
+/** Groups that wait unseen (inactive) until something brings them in: the ones a spawn trigger names,
+ *  and (round 3) the room's `later` list, which the ride and the boss bring in themselves. */
+export function laterGroups(level: LevelData): Set<string> {
+  const out = new Set(level.markers.filter(m => m.kind === "trigger" && m.data.action === "spawn" && typeof m.data.group === "string").map(m => m.data.group as string));
+  const later = level.room.later;
+  if (Array.isArray(later)) for (const g of later) if (typeof g === "string") out.add(g);
+  return out;
 }
 
 /** What a checkpoint keeps (room 3's, after the security office): where he stands, who is down, which
@@ -97,6 +108,8 @@ export type Resume = {
   health: number; copium: number; meter: number; stats: Stats;
   /** The arsenal and the secrets (optional: a checkpoint saved before them has none). */
   grenades?: number; banked?: number; found?: string[]; opened?: string[]; broken?: string[];
+  /** Room 4: the ride's step (the stop the car is at). */
+  ride?: number;
 };
 
 export type Stats = { kills: number; headshots: number; shots: number; hits: number; damageTaken: number; copiumUsed: number; time: number; btTime: number; dodges: number; secrets?: number; secretsTotal?: number };
@@ -147,6 +160,13 @@ export class Game {
   /** Meter the last shootdodge cost (a dive through the breach door gives it back). */
   private dodgeSpent = 0;
   timeScale = 1;
+  /** The world speed of a free slow motion (the breach, the elevator's door beat, the boss's last stand). */
+  slowScale: number = BREACH.slowScale;
+  /** Round 3: room 4's ride and room 5's boss (null elsewhere). */
+  readonly ride: Ride | null = null;
+  readonly boss: Boss | null = null;
+  /** The music set over the room's own (room 4 after the cables snap); null = the room's. */
+  music: string | null = null;
   bulletTime = false;
   meter: number = METER.start;
   phase: Phase = "play";
@@ -200,15 +220,16 @@ export class Game {
     const drops = (level.room.drops ?? {}) as Record<string, string>;
     // a group waits unseen (inactive) only when a spawn trigger brings it in; a group named by an alert
     // or a breach trigger only (the back rooms' storage and security office) is there from the start
-    const spawned = new Set(level.markers.filter(m => m.kind === "trigger" && m.data.action === "spawn" && typeof m.data.group === "string").map(m => m.data.group as string));
+    const spawned = laterGroups(level);
     for (const m of level.markers) {
       if (m.kind === "enemy") {
         const kindName = (m.data.kind as string | undefined) ?? "goon";
-        if (kindName !== "goon" && kindName !== "rusher" && kindName !== "heavy") continue; // later kinds (the boss)
+        if (kindName !== "goon" && kindName !== "rusher" && kindName !== "heavy" && kindName !== "madame") continue;
         const kind = kindName as EnemyKind;
-        const pick = kind === "heavy" ? 0 : typeof m.data.milady === "number" ? (m.data.milady as number) : opts.pockit?.[m.id] ?? 1 + Math.floor(hash01(this.seed, n, 0x6d, 0) * POCKIT_COUNT);
+        const pick = kind === "heavy" ? 0 : kind === "madame" ? MADAME.pockit : typeof m.data.milady === "number" ? (m.data.milady as number) : opts.pockit?.[m.id] ?? 1 + Math.floor(hash01(this.seed, n, 0x6d, 0) * POCKIT_COUNT);
         const gy = this.world.groundBelow(m.x, m.z, 0.3, m.y + 1);
-        const e = makeEnemy(n, m.id, m.x, Number.isFinite(gy) ? gy : m.y, m.z, m.yaw, ENEMY[kind].hp, pick, typeof m.data.group === "string" ? m.data.group : "", kind);
+        const hp = kind === "madame" ? MADAME.hp[this.difficulty] : ENEMY[kind].hp;
+        const e = makeEnemy(n, m.id, m.x, Number.isFinite(gy) ? gy : m.y, m.z, m.yaw, hp, pick, typeof m.data.group === "string" ? m.data.group : "", kind);
         if (e.group && !spawned.has(e.group)) e.state = "idle";
         e.perch = m.data.perch === true;
         e.deaf = m.data.deaf === true;
@@ -241,6 +262,9 @@ export class Game {
     this.stats.secrets = 0;
     this.stats.secretsTotal = this.secrets.length;
     for (const e of this.enemies) this.syncEnemyPose(e);
+    // round 3: the elevator's ride (room.ride) and the penthouse boss (an enemy of kind "madame")
+    if (level.room.ride && typeof level.room.ride === "object") this.ride = new Ride(this, level.room.ride as never);
+    if (this.enemies.some(e => e.kind === "madame")) this.boss = new Boss(this);
     this.crowd = new Crowd(level.markers, this.world, this.graph, { seed: this.seed, pockitCount: POCKIT_COUNT });
     for (const w of opts.loadout ?? []) this.giveWeapon(w);
     // a loadout starts with its last weapon in hand
@@ -268,6 +292,7 @@ export class Game {
       ammo: p.owned.map(w => { const a = p.arsenal[w]!; return [w, a.mags[0], a.mags[1], a.reserve] as [WeaponId, number, number, number]; }),
       health: p.health, copium: p.copium, meter: this.meter, stats: { ...this.stats },
       grenades: p.grenades, banked: p.banked, found: [...this.found], opened: [...this.opened], broken: [...this.broken],
+      ...(this.ride ? { ride: this.ride.i } : {}),
     };
   }
 
@@ -293,6 +318,21 @@ export class Game {
     if (p.arsenal[c.weapon]) p.weapon = p.arsenal[c.weapon]!;
     p.grenades = Math.min(GRENADE.carry, Math.max(p.grenades, c.grenades));
     p.banked = c.banked;
+  }
+
+  /** Save a checkpoint at a checkpoint marker (by id; the room's ride saves one at each stop). */
+  checkpointAt(id: string): void {
+    const at = this.level.markers.find(m => m.kind === "checkpoint" && m.id === id);
+    if (!at) return;
+    this.checkpoint = { x: at.x, y: at.y, z: at.z, facing: at.yaw };
+    this.saved = this.snapshot(at);
+  }
+
+  /** A free slow motion: world speed `scale` for `real` real seconds, no meter (the breach's mechanism). */
+  slowFor(real: number, scale: number): void {
+    this.breachSlow = real;
+    this.slowScale = scale;
+    this.timeScale = Math.min(this.timeScale, scale);
   }
 
   /** Rebuild the room as the checkpoint left it (no events: the views read the state). */
@@ -331,6 +371,7 @@ export class Game {
     p.copium = r.copium;
     this.meter = Math.max(r.meter, METER.start * 0.5);
     this.stats = { ...r.stats, secrets: this.found.length, secretsTotal: this.secrets.length };
+    if (this.ride && typeof r.ride === "number") this.ride.resumeAt(r.ride);
     this.saved = r;
   }
 
@@ -347,7 +388,7 @@ export class Game {
 
   get alive(): number {
     let n = 0;
-    for (const e of this.enemies) if (e.state !== "dead") n++;
+    for (const e of this.enemies) if (e.state !== "dead" && !e.fled) n++;
     return n;
   }
 
@@ -373,7 +414,7 @@ export class Game {
     }
     const diving = p.mode === "dive";
     if (this.breachSlow > 0) this.breachSlow = Math.max(0, this.breachSlow - DT);
-    const target = this.phase === "killcam" ? TIME.killCam : this.breachSlow > 0 ? BREACH.slowScale : this.bulletTime || diving ? TIME.bulletTime : 1;
+    const target = this.phase === "killcam" ? TIME.killCam : this.breachSlow > 0 ? this.slowScale : this.bulletTime || diving ? TIME.bulletTime : 1;
     this.timeScale += (target - this.timeScale) * Math.min(1, TIME.ease * DT);
     if (Math.abs(this.timeScale - target) < 1e-4) this.timeScale = target;
     const ts = this.timeScale;
@@ -454,6 +495,10 @@ export class Game {
 
     // projectiles
     this.stepProjectiles(wdt);
+    // round 3: the ride (stops, doors, the roof heavy, the cables) and the boss's room (phases, grenades,
+    // the add doors, the chandelier)
+    this.ride?.step(this, wdt);
+    this.boss?.step(this, wdt);
 
     // pickups + triggers
     if (inControl && p.mode !== "dead") {
@@ -682,12 +727,13 @@ export class Game {
       const e = c.e;
       const dx = c.x - px, dz = c.z - pz, dl = Math.hypot(dx, dz) || 1;
       hits++;
-      e.hp -= M.damage;
+      const dmg = this.bossShare(e, M.damage);
+      e.hp -= dmg;
       e.flinch = Math.max(e.flinch, M.flinch);
       if (e.weapon === "sniper") e.tell = 0;
-      if (M.knock > 0 && e.kind !== "heavy" && !e.perch) { e.knockT = MELEE.knockTime; e.knockX = (dx / dl) * M.knock; e.knockZ = (dz / dl) * M.knock; }
+      if (M.knock > 0 && e.kind !== "heavy" && e.kind !== "madame" && !e.perch) { e.knockT = MELEE.knockTime; e.knockX = (dx / dl) * M.knock; e.knockZ = (dz / dl) * M.knock; }
       this.emit({ type: "blood", x: c.x, y: c.y, z: c.z, dx: dx / dl, dy: 0, dz: dz / dl, target: e.idx, part: HB_TORSO });
-      this.emit({ type: "hurt", target: e.idx, amount: M.damage, part: HB_TORSO, hp: Math.max(0, e.hp) });
+      this.emit({ type: "hurt", target: e.idx, amount: dmg, part: HB_TORSO, hp: Math.max(0, e.hp) });
       if (e.state === "idle") alertGoon(this, e, 0);
       if (e.kind === "heavy" && e.hp > 0 && M.damage >= HEAVY.staggerAt && e.stagger <= 0) {
         e.stagger = HEAVY.stagger;
@@ -772,7 +818,7 @@ export class Game {
       if (!gr.landed) continue;
       // goons and rushers with a clear line to it run out of the radius after a beat (the idle hear it)
       for (const e of this.enemies) {
-        if (e.kind === "heavy" || e.perch || e.state === "dead" || e.state === "inactive" || e.fleeWait > 0 || e.fleeT > 0) continue;
+        if (e.kind === "heavy" || e.kind === "madame" || e.perch || e.fled || e.state === "dead" || e.state === "inactive" || e.fleeWait > 0 || e.fleeT > 0) continue;
         const dx = e.x - gr.x, dz = e.z - gr.z, d = Math.hypot(dx, dz);
         if (d > GRENADE.fleeRadius || !this.world.clear(gr.x, gr.y + 0.2, gr.z, e.x, e.y + 1, e.z, true)) continue;
         if (e.state === "idle") alertGoon(this, e, 0);
@@ -792,11 +838,11 @@ export class Game {
     if (this.firstShotAt < 0) { this.firstShotAt = this.time; this.crowd.scatter(this.time, bx, bz, this.player.x, this.player.z); this.emit({ type: "firstShot", x: bx, z: bz }); }
     const dmgAt = (d: number) => GRENADE.damage * Math.pow(Math.max(0, 1 - d / R), GRENADE.falloff);
     for (const e of this.enemies) {
-      if (e.state === "dead" || e.state === "inactive") continue;
+      if (e.state === "dead" || e.state === "inactive" || e.fled) continue;
       if (!aimPoint(e.hit.body, e.hit.pose, HB_TORSO, this.v, this.scratchCaps)) continue;
       const dx = this.v.x - bx, dy = this.v.y - by, dz = this.v.z - bz, d = Math.hypot(dx, dy, dz);
       if (d >= R || !this.world.clear(bx, by, bz, this.v.x, this.v.y, this.v.z, true)) continue;
-      const dmg = dmgAt(d);
+      const dmg = this.bossShare(e, dmgAt(d));
       e.hp -= dmg;
       e.flinch = Math.max(e.flinch, AI.flinch);
       if (e.weapon === "sniper") e.tell = 0;
@@ -948,8 +994,7 @@ export class Game {
     dx /= l; dz /= l;
     if (!kick) {
       dx = this.player.dirX; dz = this.player.dirZ;
-      this.breachSlow = BREACH.slowReal;
-      this.timeScale = BREACH.slowScale;
+      this.slowFor(BREACH.slowReal, BREACH.slowScale);
       this.meter = Math.min(METER.max, this.meter + this.dodgeSpent);
       this.dodgeSpent = 0;
     } else {
@@ -979,6 +1024,9 @@ export class Game {
     const h = trace(this.world, this.actors, 0, piv.x, piv.y, piv.z, d.x, d.y, d.z, MAX_RANGE, this.th2);
     this.aimEnemy = h.kind === HIT_ACTOR ? h.actor - 1 : -1;
     this.aimPoint.x = h.x; this.aimPoint.y = h.y; this.aimPoint.z = h.z;
+    // round 3: the boss room's small targets (the grenade in her hand, a grenade, the chain) are on the crosshair too
+    const cut = this.boss ? this.boss.intercept(piv.x, piv.y, piv.z, d.x, d.y, d.z, h.t) : null;
+    if (cut) { this.aimEnemy = -1; this.aimPoint.x = piv.x + d.x * cut.t; this.aimPoint.y = piv.y + d.y * cut.t; this.aimPoint.z = piv.z + d.z * cut.t; }
   }
 
   private firePlayer(hand: number): void {
@@ -1117,8 +1165,15 @@ export class Game {
       this.emit({ type: "shot", shooter, hand, ox, oy, oz, ex: ox + dx * MAX_RANGE, ey: oy + dy * MAX_RANGE, ez: oz + dz * MAX_RANGE, projectile: true, id, weapon, pellet });
       return;
     }
+    const h = trace(this.world, this.actors, team, ox, oy, oz, dx, dy, dz, MAX_RANGE, this.th);
+    // round 3: his shot may meet one of the boss room's small targets first
+    const cut = team === 0 && this.boss ? this.boss.intercept(ox, oy, oz, dx, dy, dz, h.t) : null;
+    if (cut) {
+      this.emit({ type: "shot", shooter, hand, ox, oy, oz, ex: ox + dx * cut.t, ey: oy + dy * cut.t, ez: oz + dz * cut.t, projectile: false, id, weapon, pellet });
+      this.boss!.hitTarget(this, cut, ox, oy, oz);
+      return;
+    }
     if (pierce <= 0) {
-      const h = trace(this.world, this.actors, team, ox, oy, oz, dx, dy, dz, MAX_RANGE, this.th);
       this.emit({ type: "shot", shooter, hand, ox, oy, oz, ex: h.x, ey: h.y, ez: h.z, projectile: false, id, weapon, pellet });
       this.resolveHit(h, ox, oy, oz, dx, dy, dz, damage, team, shooter, weapon);
       return;
@@ -1159,7 +1214,13 @@ export class Game {
       for (const k of b.skip) this.actors[k].hittable = false;
       const h = trace(this.world, this.actors, b.team, b.x, b.y, b.z, b.dx, b.dy, b.dz, len, this.th);
       b.skip.forEach((k, j) => { this.actors[k].hittable = was[j]; });
-      if (h.kind === HIT_ACTOR && b.pierce > 0) {
+      // round 3: his bullet may meet one of the boss room's small targets first
+      const cut = b.team === 0 && this.boss ? this.boss.intercept(b.x, b.y, b.z, b.dx, b.dy, b.dz, h.t) : null;
+      if (cut) {
+        b.x += b.dx * cut.t; b.y += b.dy * cut.t; b.z += b.dz * cut.t;
+        b.alive = false;
+        this.boss!.hitTarget(this, cut, b.sx, b.sy, b.sz);
+      } else if (h.kind === HIT_ACTOR && b.pierce > 0) {
         // on through the body: the rest of its flight goes on from there next step
         b.pierce--;
         b.skip.push(h.actor);
@@ -1204,12 +1265,30 @@ export class Game {
     }
     const e = this.enemies[target];
     if (!e || e.state === "dead") return;
-    const amount = damage * HB_MULT[h.part];
-    e.hp -= amount;
     if (team === 0) this.stats.hits++;
-    e.flinch = AI.flinch;
+    const amount = damage * HB_MULT[h.part] * (e.kind === "madame" && this.boss ? this.boss.damageMul(h.part) : 1);
+    const shot = team === 0 ? { ox, oy, oz, x: h.x, y: h.y, z: h.z } : null;
+    const blast = team === 0 && (weapon === "shotgun" || weapon === "sawedoff") && (e.x - ox) ** 2 + (e.z - oz) ** 2 < 4 * 4;
+    this.damageEnemy(e, amount, h.part, dx, dz, shot, blast);
+  }
+
+  /** Madame Pockit's share of a blow that is not a bullet (a melee, a frag): her coat's and the coat
+   *  throw's factor, and never her kill before the last stand. Anyone else takes it all. */
+  private bossShare(e: Enemy, amount: number): number {
+    if (e.kind !== "madame" || !this.boss) return amount;
+    return this.boss.clampDamage(e, amount * this.boss.damageMul(HB_TORSO));
+  }
+
+  /** Damage to an enemy (a hit, or round 3's blasts and the chandelier): the flinch, the heavy's
+   *  stagger, the kill. `shot` = the player's (the kill counts and the kill cam replays it). */
+  damageEnemy(e: Enemy, amount: number, part: number, dx: number, dz: number, shot: { ox: number; oy: number; oz: number; x: number; y: number; z: number } | null, blast = false): void {
+    if (e.state === "dead" || amount <= 0) return;
+    const target = e.idx;
+    if (e.kind === "madame" && this.boss) amount = this.boss.clampDamage(e, amount);
+    e.hp -= amount;
+    e.flinch = e.kind === "madame" ? MADAME.flinch : AI.flinch;
     if (e.weapon === "sniper") e.tell = 0; // a hit spoils her aim
-    this.emit({ type: "hurt", target, amount, part: h.part, hp: Math.max(0, e.hp) });
+    this.emit({ type: "hurt", target, amount, part, hp: Math.max(0, e.hp) });
     if (e.state === "idle") alertGoon(this, e, 0);
     if (e.kind === "heavy" && e.hp > 0) {
       // a stagger needs 40+ in one hit: a shotgun blast's pellets land within a few steps of each other
@@ -1222,10 +1301,7 @@ export class Game {
         this.emit({ type: "stagger", enemy: e.idx });
       }
     }
-    if (e.hp <= 0) {
-      const blast = team === 0 && (weapon === "shotgun" || weapon === "sawedoff") && (e.x - ox) ** 2 + (e.z - oz) ** 2 < 4 * 4;
-      this.killEnemy(e, h.part === HB_HEAD, dx, dz, team === 0 ? { ox, oy, oz, x: h.x, y: h.y, z: h.z } : null, blast);
-    }
+    if (e.hp <= 0) this.killEnemy(e, part === HB_HEAD, dx, dz, shot, blast);
   }
 
   /** Heavy stagger accounting: damage summed over one blast (per enemy) and when it started. */
@@ -1243,6 +1319,8 @@ export class Game {
     onGoonDeath(this, e);
     e.tell = 0;
     e.stagger = 0;
+    // round 3: the boss down: her adds run (they are not counted any more), so the clear is her kill
+    if (e.kind === "madame") this.boss?.down(this);
     if (e.drop && PICKUPS[e.drop]) {
       // the gun (or ammo) lands at the body; off a perch it falls 1.3 m out toward him, to the ground below
       let x = e.x, z = e.z, y = e.y;
@@ -1360,7 +1438,7 @@ export class Game {
     pose.x = e.x; pose.y = e.y; pose.z = e.z; pose.yaw = e.facing;
     pose.stance = e.state === "dead" ? "dead" : e.crouch ? "crouch" : "stand";
     pose.lean = e.lean;
-    e.hit.hittable = e.state !== "dead" && e.state !== "inactive";
+    e.hit.hittable = e.state !== "dead" && e.state !== "inactive" && !e.fled;
   }
 
   // ---- determinism ----------------------------------------------------------------------------
@@ -1377,6 +1455,8 @@ export class Game {
     for (const b of this.projectiles) h.f64(b.x).f64(b.y).f64(b.z);
     h.i32(p.grenades).i32(p.banked).f64(p.meleeT).i32(p.zoom ? 1 : 0).i32(this.found.length).i32(this.opened.length).i32(this.broken.length).i32(this.grenadesLive.length);
     for (const gr of this.grenadesLive) h.f64(gr.x).f64(gr.y).f64(gr.z).f64(gr.fuse);
+    this.ride?.hashInto(h);
+    this.boss?.hashInto(h);
     return h.hex();
   }
 }

@@ -1,0 +1,8117 @@
+{
+ "id": "room4",
+ "name": "Room 4: the elevator",
+ "materials": {
+  "concrete": {
+   "color": "#ffffff",
+   "texture": "/textures/elevator/concrete_bare.webp",
+   "repeat": true,
+   "repeatCount": [0.25, 0.25],
+   "roughness": 0.9
+  },
+  "concreteBare": {
+   "color": "#ffffff",
+   "texture": "/textures/elevator/concrete_bare.webp",
+   "repeat": true,
+   "repeatCount": [0.25, 0.25],
+   "roughness": 0.85
+  },
+  "concreteDark": {
+   "color": "#ffffff",
+   "texture": "/textures/elevator/shaft_concrete.webp",
+   "repeat": true,
+   "repeatCount": [0.25, 0.25],
+   "roughness": 0.92
+  },
+  "carFloor": {
+   "color": "#ffffff",
+   "texture": "/textures/elevator/car_floor_diamond.webp",
+   "repeat": true,
+   "repeatCount": [1, 1],
+   "roughness": 0.45,
+   "metalness": 0.5
+  },
+  "carWall": {
+   "color": "#ffffff",
+   "texture": "/textures/elevator/car_wall_steel.webp",
+   "repeat": true,
+   "repeatCount": [0.5, 0.5],
+   "roughness": 0.78,
+   "metalness": 0.22
+  },
+  "carCeil": {
+   "color": "#ffffff",
+   "texture": "/textures/elevator/car_wall_steel.webp",
+   "repeat": true,
+   "repeatCount": [0.5, 0.5],
+   "roughness": 0.85,
+   "metalness": 0.15
+  },
+  "carPanel": {
+   "materialType": "basic",
+   "color": "#ffffff",
+   "toneMapped": false,
+   "name": "glow 0.5",
+   "texture": "/textures/elevator/car_panel.webp"
+  },
+  "dial": {
+   "materialType": "basic",
+   "color": "#ffffff",
+   "toneMapped": false,
+   "name": "glow 0.4",
+   "texture": "/textures/elevator/floor_dial.webp"
+  },
+  "bulb": {
+   "materialType": "basic",
+   "color": "#ffd29a",
+   "toneMapped": false,
+   "name": "glow 0.9 flicker"
+  },
+  "hazard": {
+   "color": "#ffffff",
+   "texture": "/textures/elevator/hazard_sill.webp",
+   "repeat": true,
+   "repeatCount": [2, 16.666666666666668],
+   "roughness": 0.7
+  },
+  "hazardX": {
+   "color": "#ffffff",
+   "texture": "/textures/elevator/hazard_sill.webp",
+   "repeat": true,
+   "repeatCount": [2, 16.666666666666668],
+   "roughness": 0.7
+  },
+  "crate": {
+   "color": "#ffffff",
+   "texture": "/textures/backrooms/boxes_cardboard.webp",
+   "repeat": true,
+   "repeatCount": [1.6666666666666667, 1.6666666666666667],
+   "roughness": 0.9
+  },
+  "vinyl": {
+   "color": "#ffffff",
+   "texture": "/textures/backrooms/floor_vinyl.webp",
+   "repeat": true,
+   "repeatCount": [0.6666666666666666, 0.6666666666666666],
+   "roughness": 0.55
+  },
+  "ceilTile": {
+   "color": "#ffffff",
+   "texture": "/textures/backrooms/ceiling_tiles.webp",
+   "repeat": true,
+   "repeatCount": [0.8333333333333334, 0.8333333333333334],
+   "roughness": 0.95
+  },
+  "block": {
+   "color": "#ffffff",
+   "texture": "/textures/backrooms/wall_cinderblock.webp",
+   "repeat": true,
+   "repeatCount": [0.5, 0.5],
+   "roughness": 0.92
+  },
+  "marble": {
+   "color": "#ffffff",
+   "texture": "/textures/elevator/marble_grey.webp",
+   "repeat": true,
+   "repeatCount": [0.5, 0.5],
+   "roughness": 0.3
+  },
+  "damask": {
+   "color": "#ffffff",
+   "texture": "/textures/penthouse/wall_damask.webp",
+   "repeat": true,
+   "repeatCount": [1, 1],
+   "roughness": 0.8
+  },
+  "ceilDark": {
+   "color": "#ffffff",
+   "texture": "/textures/penthouse/ceiling_coffered.webp",
+   "repeat": true,
+   "repeatCount": [0.3333333333333333, 0.3333333333333333],
+   "roughness": 0.9
+  },
+  "cart": {
+   "color": "#3a4a5e",
+   "roughness": 0.5,
+   "metalness": 0.3
+  },
+  "linen": {
+   "color": "#b9b3a6",
+   "roughness": 0.95
+  },
+  "cage": {
+   "color": "#50555e",
+   "roughness": 0.45,
+   "metalness": 0.6
+  },
+  "washer": {
+   "color": "#8d9096",
+   "roughness": 0.35,
+   "metalness": 0.4
+  },
+  "table": {
+   "color": "#4a3a2a",
+   "roughness": 0.6
+  },
+  "marbleWhite": {
+   "color": "#cfcac2",
+   "roughness": 0.3
+  },
+  "vase": {
+   "color": "#2b3f5a",
+   "roughness": 0.25,
+   "metalness": 0.2
+  },
+  "bench": {
+   "color": "#3b2a22",
+   "roughness": 0.5
+  },
+  "desk": {
+   "color": "#2e2622",
+   "roughness": 0.45
+  },
+  "frame": {
+   "color": "#6a5230",
+   "roughness": 0.4,
+   "metalness": 0.6
+  },
+  "artA": {
+   "color": "#3b2f4a",
+   "roughness": 0.9
+  },
+  "artB": {
+   "color": "#4a3326",
+   "roughness": 0.9
+  },
+  "stairEdge": {
+   "color": "#3a3a3c",
+   "roughness": 0.8
+  },
+  "scaffold": {
+   "color": "#6b6f75",
+   "roughness": 0.45,
+   "metalness": 0.6
+  },
+  "plywood": {
+   "color": "#8a6a44",
+   "roughness": 0.85
+  },
+  "bags": {
+   "color": "#8c8577",
+   "roughness": 0.95
+  },
+  "rebar": {
+   "color": "#5a3a2a",
+   "roughness": 0.7,
+   "metalness": 0.5
+  },
+  "metalDark": {
+   "color": "#25272c",
+   "roughness": 0.45,
+   "metalness": 0.6
+  },
+  "chrome": {
+   "color": "#b9bcc4",
+   "roughness": 0.2,
+   "metalness": 0.9
+  },
+  "sodium": {
+   "materialType": "basic",
+   "color": "#ffb266",
+   "toneMapped": false,
+   "name": "glow 1"
+  },
+  "spot": {
+   "materialType": "basic",
+   "color": "#eef2ff",
+   "toneMapped": false,
+   "name": "glow 1"
+  },
+  "workLamp": {
+   "materialType": "basic",
+   "color": "#ffd9a8",
+   "toneMapped": false,
+   "name": "glow 1.2"
+  },
+  "exitRed": {
+   "materialType": "basic",
+   "color": "#ff2a1a",
+   "toneMapped": false,
+   "name": "glow 1"
+  },
+  "lampWarm": {
+   "materialType": "basic",
+   "color": "#ffc98a",
+   "toneMapped": false,
+   "name": "glow 1.2"
+  }
+ },
+ "root": {
+  "id": "room",
+  "components": {
+   "data": {
+    "type": "Data",
+    "properties": {
+     "data": {
+      "room": {
+       "name": "The Elevator",
+       "number": 4,
+       "next": "room5",
+       "cutsceneAfter": "c3",
+       "music": "elevator",
+       "look": "elevator",
+       "footsteps": "hard",
+       "enterLine": "r4_enter",
+       "enterDelay": 1.5,
+       "clearLine": "r4_clear",
+       "tutorial": false,
+       "later": [
+        "L1",
+        "roof",
+        "L2",
+        "L3"
+       ],
+       "ride": {
+        "car": [-3, -3, 3, 3],
+        "hatch": [-0.5, 0],
+        "steps": [
+         {
+          "t": 12
+         },
+         {
+          "stop": "S1",
+          "side": "e",
+          "doors": [
+           "door-e"
+          ],
+          "groups": [
+           "L1",
+           "L1b"
+          ],
+          "slow": true,
+          "checkpoint": "cp-s1"
+         },
+         {
+          "t": 24,
+          "roof": 5,
+          "group": "roof"
+         },
+         {
+          "stop": "S2",
+          "side": "w",
+          "doors": [
+           "door-w"
+          ],
+          "groups": [
+           "L2",
+           "L2b"
+          ],
+          "alert": true,
+          "checkpoint": "cp-s2"
+         },
+         {
+          "t": 11,
+          "cables": 3.5
+         },
+         {
+          "stop": "S3",
+          "side": "s",
+          "doors": [
+           "door-s"
+          ],
+          "groups": [
+           "L3",
+           "L3b",
+           "L3c"
+          ],
+          "pry": 2,
+          "alert": true,
+          "checkpoint": "cp-s3",
+          "last": true
+         }
+        ]
+       }
+      }
+     }
+    }
+   }
+  },
+  "children": [
+   {
+    "id": "geometry",
+    "children": [
+     {
+      "id": "floor",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3.5, -0.25, 5.5],
+         "scale": [37, 0.5, 27]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concrete"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "car-ceil-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 3.5, -1.9],
+         "scale": [6.4, 0.2, 2.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "carCeil"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "car-ceil-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 3.5, 1.9],
+         "scale": [6.4, 0.2, 2.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "carCeil"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "car-ceil-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2.15, 3.5, 0],
+         "scale": [2.1, 0.2, 1.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "carCeil"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "car-ceil-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [1.65, 3.5, 0],
+         "scale": [3.1, 0.2, 1.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "carCeil"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "car-wall-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 1.7, -3.1],
+         "scale": [6.4, 3.4, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "carWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "car-wall-e1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.1, 1.7, -2.4],
+         "scale": [0.2, 3.4, 1.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "carWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "car-wall-e2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.1, 1.7, 2.4],
+         "scale": [0.2, 3.4, 1.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "carWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "car-lintel-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.1, 3.2, 0],
+         "scale": [0.2, 0.4, 3.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "carWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "door-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.1, 1.5, 0],
+         "scale": [0.1, 3, 3.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "metalDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false,
+         "visible": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal",
+          "camera": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "car-wall-w1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3.1, 1.7, -2.4],
+         "scale": [0.2, 3.4, 1.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "carWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "car-wall-w2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3.1, 1.7, 2.4],
+         "scale": [0.2, 3.4, 1.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "carWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "car-lintel-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3.1, 3.2, 0],
+         "scale": [0.2, 0.4, 3.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "carWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "door-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3.1, 1.5, 0],
+         "scale": [0.1, 3, 3.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "metalDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false,
+         "visible": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal",
+          "camera": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "car-wall-s1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2.4, 1.7, 3.1],
+         "scale": [1.6, 3.4, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "carWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "car-wall-s2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2.4, 1.7, 3.1],
+         "scale": [1.6, 3.4, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "carWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "car-lintel-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 3.2, 3.1],
+         "scale": [3.2, 0.4, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "carWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "door-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 1.5, 3.1],
+         "scale": [3.2, 3, 0.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "metalDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false,
+         "visible": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal",
+          "camera": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "crate-a",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2.2, 0.5, -2.35],
+         "scale": [1, 1, 0.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "crate"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "crate-b",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2.3, 0.5, 2.4],
+         "scale": [1, 1, 0.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "crate"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "crate-c",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2.4, 0.45, 2.4],
+         "scale": [0.8, 0.9, 0.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "crate"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-ceil",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.2, 3.3, -0.9],
+         "scale": [10.4, 0.2, 7.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "ceilTile"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-wall-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.2, 1.6, -4.7],
+         "scale": [10.4, 3.2, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "block"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-wall-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.2, 1.6, 2.9],
+         "scale": [10.4, 3.2, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "block"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-wall-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [13.3, 1.6, 0],
+         "scale": [0.2, 3.2, 5.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "block"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-wall-e-head",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [13.3, 2.8, -3.7],
+         "scale": [0.2, 0.8, 1.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "block"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-back-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [14.2, 1.6, -4.7],
+         "scale": [1.6, 3.2, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concreteDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-back-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [14.2, 1.6, -2.7],
+         "scale": [1.6, 3.2, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concreteDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-back-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [15.1, 1.6, -3.7],
+         "scale": [0.2, 3.2, 2.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concreteDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-back-ceil",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [14.2, 3.3, -3.7],
+         "scale": [2, 0.2, 2.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "ceilTile"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-wall-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.1, 1.6, -3.9],
+         "scale": [0.2, 3.2, 1.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "block"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-cart-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.6, 0.55, -3],
+         "scale": [1.2, 0.9, 0.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "cart"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-cart-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.6, 0.55, 1.6],
+         "scale": [1.2, 0.9, 0.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "cart"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-cage",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.6, 1, -2],
+         "scale": [1.2, 2, 1.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "cage"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-pillar",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8, 1.6, -0.4],
+         "scale": [0.8, 3.2, 0.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concrete"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-washer-0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.625, 0.5, -4.225],
+         "scale": [0.85, 1, 0.75]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "washer"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-washer-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [5.575, 0.5, -4.225],
+         "scale": [0.85, 1, 0.75]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "washer"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-washer-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.525, 0.5, -4.225],
+         "scale": [0.85, 1, 0.75]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "washer"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-table",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [12.2, 0.4, 1.2],
+         "scale": [1.2, 0.8, 1.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "table"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-ceil",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.2, 3.7, -1.6],
+         "scale": [14.4, 0.2, 9.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "ceilDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-wall-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.2, 1.8, -6.1],
+         "scale": [14.4, 3.6, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "damask"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-wall-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.2, 1.8, 2.9],
+         "scale": [14.4, 3.6, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "damask"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-wall-e1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3.1, 1.8, -4.6],
+         "scale": [0.2, 3.6, 2.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "damask"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-wall-w1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17.3, 1.8, -0.4],
+         "scale": [0.2, 3.6, 6.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "damask"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-wall-w-head",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17.3, 3, -4.6],
+         "scale": [0.2, 1.2, 2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "damask"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-wall-w0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17.3, 1.8, -5.8],
+         "scale": [0.2, 3.6, 0.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "damask"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-stair-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.2, 1.8, -6.1],
+         "scale": [4, 3.6, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concreteDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-stair-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.2, 1.8, -2.1],
+         "scale": [4, 3.6, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concreteDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-stair-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-21.3, 1.8, -4.1],
+         "scale": [0.2, 3.6, 4.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concreteDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-stair-ceil",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.3, 3.7, -4.1],
+         "scale": [4.2, 0.2, 4.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "ceilDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-plinth-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.6, 0.8, -3.8],
+         "scale": [0.8, 1.6, 0.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "marbleWhite"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "concrete"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-plinth-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-11.8, 0.8, 1.1],
+         "scale": [0.8, 1.6, 0.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "marbleWhite"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "concrete"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-plinth-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13.6, 0.8, -4],
+         "scale": [0.8, 1.6, 0.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "marbleWhite"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "concrete"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-bench",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-9.5, 0.475, -0.95],
+         "scale": [1.8, 0.95, 0.7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "bench"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-desk",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-14.8, 0.55, 0.1],
+         "scale": [1.2, 1.1, 2.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "desk"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-ceil",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 3.7, 10.2],
+         "scale": [18.4, 0.2, 14.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concreteDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-wall-n1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6.2, 1.8, 3.1],
+         "scale": [6, 3.6, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concreteDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-wall-n2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.2, 1.8, 3.1],
+         "scale": [6, 3.6, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concreteDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-wall-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-9.1, 1.8, 10.3],
+         "scale": [0.2, 3.6, 14.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concreteDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-wall-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.1, 1.8, 10.3],
+         "scale": [0.2, 3.6, 14.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concreteDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-wall-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 1.8, 17.3],
+         "scale": [18.4, 3.6, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concreteDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-col--5-8",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-5, 1.8, 8],
+         "scale": [0.7, 3.6, 0.7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concrete"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-col-5-8",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [5, 1.8, 8],
+         "scale": [0.7, 3.6, 0.7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concrete"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-col--5-13.4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-5, 1.8, 13.4],
+         "scale": [0.7, 3.6, 0.7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concrete"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-col-2.6-13.2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2.6, 1.8, 13.2],
+         "scale": [0.7, 3.6, 0.7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concrete"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-scaffold-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.6, 1.1, 11],
+         "scale": [1.6, 2.2, 2.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "scaffold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false,
+         "visible": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal",
+          "camera": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-scaffold-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.4, 1.1, 5.8],
+         "scale": [2, 2.2, 1.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "scaffold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false,
+         "visible": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal",
+          "camera": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-bags-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.6, 0.45, 6.8],
+         "scale": [1.6, 0.9, 0.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "bags"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "drywall"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-bags-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2.4, 0.45, 10.6],
+         "scale": [1.6, 0.9, 0.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "bags"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "drywall"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-bags-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3, 0.45, 14.2],
+         "scale": [1.6, 0.9, 0.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "bags"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "drywall"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-bags-4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.5, 0.45, 12.1],
+         "scale": [1, 0.9, 1.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "bags"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "drywall"
+         }
+        }
+       }
+      }
+     }
+    ]
+   },
+   {
+    "id": "decor",
+    "components": {
+     "data": {
+      "type": "Data",
+      "properties": {
+       "data": {
+        "collider": false
+       }
+      }
+     }
+    },
+    "children": [
+     {
+      "id": "car-floor",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0.006, 0],
+         "scale": [6, 0.012, 6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "carFloor"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "car-roof",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.5, 4.35, 0],
+         "scale": [1.6, 0.1, 1.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "metalDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "hatch-rim-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.5, 3.385, -0.63],
+         "scale": [1.32, 0.03, 0.06]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "hazard"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "hatch-rim-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.5, 3.385, 0.63],
+         "scale": [1.32, 0.03, 0.06]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "hazard"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "hatch-rim-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.13, 3.385, 0],
+         "scale": [0.06, 0.03, 1.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "hazard"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "hatch-rim-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0.13, 3.385, 0],
+         "scale": [0.06, 0.03, 1.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "hazard"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "sill-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.1, 0.01, 0],
+         "scale": [0.4, 0.02, 3.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "hazardX"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "sill-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3.1, 0.01, 0],
+         "scale": [0.4, 0.02, 3.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "hazardX"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "sill-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0.01, 3.1],
+         "scale": [3.2, 0.02, 0.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "hazard"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "crate-c-top",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2.4, 1.07, 2.35],
+         "rotation": [0, 0.35, 0],
+         "scale": [0.5, 0.34, 0.44]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "crate"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "rail-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0.975, -2.96],
+         "scale": [5.8, 0.05, 0.06]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "chrome"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "car-panel",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2.3, 1.35, -2.99],
+         "scale": [0.4, 0.8, 0.01]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "carPanel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "floor-dial",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2.99, 3.18, 0],
+         "scale": [0.01, 0.32, 0.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "dial"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "car-bulb-cage",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [1.3, 3.29, 0],
+         "scale": [0.4, 0.22, 0.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "metalDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "car-bulb",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [1.3, 3.29, 0],
+         "scale": [0.24, 0.18, 0.24]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "bulb"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-floor",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.2, 0.006, -0.9],
+         "scale": [10, 0.012, 7.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "vinyl"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-back-floor",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [14.2, 0.006, -3.7],
+         "scale": [1.6, 0.012, 1.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "vinyl"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-linen-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.6, 1.125, -3],
+         "scale": [1, 0.25, 0.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "linen"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-linen-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.6, 1.1, 1.6],
+         "scale": [1, 0.2, 0.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "linen"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-cage-linen",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.6, 0.9, -2],
+         "scale": [1, 1.4, 1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "linen"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-table-linen",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [12, 0.875, 1.15],
+         "scale": [0.6, 0.15, 0.7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "linen"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-lamp-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.2, 3.165, -1.2],
+         "scale": [1.2, 0.05, 0.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "sodium"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-lamp-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.6, 3.165, 0.6],
+         "scale": [1.2, 0.05, 0.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "sodium"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-exit",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [13.19, 2.67, -3.7],
+         "scale": [0.02, 0.14, 0.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "exitRed"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-floor",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.2, 0.006, -1.6],
+         "scale": [14, 0.012, 8.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "marble"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-step-0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20.3, 0.012, -5.8],
+         "scale": [1.8, 0.024, 0.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "stairEdge"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-step-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20.25, 0.012, -5.3],
+         "scale": [1.9, 0.023, 0.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "stairEdge"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-step-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20.2, 0.011, -4.8],
+         "scale": [2, 0.022, 0.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "stairEdge"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-step-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20.15, 0.011, -4.3],
+         "scale": [2.1, 0.021, 0.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "stairEdge"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-step-4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20.1, 0.01, -3.8],
+         "scale": [2.2, 0.02, 0.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "stairEdge"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-stair-exit",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17.225, 2.57, -4.62],
+         "scale": [0.05, 0.14, 0.36]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "exitRed"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-plinth-1-vase",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.6, 1.85, -3.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.14, 0.2, 0.5, 14]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "vase"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-plinth-2-vase",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-11.8, 1.85, 1.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.14, 0.2, 0.5, 14]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "vase"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-plinth-3-vase",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13.6, 1.85, -4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.14, 0.2, 0.5, 14]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "vase"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-desk-top",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-14.8, 1.12, 0.1],
+         "scale": [1.3, 0.04, 2.7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "marbleWhite"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-desk-lamp",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-14.825, 1.32, 0.975],
+         "scale": [0.15, 0.36, 0.15]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "lampWarm"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-frame-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6.5, 1.85, -5.98],
+         "scale": [1.6, 1.3, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "frame"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-frame-1-art",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6.5, 1.85, -5.98],
+         "scale": [1.4, 1.1, 0.06]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "artA"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-frame-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 1.85, -5.98],
+         "scale": [2, 1.3, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "frame"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-frame-2-art",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 1.85, -5.98],
+         "scale": [1.8, 1.1, 0.06]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "artA"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-frame-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8.8, 1.85, 2.78],
+         "scale": [1.8, 1.3, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "frame"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-frame-3-art",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8.8, 1.85, 2.78],
+         "scale": [1.6, 1.1, 0.06]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "artB"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-frame-4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13.4, 1.85, 2.78],
+         "scale": [1.4, 1.3, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "frame"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-frame-4-art",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13.4, 1.85, 2.78],
+         "scale": [1.2, 1.1, 0.06]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "artB"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-spot--6",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6, 3.575, -1.5],
+         "scale": [0.6, 0.03, 0.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "spot"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-spot--10",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10, 3.575, -1.5],
+         "scale": [0.6, 0.03, 0.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "spot"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-spot--14",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-14, 3.575, -1.5],
+         "scale": [0.6, 0.03, 0.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "spot"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-floor",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0.006, 10.2],
+         "scale": [18, 0.012, 14]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concreteBare"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-scaffold-1-pole--8.4-9.6",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8.4, 1.1, 9.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.04, 0.04, 2.2, 8]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "scaffold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-scaffold-1-pole--6.8-9.6",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6.8, 1.1, 9.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.04, 0.04, 2.2, 8]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "scaffold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-scaffold-1-pole--8.4-12.4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8.4, 1.1, 12.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.04, 0.04, 2.2, 8]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "scaffold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-scaffold-1-pole--6.8-12.4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6.8, 1.1, 12.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.04, 0.04, 2.2, 8]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "scaffold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-scaffold-1-board-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.6, 1.03, 11],
+         "scale": [1.6, 0.06, 2.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "plywood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-scaffold-1-board-2.1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.6, 2.13, 11],
+         "scale": [1.6, 0.06, 2.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "plywood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-scaffold-1-brace",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.6, 1.1, 9.6],
+         "rotation": [0, 0, 0.629]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.025, 0.025, 2.72, 6]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "scaffold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-scaffold-2-pole-6.4-5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.4, 1.1, 5]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.04, 0.04, 2.2, 8]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "scaffold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-scaffold-2-pole-8.4-5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.4, 1.1, 5]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.04, 0.04, 2.2, 8]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "scaffold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-scaffold-2-pole-6.4-6.6",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.4, 1.1, 6.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.04, 0.04, 2.2, 8]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "scaffold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-scaffold-2-pole-8.4-6.6",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.4, 1.1, 6.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.04, 0.04, 2.2, 8]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "scaffold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-scaffold-2-board-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.4, 1.03, 5.8],
+         "scale": [2, 0.06, 1.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "plywood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-scaffold-2-board-2.1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.4, 2.13, 5.8],
+         "scale": [2, 0.06, 1.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "plywood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-scaffold-2-brace",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.4, 1.1, 5],
+         "rotation": [0, 0, 0.738]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.025, 0.025, 2.973, 6]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "scaffold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-plywood",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8.9, 1.2, 6.2],
+         "scale": [0.1, 2.4, 2.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "plywood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-rebar",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0.7, 0.08, 15.8],
+         "scale": [3.4, 0.12, 0.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "rebar"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-stair-exit",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.2, 2.57, 17.18],
+         "scale": [0.4, 0.14, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "exitRed"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-step-0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [5.6, 0.01, 16.65],
+         "scale": [0.6, 0.02, 0.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "stairEdge"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-step-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.2, 0.01, 16.65],
+         "scale": [0.6, 0.02, 0.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "stairEdge"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-step-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.8, 0.01, 16.65],
+         "scale": [0.6, 0.02, 0.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "stairEdge"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-step-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.4, 0.01, 16.65],
+         "scale": [0.6, 0.02, 0.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "stairEdge"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-step-4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8, 0.01, 16.65],
+         "scale": [0.6, 0.02, 0.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "stairEdge"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-step-5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.6, 0.01, 16.65],
+         "scale": [0.6, 0.02, 0.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "stairEdge"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-stair-rail",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.1, 1.025, 15.925],
+         "scale": [3.8, 0.05, 0.05]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "scaffold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-stair-post-5.2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [5.2, 0.5, 15.92]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.025, 0.025, 1, 6]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "scaffold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-stair-post-7.1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.1, 0.5, 15.92]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.025, 0.025, 1, 6]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "scaffold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-stair-post-9",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9, 0.5, 15.92]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.025, 0.025, 1, 6]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "scaffold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-cord--4-6",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4, 3.2, 6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.01, 0.01, 0.8, 4]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "metalDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-lamp--4-6",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4, 2.75, 6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "sphere",
+         "args": [0.12, 10, 8]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "workLamp"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-cord-3-6.5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3, 3.2, 6.5]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.01, 0.01, 0.8, 4]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "metalDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-lamp-3-6.5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3, 2.75, 6.5]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "sphere",
+         "args": [0.12, 10, 8]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "workLamp"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-cord--3-11.5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3, 3.2, 11.5]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.01, 0.01, 0.8, 4]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "metalDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-lamp--3-11.5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3, 2.75, 11.5]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "sphere",
+         "args": [0.12, 10, 8]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "workLamp"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-cord-4-12.5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4, 3.2, 12.5]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.01, 0.01, 0.8, 4]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "metalDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-lamp-4-12.5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4, 2.75, 12.5]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "sphere",
+         "args": [0.12, 10, 8]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "workLamp"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-cord-0-15.5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 3.2, 15.5]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.01, 0.01, 0.8, 4]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "metalDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-lamp-0-15.5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 2.75, 15.5]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "sphere",
+         "args": [0.12, 10, 8]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "workLamp"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     }
+    ]
+   },
+   {
+    "id": "markers",
+    "children": [
+     {
+      "id": "spawn",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.4, 0, -0.6],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "spawn"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cp-s1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.4, 0, -0.6],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "checkpoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cp-s2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0.5, 0, 0.6],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "checkpoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cp-s3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0.9, 0, -0.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "checkpoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-goon-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.2, 0, 0.1],
+         "rotation": [0, 3.642, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "L1"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-goon-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [11, 0, -0.9],
+         "rotation": [0, 2.471, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "L1"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-goon-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.3, 0, -3.8],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "L1"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-goon-4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [12.3, 0, 2.2],
+         "rotation": [0, -0.971, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "L1"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l1b-rusher-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [14.3, 0, -4.1],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher",
+          "group": "L1b"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l1b-rusher-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [14.5, 0, -3.3],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher",
+          "group": "L1b"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "roof-heavy",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.5, 0, 0],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "heavy",
+          "model": "rival652",
+          "group": "roof"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-goon-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-9.6, 0, -2.8],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "L2"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-goon-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-12.8, 0, 2],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "L2"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-goon-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-15.9, 0, 0.2],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "L2"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-rusher-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.8, 0, 1.9],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher",
+          "group": "L2"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l2-rusher-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-11.2, 0, -2.6],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher",
+          "group": "L2"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l2b-rusher-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19, 0, -4.8],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher",
+          "group": "L2b"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l2b-rusher-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.8, 0, -3.6],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher",
+          "group": "L2b"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-goon-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1, 0, 4.4],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "L3"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-goon-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [1.1, 0, 4.5],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "L3"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-goon-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.4, 0, 5.4],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "L3"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-heavy-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0, 6.2],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "heavy",
+          "model": "rival723",
+          "group": "L3"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l3b-rusher-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6, 0, 16],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher",
+          "group": "L3b"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l3b-rusher-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.4, 0, 16.2],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher",
+          "group": "L3b"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l3b-goon-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.3, 0, 15.3],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "L3b"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l3b-goon-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.6, 0, 15.2],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "L3b"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l3c-heavy",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7, 0, 16.3],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "heavy",
+          "model": "rival652",
+          "group": "L3c",
+          "weapon": "handcannon"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l3c-rusher-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [5.8, 0, 15.4],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher",
+          "group": "L3c"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l3c-rusher-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.4, 0, 16.4],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher",
+          "group": "L3c"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-car-a",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.3, 0, -2.35],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-car-b",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [1.4, 0, 2.4],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-l1-cart-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.65, 0, -3],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-l1-cart-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.65, 0, 1.6],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-l1-cage",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [11.65, 0, -2],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-l1-pillar",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.85, 0, -0.4],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-l1-table",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [12.95, 0, 1.2],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-l2-plinth-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8.4, 0, -3.8],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-l2-plinth-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-12.6, 0, 1.1],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-l2-plinth-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-14.4, 0, -4],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-l2-bench",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.85, 0, -0.95],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-l2-desk",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-15.85, 0, 0.1],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-l3-bags-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.6, 0, 7.65],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-l3-bags-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2.4, 0, 11.45],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-l3-bags-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3, 0, 15.05],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-l3-bags-4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.5, 0, 13.25],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-l3-col-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-5, 0, 8.8],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-l3-col-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [5, 0, 8.8],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-l3-col-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-5, 0, 14.2],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-l3-col-4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2.6, 0, 14],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-l3-scaffold",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.6, 0, 12.85],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-c0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-c-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0.2, 0, -2.1]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-c-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2.1, 0, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-c-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2.1, 0, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-c-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0, 2.1]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l1-a",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [5.8, 0, -1.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l1-b",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.4, 0, 1.9]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l1-c",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.2, 0, -3.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l1-d",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.8, 0, 0.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l1-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [12.2, 0, -3.4]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l1-f",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [12.5, 0, 2.3]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l1-g",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [12.2, 0, -0.4]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l1-back",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [14.2, 0, -3.7]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l2-a",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6, 0, -4.9]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l2-b",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6.2, 0, 1.9]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l2-c",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-9.6, 0, 1.9]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l2-d",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.2, 0, -3]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l2-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13, 0, -2.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l2-f",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-16.2, 0, -4.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l2-g",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-16.2, 0, 1.9]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l2-h",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13.4, 0, -5.3]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l3-a",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2.6, 0, 5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l3-b",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3, 0, 7]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l3-c",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6.8, 0, 5.4]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l3-d",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.4, 0, 8.4]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l3-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0.2, 0, 9]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l3-f",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2.6, 0, 11.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l3-g",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.4, 0, 9.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l3-h",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.2, 0, 15.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l3-i",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6.2, 0, 15.8]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l3-j",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0.6, 0, 13.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l3-k",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.6, 0, 13.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l1-in",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.2, 0, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-c-e"
+          ],
+          "door": "door-e"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l2-in",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4.2, 0, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-c-w"
+          ],
+          "door": "door-w"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l3-in",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0, 4.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-c-s"
+          ],
+          "door": "door-s"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l2-stair",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.2, 0, -4.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l3-stair",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.6, 0, 15.8]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-l3-mouth",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.3, 0, 13.9]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "copium-car",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2.2, 0, -1.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium",
+          "amount": 1
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "shotgun-l1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [12.2, 0, 0.1]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "shotgun"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "copium-l2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-16.4, 0, 2.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium",
+          "amount": 1
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "smgs-l2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-9.5, 0, -1.9]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "smgs"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "grenades-l2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.4, 0, -1.3]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "grenade",
+          "amount": 2
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "rifle-l3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6.8, 0, 9.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "rifle"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "copium-l3-a",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8.3, 0, 16.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium",
+          "amount": 1
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "copium-l3-b",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.3, 0, 3.9]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium",
+          "amount": 1
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "shells-l3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.6, 0, 8.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "shotgun_ammo"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "smg-ammo-l3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.6, 0, 12]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "smgs_ammo"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "trigger-l1b",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, -40, 0],
+         "scale": [0.2, 0.2, 0.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "trigger",
+          "action": "spawn",
+          "group": "L1b",
+          "afterKills": 3
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "trigger-l2b",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, -40, 0],
+         "scale": [0.2, 0.2, 0.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "trigger",
+          "action": "spawn",
+          "group": "L2b",
+          "afterKills": 10
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "trigger-l3b",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, -40, 0],
+         "scale": [0.2, 0.2, 0.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "trigger",
+          "action": "spawn",
+          "group": "L3b",
+          "whenClear": "L3"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "trigger-l3c",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, -40, 0],
+         "scale": [0.2, 0.2, 0.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "trigger",
+          "action": "spawn",
+          "group": "L3c",
+          "whenClear": "L3b"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "exit-stairs",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.2, 0, 16.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "exit"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "trigger-exit",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7, 1, 16],
+         "scale": [3.2, 3, 2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "trigger",
+          "action": "exit"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-car-fill",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.2, 2.8, -0.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#cfd8ea",
+          "intensity": 4,
+          "distance": 6
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-l1-a",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.2, 2.5, -1.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ffb266",
+          "intensity": 12,
+          "distance": 9
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-l1-b",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.6, 2.5, 0.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ffb266",
+          "intensity": 12,
+          "distance": 9
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-l2-a",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6, 3, -1.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#e4ecff",
+          "intensity": 11,
+          "distance": 9
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-l2-b",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10, 3, -1.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#e4ecff",
+          "intensity": 11,
+          "distance": 9
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-l2-c",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-14, 3, -1.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#e4ecff",
+          "intensity": 11,
+          "distance": 9
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-l2-stair",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.2, 2.8, -4.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ff2a1a",
+          "intensity": 3,
+          "distance": 4
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-l3-a",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4, 2.6, 6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ffd9a8",
+          "intensity": 16,
+          "distance": 11
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-l3-b",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3, 2.6, 6.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ffd9a8",
+          "intensity": 16,
+          "distance": 11
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-l3-c",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3, 2.6, 11.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ffd9a8",
+          "intensity": 16,
+          "distance": 11
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-l3-d",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4, 2.6, 12.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ffd9a8",
+          "intensity": 16,
+          "distance": 11
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-l3-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 2.6, 15.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ffd9a8",
+          "intensity": 13,
+          "distance": 10
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cam-car",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2.4, 1.7, 2.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "camera",
+          "at": [3, 1.2, -0.5]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cam-l1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2, 1.7, 1]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "camera",
+          "at": [10, 1, -0.5]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cam-l2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2, 1.7, -1]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "camera",
+          "at": [-11, 1, -1]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cam-l3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0.5, 1.8, 2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "camera",
+          "at": [1, 1, 12]
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

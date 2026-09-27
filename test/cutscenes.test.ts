@@ -33,7 +33,7 @@ function mp3Seconds(path: URL): number {
   return (frames * 1152) / sr;
 }
 
-const CUTS = ["c1", "e1", "c2"];
+const CUTS = ["c1", "e1", "c2", "c3", "c4"];
 
 test("every cutscene clip is on disk and in the preload list", () => {
   const pre = new Set<string>(FILES);

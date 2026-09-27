@@ -5,7 +5,7 @@ a Milady gang's rave in bullet time: dual pistols, slow motion, shootdodges, and
 
 > they took everything I had. I went back for it.
 
-**Status:** chapter 1, second round. The opening plays start to finish: title, the comic-panel
+**Status:** chapter 1, complete (third round). The chapter plays start to finish: title, the comic-panel
 cutscene with the narrator, then room 1, the rainy Manhattan street outside CLUB MILADY (puddle
 reflections, neon bloom, rain that slows in bullet time). Clear the Milady goons, watch the last bullet
 land, walk to the club door, and the ending panels take you inside: room 2, the rave. The dance floor is
@@ -13,11 +13,16 @@ full, and only some of the girls are armed. The first shot kills the music, the 
 lights come up, and the backup charges in with SMGs. Cutscene 2 follows, then room 3, the back of the
 house: a service corridor where the first rival Radbro comes round the corner with a pump shotgun, a
 storage room, a locked office door you go through with a shootdodge, the security office with the dual
-SMGs, the manager's office behind glass and the service elevator. To be continued: the elevator.
+SMGs, the manager's office behind glass and the service elevator. Room 4 is the elevator ride itself:
+the car stops three times and its doors open on three floors of the gang (the laundry, the gallery, an
+unfinished floor they pry the doors open onto), a rival heavy drops through the roof hatch on the way,
+and the cables snap before the last stop. Cutscene 3 is the penthouse and the call; room 5 is the boss,
+Madame Pockit, in her big oxblood coat: three phases, her adds through two doors, heart grenades, a
+chandelier over the rug. Cutscene 4 brings the bag back. TO BE CONTINUED, then the chapter's results.
 
 **The arsenal:** every hostile drops the gun she carried, and guns lie in the rooms from the first street
 on: the hand cannon, a sawed-off, an assault rifle, a sniper rifle with a scope, frag grenades, #4764's
-katana (a strike with the gun for everyone else). Each room hides three secrets, two of the six Radbro
+katana (a strike with the gun for everyone else). Rooms 1-3 each hide three secrets, two of the six Radbro
 Webring pins among them, and a few easter eggs; the results count what you found.
 
 ## Play
@@ -59,6 +64,15 @@ After you land from a dive you lie prone and can keep shooting. Press a move key
 you hold a move key as you land, you roll straight into a run. Kill the whole room, watch the last
 bullet land, then walk to the club door.
 
+In the elevator, the car moves on only once a floor is clear and you are back inside; each stop is a
+checkpoint. Watch the roof hatch when something lands on it.
+
+Madame Pockit's tells: two pink laser lines across the floor before she sweeps her SMGs (dive under it
+or get behind something tall); a heart grenade held over her head before she throws it (shoot it there
+and it goes off on her; a pink ring shows where a thrown one will go off); a red lamp over a door before
+her girls come through it. The chandelier hangs by one chain over the white rug. Her coat soaks up body
+hits until she throws it off; her head does not.
+
 In the back of the house, a locked door does not open: shootdodge through it. The room behind it runs
 in slow motion for a moment and wakes late. Wait too long in front of it and the heavy inside kicks it
 open himself. Clearing the security office is a checkpoint: dying after it retries from there.
@@ -71,7 +85,7 @@ npm run typecheck
 npm run build      # production build in dist/
 npm run greybox    # regenerate public/levels/greybox.json
 npm run check-level [room]   # parse a level like the game does and list its markers and issues
-node tools/room1.ts      # regenerate public/levels/room1.json (overwrites hand edits made in the editor; room2.ts / room3.ts likewise)
+node tools/room1.ts      # regenerate public/levels/room1.json (overwrites hand edits made in the editor; room2.ts .. room5.ts likewise)
 node tools/textures.ts   # re-bake the procedural tiling textures in public/textures (needs ImageMagick)
 ```
 
@@ -99,6 +113,18 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
     fire, melee and grenades; `egg` markers (`{egg, interact?}`) are drawn by `src/app/EggsView.tsx`.
     The rooms' additions live in `tools/levels/arsenal.ts` (the room tools apply them; `node
     tools/arsenal-levels.ts` patches the JSONs in place, idempotently).
+  - Round 3: a room's `later: [groups]` makes those groups wait unseen until the room's own mechanism
+    brings them in. Room 4 (`node tools/room4.ts`) has `ride` in its settings (`src/sim/ride.ts`): the
+    car (`car`, `hatch`) and the steps, legs (`t` seconds; `roof` + `group`: the heavy through the
+    hatch; `cables`: the snap, the fall, the brakes) and stops (`side`, the `doors` colliders it takes
+    out, the `groups` to clear, `slow` the door beat, `pry` seconds, `alert`, `checkpoint`, `last`).
+    Room 5 (`node tools/room5.ts`) has `boss` (the chandelier's chain, the rug, the bag, the terrace
+    door, the add `doors` and their groups: `src/sim/boss.ts`) and `chapterEnd`; the enemy kind
+    `madame` is the boss (`src/ai/madame.ts`; her numbers are `MADAME` in `src/sim/tuning.ts`).
+    Their looks are `elevator` and `penthouse` (`src/app/look/tower.tsx`); the moving parts are
+    `src/app/RideView.tsx` (the gates, the landing doors, the scrolling shaft, the hatch, the cables)
+    and `src/app/BossView.tsx` (her coat and second gun, the lasers, the grenades and their rings, the
+    chandelier, the add doors, the glass, the screen).
   - Room 1's look (`src/app/look/street.tsx`) reads material names: `wet <k>` for reflective ground,
     `lit <gain>` for facades whose lit windows glow, and `glow <gain>` for neon, with `pulse` (the
     club's bass), `flicker` or `blink` added. Change the gain in the editor to retune a sign.
@@ -140,8 +166,10 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
   title is up (the street fades in behind it), and PLAY works at once. The Radbro files, the gang's
   models and the sounds load behind the title and cutscene 1, and each room gets ready (its gang, its
   shaders, its sounds) under the cutscene before it: rooms 2 and 3 swap in behind the ending panels and
-  cutscene 2. A loading card only shows what is still not there when the panels end (or are skipped).
-  The later rooms' sounds and clips load while room 1 plays. Files in `public/` (the fonts too) are
+  cutscene 2, room 5 behind cutscene 3. Room 4 follows room 3's elevator doors with no panels between:
+  its gang loads during the walk to the elevator, its shaders compile behind a short loading card. A
+  loading card only shows what is still not there when the panels end (or are skipped). The later rooms'
+  sounds and clips load while room 1 plays; rooms 4-5's own (the "end" group) from room 3 on. Files in `public/` (the fonts too) are
   fetched by content-hashed URLs and cached for good (`vercel.json`); the Pockit models are
   kept in the browser's cache, and each visit's gang mixes girls already there with a couple of new ones.
 - **Dev URL flags:**
@@ -158,7 +186,8 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
   - `?gfx=low|medium|high|cinematic` picks a graphics preset for one page load (`?q=low` = Low).
   - `?cam=<camera marker>` holds the camera on a shot (room 1: `cam-wide`, `cam-club`, `cam-canyon`;
     room 2: `cam-floor`, `cam-dj`; room 3: `cam-hall`, `cam-store`, `cam-door`, `cam-office`,
-    `cam-manager`, `cam-lobby`).
+    `cam-manager`, `cam-lobby`; room 4: `cam-car`, `cam-l1`, `cam-l2`, `cam-l3`; room 5: `cam-hall`,
+    `cam-dais`, `cam-rug`, `cam-door-a`).
   - `?loadout=shotgun,sniper` starts with those weapons (any weapon id; the last one in hand),
     `?grenades=N` with N frags.
   - `?radbro=<id>` plays that Radbro for one page load.
@@ -219,13 +248,19 @@ input log. Bullet time is a time scale on it.
   - Round 2: `radbro<id>.r2.glb` (the shotgun set, the heavy's stagger, the weapon swap),
     `milady.r2.glb` (the crowd's dances, flee and cower, the DJ), `rival652.glb` / `rival723.glb`
     (the heavies), `textures/club/`, `textures/backrooms/`, and the music, crowd, PA and heavy voices.
+  - Round 3: `textures/elevator/`, `textures/penthouse/`, `cutscenes/c3` (the call) and `c4` (the bag),
+    the elevator muzak (and its failing take), the boss loop, the ride's and the boss room's sounds,
+    and Madame Pockit's voice (`voices/madame/`). They are their own load group ("end",
+    `src/audio/round3.ts`): rooms 1-3 never download them; they load once room 3 starts. Madame Pockit
+    is Pockit #3099 (the goons never get her).
 - **Headless check:** with the dev server up,
   `RADPAYNE_CHROME_PROFILE=<throwaway dir> RADPAYNE_GPU=1 RADPAYNE_CUTSCENE=1 node tools/smoke.ts
   "http://localhost:4880/?bot=demo&seed=1&webgl2" .local/shots/run` plays title -> cutscene, then the
   bot clears the room, and saves screenshots. `?bot=demo&cutscene&seed=1&webgl2` does it in one go:
   cutscene 1, the fight, the ending, the results, with every panel shot and the voice lines listed.
   From room 1 the chain runs on through room 2, cutscene 2 and room 3 to the results
-  (`RADPAYNE_MAX_S=620` gives it the time).
+  (`RADPAYNE_MAX_S=620` gives it the time); `?bot=demo&room=room3` runs room 3, room 4, cutscene 3,
+  room 5 and cutscene 4 to the chapter's results, with a shot of each stop and each boss phase.
   `RADPAYNE_GPU=1` uses the machine's GPU (WebGL2); without it Chromium falls back to SwiftShader
   (very slow).
 - **Hold check:** with the dev server up, `RADPAYNE_CHROME_PROFILE=<throwaway dir> node tools/holdcheck.ts

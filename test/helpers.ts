@@ -48,3 +48,13 @@ export function room3(): LevelData {
   const file = path.resolve(import.meta.dirname, "..", "public", "levels", "room3.json");
   return readLevel(JSON.parse(fs.readFileSync(file, "utf8")));
 }
+
+export function room4(): LevelData {
+  const file = path.resolve(import.meta.dirname, "..", "public", "levels", "room4.json");
+  return readLevel(JSON.parse(fs.readFileSync(file, "utf8")));
+}
+
+export function room5(): LevelData {
+  const file = path.resolve(import.meta.dirname, "..", "public", "levels", "room5.json");
+  return readLevel(JSON.parse(fs.readFileSync(file, "utf8")));
+}

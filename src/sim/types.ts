@@ -89,4 +89,14 @@ export type GameEvent =
   | { type: "secret"; id: string; n: number; of: number; name: string }
   | { type: "open"; node: string }
   | { type: "break"; node: string; x: number; y: number; z: number; surface: string }
-  | { type: "interact"; id: string; egg: string };
+  | { type: "interact"; id: string; egg: string }
+  /** Round 3, room 4: the ride (sim/ride.ts). start / depart: a leg begins; arrive: the car stops at
+   *  `stop`; open / close: its doors (pry: forced open from outside); roof: the thud on the car's roof;
+   *  hatch: the heavy kicks the hatch in and drops; land: he is down in the car; cables / drop / brake:
+   *  the fall; back: the stop is clear and he is still outside the car. */
+  | { type: "ride"; what: "start" | "depart" | "arrive" | "open" | "close" | "roof" | "hatch" | "land" | "cables" | "drop" | "brake" | "back"; stop?: string; side?: string; pry?: boolean }
+  /** Round 3, room 5: Madame Pockit (sim/boss.ts). */
+  | { type: "boss"; what: "intro" | "phase2" | "phase3" | "sweepTell" | "sweep" | "windup" | "reload" | "rug" | "chain" | "chandelier" | "crash" | "lamp" | "door" | "lastStand" | "bag" | "down" | "stagger" | "laugh"; door?: string; hit?: boolean }
+  /** Her heart grenades: throw (from her hand), land, blast (hand: shot in her hand, it went off on her),
+   *  pop (shot in the air: harmless). */
+  | { type: "grenade"; what: "throw" | "land" | "blast" | "pop"; id: number; x: number; y: number; z: number; hand?: boolean };

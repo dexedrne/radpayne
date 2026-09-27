@@ -386,24 +386,47 @@ function bestFor(r: Results): { prev: number | null; isBest: boolean } {
   return b;
 }
 
+/** Round 3: the end of the chapter: a black card, TO BE CONTINUED, before the results (a click, Enter or
+ *  Space skips it). Game UI, never baked into the panels. */
+function ChapterCard({ onDone }: { onDone: () => void }) {
+  const [out, setOut] = useState(false);
+  useEffect(() => {
+    const a = setTimeout(() => setOut(true), 3400), b = setTimeout(onDone, 4100);
+    const skip = (e: KeyboardEvent) => { if (e.code === "Enter" || e.code === "Space" || e.code === "Escape") onDone(); };
+    addEventListener("keydown", skip);
+    return () => { clearTimeout(a); clearTimeout(b); removeEventListener("keydown", skip); };
+  }, [onDone]);
+  return (
+    <div className="rp-layer" data-testid="tbc" onClick={onDone} style={{ background: "#040405", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 18, opacity: out ? 0 : 1, transition: "opacity 0.7s", animation: "rp-line 1.2s ease-out", pointerEvents: "auto" }}>
+      <div style={{ font: '400 120px/0.9 var(--display)', letterSpacing: 10, color: "var(--paper)" }}>TO BE CONTINUED</div>
+      <div style={{ font: '400 28px/1 var(--display)', letterSpacing: 6, color: "var(--pink)" }}>CHAPTER 1: RUGGED · COMPLETE</div>
+    </div>
+  );
+}
+
 export function ResultsScreen({ onRetry, onTitle }: { onRetry: () => void; onTitle: () => void }) {
   const r = useUi(s => s.results);
   const photo = useUi(s => s.lastKillPhoto);
   const [photoOk, setPhotoOk] = useState(true);
+  /** The chapter card is up (the end of chapter 1) until it is done. */
+  const [card, setCard] = useState(() => !!useUi.getState().results?.chapter);
   useMenuInput(a => {
+    if (card) return false;
     if (a === "enter") onRetry();
     else if (a === "back") onTitle();
     else return false;
   }, !!r);
   if (!r) return null;
-  const s = r.stats;
+  if (card && r.chapter) return <ChapterCard onDone={() => setCard(false)} />;
+  const chapter = r.chapter;
+  const s = chapter ? chapter.stats : r.stats;
   const best = bestFor(r);
   const acc = s.shots ? Math.round((s.hits / s.shots) * 100) : 0;
   const bro = RADBROS.find(b => b.id === r.radbro) ?? RADBROS[1];
   const text = roomText(r.room);
-  const where = `room ${text.number} of ${text.of}`;
+  const where = chapter ? `${chapter.rooms} room${chapter.rooms === 1 ? "" : "s"}, the whole chapter` : `room ${text.number} of ${text.of}`;
   const stats: Array<[string, string, boolean?]> = [
-    [fmtTime(s.time), "time", r.cleared && best.isBest], [String(s.kills), "kills"], [String(s.headshots), "headshots"], [`${acc}%`, "accuracy"],
+    [fmtTime(s.time), chapter ? "chapter time" : "time", r.cleared && best.isBest && !chapter], [String(s.kills), "kills"], [String(s.headshots), "headshots"], [`${acc}%`, "accuracy"],
     [String(Math.round(s.damageTaken)), "damage taken"], [String(s.copiumUsed), "copium used"], [`${s.btTime.toFixed(1)} s`, "bullet time"], [String(s.dodges), "shootdodges"],
     ...(s.secretsTotal ? [[`${s.secrets ?? 0}/${s.secretsTotal}`, "secrets"] as [string, string]] : []),
   ];
@@ -422,8 +445,8 @@ export function ResultsScreen({ onRetry, onTitle }: { onRetry: () => void; onTit
         </div>
         <div className="rp-head">
           <div className={`rp-splash${r.cleared ? "" : " rugged"}`}>
-            {r.cleared ? <div className="big">ROOM<br />CLEAR</div> : <div className="big">RUGGED</div>}
-            {r.cleared && <div className="rp-tbc">TO BE CONTINUED: {text.next}</div>}
+            {r.cleared ? chapter ? <div className="big">CHAPTER<br />ONE</div> : <div className="big">ROOM<br />CLEAR</div> : <div className="big">RUGGED</div>}
+            {r.cleared && <div className="rp-tbc">{chapter ? "TO BE CONTINUED" : `TO BE CONTINUED: ${text.next}`}</div>}
             {r.cleared && photo && photoOk && (
               <div className="rp-photo" data-testid="evidence">
                 <div className="clip" />

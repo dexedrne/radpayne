@@ -178,7 +178,7 @@ export const ThreatLayer = memo(function ThreatLayer({ s }: { s: Session }) {
       const near = reticleFadePx(S);
       for (let i = 0; i < g.enemies.length; i++) {
         const e = g.enemies[i];
-        const awake = e.state !== "inactive" && e.state !== "dead";
+        const awake = e.state !== "inactive" && e.state !== "dead" && !e.fled; // (room 5's adds running off: no threat)
         const engaged = awake && (e.state === "peek" || e.state === "engage") && e.sees;
         const showMark = awake && mode !== "off" && (mode === "all" || engaged);
         const showArrow = engaged && mode !== "off";
