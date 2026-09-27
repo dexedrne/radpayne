@@ -85,6 +85,38 @@ test("a secret door opens on E only within reach and facing it; the stash behind
   assert.ok(g.drain().some(e => e.type === "interact" && e.egg === "george"));
 });
 
+test("a long secret door (a bookshelf) opens from its end: he faces the part of it he stands at", () => {
+  const lv = level([
+    markerNode("spawn", "spawn", [0, 0, 0], {}, PI),
+    boxNode("shelf", [-0.78, 1.1, 3], [0.45, 2.2, 3.2], { secretDoor: "bookshelf", open: "slide", slide: [0, -1.2] }),
+    markerNode("e", "enemy", [0, 0, -30], { milady: 3 }),
+  ]);
+  const g = new Game(lv, { ai: false, seed: 1 });
+  const p = g.player;
+  p.x = 0.1; p.z = 4.3;
+  const inp = emptyInput();
+  inp.yaw = Math.atan2(0.9, -0.2); // looking west and a little south, at its south end
+  g.step(inp);
+  inp.interact = true; g.step(inp);
+  assert.ok(g.drain().some(e => e.type === "open" && e.node === "shelf"));
+});
+
+test("a perched goon's gun falls off the platform into the street, however he stands", () => {
+  const lv = level([
+    markerNode("spawn", "spawn", [-6, 0, 11.35], {}, PI / 2),
+    boxNode("perch", [8.5, 3.25, 11.35], [8, 0.1, 1.3]),
+    markerNode("s", "enemy", [9.5, 3.3, 11.35], { milady: 3, perch: true, weapon: "sniper" }),
+    markerNode("e", "enemy", [0, 0, -30], { milady: 4 }),
+  ]);
+  const g = new Game(lv, { ai: false, seed: 1 });
+  const e = g.enemies[0];
+  const t = { x: e.x, y: e.y + 1.1, z: e.z };
+  e.hp = 1;
+  g.shoot(0, -1, 0, t.x - 2, t.y, t.z, 1, 0, 0, 100, "pistols");
+  const k = g.pickups.find(x => x.id === "drop-s")!;
+  assert.ok(k && Math.abs(k.y) < 1e-6, `on the ground (y ${k?.y})`);
+});
+
 test("a breakable breaks at its HP (bullets), drops its item below it and counts its secret", () => {
   const g = new Game(secretRoom(), { ai: false, seed: 1 });
   const ev: GameEvent[] = [];

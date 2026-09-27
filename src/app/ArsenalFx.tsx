@@ -7,7 +7,7 @@
 import { useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import {
-  AdditiveBlending, BackSide, BoxGeometry, CircleGeometry, Group, Mesh, MeshBasicMaterial, RingGeometry, SphereGeometry, Vector3,
+  AdditiveBlending, BackSide, DoubleSide, BoxGeometry, CircleGeometry, Group, Mesh, MeshBasicMaterial, RingGeometry, SphereGeometry, Vector3,
 } from "three";
 import type { Session } from "./session.ts";
 import type { GameEvent } from "../sim/types.ts";
@@ -20,7 +20,7 @@ import { GRENADE } from "../sim/tuning.ts";
 export const blastShake = { k: 0 };
 
 const own = <T extends { userData: Record<string, unknown> }>(m: T): T => { m.userData.rpOwn = true; return m; };
-const add = (color: string, opacity: number) => own(new MeshBasicMaterial({ color, transparent: true, opacity, blending: AdditiveBlending, depthWrite: false, toneMapped: false }));
+const add = (color: string, opacity: number) => own(new MeshBasicMaterial({ color, transparent: true, opacity, blending: AdditiveBlending, depthWrite: false, toneMapped: false, side: DoubleSide }));
 
 type Blast = { t: number; x: number; y: number; z: number; flash: Mesh; ring: Mesh; smoke: Mesh[]; sparks: { m: Mesh; v: Vector3 }[]; scorch: Mesh };
 type Slash = { t: number; g: Group; life: number };
@@ -98,18 +98,23 @@ export function ArsenalFx({ s }: { s: Session }) {
       const katana = e.kind === "katana";
       const sg = new Group();
       const r0 = katana ? 1.05 : 0.7;
-      const core = new Mesh(new RingGeometry(r0 - 0.03, r0, 32, 1, -0.35, 2.3), add("#ffffff", 0.95));
+      // (seen from behind him the ring is mirrored: local -0.2..2.5 rad reads as a cut from his upper right
+      // over to his lower left)
+      const core = new Mesh(new RingGeometry(r0 - 0.03, r0, 32, 1, -0.2, 2.7), add("#ffffff", 0.95));
       sg.add(core);
       if (katana) {
-        const edge = new Mesh(new RingGeometry(r0 - 0.1, r0 + 0.04, 32, 1, -0.35, 2.3), add("#3ff0ff", 0.55));
+        const edge = new Mesh(new RingGeometry(r0 - 0.1, r0 + 0.04, 32, 1, -0.2, 2.7), add("#3ff0ff", 0.55));
         edge.position.z = -0.01;
         sg.add(edge);
       }
       const p = g.player;
+      // upright in front of his chest, facing the lens, the arc from high right to low left, leaning back
       sg.position.copy(playerChest.lengthSq() > 0 ? playerChest : new Vector3(p.x, p.y + 1.1, p.z));
-      sg.rotation.set(0, p.facing + Math.PI, 0);
-      sg.rotateZ(katana ? -0.55 : -0.3);
-      sg.rotateX(-1.1);
+      sg.position.x += Math.sin(p.facing) * 0.35;
+      sg.position.z += Math.cos(p.facing) * 0.35;
+      sg.rotation.set(0, p.facing, 0);
+      sg.rotateZ(katana ? -0.25 : -0.1);
+      sg.rotateX(0.35);
       sg.traverse(o => { o.frustumCulled = false; });
       fx.group.add(sg);
       fx.slashes.push({ t: 0, g: sg, life: katana ? 0.2 : 0.16 });

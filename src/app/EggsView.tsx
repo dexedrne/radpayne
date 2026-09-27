@@ -13,7 +13,7 @@ import { useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useAssetRuntime } from "react-three-game";
 import {
-  AnimationMixer, BoxGeometry, CanvasTexture, Group, LoopOnce, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, SRGBColorSpace, TextureLoader,
+  AnimationMixer, BoxGeometry, PointLight, CanvasTexture, Group, LoopOnce, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, SRGBColorSpace, TextureLoader,
   type AnimationAction, type AnimationClip, type Object3D, type Texture,
 } from "three";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
@@ -184,6 +184,20 @@ export function EggsView({ s }: { s: Session }) {
     return out;
   }, [eggs, group, playing]);
   useEffect(() => () => { for (const b of built.values()) group.remove(b.root); }, [built, group]);
+  // the secrets' own lamps in the club and the back rooms (the street look mounts its light markers
+  // itself): a warm point light each, so a found room is not a black box
+  useEffect(() => {
+    if (s.level.room.look === "street") return;
+    const lights: PointLight[] = [];
+    for (const m of s.level.markers) {
+      if (m.kind !== "light" || !m.id.startsWith("ars-")) continue;
+      const l = new PointLight(String(m.data.color ?? "#ffc98a"), Number(m.data.intensity ?? 1.5) * 2.2, Number(m.data.distance ?? 5), 1.6);
+      l.position.set(m.x, m.y, m.z);
+      lights.push(l);
+      group.add(l);
+    }
+    return () => { for (const l of lights) group.remove(l); };
+  }, [s.level, group]);
   const cat = useMemo(() => ({ g: null as George | null, want: eggs.find(m => m.data.egg === "george") ?? null }), [eggs]);
 
   // George: RadRun's own model and clips (Draco; the asset runtime decodes it), lit for the night

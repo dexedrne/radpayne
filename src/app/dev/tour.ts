@@ -16,6 +16,9 @@ const params = new URLSearchParams(location.search);
 export const TOUR = DEV && params.has("tour");
 
 type Step =
+  | { take: string }
+  | { zoom: number; at: [number, number, number] }
+  | { melee: true }
   | { tp: [number, number, number]; at?: [number, number, number]; hold?: number }
   | { walk: [number, number]; at?: [number, number, number] }
   | { look: [number, number, number]; hold?: number }
@@ -25,12 +28,14 @@ type Step =
 
 const SCRIPTS: Record<string, Step[]> = {
   room1: [
+    // the sniper's rifle she dropped off the fire escape: take it, scope the club door, fire; a melee swing
+    { take: "drop-goon-fire-escape-s" }, { zoom: 1.4, at: [15.2, 1.6, -14.5] }, { melee: true },
     { tp: [-20, 0.15, 10.2], at: [-19.4, 0.8, 16.8], hold: 1.2 }, { shot: "alley-mouth", hold: 0.3 },
     { walk: [-20, 15.4] }, { look: [-19.4, 0.8, 16.8], hold: 0.8 }, { use: true }, { look: [-19.4, 0.8, 16.8], hold: 1.2 },
     { walk: [-20.5, 17.3] },
     { tp: [-18, 0.15, -10.3], at: [-18.4, 0.3, -11.6], hold: 1.0 }, { shot: "kiosk", hold: 0.3 },
-    { tp: [2.3, 0.15, -11.45], at: [-3, 2.5, -11.45], hold: 0.6 }, { walk: [0.2, -11.45] }, { shot: "stairs", hold: 0.2 }, { walk: [-8.6, -11.35] },
-    { look: [0, 0.5, 4], hold: 0.8 }, { shot: "nest-view", hold: 0.3 },
+    { tp: [2.3, 0.15, -11.45], at: [-3, 2.5, -11.45], hold: 0.6 }, { walk: [0.2, -11.45] }, { shot: "stairs", hold: 0.2 }, { walk: [-2.8, -11.45] },
+    { walk: [-3.4, -11.6] }, { look: [-8, 3.5, -11.3], hold: 0.8 }, { shot: "nest-view", hold: 0.3 },
   ],
   room2: [
     { tp: [-18.3, 0, -2.8], at: [-19.45, 1.2, -3.9], hold: 1.0 }, { use: true }, { look: [-19.45, 1.2, -3.9], hold: 0.8 },
@@ -43,8 +48,8 @@ const SCRIPTS: Record<string, Step[]> = {
   room3: [
     { tp: [15.9, 0, -19.6], at: [17.1, 1.0, -19.6], hold: 0.6 }, { fire: 16, every: 0.45, until: "break" }, { look: [17.1, 1.0, -19.6], hold: 0.8 },
     { walk: [18.4, -19.7] }, { look: [20.55, 1.5, -19.6], hold: 1.0 }, { shot: "photo-wall", hold: 0.3 }, { walk: [19.2, -21.0] }, { walk: [18.2, -18.3] },
-    { tp: [-4.75, 0, -6.0], at: [-5.2, 1.0, -6.0], hold: 0.6 }, { use: true }, { look: [-5.2, 1.0, -6.0], hold: 0.9 }, { walk: [-6.2, -6.3] }, { look: [-7.2, 1.6, -6.0], hold: 0.8 },
-    { tp: [0.1, 0, 3.0], at: [-0.8, 1.0, 3.0], hold: 0.6 }, { use: true }, { look: [-0.8, 1.2, 3.0], hold: 1.0 }, { walk: [-0.62, 3.0] }, { look: [-1, 1.1, 3.0], hold: 0.8 },
+    { tp: [-4.75, 0, -6.0], at: [-5.2, 1.0, -6.0], hold: 0.6 }, { use: true }, { look: [-5.2, 1.0, -6.0], hold: 0.9 }, { walk: [-6.6, -6.0] }, { look: [-8.6, 1.2, -6.0], hold: 0.8 }, { shot: "closet", hold: 0.2 }, { walk: [-8.0, -5.6] },
+    { tp: [0.1, 0, 4.0], at: [-0.8, 1.0, 4.0], hold: 0.6 }, { use: true }, { look: [-0.8, 1.2, 4.0], hold: 1.0 }, { walk: [-0.7, 4.0] }, { look: [-1, 1.1, 4.0], hold: 0.8 }, { shot: "safe", hold: 0.2 },
   ],
 };
 
@@ -141,8 +146,28 @@ export class TourDriver {
       const dx = st.walk[0] - p.x, dz = st.walk[1] - p.z, d = Math.hypot(dx, dz);
       if (st.at) aimAt(...st.at); else if (d > 0.3) { f.yaw = Math.atan2(-dx, -dz); f.pitch = 0; }
       const sy = Math.sin(f.yaw), cy = Math.cos(f.yaw);
-      if (d > 0.25) { f.moveY = (dx * -sy + dz * -cy) / d * 0.6; f.moveX = (dx * cy - dz * sy) / d * 0.6; }
-      done = d <= 0.25 || this.stepT > 8;
+      if (d > 0.1) { const k = Math.min(0.6, 0.15 + d); f.moveY = (dx * -sy + dz * -cy) / d * k; f.moveX = (dx * cy - dz * sy) / d * k; }
+      done = d <= 0.12 || this.stepT > 8;
+    } else if ("take" in st) {
+      const k = g.pickups.find(x => x.id === st.take);
+      if (!k || k.taken) done = true;
+      else {
+        const dx = k.x - p.x, dz = k.z - p.z, d = Math.hypot(dx, dz);
+        if (this.stepT <= 1 / 120 + 1e-9 && d > 6) { p.x = k.x - (dx / d) * 5; p.z = k.z - (dz / d) * 5; }
+        f.yaw = Math.atan2(-dx, -dz); f.pitch = -0.3;
+        f.moveY = 0.8;
+        done = this.stepT > 6;
+      }
+    } else if ("zoom" in st) {
+      // key 5 (again) until the sniper is up
+      if (p.weapon.id !== "sniper" && p.owned.includes("sniper") && Math.round(this.stepT * 120) % 12 === 1) f.slot = 5;
+      aimAt(...st.at);
+      f.zoom = this.stepT > 0.9;
+      f.fire = this.stepT > st.zoom + 0.4 - 0.3 && this.stepT < st.zoom + 0.4 - 0.28;
+      done = this.stepT > st.zoom + 0.8;
+    } else if ("melee" in st) {
+      f.melee = this.stepT <= 1 / 120 + 1e-9;
+      done = this.stepT > 0.8;
     } else if ("look" in st) {
       aimAt(...st.look);
       done = this.stepT >= (st.hold ?? 0.5);

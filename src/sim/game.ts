@@ -823,7 +823,9 @@ export class Game {
       const box = this.level.boxes.find(b => b.node === dr.node);
       if (!box || p.y + 1 < box.bottom || p.y > box.top) continue;
       const d = boxDist(box, p.x, p.z);
-      if (d > USE.reach || !inFront(box.cx, box.cz, Math.hypot(box.cx - p.x, box.cz - p.z))) continue;
+      // facing the nearest point of it (a long bookshelf: the end he stands at)
+      const c = boxNearest(box, p.x, p.z);
+      if (d > USE.reach || !inFront(c.x, c.z, Math.hypot(c.x - p.x, c.z - p.z))) continue;
       if (!door || d < door.d) door = { node: dr.node, d };
     }
     if (door) {
@@ -1195,10 +1197,18 @@ export class Game {
       // the gun (or ammo) lands at the body; off a perch it falls 1.3 m out toward him, to the ground below
       let x = e.x, z = e.z, y = e.y;
       if (e.perch) {
-        const ox = this.player.x - e.x, oz = this.player.z - e.z, ol = Math.hypot(ox, oz) || 1;
-        x += (ox / ol) * 1.3; z += (oz / ol) * 1.3;
-        const gy = this.world.groundBelow(x, z, 0.1, e.y + 0.5);
-        if (Number.isFinite(gy)) y = gy;
+        // off the perch to the ground below: the shortest way off it (1.3-4 m), the way toward him first
+        const a0 = Math.atan2(this.player.x - e.x, this.player.z - e.z);
+        let best: { x: number; y: number; z: number; d: number } | null = null;
+        for (let i = 0; i < 8 && !(best && best.d <= 1.3); i++) {
+          const a = a0 + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * (Math.PI / 4);
+          for (let d = 1.3; d <= 4.01 && (!best || d < best.d); d += 0.45) {
+            const tx = e.x + Math.sin(a) * d, tz = e.z + Math.cos(a) * d;
+            const gy = this.world.groundBelow(tx, tz, 0.1, e.y + 0.5);
+            if (Number.isFinite(gy) && gy < e.y - 1) { best = { x: tx, y: gy, z: tz, d }; break; }
+          }
+        }
+        if (best) { x = best.x; y = best.y; z = best.z; }
       }
       const k: Pickup = { id: `drop-${e.id}`, item: e.drop, amount: PICKUPS[e.drop].amount, x, y, z, taken: false };
       this.pickups.push(k);
@@ -1319,6 +1329,13 @@ export class Game {
     for (const gr of this.grenadesLive) h.f64(gr.x).f64(gr.y).f64(gr.z).f64(gr.fuse);
     return h.hex();
   }
+}
+
+/** The point of a yawed box's footprint nearest to (x, z). */
+export function boxNearest(b: Box, x: number, z: number): { x: number; z: number } {
+  const dx = x - b.cx, dz = z - b.cz;
+  const lx = Math.max(-b.hx, Math.min(b.hx, dx * b.cos - dz * b.sin)), lz = Math.max(-b.hz, Math.min(b.hz, dx * b.sin + dz * b.cos));
+  return { x: b.cx + lx * b.cos + lz * b.sin, z: b.cz - lx * b.sin + lz * b.cos };
 }
 
 /** Horizontal distance from (x, z) to a yawed box's footprint (0 inside it). */

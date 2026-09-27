@@ -117,17 +117,17 @@ function room1(p: Prefab, a: Adds): void {
   );
 
   // 3. the fire escape: a stack of crates and pallets up to platform 1 (steps of 0.315 m, he walks up),
-  //    the nest at its west end: pin #652, the SMGs, sniper rounds, copium
+  //    the nest at its east end, under the flight to platform 2: pin #652, the SMGs, sniper rounds, copium
   for (let i = 0; i < 10; i++) {
     const x1 = 1.5 - 0.3 * i, x0 = x1 - 0.3;
     a.solid.push(box(`ars-fe-step-${i}`, [x0, 0.15, -12], [x1, 0.15 + 0.315 * (i + 1), -10.9], i % 3 === 2 ? "dumpster" : "wood", { data: { surface: i % 3 === 2 ? "metal" : "wood" } }));
   }
   a.markers.push(
-    volume("ars-secret-nest", "secret", [-9.5, 3.3, -12], [-6.5, 5.3, -10.7], { name: "the fire escape" }),
-    marker("ars-pin-652", "pickup", [-9.1, 3.3, -11.5], { item: "pin", pin: "652" }),
-    marker("ars-nest-smgs", "pickup", [-8.4, 3.3, -11.35], { item: "smgs" }),
-    marker("ars-nest-sniper-ammo", "pickup", [-7.5, 3.3, -11.5], { item: "sniper_ammo", amount: 10 }),
-    marker("ars-nest-copium", "pickup", [-6.9, 3.3, -11.2], { item: "copium", amount: 2 }),
+    volume("ars-secret-nest", "secret", [-4.3, 3.3, -12], [-1.5, 5.3, -10.7], { name: "the fire escape" }),
+    marker("ars-pin-652", "pickup", [-3.4, 3.3, -11.6], { item: "pin", pin: "652" }),
+    marker("ars-nest-smgs", "pickup", [-2.7, 3.3, -11.25], { item: "smgs" }),
+    marker("ars-nest-sniper-ammo", "pickup", [-4.0, 3.3, -11.3], { item: "sniper_ammo", amount: 10 }),
+    marker("ars-nest-copium", "pickup", [-2.0, 3.3, -11.6], { item: "copium", amount: 2 }),
   );
 
   // eggs: the Solscape poster wheat-pasted over poster-3 by the queue, a RadRun one-sheet over poster-1
@@ -245,37 +245,39 @@ function room3(p: Prefab, a: Adds): void {
   // 2. the west alcove's door slides open: a janitor's closet behind it (light under the door)
   setData(p, "alc-w-back", { secretDoor: "janitor", open: "slide", slide: [0, 1.7], mesh: "alc-w-door" });
   a.solid.push(
-    box("ars-jan-floor", [-7.6, -0.5, -7.2], [-5.9, 0, -4.8], "floorConcrete"),
-    box("ars-jan-w", [-7.6, 0, -7.2], [-7.3, 3, -4.8], "block"),
-    box("ars-jan-n", [-7.6, 0, -7.2], [-5.2, 3, -7.0], "block"),
-    box("ars-jan-s", [-7.6, 0, -5.0], [-5.2, 3, -4.8], "block"),
-    box("ars-jan-ceil", [-7.6, 3.0, -7.2], [-5.2, 3.2, -4.8], "ceiling"),
-    box("ars-jan-shelf", [-7.3, 0, -6.9], [-6.9, 1.8, -5.3], "shelf", { data: { surface: "metal" } }),
+    box("ars-jan-floor", [-9.0, -0.5, -7.2], [-5.9, 0, -4.8], "floorConcrete"),
+    box("ars-jan-w", [-9.0, 0, -7.2], [-8.7, 3, -4.8], "block"),
+    box("ars-jan-n", [-9.0, 0, -7.2], [-5.2, 3, -7.0], "block"),
+    box("ars-jan-s", [-9.0, 0, -5.0], [-5.2, 3, -4.8], "block"),
+    box("ars-jan-ceil", [-9.0, 3.0, -7.2], [-5.2, 3.2, -4.8], "ceiling"),
+    box("ars-jan-shelf", [-8.3, 0, -7.0], [-6.9, 1.8, -6.6], "shelf", { data: { surface: "metal" } }),
   );
   a.decor.push(
     box("ars-jan-underlight", [-5.05, 0.005, -6.45], [-4.95, 0.03, -5.55], "lampWarm"),
     box("ars-jan-bucket", [-5.95, 0, -6.75], [-5.6, 0.35, -6.4], "bucket"),
-    box("ars-jan-radio", [-7.25, 1.8, -6.2], [-6.95, 1.98, -5.8], "chair"),
+    box("ars-jan-radio", [-7.8, 1.8, -6.95], [-7.4, 1.98, -6.7], "chair"),
+    box("ars-jan-lamp", [-7.2, 2.9, -6.2], [-6.8, 3.0, -5.8], "lampWarm"),
   );
   a.markers.push(
-    marker("ars-jan-light", "light", [-6.3, 2.5, -6], { color: "#ffc98a", intensity: 1.2, distance: 3.5 }),
-    volume("ars-secret-janitor", "secret", [-6.9, 0, -7.0], [-5.35, 3, -5.0], { name: "the janitor's closet" }),
-    marker("ars-pin-250", "pickup", [-6.3, 0, -6.6], { item: "pin", pin: "250", behind: "alc-w-back" }),
-    marker("ars-jan-copium", "pickup", [-6.2, 0, -5.4], { item: "copium", amount: 2, behind: "alc-w-back" }),
+    marker("ars-jan-light", "light", [-7.0, 2.5, -6], { color: "#ffc98a", intensity: 1.2, distance: 4.5 }),
+    volume("ars-secret-janitor", "secret", [-8.7, 0, -7.0], [-5.35, 3, -5.0], { name: "the janitor's closet" }),
+    marker("ars-pin-250", "pickup", [-8.0, 0, -5.6], { item: "pin", pin: "250", behind: "alc-w-back" }),
+    marker("ars-jan-copium", "pickup", [-7.2, 0, -5.4], { item: "copium", amount: 2, behind: "alc-w-back" }),
   );
 
   // 3. the manager's bookshelf slides 1.2 m north on E: a wall safe with the hand cannon's rounds
   setData(p, "shelf-e3", { secretDoor: "bookshelf", open: "slide", slide: [0, -1.2] });
   a.solid.push(box("ars-shelf-slid", [-1.0, 0, 0.2], [-0.56, 2.2, 1.39], "wood", { hidden: true, data: { surface: "wood" } }));
   a.decor.push(
-    box("ars-safe", [-1.0, 0.8, 2.6], [-0.93, 1.5, 3.4], "metalDark"),
-    box("ars-safe-door", [-0.95, 0.85, 3.35], [-0.6, 1.45, 3.39], "chrome", { rot: [0, -1.1, 0] }),
-    box("ars-scrape-0", [-0.95, 0.001, 0.3], [-0.6, 0.006, 1.35], "rug"),
+    box("ars-safe", [-1.0, 0.8, 3.65], [-0.93, 1.5, 4.35], "metalDark"),
+    box("ars-safe-door", [-0.95, 0.85, 4.3], [-0.6, 1.45, 4.34], "chrome", { rot: [0, -1.1, 0] }),
+    box("ars-scrape-0", [-0.5, 0.001, 3.5], [-0.3, 0.006, 4.5], "rug"),
+    box("ars-scrape-1", [-0.95, 0.001, 0.25], [-0.6, 0.006, 1.35], "rug"),
   );
   a.markers.push(
-    volume("ars-secret-shelf", "secret", [-1.0, 0, 1.4], [-0.56, 3, 4.6], { name: "the bookshelf" }),
-    marker("ars-safe-rounds", "pickup", [-0.8, 0, 3.0], { item: "handcannon_ammo", amount: 14, behind: "shelf-e3" }),
-    marker("ars-safe-copium", "pickup", [-0.8, 0, 3.9], { item: "copium", amount: 1, behind: "shelf-e3" }),
+    volume("ars-secret-shelf", "secret", [-1.0, 0, 3.45], [-0.45, 3, 4.6], { name: "the bookshelf" }),
+    marker("ars-safe-rounds", "pickup", [-0.8, 0, 3.8], { item: "handcannon_ammo", amount: 14, behind: "shelf-e3" }),
+    marker("ars-safe-copium", "pickup", [-0.8, 0, 4.35], { item: "copium", amount: 1, behind: "shelf-e3" }),
   );
 }
 

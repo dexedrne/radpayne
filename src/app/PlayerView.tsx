@@ -18,7 +18,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useAssetRuntime } from "react-three-game";
-import { AnimationMixer, AnimationUtils, Box3, Group, LoopOnce, MeshBasicMaterial, Quaternion, Vector3, type AnimationAction, type Camera, type PerspectiveCamera, type AnimationClip, type Bone, type Material, type Mesh, type Object3D } from "three";
+import { AnimationMixer, AnimationUtils, Box3, Euler, Group, LoopOnce, MeshBasicMaterial, Quaternion, Vector3, type AnimationAction, type Camera, type PerspectiveCamera, type AnimationClip, type Bone, type Material, type Mesh, type Object3D } from "three";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 import type { Session } from "./session.ts";
 import { AnimPlayer } from "../anim/animPlayer.ts";
@@ -258,6 +258,10 @@ function makeRig(id: RadbroId, src: Object3D, pack: Object3D | null, gunPack: Ob
     attachGun(sniper, bones.rHand, grips.right, 1, [SHOTGUN_THICK_PLAYER, SHOTGUN_THICK_PLAYER, SHOTGUN_SCALE[id]]);
     attachGun(rifle, bones.rHand, grips.right, 1, [SHOTGUN_THICK_PLAYER, SHOTGUN_THICK_PLAYER, SHOTGUN_SCALE[id]]);
     attachGun(katana, bones.rHand, grips.right, 1, 1);
+    // a sword rises from the fist (the pistol frame's barrel points out of it): the blade tipped up and
+    // out, so it draws a line across the view as the arm cuts instead of pointing into the lens
+    katana.quaternion.multiply(new Quaternion().setFromEuler(new Euler(-1.15, 0.35, 0)));
+    katana.userData.grip = katana.quaternion.clone();
   }
   if (bones.lHand) attachGun(grenade, bones.lHand, grips.left, 1, 1.3);
   for (const g of [...smgs, shotgun, ak, handcannon, sawedoff, sniper, rifle, katana, grenade]) g.visible = false;

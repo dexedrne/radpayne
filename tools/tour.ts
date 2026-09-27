@@ -3,7 +3,7 @@
 // room's secrets and eggs once it is clear, and shoots every moment the page queues (the first shot with
 // each gun, a melee, a grenade, the scope, a drop picked up, each secret / door / egg), the start and the
 // results. Prints console errors.
-//   RADPAYNE_CHROME_PROFILE=<throwaway dir> node tools/tour.ts <url> <outDir>
+//   RADPAYNE_CHROME_PROFILE=<throwaway dir> node tools/tour.ts <url> <outDir>   (RADPAYNE_ONE_ROOM=1: the first room only)
 //   e.g. node tools/tour.ts "http://localhost:4880/?bot&tour&seed=1&webgl2&room=room1&loadout=handcannon,sawedoff,rifle&grenades=3" .local/shots/tour1
 // Always a THROWAWAY --user-data-dir; the browser is killed by its PID at the end. GPU through ANGLE/GL.
 import fs from "node:fs";
@@ -39,7 +39,7 @@ try {
     log.push(`SHOT ${name} at ${((Date.now() - t0) / 1000).toFixed(1)} s`);
   };
   await page.goto(url, { waitUntil: "load" });
-  let started = false, lastLog = 0;
+  let started = false, lastLog = 0, firstRoom = "";
   const maxMs = Number(process.env.RADPAYNE_MAX_S ?? 420) * 1000;
   while (Date.now() - t0 < maxMs) {
     const st = (await page.evaluate(() => {
@@ -49,13 +49,17 @@ try {
       const q = w.__tour?.queue ?? [];
       const due = q.filter(x => x.at <= now).map(x => x.name);
       if (w.__tour) w.__tour.queue = q.filter(x => x.at > now);
-      return g ? { phase: g.phase, t: g.realTime, alive: g.alive, hp: g.player.health, gun: g.player.weapon.id, nades: g.player.grenades, found: g.found.length, kills: g.stats.kills, step: w.__tour?.step ?? -1, done: !!w.__tour?.done, due, results: !!document.querySelector("[data-testid=results]") } : null;
-    })) as { phase: string; t: number; alive: number; hp: number; gun: string; nades: number; found: number; kills: number; step: number; done: boolean; due: string[]; results: boolean } | null;
+      const room = (w.__rp?.session as unknown as { roomId?: string } | undefined)?.roomId ?? "";
+      return g ? { room, phase: g.phase, t: g.realTime, alive: g.alive, hp: g.player.health, gun: g.player.weapon.id, nades: g.player.grenades, found: g.found.length, kills: g.stats.kills, step: w.__tour?.step ?? -1, done: !!w.__tour?.done, due, results: !!document.querySelector("[data-testid=results]") } : null;
+    })) as { room: string; phase: string; t: number; alive: number; hp: number; gun: string; nades: number; found: number; kills: number; step: number; done: boolean; due: string[]; results: boolean } | null;
     if (!st) { await sleep(300); continue; }
     if (!started && st.t > 1.5) { started = true; await shot("0-start"); }
     for (const n of st.due) await shot(n);
     if (Date.now() - lastLog > 10_000) { lastLog = Date.now(); console.log(`  ${((Date.now() - t0) / 1000).toFixed(0)} s: ${JSON.stringify({ ...st, due: undefined })}`); }
     if (st.results) { await sleep(500); await shot("9-results"); code = 0; break; }
+    // RADPAYNE_ONE_ROOM=1: stop when the chain moves on to the next room
+    firstRoom ||= st.room;
+    if (process.env.RADPAYNE_ONE_ROOM === "1" && st.room && st.room !== firstRoom) { code = 0; break; }
     if (st.phase === "dead") { await sleep(1200); await shot("9-dead"); break; }
     await sleep(100);
   }
