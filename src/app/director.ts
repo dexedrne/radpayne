@@ -635,7 +635,8 @@ export class Director {
         if (e.stop === "S1") this.say("r4_stop1", 1.6);
         break;
       }
-      case "roof": this.say("r4_heavy", 0.5); break;
+      // (the heavy on the roof between two stops; a girl dropping in at a stop has no line of the narrator's)
+      case "roof": if (!g.ride?.stop) this.say("r4_heavy", 0.5); break;
       case "land": {
         const h = g.enemies.find(k => k.group === "roof");
         if (h && this.chatter !== "off") { this.alerted.add(`heavy-${h.idx}`); this.voiceAt("heavy/roof_1", h.x, h.z, ROUND3_BARKS["heavy/roof_1"] ?? "", 1.2); }

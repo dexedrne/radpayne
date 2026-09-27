@@ -156,9 +156,13 @@ export class Bot {
       }
     } else {
       if (g.bulletTime && this.lost > 0.6) f.bt = true; // off again (not the moment a target blinks out of sight)
+      // room 4, a stop's gang out of sight: hold the car a while (in cover by a door), let them come
+      const ride = g.ride;
+      const hold = this.cover && g.phase === "play" && !!ride?.stop && ride.phase !== "arrive" && ride.inCar(p.x, p.z, 0) && !ride.wantsIn(g) && this.lost < 5;
+      if (hold && p.cover < 0 && p.dashSeg < 0 && g.coverTarget && !g.coverTarget.dash && this.coverCd <= 0) { f.cover = true; this.coverCd = 1; }
       // walk toward the nearest live goon (or the exit once clear)
       let tx = NaN, tz = NaN, key = -1;
-      if (g.phase === "clear") {
+      if (hold) { /* holding */ } else if (g.phase === "clear") {
         const ex = g.level.markers.find(m => m.kind === "trigger" && m.data.action === "exit");
         if (ex) { tx = ex.x; tz = ex.z; key = 999; }
       } else {
@@ -226,7 +230,7 @@ export class Bot {
         if (this.stuckT > 1) { f.jump = true; this.sidestep = 0.6; this.stuckT = 0; this.repath = 0; this.strafe = -this.strafe; this.stuckN++; }
         // still stuck after a few tries (a ledge, a desk): the nearest waypoint first, whatever the line
         if (this.stuckN >= 3 && this.sidestep <= 0) {
-          const n = g.graph.nearest(p.x, p.y, p.z, false), w = n >= 0 ? g.graph.nodes[n] : null;
+          const n0 = g.graph.nearest(p.x, p.y, p.z, true), n = n0 >= 0 ? n0 : g.graph.nearest(p.x, p.y, p.z, false), w = n >= 0 ? g.graph.nodes[n] : null;
           if (w) { this.path = [{ x: w.x, z: w.z }, ...this.path]; this.repath = 1.5; }
           this.stuckN = 0;
         }
@@ -306,7 +310,9 @@ export class Bot {
     // flanked (one that can hit it from round the side), or nobody in view for a while: out
     const flank = g.enemies.some(e => e.sees && e.state !== "dead" && (((e.x - p.x) * -c.nx + (e.z - p.z) * -c.nz) / (Math.hypot(e.x - p.x, e.z - p.z) || 1)) < 0.25);
     this.idleT = best >= 0 ? 0 : this.idleT + dt;
-    if (flank || this.idleT > 2.5) {
+    // (in the elevator's car it waits longer for them to show: the landing is theirs)
+    const patience = g.ride && g.ride.inCar(p.x, p.z, 0) ? 7 : 2.5;
+    if (flank || this.idleT > patience) {
       toWorld(c.nx, c.nz);
       this.coverCd = flank ? 2.5 : 4;
       this.popT = 0;
