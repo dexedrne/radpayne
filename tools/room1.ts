@@ -20,6 +20,7 @@
 //               ("pulse" = the club's kick, "flicker" = a failing tube, "blink" = a barricade flasher)
 import fs from "node:fs";
 import path from "node:path";
+import { applyArsenal } from "./levels/arsenal.ts";
 
 type Node = { id: string; components?: Record<string, unknown>; children?: Node[] };
 type V3 = [number, number, number];
@@ -738,6 +739,9 @@ const dupes: string[] = [];
 const visit = (n: { id: string; children?: Array<{ id: string }> }) => { if (seen.has(n.id)) dupes.push(n.id); seen.add(n.id); for (const c of n.children ?? []) visit(c); };
 visit(prefab.root);
 if (dupes.length) throw new Error(`duplicate node ids: ${dupes.slice(0, 10).join(", ")}`);
+
+// the arsenal's additions (placed weapons, secrets, pins, eggs: tools/levels/arsenal.ts)
+applyArsenal(prefab, "room1");
 
 const outFile = path.resolve(import.meta.dirname, "..", "public", "levels", "room1.json");
 fs.mkdirSync(path.dirname(outFile), { recursive: true });

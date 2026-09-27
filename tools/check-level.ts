@@ -7,6 +7,7 @@ import path from "node:path";
 import { readLevel } from "../src/world/level.ts";
 import { World } from "../src/sim/world.ts";
 import { Graph } from "../src/ai/graph.ts";
+import { PICKUPS } from "../src/combat/weapons.ts";
 
 const dir = path.resolve(import.meta.dirname, "..", "public", "levels");
 const arg = process.argv[2];
@@ -30,7 +31,10 @@ for (const f of files) {
     if ((m.kind === "crowd" || m.kind === "crowdExit") && graph.nearest(m.x, m.y, m.z) < 0) issues.push(`${m.kind} ${m.id}: no waypoint in walkable line of sight`);
     if (m.kind === "crowd" && typeof m.data.flee === "string" && !level.markers.some(x => x.kind === "crowdExit" && x.id === m.data.flee)) issues.push(`crowd ${m.id}: flee exit ${m.data.flee} does not exist`);
     if (m.kind === "enemy" && m.data.kind && !["goon", "rusher", "heavy"].includes(String(m.data.kind))) issues.push(`enemy ${m.id}: unknown kind ${String(m.data.kind)}`);
-    if (m.kind === "pickup" && !["copium", "shotgun", "smgs", "shotgun_ammo", "smgs_ammo"].includes(String(m.data.item ?? "copium"))) issues.push(`pickup ${m.id}: unknown item ${String(m.data.item)}`);
+    if (m.kind === "pickup" && !["copium", "pin", ...Object.keys(PICKUPS)].includes(String(m.data.item ?? "copium"))) issues.push(`pickup ${m.id}: unknown item ${String(m.data.item)}`);
+    if (m.kind === "pickup" && m.data.item === "pin" && typeof m.data.pin !== "string") issues.push(`pickup ${m.id}: a pin without its Radbro id`);
+    if (m.kind === "pickup" && typeof m.data.behind === "string" && !level.doors.some(d => d.node === m.data.behind) && !level.breakables.some(b => b.node === m.data.behind)) issues.push(`pickup ${m.id}: behind ${m.data.behind}, which is no secret door or breakable`);
+    if (m.kind === "egg" && typeof m.data.egg !== "string") issues.push(`egg ${m.id}: no egg name`);
     // room 3: the breach door must be a collider; conditional triggers need their group / checkpoint
     if (m.kind === "trigger" && m.data.action === "breach" && !level.boxes.some(b => b.node === m.data.door)) issues.push(`trigger ${m.id}: breach door ${String(m.data.door)} is not a collider`);
     if (m.kind === "trigger" && typeof m.data.whenClear === "string" && !level.markers.some(e => e.kind === "enemy" && e.data.group === m.data.whenClear)) issues.push(`trigger ${m.id}: no enemy in group ${m.data.whenClear}`);
@@ -42,13 +46,14 @@ for (const f of files) {
     for (const b of level.boxes) {
       const dx = m.x - b.cx, dz = m.z - b.cz;
       const lx = dx * b.cos - dz * b.sin, lz = dx * b.sin + dz * b.cos;
+      if (m.data.behind === b.node) continue; // a stash behind a secret door (taken once it opens)
       if (Math.abs(lx) < b.hx && Math.abs(lz) < b.hz && m.y + 0.5 > b.bottom && m.y + 0.5 < b.top) issues.push(`${m.kind} ${m.id} is inside box ${b.node}`);
     }
   }
   if (!count("exit") && !level.markers.some(m => m.kind === "trigger" && m.data.action === "exit")) issues.push("no exit: the room ends 2.5 s after it is cleared");
   const kinds = ["goon", "rusher", "heavy"].map(k => `${k} ${level.markers.filter(m => m.kind === "enemy" && (m.data.kind ?? "goon") === k).length}`).join(" / ");
   const crowd = level.markers.filter(m => m.kind === "crowd").reduce((n, m) => n + Number(m.data.count ?? 1), 0);
-  console.log(`${f}: "${level.room.name}" ${level.boxes.length} colliders, spawn ${count("spawn")}, enemies ${count("enemy")} (${kinds}), covers ${count("cover")}, waypoints ${count("waypoint")} (${graph.nodes.reduce((s, n) => s + n.links.length, 0) / 2} links), pickups ${count("pickup")}, triggers ${count("trigger")}${crowd ? `, crowd ${crowd} (${count("crowdExit")} exits)` : ""}`);
+  console.log(`${f}: "${level.room.name}" ${level.boxes.length} colliders, spawn ${count("spawn")}, enemies ${count("enemy")} (${kinds}), covers ${count("cover")}, waypoints ${count("waypoint")} (${graph.nodes.reduce((s, n) => s + n.links.length, 0) / 2} links), pickups ${count("pickup")}, triggers ${count("trigger")}, secrets ${count("secret")} (${level.doors.length} doors, ${level.breakables.length} breakables), eggs ${count("egg")}${crowd ? `, crowd ${crowd} (${count("crowdExit")} exits)` : ""}`);
   for (const i of issues) console.log(`  ! ${i}`);
   bad += issues.length;
 }

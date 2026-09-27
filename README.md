@@ -15,6 +15,11 @@ house: a service corridor where the first rival Radbro comes round the corner wi
 storage room, a locked office door you go through with a shootdodge, the security office with the dual
 SMGs, the manager's office behind glass and the service elevator. To be continued: the elevator.
 
+**The arsenal:** every hostile drops the gun she carried, and guns lie in the rooms from the first street
+on: the hand cannon, a sawed-off, an assault rifle, a sniper rifle with a scope, frag grenades, #4764's
+katana (a strike with the gun for everyone else). Each room hides three secrets, two of the six Radbro
+Webring pins among them, and a few easter eggs; the results count what you found.
+
 ## Play
 
 ```bash
@@ -33,11 +38,20 @@ Pick a Radbro and a difficulty, then press **PLAY**. Click the game to lock the 
 | Space | jump (clears low cover) |
 | R | reload |
 | H | copium (+35 HP over 1 s, carry up to 8) |
-| 1-3 / wheel | weapon: dual pistols, the shotgun (8 pellets, pump action), dual SMGs |
+| 1-5 / wheel | weapon by kind: 1 the dual pistols (#250: his AK), 2 the shotgun / sawed-off, 3 the dual SMGs, 4 the hand cannon, 5 the rifle / sniper. Press a key again for its twin |
+| Right button (sniper in hand) | hold to scope (Q stays bullet time) |
+| F | melee: #4764 draws his katana, everyone else strikes with the gun |
+| G | throw a grenade (it lands where you aim, 3-20 m) |
+| E | use: secret doors, the cat, the arcade cabinet |
 | Esc | pause |
 
-A gamepad also works: left stick to move, right stick to aim, RT to fire, LT for bullet time, B to dive,
-A to jump, X to reload, Y for copium.
+A gamepad also works: left stick to move, right stick to aim, RT to fire, LT for bullet time (with the
+sniper in hand hold LT to scope; d-pad up is bullet time then), B to dive, A to jump, X to reload, Y for
+copium, RB to throw a grenade, R3 for melee, d-pad down to use, d-pad left / right or LB for the weapon.
+
+Walk over a gun to take it (the first one of a kind, then its ammo). The gang's pistols feed your SMGs
+with 9 mm, banked until you have them. The hand cannon and the sniper put a round through a body into
+the next one.
 
 The cutscenes: click, Space or Enter turns the page, Esc skips the rest.
 
@@ -76,6 +90,15 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
     inside the trigger takes it out; the group behind it wakes) and the trigger conditions
     `afterKills: N` / `whenClear: <group>`. A group waits unseen only when a `spawn` trigger names it.
     A `checkpoint` trigger (`at`: a checkpoint marker) saves the room; a retry resumes from it.
+  - The arsenal (`docs/specs/2026-09-26-arsenal-secrets.md`): an enemy's `weapon` (`sniper` for a goon,
+    `handcannon` for a heavy) and `drop` (default: the gun she carries); `pickup` items are the keys of
+    `PICKUPS` in `src/combat/weapons.ts` plus `copium` and `pin` (`{pin: "<radbro id>"}`), and
+    `behind: <node>` keeps one until that secret door or breakable is out of the way. `secret` is a
+    volume marker (`{name, via?: "break"}`); a box with Data `{secretDoor, open: "swing" | "slide",
+    hinge?, slide?, mesh?}` opens on E, one with `{breakable: hp, drop?, amount?, secret?}` breaks under
+    fire, melee and grenades; `egg` markers (`{egg, interact?}`) are drawn by `src/app/EggsView.tsx`.
+    The rooms' additions live in `tools/levels/arsenal.ts` (the room tools apply them; `node
+    tools/arsenal-levels.ts` patches the JSONs in place, idempotently).
   - Room 1's look (`src/app/look/street.tsx`) reads material names: `wet <k>` for reflective ground,
     `lit <gain>` for facades whose lit windows glow, and `glow <gain>` for neon, with `pulse` (the
     club's bass), `flicker` or `blink` added. Change the gain in the editor to retune a sign.
@@ -115,10 +138,13 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
   - `?cam=<camera marker>` holds the camera on a shot (room 1: `cam-wide`, `cam-club`, `cam-canyon`;
     room 2: `cam-floor`, `cam-dj`; room 3: `cam-hall`, `cam-store`, `cam-door`, `cam-office`,
     `cam-manager`, `cam-lobby`).
-  - `?loadout=shotgun,smgs` starts with those weapons (the last one in hand).
+  - `?loadout=shotgun,sniper` starts with those weapons (any weapon id; the last one in hand),
+    `?grenades=N` with N frags.
   - `?radbro=<id>` plays that Radbro for one page load.
-  - `?holdcheck=<shotgun|ak|pistols|smgs>` runs the hold check: an empty street, that gun in hand,
+  - `?holdcheck=<weapon id>` runs the hold check: an empty street, that gun in hand,
     and a scripted player instead of the input (`src/app/dev/holdcheck.ts`, `window.__holdcheck`).
+  - `?bot&tour` is the arsenal tour: the bot fights on each new gun in turn, then walks the room's
+    secrets and eggs once it is clear (`src/app/dev/tour.ts`; `tools/tour.ts` shoots it).
   - `?look=fight` holds the club in its fight lighting; `?extra=heavy` adds a heavy by the staff door
     (`?cam=cam-heavy`); `?still` hides the click-to-fight veil (for screenshots without the bot).
   - `?fx=clean` starts with Effects on Clean (also in the pause menu): no rain near the camera, no
@@ -140,8 +166,16 @@ input log. Bullet time is a time scale on it.
     every frame with two-bone arm IK (`src/anim/ik.ts`): the right hand on the grip, the left on the
     pump or handguard, riding the clips' pump rack and shell feed. The AK's mag change is a scripted
     left-hand path. While a long gun is out the shoulder camera sits further out to his right, closer
-    and lower (`LONG_CAM` in `src/app/CameraView.tsx`); the crosshair still marks exactly where shots
-    go.
+    and lower (`LONG_CAM` in `src/app/CameraView.tsx`); shouldered (shooting, bullet time) it comes
+    closer, wider and lower still, and in a dive or prone it climbs and he rolls onto his left side, so
+    the gun under his cheek clears the big head and hair. The crosshair still marks exactly where shots
+    go. The rifle and the sniper take the same hold; the hand cannon and the sawed-off are one-handed
+    (the left arm drops to a guard). The new guns are procedural (`src/app/guns.ts`).
+  - The arsenal's sounds (`public/audio/sfx/handcannon_*`, `sawedoff_*`, `sniper_*`, `scope_*`,
+    `grenade_*`, `katana_*`, `melee_*`, `plywood_break`, `secret_door`) are generated layers mixed
+    offline; George's meows (`meow_*`) and `models/george.glb` come from RadRun. The block at the end of
+    `src/audio/sfx.ts` plays them (a missing file falls back to the round-1 / round-2 samples).
+  - `public/textures/eggs/`: the posters and the arcade cabinet's screen.
   - `public/audio/`: `sfx/`, `music/` (calm street + fight loops), `voices/narrator/` (the Radbro's
     low, tired noir voice-over), `voices/radbro/` (his grunts, breath and last words in the fight) and
     the two high Milady voices in `voices/goon_a|goon_b/`. `src/audio/sfx.ts` plays them;
@@ -168,7 +202,11 @@ input log. Bullet time is a time scale on it.
   walk, back-pedal, strafe, run, fire, reload, jump, dive, prone, get-up and roll with each long gun. It
   prints the grip error, the left palm's distance to the gun, the wrist bend, elbow flips and the gun's
   visible pixels from the gameplay camera, and saves a gameplay shot and a close-up per state in
-  `.local/shots/hold/`.
+  `.local/shots/hold/`. It fails a shouldered state (fire, bullet time, dive, prone) under 1,200 px.
+- **Arsenal tour:** with the dev server up, `RADPAYNE_CHROME_PROFILE=<throwaway dir> node tools/tour.ts
+  "http://localhost:4880/?bot&tour&seed=1&webgl2&room=room1&loadout=handcannon,sawedoff,rifle&grenades=3"
+  .local/shots/tour1` shoots the first shot with each gun, a melee, a grenade, the scope, the drops
+  picked up, and each secret, door and egg.
 
 ## Use it
 
