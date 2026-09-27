@@ -62,12 +62,24 @@ export type Hud = {
   awake: boolean;
   /** Session attempt counter (per-attempt HUD state resets when it changes). */
   run: number;
+  /** Frag grenades carried; the last gun used per key (a category tab shows it); scoped. */
+  grenades: number;
+  lastInSlot: Partial<Record<number, WeaponId>>;
+  zoom: boolean;
+  /** Secrets found in the room / there. */
+  secrets: number;
+  secretsTotal: number;
+  /** Pins picked up this attempt (Radbro ids, in order). */
+  pins: string[];
+  /** What E would do right now (a secret door or an egg in reach, faced): the prompt's label, "" = none. */
+  use: string;
 };
 
 /** One hit on the player: where the shooter stood (NaN = no shooter: a fall), when, how hard. */
 export type Hurt = { sx: number; sz: number; at: number; amount: number; shooter: number };
 
-export type Results = { cleared: boolean; stats: Stats; room: string; difficulty: Difficulty; radbro: RadbroId };
+/** pins: the pins picked up in this run (the results mark them NEW). */
+export type Results = { cleared: boolean; stats: Stats; room: string; difficulty: Difficulty; radbro: RadbroId; pins?: string[] };
 
 export type Quality = "high" | "low";
 export type HudSize = "s" | "m" | "l";
@@ -138,6 +150,7 @@ export const HUD_INITIAL: Hud = {
   alive: 0, total: 0, phase: "play", onTarget: false, mode: "normal", fps: 60, hurtAgo: 99, killcam: false,
   roomLabel: "", objective: "", objectiveAt: 0, weaponId: "pistols", owned: ["pistols"], reserve: Infinity, hands: 2, ammo: { pistols: Infinity },
   refill: null, btRefusedAt: 0, killcamProgress: 0, awake: false, run: 0,
+  grenades: 0, lastInSlot: {}, zoom: false, secrets: 0, secretsTotal: 0, pins: [], use: "",
 };
 
 export const useUi = create<Ui>(() => ({

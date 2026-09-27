@@ -6,7 +6,7 @@
 // At a locked breach door (room 3) it dives through when it is within 4 m and heading for it.
 // Used by the Node smoke test and the browser's ?bot mode (same input frames -> same result).
 import { HB_HEAD, HB_TORSO, aimPoint, makeCapsules } from "../combat/hitboxes.ts";
-import { PICKUPS, WEAPONS, ammoLeft, slotOf, type WeaponId } from "../combat/weapons.ts";
+import { PICKUPS, SLOT_ORDER, WEAPONS, ammoLeft, slotOf, type WeaponId } from "../combat/weapons.ts";
 import { insideTrigger, type Game } from "./game.ts";
 import { pivotOf } from "./player.ts";
 import { emptyInput, type InputFrame } from "./types.ts";
@@ -36,6 +36,7 @@ export class Bot {
   private demoBt = false;
   private demoDodge = false;
   private swapCd = 0;
+  private nadeCd = 0;
   /** Test / dev: keep this weapon in hand whenever it has rounds (the view checks of one gun). */
   only: WeaponId | null = null;
   private fired = false;
@@ -61,6 +62,7 @@ export class Bot {
     const f = this.frame;
     const p = g.player;
     f.fire = f.bt = f.dodge = f.jump = f.reload = f.copium = f.skip = false;
+    f.melee = f.throw = f.interact = f.zoom = false;
     f.slot = 0;
     f.moveX = f.moveY = 0;
     f.yaw = p.yaw;
@@ -69,6 +71,7 @@ export class Bot {
     if (p.mode === "dead") return f;
     this.dodgeCd -= 1 / 120;
     this.swapCd -= 1 / 120;
+    this.nadeCd -= 1 / 120;
     const piv = pivotOf(p, this.piv, g.world);
 
     // target: nearest visible live hostile
@@ -96,11 +99,22 @@ export class Bot {
       f.fire = this.onTarget >= this.settle;
       // semi-auto: a fresh press per shot
       if (!WEAPONS[p.weapon.id].auto) { f.fire = f.fire && !this.fired; this.fired = f.fire; }
-      this.pickWeapon(g, f, Math.sqrt(bd));
+      this.pickWeapon(g, f, Math.sqrt(bd), e.kind === "heavy");
+      // the sniper beyond 22 m: scoped, standing still
+      if (p.weapon.id === "sniper" && Math.sqrt(bd) > 22) f.zoom = true;
+      // melee when one is in reach; a grenade into a cluster at 8-18 m
+      const reach = g.katana ? 1.8 : 1.4;
+      if (Math.sqrt(bd) < reach && p.meleeT <= 0 && p.mode === "normal") { f.melee = true; f.fire = false; }
+      if (p.grenades > 0 && this.nadeCd <= 0 && p.mode === "normal") {
+        const d = Math.sqrt(bd);
+        let near = 0;
+        for (const o of g.enemies) if (o !== e && o.state !== "dead" && o.state !== "inactive" && (o.x - e.x) ** 2 + (o.z - e.z) ** 2 < 3.5 * 3.5) near++;
+        if (near >= 1 && d >= 8 && d <= 18 && g.aimEnemy === best) { f.throw = true; this.nadeCd = 6; }
+      }
       // strafe while shooting
       this.strafeT -= 1 / 120;
       if (this.strafeT <= 0) { this.strafe = -this.strafe; this.strafeT = 1.2; }
-      f.moveX = this.strafe * 0.6;
+      f.moveX = f.zoom ? 0 : this.strafe * 0.6;
       if (shooting >= 2 && !g.bulletTime && g.meter > 3) f.bt = true;
       if (p.health < 70 && this.dodgeCd <= 0 && p.mode === "normal" && shooting >= 1) { f.dodge = true; this.dodgeCd = 4; }
       if (this.demo) {
@@ -126,7 +140,8 @@ export class Bot {
         for (let i = 0; i < g.pickups.length; i++) {
           const k = g.pickups[i];
           const d = PICKUPS[k.item];
-          if (k.taken || !d || (!d.weapon && !p.owned.includes(d.ammo))) continue;
+          // not the secrets, nothing up a climb, nothing it cannot take
+          if (k.taken || !d || k.secret || k.behind || k.y > p.y + 1.2 || !g.canTake(k.item)) continue;
           const dd = (k.x - p.x) ** 2 + (k.z - p.z) ** 2;
           if (dd < kd) { kd = dd; tx = k.x; tz = k.z; key = 700 + i; }
         }
@@ -180,13 +195,24 @@ export class Bot {
     return f;
   }
 
-  /** The shotgun within 9 m, the SMGs past it, the pistols when the others are dry. */
-  private pickWeapon(g: Game, f: InputFrame, dist: number): void {
+  /** The sawed-off under 4 m, the shotgun under 9 m, the hand cannon on a heavy, the sniper past 22 m,
+   *  the rifle at 9-40 m, the SMGs as before, the base gun when the rest are dry. */
+  private pickWeapon(g: Game, f: InputFrame, dist: number, heavy: boolean): void {
     const p = g.player;
     if (this.swapCd > 0 || p.owned.length < 2 || p.weapon.reloadT > 0 && ammoLeft(p.weapon) > 0) return;
     const has = (id: WeaponId) => p.owned.includes(id) && ammoLeft(p.arsenal[id]!) > 0;
     const base = p.owned[0];
-    const want: WeaponId = this.only && has(this.only) ? this.only : dist < 9 && has("shotgun") ? "shotgun" : base === "ak" ? base : has("smgs") ? "smgs" : has("shotgun") && dist < 14 ? "shotgun" : base;
-    if (want !== p.weapon.id) { f.slot = slotOf(want); this.swapCd = 1.5; }
+    const want: WeaponId = this.only && has(this.only) ? this.only
+      : dist < 4 && has("sawedoff") ? "sawedoff"
+      : dist < 9 && has("shotgun") ? "shotgun"
+      : heavy && has("handcannon") ? "handcannon"
+      : dist > 22 && has("sniper") ? "sniper"
+      : dist >= 9 && dist <= 40 && has("rifle") ? "rifle"
+      : base === "ak" ? base : has("smgs") ? "smgs" : has("shotgun") && dist < 14 ? "shotgun" : base;
+    if (want !== p.weapon.id) {
+      // a category key: a second press next step reaches its other member
+      f.slot = slotOf(want);
+      this.swapCd = SLOT_ORDER.filter(w => p.owned.includes(w) && slotOf(w) === f.slot).length > 1 ? 2 / 120 : 1.5;
+    }
   }
 }

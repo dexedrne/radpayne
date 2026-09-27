@@ -6,7 +6,7 @@
 // the heavy (ai/rusher.ts, ai/heavy.ts); ai/enemies.ts picks the brain per kind.
 import type { Enemy } from "../sim/actors.ts";
 import type { Game } from "../sim/game.ts";
-import { AI, ENEMY, RUSHER } from "../sim/tuning.ts";
+import { AI, ENEMY, ENEMY_ARMS, RUSHER } from "../sim/tuning.ts";
 
 
 export function setState(e: Enemy, s: Enemy["state"]): void {
@@ -242,6 +242,27 @@ export function slotFree(g: Game, e: Enemy): boolean {
 /** Bursts: `burst` shots at the fire interval, then a pause (goons ~1-1.5 s, rushers RUSHER.burstPause). */
 export function tryFire(g: Game, e: Enemy, dt: number, moving: boolean): void {
   const T = ENEMY[e.kind];
+  if (e.weapon === "sniper") {
+    // the sniper: a cold laser on him for the tell (she holds her slot through it), then one round
+    const A = ENEMY_ARMS.sniper;
+    if (e.tell > 0) {
+      e.lastShotT = g.time;
+      e.tell -= dt;
+      if (e.tell <= 0) {
+        e.tell = 0;
+        if (g.canShoot(e)) g.enemyFire(e, false);
+        e.fireT = A.interval * (0.9 + 0.2 * g.rng.next());
+      }
+      return;
+    }
+    e.fireT -= dt;
+    if (e.fireT > 0) return;
+    if (!g.canShoot(e)) { e.fireT = 0.15; return; }
+    if (!slotFree(g, e)) { e.fireT = 0.2 + 0.3 * g.rng.next(); return; }
+    e.lastShotT = g.time;
+    e.tell = A.tell;
+    return;
+  }
   e.fireT -= dt;
   if (e.fireT > 0) return;
   if (!g.canShoot(e)) { e.fireT = 0.15; return; }

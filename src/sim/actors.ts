@@ -43,16 +43,31 @@ export type Player = {
   /** Last step's move input, world space (animation reads it). */
   moveWX: number;
   moveWZ: number;
+  /** Frag grenades in the pouch (at most GRENADE.carry); seconds (his clock) before the next throw. */
+  grenades: number;
+  throwT: number;
+  /** The melee in progress: seconds left of it (his clock; 0 = none), whether its hit has resolved. */
+  meleeT: number;
+  meleeDone: boolean;
+  /** Scoped (the sniper, right mouse held); `zoomBlock`: a swap / reload / dive dropped the scope and
+   *  it stays down until the button is let go. */
+  zoom: boolean;
+  zoomBlock: boolean;
+  /** 9 mm picked up before he owns the SMGs (the gang's pistols); it goes into their reserve on pickup. */
+  banked: number;
+  /** The last weapon used in each key's category (a key press goes back to it). */
+  lastInSlot: Partial<Record<number, WeaponId>>;
 };
 
 export function makePlayer(x: number, y: number, z: number, facing: number, base: BaseWeapon = "pistols"): Player {
   const yaw = facing - Math.PI;
-  const gun = makeWeapon(base);
+  const gun = makeWeapon(base, true);
   return {
     x, y, z, vx: 0, vy: 0, vz: 0, grounded: true, mode: "normal", modeT: 0, dirX: 0, dirZ: 1, rollOnLand: false, dodgeCooldown: 0,
     yaw, pitch: 0, facing, health: PLAYER.maxHealth, copium: PLAYER.startCopium, healLeft: 0,
     weapon: gun, owned: [base], arsenal: { [base]: gun }, pivotUp: 1.55, speed: 0,
     hit: makeHitActor("radbro", 0), moveWX: 0, moveWZ: 0,
+    grenades: 0, throwT: 0, meleeT: 0, meleeDone: true, zoom: false, zoomBlock: false, banked: 0, lastInSlot: {},
   };
 }
 
@@ -62,7 +77,9 @@ export type EnemyState = "inactive" | "idle" | "alert" | "move" | "cover" | "pee
 /** goon: pistol, cover and peek (room 1). rusher: SMG, charges and strafes, cover once when hurt.
  *  heavy: a rival Radbro with a pump shotgun, slow advance, a laser-sight tell, staggers, no cover. */
 export type EnemyKind = "goon" | "rusher" | "heavy";
-export type EnemyWeapon = "pistol" | "smg" | "shotgun";
+/** The gang's guns; a marker's `weapon` overrides the kind's (a goon with the sniper rifle on a perch,
+ *  a heavy with the hand cannon). */
+export type EnemyWeapon = "pistol" | "smg" | "shotgun" | "sniper" | "handcannon";
 export const KIND_WEAPON: Record<EnemyKind, EnemyWeapon> = { goon: "pistol", rusher: "smg", heavy: "shotgun" };
 
 export type Enemy = {
@@ -142,6 +159,15 @@ export type Enemy = {
   deaf: boolean;
   /** Heavy with marker data {hold: true}: holds his spot (the manager behind his desk) and fires from it. */
   hold: boolean;
+  /** A melee strike's shove: world seconds left and the push (m/s, xz). */
+  knockT: number;
+  knockX: number;
+  knockZ: number;
+  /** Running from a grenade: world seconds of reaction left, then of running; the way out (unit xz). */
+  fleeWait: number;
+  fleeT: number;
+  fleeX: number;
+  fleeZ: number;
 };
 
 export function makeEnemy(idx: number, id: string, x: number, y: number, z: number, facing: number, hp: number, milady: number, group: string, kind: EnemyKind = "goon"): Enemy {
@@ -152,5 +178,6 @@ export function makeEnemy(idx: number, id: string, x: number, y: number, z: numb
     cover: -1, lastCover: -1, path: [], pathI: 0, peeks: 0, peeksMax: 2, burstLeft: 0, fireT: 0, flinch: 0, sees: false, lastSeenX: x, lastSeenZ: z,
     lean: 0, leanTarget: 0, crouch: false, deadT: 0, deathHold: false, killDX: 0, killDZ: 1, headshot: false, strafe: 1, hit, patrol: [], shots: 0,
     lastShotT: -1e9, perch: false, tell: 0, stagger: 0, shells: 6, reloadT: 0, coverUsed: false, engageAt: 7, repath: 0, drop: "", deaf: false, hold: false,
+    knockT: 0, knockX: 0, knockZ: 0, fleeWait: 0, fleeT: 0, fleeX: 0, fleeZ: 0,
   };
 }

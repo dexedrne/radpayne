@@ -6,11 +6,13 @@
 // Start plays without it (the right stick aims), and a later click on the game switches to the mouse.
 // Round 2: a cleared room with a `next` room goes on: its cutscene (room.cutsceneAfter; room 1's is the
 // e1 ending panels), then the next room's session replaces this one in the same canvas (the room is a
-// checkpoint: dying there retries that room). The swap happens behind the cutscene's panels as soon as
-// the next level is read, so that room gets ready there. The results come at the end of the chain, or
-// when the next room's level file does not exist yet ("to be continued").
+// checkpoint: dying there retries that room, with the guns, rounds and frags he walked in with). The
+// swap happens behind the cutscene's panels as soon as the next level is read, so that room gets ready
+// there. The results come at the end of the chain, or when the next room's level file does not exist
+// yet ("to be continued").
 // Dev / test builds: ?bot plays the room by itself (smoke test), ?room=<id> picks a level file,
-// ?seed=N fixes the seed, ?skip skips the title and the cutscene.
+// ?seed=N fixes the seed, ?skip skips the title and the cutscene, ?radbro=<id> picks the Radbro,
+// ?holdcheck=<weapon> runs the long-gun hold check (dev/holdcheck.ts: no gang, a scripted player).
 // Loading (the load audit): the title needs only the page and the level; PLAY is live at once.
 // The room's shaders are compiled off the critical frame (look/compile.ts) while the title is up: the
 // room does not render until they are (the title sits on the dark page, the street fades in). The
@@ -31,6 +33,7 @@ import { useGfx } from "./look/gfx.ts";
 import { scenePending } from "./Scene.tsx";
 import { readLevel } from "../world/level.ts";
 import { baseWeaponOf, useUi, type RadbroId } from "../ui/store.ts";
+import { WEAPONS } from "../combat/weapons.ts";
 import { Hud, canvasFx } from "../ui/Hud.tsx";
 import { UiEffects } from "../ui/hud/UiEffects.tsx";
 import { FightPrompt, Loading, Pause, ResultsScreen, Title, layer } from "../ui/screens.tsx";
@@ -42,6 +45,9 @@ import { Bot } from "../sim/bot.ts";
 import type { WeaponId } from "../combat/weapons.ts";
 import { frames, prefetchGoons, roomWarm, warmRoom } from "./warmup.ts";
 import { renderGate } from "./frame.ts";
+import { HOLDCHECK, HoldScript, holdDev } from "./dev/holdcheck.ts";
+import { TOUR, TourDriver } from "./dev/tour.ts";
+import { RADBROS } from "../ui/store.ts";
 import { roomText } from "../ui/rooms.ts";
 import { bridge, roomResult } from "../radbro/bridge.ts";
 
@@ -50,7 +56,10 @@ const params = new URLSearchParams(location.search);
 const BOT = DEV && params.has("bot");
 /** ?bot=demo: the bot shows off bullet time, a shootdodge and the full kill cam (browser check). */
 const BOT_DEMO = params.get("bot") === "demo";
-const SKIP = DEV && (params.has("skip") || BOT);
+const SKIP = DEV && (params.has("skip") || BOT || !!HOLDCHECK);
+/** Dev: ?radbro=<id> plays that Radbro for this page load (the hold check loops over them). */
+const RADBRO_PARAM = DEV ? RADBROS.find(r => r.id === params.get("radbro"))?.id : undefined;
+if (RADBRO_PARAM) useUi.setState({ radbro: RADBRO_PARAM });
 /** ?ending: play the ending cutscene even with ?skip / ?bot (it plays anyway with ?bot=demo);
  *  ?cutscene: play cutscene 1 even with ?bot (the headless run: cutscene, fight, ending, results). */
 const ENDING = params.has("ending");
@@ -61,11 +70,16 @@ const ROOM = params.get("room") ?? "room1";
 const EXTRA = DEV ? params.get("extra") ?? "" : "";
 /** Dev: ?still hides the "click to fight" veil (camera-marker screenshots without the bot). */
 const STILL = DEV && params.has("still");
-/** Dev: ?loadout=shotgun,smgs owns those weapons from the start (the last one in hand). */
-const LOADOUT = (DEV ? params.get("loadout") ?? "" : "").split(",").filter((w): w is WeaponId => w === "shotgun" || w === "smgs");
+/** Dev: ?loadout=shotgun,sniper owns those weapons from the start (the last one in hand; any weapon id);
+ *  ?grenades=N starts with N frags. */
+const LOADOUT = HOLDCHECK && HOLDCHECK !== "pistols" ? [HOLDCHECK] : (DEV ? params.get("loadout") ?? "" : "").split(",").filter((w): w is WeaponId => w in WEAPONS && w !== "pistols" && w !== "ak");
+const GRENADES = DEV ? Number(params.get("grenades") ?? 0) || 0 : 0;
 /** Dev: ?botgun=shotgun|smgs keeps the bot on that weapon while it has rounds (the gun view checks). */
 const BOT_GUN = DEV ? (params.get("botgun") as WeaponId | null) : null;
 const newBot = () => { const b = new Bot(3.5, 0.3, BOT_DEMO); b.only = BOT_GUN; return b; };
+/** The page's driver: the bot, the hold check's script, or the player. */
+const driver = (s: Session) => (HOLDCHECK ? new HoldScript() : BOT && TOUR ? new TourDriver(newBot(), s) : BOT ? newBot() : null);
+const AUTO = BOT || !!HOLDCHECK;
 const SEED = params.has("seed") ? Number(params.get("seed")) >>> 0 : (Math.random() * 2 ** 31) >>> 0;
 /** The longest a room's start waits for its models (then it goes on: a model still missing is a stand-in girl). */
 const HOLD_CAP_MS = 20_000;
@@ -91,6 +105,8 @@ async function until(ok: () => boolean, capMs: number, onTick?: () => void): Pro
  *  for it (under a cutscene nothing shows); `last` is where it is. */
 type Prep = { promise: Promise<void>; done: boolean; last: { progress: number; what: string }; show: ((progress: number, what: string) => void) | null };
 const preps = new WeakMap<Session, Prep>();
+/** Next-room sessions that got the guns he carried out of the last room (once each). */
+const carried = new WeakSet<Session>();
 /** The first room holds its render until its shaders are compiled (taken when the page mounts, released
  *  by the title's warm-up). */
 let bootHold = false;
@@ -153,6 +169,10 @@ async function loadRoom(id: string, exact = false, current = true): Promise<Sess
   for (const m of Object.values((prefab as { materials?: Record<string, { texture?: unknown }> }).materials ?? {})) if (typeof m.texture === "string") m.texture = assetUrl(m.texture);
   const level = readLevel(prefab as Parameters<typeof readLevel>[0]);
   for (const w of level.warnings) console.info(`[level] ${w}`);
+  if (HOLDCHECK) {
+    // the hold check: an empty street (no gang, no crowd)
+    level.markers = level.markers.filter(m => m.kind !== "enemy" && m.kind !== "crowd");
+  }
   if (EXTRA.includes("heavy")) {
     const m = { hx: 0, hy: 0, hz: 0 };
     level.markers.push({ kind: "enemy", id: "dev-heavy", x: 12, y: 0, z: -12.6, yaw: 0, ...m, data: { kind: "heavy", model: EXTRA.includes("723") ? "rival723" : "rival652" } });
@@ -161,7 +181,7 @@ async function loadRoom(id: string, exact = false, current = true): Promise<Sess
   // the gang: mostly girls already in the browser's cache, a couple of new faces (vrm/pockit.ts)
   const pockit = pickPockits(goonSlots(level), (SEED ^ hashId(got)) >>> 0, await cachedPockits(), usedPockits);
   for (const n of Object.values(pockit)) usedPockits.add(n);
-  const s = new Session(level, prefab, got, { seed: SEED, difficulty: useUi.getState().difficulty, base: baseWeaponOf(useUi.getState().radbro), pockit, ...(LOADOUT.length ? { loadout: LOADOUT } : {}) });
+  const s = new Session(level, prefab, got, { seed: SEED, difficulty: useUi.getState().difficulty, base: baseWeaponOf(useUi.getState().radbro), katana: useUi.getState().radbro === "4764", pockit, ...(LOADOUT.length ? { loadout: LOADOUT } : {}), ...(GRENADES ? { grenades: GRENADES } : {}), ...(HOLDCHECK ? { ai: false } : {}) });
   // their downloads start now, not when the Radbro files are in; room 1's music waits for them
   const gang = prefetchGoons(s);
   if (current && got === "room1") setMusicGate(gang);
@@ -220,7 +240,7 @@ export default function PlayPage() {
   const padFightRef = useRef(false);
   const setPadFight = (on: boolean) => { padFightRef.current = on; setPadFightState(on); };
   /** The "click to fight" prompt is up: playing, no pointer lock, not on the pad. */
-  const awaitingFight = () => useUi.getState().screen === "play" && !useUi.getState().locked && !padFightRef.current && !BOT;
+  const awaitingFight = () => useUi.getState().screen === "play" && !useUi.getState().locked && !padFightRef.current && !AUTO;
 
   // boot: the room
   useEffect(() => {
@@ -297,7 +317,7 @@ export default function PlayPage() {
     if (!session) return;
     return attachDom(session.input, () => canvasEl(), l => {
       useUi.setState({ locked: l });
-      if (useUi.getState().screen !== "play" || BOT) return;
+      if (useUi.getState().screen !== "play" || AUTO) return;
       if (l) { setPadFight(false); session.input.flush(); session.paused = false; }
       else pause();
     });
@@ -323,7 +343,7 @@ export default function PlayPage() {
     };
   });
 
-  const lock = () => { if (!BOT) void (canvasEl()?.requestPointerLock() as unknown as Promise<void> | undefined)?.catch?.(() => undefined); };
+  const lock = () => { if (!AUTO) void (canvasEl()?.requestPointerLock() as unknown as Promise<void> | undefined)?.catch?.(() => undefined); };
 
   /** Gamepad A / Start on the prompt: play without the pointer lock. Runs inside the session's
    *  frame, after the pad poll and before the steps, so the flush drops the press. */
@@ -344,7 +364,7 @@ export default function PlayPage() {
     session.input.flush();
     session.stepper.reset();
     // the sim runs once the pointer is locked (the lock handler unpauses); the bot needs no lock
-    session.paused = !BOT && !document.pointerLockElement;
+    session.paused = !AUTO && !document.pointerLockElement;
     lock();
   }, [session]);
 
@@ -414,7 +434,7 @@ export default function PlayPage() {
   function mount(ns: Session): void {
     if (mounted.current === ns) return;
     mounted.current = ns;
-    ns.bot = BOT ? newBot() : null;
+    ns.bot = driver(ns);
     ns.paused = true;
     (window as unknown as { __session?: Session }).__session = ns;
     setSession(ns);
@@ -436,8 +456,14 @@ export default function PlayPage() {
     // start waits for the rest: holdRoom)
     useUi.setState({ screen: "loading", load: { progress: 0, label: "", error: null } });
     await groupReady("cs1", 4000);
-    session.restart({ difficulty: useUi.getState().difficulty, base: baseWeaponOf(useUi.getState().radbro) });
-    session.bot = BOT ? newBot() : null;
+    session.restart({ difficulty: useUi.getState().difficulty, base: baseWeaponOf(useUi.getState().radbro), katana: useUi.getState().radbro === "4764" });
+    session.bot = driver(session);
+    if (HOLDCHECK) {
+      const hp = session.game.player;
+      holdDev.session = session;
+      holdDev.baseYaw = hp.yaw;
+      holdDev.homeAt = { x: hp.x, y: hp.y, z: hp.z };
+    }
     session.paused = true;
     if (!seenCutscene.current && (!SKIP || CUTSCENE)) {
       seenCutscene.current = true;
@@ -495,7 +521,7 @@ export default function PlayPage() {
       setHeartbeat(false);
       setFootsteps(0);
       const g = session.game;
-      const results = { cleared: phase === "done", stats: { ...g.stats }, room: session.roomId, difficulty: g.difficulty, radbro: useUi.getState().radbro };
+      const results = { cleared: phase === "done", stats: { ...g.stats }, room: session.roomId, difficulty: g.difficulty, radbro: useUi.getState().radbro, pins: useUi.getState().hud.pins };
       // room 3 holds the last frame while the elevator opens (room.exitHold seconds)
       const hold = phase === "done" && typeof session.level.room.exitHold === "number" ? session.level.room.exitHold * 1000 : 0;
       const show = () => { if (hold) setTimeout(() => useUi.setState({ screen: "results", results }), hold); else useUi.setState({ screen: "results", results }); };
@@ -503,10 +529,15 @@ export default function PlayPage() {
       // the next room (when its level exists), else the results: "to be continued"
       const room = session.level.room;
       const next = typeof room.next === "string" ? room.next : "";
+      // he keeps what he picked up: the guns, their rounds, the frags (a retry of the room too); handed
+      // over once, before the next room mounts (under the panels, or at the swap)
+      const carry = g.carryOut();
+      const handOver = (ns: Session) => { if (!carried.has(ns)) { carried.add(ns); ns.restart({ carry }); } };
       const goOn = () => {
         if (!next) { show(); return; }
         void prepareNext(session).then(ns => {
           nextRoom.current = null;
+          if (ns) handOver(ns);
           if (ns) void enterRoom(ns);
           else { console.info(`[radpayne] ${next} is not built yet`); show(); }
         });
@@ -523,7 +554,7 @@ export default function PlayPage() {
           if (typeof c.music === "string") void loadSamples().then(() => setMusic("calm", c.music));
           // and the next room itself: its scene mounts behind the panels and gets ready there (the gang,
           // its shaders, its sounds, its first frames), so it starts when they end, not behind a card
-          if (next) void prepareNext(session).then(ns => { if (ns && useUi.getState().screen === "cutscene") { mount(ns); void readyRoom(ns); } });
+          if (next) void prepareNext(session).then(ns => { if (ns && useUi.getState().screen === "cutscene") { handOver(ns); mount(ns); void readyRoom(ns); } });
         });
         return;
       }
@@ -548,7 +579,7 @@ export default function PlayPage() {
     if (!session) return;
     // from the room's last checkpoint when it has one (room 3: after the security office)
     session.restart({ difficulty: useUi.getState().difficulty, resume: session.game.saved ?? undefined });
-    session.bot = BOT ? newBot() : null;
+    session.bot = driver(session);
     void startPlay();
   };
   const toTitle = () => {
@@ -575,7 +606,7 @@ export default function PlayPage() {
       {screen === "loading" && <Loading />}
       {screen === "cutscene" && cut && <Cutscene key={cut.data.id} data={cut.data} onDone={() => { const then = cut.then; setCut(null); then(); }} />}
       {screen === "play" && <Hud />}
-      {screen === "play" && !locked && !padFight && !BOT && !STILL && <FightPrompt onLock={() => { session?.input.flush(); lock(); }} />}
+      {screen === "play" && !locked && !padFight && !AUTO && !STILL && <FightPrompt onLock={() => { session?.input.flush(); lock(); }} />}
       {screen === "paused" && <Pause onResume={() => { useUi.setState({ screen: "play" }); if (session) { session.input.flush(); session.paused = !BOT && !document.pointerLockElement && !padFightRef.current; } lock(); }} onRestart={retry} onQuit={toTitle} />}
       {screen === "results" && <ResultsScreen onRetry={retry} onTitle={toTitle} />}
       {!session && <div style={{ ...layer, background: "#05060c" }}>{useUi.getState().load.error ?? "loading…"}</div>}

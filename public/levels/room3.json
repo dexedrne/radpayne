@@ -140,10 +140,7 @@
    "color": "#ffffff",
    "texture": "/textures/backrooms/steel_panel.webp",
    "repeat": true,
-   "repeatCount": [
-    1,
-    1
-   ],
+   "repeatCount": [1, 1],
    "roughness": 0.45,
    "metalness": 0.6
   },
@@ -232,9 +229,6 @@
        "enterDelay": 1,
        "clearLine": "r3_clear",
        "tutorial": false,
-       "drops": {
-        "rusher": "smgs_ammo"
-       },
        "prompt": "the service elevator. the key.",
        "exitHold": 2.6
       }
@@ -1128,7 +1122,11 @@
         "type": "Data",
         "properties": {
          "data": {
-          "surface": "concrete"
+          "surface": "concrete",
+          "secretDoor": "janitor",
+          "open": "slide",
+          "slide": [0, 1.7],
+          "mesh": "alc-w-door"
          }
         }
        }
@@ -1764,8 +1762,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [17.1, 1, -17.9],
-         "scale": [0.2, 2, 8.2]
+         "position": [17.1, 1, -21.2],
+         "scale": [0.2, 2, 1.6]
         }
        },
        "geometry": {
@@ -3849,7 +3847,10 @@
         "type": "Data",
         "properties": {
          "data": {
-          "surface": "wood"
+          "surface": "wood",
+          "secretDoor": "bookshelf",
+          "open": "slide",
+          "slide": [0, -1.2]
          }
         }
        }
@@ -4717,6 +4718,529 @@
         "properties": {
          "castShadow": false,
          "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-b-wall-e-ply",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [17.1, 1, -19.6],
+         "scale": [0.2, 2, 1.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "pallet"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "breakable": 80,
+          "surface": "wood",
+          "secret": "ars-secret-wall"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-b-wall-e-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [17.1, 1, -16.3],
+         "scale": [0.2, 2, 5]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "block"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "concrete"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-den-floor",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [20.4, -0.25, -19.65],
+         "scale": [1, 0.5, 4.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "floorConcrete"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-den-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [19.05, 1.5, -22.1],
+         "scale": [3.7, 3, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "block"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-den-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [20.75, 1.5, -19.65],
+         "scale": [0.3, 3, 4.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "block"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-den-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [19.05, 1.5, -17.3],
+         "scale": [3.7, 3, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "block"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-den-ceil",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [19.05, 3.1, -19.7],
+         "scale": [3.7, 0.2, 5]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "ceiling"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-den-desk",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [19.3, 0.39, -21.4],
+         "scale": [1.4, 0.78, 0.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "desk"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-jan-floor",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.45, -0.25, -6],
+         "scale": [3.1, 0.5, 2.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "floorConcrete"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-jan-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8.85, 1.5, -6],
+         "scale": [0.3, 3, 2.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "block"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-jan-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.1, 1.5, -7.1],
+         "scale": [3.8, 3, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "block"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-jan-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.1, 1.5, -4.9],
+         "scale": [3.8, 3, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "block"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-jan-ceil",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.1, 3.1, -6],
+         "scale": [3.8, 0.2, 2.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "ceiling"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-jan-shelf",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.6, 0.9, -6.8],
+         "scale": [1.4, 1.8, 0.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "shelf"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-shelf-slid",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.78, 1.1, 0.795],
+         "scale": [0.44, 2.2, 1.19]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "wood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false,
+         "visible": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
         }
        }
       }
@@ -13642,6 +14166,393 @@
         }
        }
       }
+     },
+     {
+      "id": "ars-ply-splinter-0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.97, 0.915, -19.5],
+         "rotation": [0.4, 0, 0],
+         "scale": [0.06, 0.03, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "pallet"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-ply-splinter-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.965, 1.31, -19.025],
+         "rotation": [-0.3, 0, 0],
+         "scale": [0.07, 0.02, 0.15]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "pallet"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-ply-seam",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.99, 1, -18.815],
+         "scale": [0.02, 1.9, 0.03]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "lampWarm"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-den-lamp",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [19.55, 0.99, -21.45],
+         "scale": [0.1, 0.42, 0.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "lampWarm"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-jan-underlight",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-5, 0.017, -6],
+         "scale": [0.1, 0.025, 0.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "lampWarm"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-jan-bucket",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-5.775, 0.175, -6.575],
+         "scale": [0.35, 0.35, 0.35]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "bucket"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-jan-radio",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.6, 1.89, -6.825],
+         "scale": [0.4, 0.18, 0.25]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "chair"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-jan-lamp",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7, 2.95, -6],
+         "scale": [0.4, 0.1, 0.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "lampWarm"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-safe",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.965, 1.15, 4],
+         "scale": [0.07, 0.7, 0.7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "metalDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-safe-door",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.775, 1.15, 4.32],
+         "rotation": [0, -1.1, 0],
+         "scale": [0.35, 0.6, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "chrome"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-scrape-0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.4, 0.004, 4],
+         "scale": [0.2, 0.005, 1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "rug"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-scrape-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.775, 0.004, 0.8],
+         "scale": [0.35, 0.005, 1.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "rug"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
      }
     ]
    },
@@ -13864,7 +14775,8 @@
           "marker": "enemy",
           "kind": "heavy",
           "model": "rival723",
-          "hold": true
+          "hold": true,
+          "weapon": "handcannon"
          }
         }
        }
@@ -15557,6 +16469,310 @@
          "data": {
           "marker": "camera",
           "at": [3.4, 1.2, -10]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-sec-grenades",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [15.9, 0.78, -2.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "grenade",
+          "amount": 2
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-den-light",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [18.9, 2.4, -19.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ffc98a",
+          "intensity": 1.6,
+          "distance": 5
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-secret-wall",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [19, 0.5, -20],
+         "scale": [0.4, 1, 0.4]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "secret",
+          "name": "the false wall",
+          "via": "break"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-photo-wall",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [20.55, 1.55, -19.6],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "egg",
+          "egg": "photowall"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-pin-3171",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [19.2, 0.78, -21.4]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "pin",
+          "pin": "3171",
+          "behind": "ars-b-wall-e-ply"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-den-grenades",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [18, 0, -18.1]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "grenade",
+          "amount": 2,
+          "behind": "ars-b-wall-e-ply"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-den-copium",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [19.9, 0, -18]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium",
+          "amount": 1,
+          "behind": "ars-b-wall-e-ply"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-jan-light",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7, 2.5, -6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ffc98a",
+          "intensity": 1.2,
+          "distance": 4.5
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-secret-janitor",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.025, 1.5, -6],
+         "scale": [3.35, 3, 2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "secret",
+          "name": "the janitor's closet"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-pin-250",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8, 0, -5.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "pin",
+          "pin": "250",
+          "behind": "alc-w-back"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-jan-copium",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.2, 0, -5.4]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium",
+          "amount": 2,
+          "behind": "alc-w-back"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-secret-shelf",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.725, 1.5, 4.025],
+         "scale": [0.55, 3, 1.15]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "secret",
+          "name": "the bookshelf"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-safe-rounds",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.8, 0, 3.8]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "handcannon_ammo",
+          "amount": 14,
+          "behind": "shelf-e3"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-safe-copium",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.8, 0, 4.35]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium",
+          "amount": 1,
+          "behind": "shelf-e3"
          }
         }
        }

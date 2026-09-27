@@ -46,7 +46,7 @@ const HINTS: Record<string, string> = {
   r2_scatter: "red crosshair = armed",
   r3_heavy: "stay out of shotgun range",
   r3_breach: "SHIFT: dive through the door",
-  r3_shotgun: "1-3 / WHEEL: switch weapon",
+  r3_shotgun: "1-5 / WHEEL: switch weapon",
   r3_smgs: "3: dual SMGs",
 };
 /** The DJ's PA lines (subtitled). */

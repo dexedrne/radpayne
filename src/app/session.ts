@@ -6,7 +6,9 @@ import { FixedStepper } from "../sim/stepper.ts";
 import { InputLatch } from "../input/input.ts";
 import type { GameEvent, InputFrame } from "../sim/types.ts";
 import type { LevelData } from "../world/level.ts";
-import { Bot } from "../sim/bot.ts";
+
+/** Something that plays in place of the input: the test bot, or the dev hold check's script. */
+export type Driver = { next(g: Game): InputFrame };
 
 export type Listener = (e: GameEvent, s: Session) => void;
 
@@ -28,7 +30,7 @@ export class Session {
   paused = true;
   /** A new id on every restart and for every new room's session (views reset their per-run state). */
   run = ++runIds;
-  bot: Bot | null = null;
+  bot: Driver | null = null;
   record: InputFrame[] | null = null;
   private readonly listeners = new Set<Listener>();
   // interpolation
@@ -86,6 +88,8 @@ export class Session {
 
   /** One rendered frame: poll input, run the fixed steps, dispatch events, interpolate. */
   frame(delta: number): void {
+    // the sniper in hand: right mouse / LT hold the scope
+    this.input.zoomMode = this.game.player.weapon.id === "sniper";
     this.input.poll(Math.min(delta, 0.1));
     if (this.input.padStart) this.onPadStart?.();
     if (this.input.padA) this.onPadA?.();

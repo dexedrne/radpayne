@@ -19,8 +19,13 @@ export class InputLatch {
   lmb = false;
   /** Aim-assist slowdown multiplier the game sets while the crosshair is on a target (gamepad only). */
   assist = 1;
-  private edges = { bt: false, dodge: false, jump: false, reload: false, copium: false, skip: false, slot: 0 };
-  private pad = { lx: 0, ly: 0, fire: false, active: false, start: false, a: false, prev: [] as boolean[] };
+  /** The sniper is in hand (the game sets it): right mouse / LT hold the scope instead of bullet time. */
+  zoomMode = false;
+  /** Look sensitivity x this (the camera sets the FOV ratio while scoped). */
+  fovK = 1;
+  rmb = false;
+  private edges = { bt: false, dodge: false, jump: false, reload: false, copium: false, skip: false, slot: 0, melee: false, throw: false, interact: false };
+  private pad = { lx: 0, ly: 0, fire: false, active: false, start: false, a: false, lt: false, prev: [] as boolean[] };
   readonly frame: InputFrame = emptyInput();
   /** Any key / button this frame (skips cutscenes and the kill cam). */
   anyPress = false;
@@ -39,6 +44,11 @@ export class InputLatch {
       case "Digit1": this.edges.slot = 1; break;
       case "Digit2": this.edges.slot = 2; break;
       case "Digit3": this.edges.slot = 3; break;
+      case "Digit4": this.edges.slot = 4; break;
+      case "Digit5": this.edges.slot = 5; break;
+      case "KeyF": this.edges.melee = true; break;
+      case "KeyG": this.edges.throw = true; break;
+      case "KeyE": this.edges.interact = true; break;
     }
   }
   release(code: string): void {
@@ -48,13 +58,14 @@ export class InputLatch {
     this.anyPress = true;
     this.edges.skip = true;
     if (button === 0) this.lmb = true;
-    if (button === 2) this.edges.bt = true;
+    if (button === 2) { this.rmb = true; if (!this.zoomMode) this.edges.bt = true; }
   }
   mouseUp(button: number): void {
     if (button === 0) this.lmb = false;
+    if (button === 2) this.rmb = false;
   }
   look(dx: number, dy: number): void {
-    const k = MOUSE_K * this.sensitivity;
+    const k = MOUSE_K * this.sensitivity * this.fovK;
     this.yaw -= dx * k;
     this.pitch -= dy * k * (this.invertY ? -1 : 1);
     this.clampPitch();
@@ -65,6 +76,7 @@ export class InputLatch {
   clear(): void {
     this.keys.clear();
     this.lmb = false;
+    this.rmb = false;
   }
   private clampPitch(): void {
     this.pitch = this.pitch < PITCH_MIN ? PITCH_MIN : this.pitch > PITCH_MAX ? PITCH_MAX : this.pitch;
@@ -75,7 +87,7 @@ export class InputLatch {
     const pads = typeof navigator !== "undefined" && navigator.getGamepads ? navigator.getGamepads() : [];
     const gp = Array.from(pads ?? []).find(p => p && p.connected) ?? null;
     const pd = this.pad;
-    if (!gp) { pd.active = false; pd.lx = pd.ly = 0; pd.fire = false; pd.start = false; pd.a = false; return; }
+    if (!gp) { pd.active = false; pd.lx = pd.ly = 0; pd.fire = false; pd.start = false; pd.a = false; pd.lt = false; return; }
     const dz = (v: number) => (Math.abs(v) < 0.18 ? 0 : (v - Math.sign(v) * 0.18) / 0.82);
     pd.lx = dz(gp.axes[0] ?? 0);
     pd.ly = dz(gp.axes[1] ?? 0);
@@ -84,18 +96,26 @@ export class InputLatch {
     const hit = (i: number) => !!now[i] && !pd.prev[i];
     if (Math.abs(rx) + Math.abs(ry) + Math.abs(pd.lx) + Math.abs(pd.ly) > 0 || now.some(Boolean)) pd.active = true;
     // twin stick: right stick aims (cubic curve for fine aim), with the aim-assist slowdown
-    const k = this.sensitivity * this.assist * dt;
+    const k = this.sensitivity * this.assist * this.fovK * dt;
     this.yaw -= (rx * rx * rx + rx * 0.25) * PAD_YAW * k;
     this.pitch -= (ry * ry * ry + ry * 0.25) * PAD_PITCH * k * (this.invertY ? -1 : 1);
     this.clampPitch();
-    // standard mapping: A 0, B 1, X 2, Y 3, LB 4, RB 5, LT 6, RT 7, start 9, L3 10
-    pd.fire = !!now[7] || !!now[5];
-    if (hit(6)) this.edges.bt = true;
+    // standard mapping: A 0, B 1, X 2, Y 3, LB 4, RB 5, LT 6, RT 7, start 9, L3 10, R3 11, d-pad 12-15
+    // (up, down, left, right). RT fires; RB throws a grenade; R3 is melee; d-pad down is use; LT is
+    // bullet time, or the scope held with the sniper in hand (then d-pad up is bullet time)
+    pd.fire = !!now[7];
+    pd.lt = !!now[6];
+    if (hit(6) && !this.zoomMode) this.edges.bt = true;
+    if (hit(12) && this.zoomMode) this.edges.bt = true;
     if (hit(1) || hit(10)) this.edges.dodge = true;
     if (hit(0)) this.edges.jump = true;
     if (hit(2)) this.edges.reload = true;
     if (hit(3)) this.edges.copium = true;
-    if (hit(4)) this.edges.slot = 9;
+    if (hit(4) || hit(15)) this.edges.slot = 9;
+    if (hit(14)) this.edges.slot = 8;
+    if (hit(5)) this.edges.throw = true;
+    if (hit(11)) this.edges.melee = true;
+    if (hit(13)) this.edges.interact = true;
     pd.start = hit(9);
     pd.a = hit(0);
     if ([0, 1, 2, 3, 7, 9].some(hit)) { this.anyPress = true; this.edges.skip = true; }
@@ -127,9 +147,11 @@ export class InputLatch {
     f.yaw = this.yaw;
     f.pitch = this.pitch;
     f.fire = this.lmb || this.pad.fire;
+    f.zoom = this.zoomMode && (this.rmb || this.pad.lt);
     const e = this.edges;
     f.bt = e.bt; f.dodge = e.dodge; f.jump = e.jump; f.reload = e.reload; f.copium = e.copium; f.skip = e.skip; f.slot = e.slot;
-    e.bt = e.dodge = e.jump = e.reload = e.copium = e.skip = false;
+    f.melee = e.melee; f.throw = e.throw; f.interact = e.interact;
+    e.bt = e.dodge = e.jump = e.reload = e.copium = e.skip = e.melee = e.throw = e.interact = false;
     e.slot = 0;
     return f;
   }
@@ -137,7 +159,7 @@ export class InputLatch {
   /** Drop pending edges (e.g. the click that locked the pointer must not fire). */
   flush(): void {
     const e = this.edges;
-    e.bt = e.dodge = e.jump = e.reload = e.copium = e.skip = false;
+    e.bt = e.dodge = e.jump = e.reload = e.copium = e.skip = e.melee = e.throw = e.interact = false;
     e.slot = 0;
     this.anyPress = false;
   }

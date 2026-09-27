@@ -1085,8 +1085,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-24, 7.5, 41],
-         "scale": [8, 15, 58]
+         "position": [-24.65, 7.5, 41],
+         "scale": [6.7, 15, 58]
         }
        },
        "geometry": {
@@ -1117,8 +1117,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-24, 15.2, 11.85],
-         "scale": [8.1, 0.55, 0.7]
+         "position": [-24.65, 15.2, 11.85],
+         "scale": [6.8, 0.55, 0.7]
         }
        },
        "geometry": {
@@ -1149,8 +1149,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-16.5, 6.9, 41],
-         "scale": [7, 13.8, 58]
+         "position": [-15.85, 6.9, 41],
+         "scale": [5.7, 13.8, 58]
         }
        },
        "geometry": {
@@ -1181,8 +1181,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-16.5, 14, 11.85],
-         "scale": [7.1, 0.55, 0.7]
+         "position": [-15.85, 14, 11.85],
+         "scale": [5.8, 0.55, 0.7]
         }
        },
        "geometry": {
@@ -2500,6 +2500,592 @@
         "properties": {
          "data": {
           "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-floor",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20, 0.075, 19],
+         "scale": [2.6, 0.15, 14]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "sidewalk"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-fence",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20, 1.675, 18.5],
+         "scale": [2.6, 3.05, 0.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "invisible"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false,
+         "visible": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "shootThrough": true,
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-back",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20, 6, 26.25],
+         "scale": [2.6, 12, 0.5]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brickDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-crate",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.4, 0.35, 16.8],
+         "scale": [0.8, 0.4, 0.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "wood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-bin",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20.6, 0.6, 16.925],
+         "scale": [0.7, 0.9, 0.65]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "dumpster"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-fe-step-0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [1.35, 0.308, -11.45],
+         "scale": [0.3, 0.315, 1.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "wood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-fe-step-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [1.05, 0.465, -11.45],
+         "scale": [0.3, 0.63, 1.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "wood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-fe-step-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0.75, 0.622, -11.45],
+         "scale": [0.3, 0.945, 1.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "dumpster"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-fe-step-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0.45, 0.78, -11.45],
+         "scale": [0.3, 1.26, 1.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "wood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-fe-step-4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0.15, 0.937, -11.45],
+         "scale": [0.3, 1.575, 1.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "wood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-fe-step-5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.15, 1.095, -11.45],
+         "scale": [0.3, 1.89, 1.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "dumpster"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-fe-step-6",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.45, 1.253, -11.45],
+         "scale": [0.3, 2.205, 1.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "wood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-fe-step-7",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.75, 1.41, -11.45],
+         "scale": [0.3, 2.52, 1.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "wood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-fe-step-8",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.05, 1.568, -11.45],
+         "scale": [0.3, 2.835, 1.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "dumpster"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-fe-step-9",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.35, 1.725, -11.45],
+         "scale": [0.3, 3.15, 1.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "wood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
          }
         }
        }
@@ -14332,8 +14918,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-16.5, 1.75, 11.94],
-         "scale": [6, 3.2, 0.1]
+         "position": [-16.05, 1.75, 11.94],
+         "scale": [5.1, 3.2, 0.1]
         }
        },
        "geometry": {
@@ -14364,8 +14950,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-16.5, 3.35, 11.91],
-         "scale": [6.6, 0.75, 0.16]
+         "position": [-15.925, 3.35, 11.91],
+         "scale": [5.45, 0.75, 0.16]
         }
        },
        "geometry": {
@@ -47790,6 +48376,680 @@
         }
        }
       }
+     },
+     {
+      "id": "ars-alley-post-0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-21.28, 1.675, 18.5],
+         "scale": [0.04, 3.05, 0.06]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "fireEscape"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-post-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20.85, 1.675, 18.5],
+         "scale": [0.04, 3.05, 0.06]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "fireEscape"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-post-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20.42, 1.675, 18.5],
+         "scale": [0.04, 3.05, 0.06]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "fireEscape"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-post-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.99, 1.675, 18.5],
+         "scale": [0.04, 3.05, 0.06]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "fireEscape"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-post-4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.56, 1.675, 18.5],
+         "scale": [0.04, 3.05, 0.06]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "fireEscape"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-post-5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.13, 1.675, 18.5],
+         "scale": [0.04, 3.05, 0.06]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "fireEscape"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-post-6",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-18.7, 1.675, 18.5],
+         "scale": [0.04, 3.05, 0.06]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "fireEscape"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-wire-0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20, 0.36, 18.5],
+         "scale": [2.6, 0.02, 0.02]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "fireEscape"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-wire-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20, 0.74, 18.5],
+         "scale": [2.6, 0.02, 0.02]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "fireEscape"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-wire-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20, 1.12, 18.5],
+         "scale": [2.6, 0.02, 0.02]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "fireEscape"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-wire-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20, 1.5, 18.5],
+         "scale": [2.6, 0.02, 0.02]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "fireEscape"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-wire-4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20, 1.88, 18.5],
+         "scale": [2.6, 0.02, 0.02]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "fireEscape"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-wire-5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20, 2.26, 18.5],
+         "scale": [2.6, 0.02, 0.02]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "fireEscape"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-wire-6",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20, 2.64, 18.5],
+         "scale": [2.6, 0.02, 0.02]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "fireEscape"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-wire-7",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20, 3.02, 18.5],
+         "scale": [2.6, 0.02, 0.02]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "fireEscape"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-gate",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20.65, 1.2, 12.07],
+         "rotation": [0, -0.6, 0],
+         "scale": [1.3, 2, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "fireEscape"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-drain",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20, 0.156, 14.8],
+         "scale": [0.6, 0.009, 0.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "metalDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-door",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-21.3, 1.25, 14.9],
+         "scale": [0.04, 2.2, 1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "door"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-door-lamp",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-21.245, 2.56, 14.9],
+         "scale": [0.09, 0.12, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "bulbs"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-kiosk-hatch",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-18.1, 1.25, -9.22],
+         "rotation": [0.9, 0, 0],
+         "scale": [1.4, 1.3, 0.06]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "kiosk"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-kiosk-glow",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-18.1, 1.3, -9.11],
+         "scale": [1, 0.8, 0.02]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "shopGlow"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
      }
     ]
    },
@@ -47957,7 +49217,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "perch": true
+          "perch": true,
+          "weapon": "sniper"
          }
         }
        }
@@ -49084,6 +50345,362 @@
          "data": {
           "marker": "camera",
           "at": [60, 6, -1.5]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-shotgun-barrier",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4.9, 0, 1.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "shotgun"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-light",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.9, 2.6, 14.9]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ffb56b",
+          "intensity": 3,
+          "distance": 7
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-secret-alley",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20, 1.5, 16.25],
+         "scale": [2.6, 3, 4.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "secret",
+          "name": "the alley"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-george",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.4, 0.55, 16.8],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "egg",
+          "egg": "george",
+          "interact": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-pin-723",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20.6, 0.15, 17.8]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "pin",
+          "pin": "723"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-alley-copium",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.9, 0.15, 13.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium",
+          "amount": 2
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-kiosk-light",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-18, 1.4, -9.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ffc07a",
+          "intensity": 2.2,
+          "distance": 4
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-secret-kiosk",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-18, 1.5, -10.65],
+         "scale": [3.2, 3, 2.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "secret",
+          "name": "behind the kiosk"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-kiosk-grenades",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-18.4, 0.15, -10.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "grenade",
+          "amount": 2
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-kiosk-copium",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17.3, 0.15, -10.9]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium",
+          "amount": 1
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-secret-nest",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2.9, 4.3, -11.35],
+         "scale": [2.8, 2, 1.3]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "secret",
+          "name": "the fire escape"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-pin-652",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3.4, 3.3, -11.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "pin",
+          "pin": "652"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-nest-smgs",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2.7, 3.3, -11.25]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "smgs"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-nest-sniper-ammo",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4, 3.3, -11.3]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "sniper_ammo",
+          "amount": 10
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-nest-copium",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2, 3.3, -11.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium",
+          "amount": 2
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-poster-solscape",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [19, 1.7, -11.93]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "egg",
+          "egg": "poster-solscape"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ars-poster-radrun",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.4, 1.7, -11.93]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "egg",
+          "egg": "poster-radrun"
          }
         }
        }

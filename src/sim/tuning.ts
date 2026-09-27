@@ -205,3 +205,56 @@ export const KILLCAM = {
 export const PROJECTILE_SPEED = 60;
 /** Hitscan / projectile maximum range. */
 export const MAX_RANGE = 120;
+
+// ---- the arsenal (arsenal spec sections 3 and 4) ---------------------------------------------------
+
+/** Frag grenades: thrown from the left hand on a 35 deg loft that lands on the aim point (horizontal
+ *  distance clamped to 3-20 m), world time (bullet time slows them), bounces, a 1.6 s fuse. The blast
+ *  hurts everyone with a clear line from 0.25 m above it: damage x (1 - d / radius) ^ falloff. */
+export const GRENADE = {
+  carry: 3,
+  cooldown: 0.8,
+  loft: (35 * Math.PI) / 180,
+  minRange: 3,
+  maxRange: 20,
+  minSpeed: 6,
+  maxSpeed: 16,
+  gravity: 16,
+  restitution: 0.3,
+  tangential: 0.6,
+  restSpeed: 0.4,
+  fuse: 1.6,
+  radius: 5,
+  damage: 150,
+  falloff: 1.2,
+  /** His share of his own blast. */
+  self: 0.5,
+  /** Hostiles within this of a landed grenade run from it (after `react`, for `flee` world seconds). */
+  fleeRadius: 5,
+  react: 0.25,
+  flee: 1.0,
+} as const;
+
+/** Melee (F): #4764's katana or everyone else's strike. It resolves `windup` into the swing (his clock),
+ *  hitting at most `max` hostiles whose torso is within reach and inside the arc around the aim. */
+export const MELEE = {
+  windup: 0.1,
+  max: 3,
+  katana: { damage: 120, time: 0.45, reach: 2.0, arc: (55 * Math.PI) / 180, flinch: 0.35, knock: 0 },
+  strike: { damage: 45, time: 0.5, reach: 1.5, arc: (40 * Math.PI) / 180, flinch: 0.6, knock: 2.5 },
+  /** The shove lasts this long (world seconds). */
+  knockTime: 0.3,
+} as const;
+
+/** The sniper's scope: he moves this much slower while scoped. */
+export const ZOOM = { move: 0.45 } as const;
+
+/** The gang's other guns (marker data {weapon}): the sniper goon's cold laser tell then one round
+ *  (no far falloff up to `range`), the hand-cannon heavy's single slug after the heavy's red tell. */
+export const ENEMY_ARMS = {
+  sniper: { tell: 0.8, damage: 22, hit: 0.75, range: 50, interval: 2.6, sight: 50 },
+  handcannon: { damage: 34, interval: 1.2, shells: 7, reload: 1.6 },
+} as const;
+
+/** Secrets: the E reach (m) and the facing cone (cos of 60 deg) for secret doors and the eggs. */
+export const USE = { reach: 1.3, cos: 0.5 } as const;

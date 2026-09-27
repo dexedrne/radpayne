@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useAssetRuntime } from "react-three-game";
-import { Group, LoopOnce, Quaternion, Vector3, type AnimationAction } from "three";
+import { AdditiveBlending, BoxGeometry, Group, LoopOnce, Mesh, MeshBasicMaterial, Quaternion, Vector3, type AnimationAction } from "three";
 import type { Session } from "./session.ts";
 import type { Enemy } from "../sim/actors.ts";
 import { AnimPlayer } from "../anim/animPlayer.ts";
@@ -23,7 +23,7 @@ import type { LoadedGoon } from "../vrm/pockit.ts";
 import { RETARGET_SOURCE, clipsPath, modelPath } from "./characters.ts";
 import { frames, goonModel } from "./warmup.ts";
 import { warmObject } from "./look/compile.ts";
-import { aimGun, attachGun, makePistol, makeSmg, muzzleWorld } from "./guns.ts";
+import { aimGun, attachGun, makePistol, makeSmg, makeSniper, muzzleWorld } from "./guns.ts";
 import { FRAME } from "./frame.ts";
 import { useUi } from "../ui/store.ts";
 import { wrapAngle } from "../sim/aim.ts";
@@ -89,6 +89,8 @@ const DEATHS = ["Death_Back", "Death_Back_2", "Death_Fwd", "Death_Fwd_2", "Falli
 const LIMBS = ["hips", "leftUpperArm", "rightUpperArm", "leftUpperLeg", "rightUpperLeg"] as const;
 const ARMS = ["leftUpperArm", "rightUpperArm"] as const;
 const AX = new Vector3(1, 0, 0), AZ = new Vector3(0, 0, 1);
+/** The sniper goon's laser: a unit box from its origin along +Z (scaled to the line). */
+const LASER_GEO = new BoxGeometry(1, 1, 1).translate(0, 0, 0.5);
 
 function makeView(e: Enemy, idleClip: string): GoonView {
   const root = new Group();
@@ -96,7 +98,9 @@ function makeView(e: Enemy, idleClip: string): GoonView {
   const si = makeStandIn(GOON_LOOK);
   const standIn = si.root;
   root.add(standIn);
-  const gun = e.weapon === "smg" ? makeSmg() : makePistol();
+  // the sniper goon's rifle is carried in the right hand at the pistol grip, a little under true size
+  const gun = e.weapon === "smg" ? makeSmg() : e.weapon === "sniper" ? makeSniper() : makePistol();
+  if (e.weapon === "sniper") gun.userData.rpScale = 0.75;
   return { idx: e.idx, n: e.milady, root, standIn, si, gun, gunInHand: false, model: null, player: null, hit: null, clip: "", yaw: e.facing, legYaw: e.facing, back: false, flinch: 0, pain: 0, blinkT: -1, blinkAt: 1 + Math.random() * 3, deadShown: false, deathPlayed: false, deathTried: new Set(), deathFrames: 0, deathFallback: false, fallYaw: 0, loading: false, skip: e.kind === "heavy", rim: 1, idleClip, posed: false, warm: false, tposeFrames: 0 };
 }
 
@@ -111,6 +115,8 @@ export function EnemiesView({ s }: { s: Session }) {
   const group = useMemo(() => new Group(), []);
   const run = useRef(-1);
   const tmp = useMemo(() => ({ q: new Quaternion(), a: new Vector3(), b: new Vector3(), side: new Vector3(), hand: new Vector3(), fwd: new Vector3() }), []);
+  /** The sniper goons' lasers (made on first use). */
+  const lasers = useMemo(() => new Map<number, Mesh>(), [views]);
 
   useEffect(() => {
     for (const v of views) if (!v.skip) group.add(v.root, v.gun);
@@ -144,7 +150,7 @@ export function EnemiesView({ s }: { s: Session }) {
           const grip = m.vrm0
             ? { p: [-g.p[0], g.p[1], -g.p[2]] as [number, number, number], q: new Quaternion(0, 1, 0, 0).multiply(new Quaternion(...g.q)).toArray() as [number, number, number, number] }
             : g;
-          attachGun(v.gun, hand, grip, m.forearm / MILADY_GRIP.forearm, 1 / m.scale);
+          attachGun(v.gun, hand, grip, m.forearm / MILADY_GRIP.forearm, (v.gun.userData.rpScale as number | undefined ?? 1) / m.scale);
           v.gunInHand = true;
         }
         console.info(`[milady] goon ${v.idx}: #${v.n} ready (${m.clips.length} clips, scale ${m.scale.toFixed(2)}, blink ${m.blink ? "yes" : "no"}, talk ${m.talk ?? "no"})`);
@@ -295,7 +301,8 @@ export function EnemiesView({ s }: { s: Session }) {
   }, FRAME.animator);
 
   // -3: lean, aim arm, flinch, face, VRM update, gun
-  useFrame((_, rawDelta) => {
+  useFrame((state, rawDelta) => {
+    const cam = state.camera;
     const g = s.game;
     const dt = Math.min(rawDelta, 0.1);
     const wdt = dt * (s.paused ? 0 : g.timeScale);
@@ -385,9 +392,10 @@ export function EnemiesView({ s }: { s: Session }) {
         // stand-in: lean the whole body a little
         v.standIn.rotation.z = alive ? -e.lean * 0.3 : 0;
       }
-      // the gun: in her hand (swung onto the player while aiming), or floating at the stand-in's hand
+      // the gun: in her hand (swung onto the player while aiming), or floating at the stand-in's hand;
+      // once she is down it is the pickup lying by her (her hand is empty)
       const gun = v.gun;
-      gun.visible = true;
+      gun.visible = alive || !e.drop;
       if (v.gunInHand) {
         aimGun(gun, aiming ? tmp.a : null, 1, 0.6);
       } else {
@@ -399,6 +407,24 @@ export function EnemiesView({ s }: { s: Session }) {
         gun.updateMatrixWorld(true);
       }
       if (enemyMuzzles[v.idx]) muzzleWorld(gun, enemyMuzzles[v.idx]);
+      // the sniper's tell: a thin cold-white laser from her muzzle to him (the heavy's is red and short)
+      if (e.weapon === "sniper") {
+        let laser = lasers.get(v.idx);
+        if (!laser) { laser = new Mesh(LASER_GEO, new MeshBasicMaterial({ color: "#dff4ff", transparent: true, opacity: 0, blending: AdditiveBlending, depthWrite: false, toneMapped: false })); laser.frustumCulled = false; laser.renderOrder = 6; (laser.material as MeshBasicMaterial).userData.rpOwn = true; group.add(laser); lasers.set(v.idx, laser); }
+        laser.visible = alive && e.tell > 0;
+        if (laser.visible) {
+          const mz = muzzleWorld(gun, tmp.hand);
+          tmp.b.set(pr.x, pr.y + 1.1, pr.z).sub(mz);
+          const len0 = Math.min(60, tmp.b.length());
+          tmp.b.normalize();
+          const hit = g.world.raycast(mz.x, mz.y, mz.z, tmp.b.x, tmp.b.y, tmp.b.z, len0, true);
+          laser.position.copy(mz);
+          laser.quaternion.setFromUnitVectors(AZ, tmp.b);
+          const w = Math.max(0.006, mz.distanceTo(cam.position) * 0.0024);
+          laser.scale.set(w, w, hit ? hit.t : len0);
+          (laser.material as MeshBasicMaterial).opacity = 0.3 + 0.5 * (1 - e.tell / 0.8);
+        }
+      }
     }
   }, FRAME.bones);
 

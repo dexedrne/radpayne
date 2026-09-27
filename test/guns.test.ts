@@ -18,6 +18,7 @@ test("every gun sample ships, and the whole gun set stays under 600 KB", () => {
   for (const k of ["sfx/shotgun_pump", "sfx/smg_bolt"]) bytes += fs.statSync(path.join(SFX, `${k}.mp3`)).size;
   assert.ok(GUN_FILES.some(k => k.startsWith("sfx/ak_shot")), "the AK has its own shots");
   assert.ok(GUN_FILES.some(k => k.startsWith("sfx/enemy_")), "the gang has its own shots");
+  for (const g of ["handcannon", "sawedoff", "sniper"]) assert.ok(GUN_FILES.some(k => k.startsWith(`sfx/${g}_shot`)), `the ${g} plays through the pools`);
   assert.ok(bytes < 600 * 1024, `${Math.round(bytes / 1024)} KB`);
 });
 
@@ -50,6 +51,11 @@ test("the room picks the tail: the street outside, the club, the back rooms", ()
   setSpace("backrooms", true);
   assert.equal(tailKey("pistols"), "sfx/pistol_tail_backrooms");
   assert.equal(tailKey("smgs"), "sfx/smg_tail_room");
+  // the arsenal's guns ring in the room too (the rifle is the AK's voice)
+  assert.equal(tailKey("handcannon"), "sfx/pistol_tail_backrooms");
+  assert.equal(tailKey("sawedoff"), "sfx/shotgun_tail_backrooms");
+  assert.equal(tailKey("sniper"), "sfx/ak_tail_room");
+  assert.equal(tailKey("rifle"), tailKey("ak"));
   // a room without a look: indoor floors -> a room, otherwise the street
   setSpace(undefined, true);
   assert.equal(tailKey("shotgun"), "sfx/shotgun_tail_club");

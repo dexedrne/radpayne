@@ -8,14 +8,14 @@ import { alertGoon, onGoonDeath, setState } from "../ai/goon.ts";
 import { stepEnemy } from "../ai/enemies.ts";
 import { HB_HEAD, HB_MULT, HB_TORSO, aimPoint, makeCapsules } from "../combat/hitboxes.ts";
 import { HIT_ACTOR, HIT_NONE, HIT_WORLD, makeTraceHit, trace, type HitActor, type TraceHit } from "../combat/trace.ts";
-import { PICKUPS, SLOT_ORDER, SWAP_TIME, WEAPONS, makeWeapon, slotOf, startReload, stepWeapon, triggerWeapon, type BaseWeapon, type WeaponId } from "../combat/weapons.ts";
+import { PICKUPS, PIERCE_K, SLOT_ORDER, SWAP_TIME, WEAPONS, makeWeapon, slotOf, startReload, stepWeapon, triggerWeapon, type BaseWeapon, type WeaponId } from "../combat/weapons.ts";
 import type { LevelData, Marker } from "../world/level.ts";
-import { makeEnemy, makePlayer, type Enemy, type EnemyKind, type Player } from "./actors.ts";
+import { makeEnemy, makePlayer, type Enemy, type EnemyKind, type EnemyWeapon, type Player } from "./actors.ts";
 import { aimDir } from "./aim.ts";
 import { Crowd } from "./crowd.ts";
 import { Fnv1a, Rand, hash01 } from "./math.ts";
 import { PM_DIVE, PM_GETUP, PM_JUMP, PM_LAND, PM_PRONE, muzzleOf, pivotOf, stepPlayer } from "./player.ts";
-import { AI, BREACH, CHECKPOINT_MIN_HEALTH, DIFFICULTY, DODGE, DT, ENEMY, HEAVY, HEAVY_SCALE, KILLCAM, MAX_RANGE, METER, PLAYER, PROJECTILE_SPEED, RUSHER, TIME, type Difficulty } from "./tuning.ts";
+import { AI, BREACH, CHECKPOINT_MIN_HEALTH, DIFFICULTY, DODGE, DT, ENEMY, ENEMY_ARMS, GRENADE, HEAVY, HEAVY_SCALE, KILLCAM, MAX_RANGE, MELEE, METER, PLAYER, PROJECTILE_SPEED, RUSHER, TIME, USE, type Difficulty } from "./tuning.ts";
 import { PLAYER_ID, type GameEvent, type InputFrame, type V3 } from "./types.ts";
 import { World, circleRectOverlap, type Box } from "./world.ts";
 
@@ -43,7 +43,13 @@ export type Projectile = {
   sz: number;
   /** The shot event's weapon (the view draws pellets thinner). */
   weapon: string;
+  /** Bodies it may still go through (the hand cannon, the sniper), and the actors it already went through. */
+  pierce: number;
+  skip: number[];
 };
+
+/** A live frag: world-time flight, bounces, the fuse. `landed` once it first touched something. */
+export type Grenade = { id: number; x: number; y: number; z: number; vx: number; vy: number; vz: number; fuse: number; landed: boolean; resting: boolean; bounces: number };
 
 export type KillCam = {
   /** Real seconds since it started. */
@@ -55,14 +61,21 @@ export type KillCam = {
   to: V3;
   enemy: number;
   headshot: boolean;
+  /** A bullet to chase (false: a melee or blast kill, the orbit only). */
+  chase: boolean;
 };
 
 /** loadout: extra weapons owned from the start (tests, dev ?loadout=); the base gun is always owned.
  *  base: that base gun (slot 1, never runs dry): the dual pistols, or the AK for #250.
- *  resume: start from a checkpoint saved in an earlier attempt (Game.saved). */
+ *  resume: start from a checkpoint saved in an earlier attempt (Game.saved); carry: the guns from the last room. */
 /** pockit: model numbers per enemy marker id (the page picks them: vrm/pockit.ts pickPockits); a goon
  *  without one gets a seeded random number. */
-export type GameOptions = { seed?: number; difficulty?: Difficulty; ai?: boolean; loadout?: WeaponId[]; base?: BaseWeapon; resume?: Resume; pockit?: Readonly<Record<string, number>> };
+export type GameOptions = { seed?: number; difficulty?: Difficulty; ai?: boolean; loadout?: WeaponId[]; base?: BaseWeapon; resume?: Resume; katana?: boolean; grenades?: number; carry?: Carry; pockit?: Readonly<Record<string, number>> };
+
+/** What he walks into the next room with (Game.carryOut at the last room's exit): the guns he picked up
+ *  and their rounds, the one in hand, the frags and the banked 9 mm. A retry of that room starts with it
+ *  again (the session keeps it in its options). */
+export type Carry = { owned: WeaponId[]; weapon: WeaponId; ammo: Array<[WeaponId, number, number, number]>; grenades: number; banked: number };
 
 /** The Pockit goons of a level (goons and rushers without a fixed model), in marker order; `later` =
  *  brought in by a spawn trigger (inactive at the start). */
@@ -82,13 +95,17 @@ export type Resume = {
   drops: Array<{ id: string; item: string; x: number; y: number; z: number }>;
   owned: WeaponId[]; weapon: WeaponId; ammo: Array<[WeaponId, number, number, number]>;
   health: number; copium: number; meter: number; stats: Stats;
+  /** The arsenal and the secrets (optional: a checkpoint saved before them has none). */
+  grenades?: number; banked?: number; found?: string[]; opened?: string[]; broken?: string[];
 };
 
-export type Stats = { kills: number; headshots: number; shots: number; hits: number; damageTaken: number; copiumUsed: number; time: number; btTime: number; dodges: number };
+export type Stats = { kills: number; headshots: number; shots: number; hits: number; damageTaken: number; copiumUsed: number; time: number; btTime: number; dodges: number; secrets?: number; secretsTotal?: number };
 
 /** wait: real seconds the player has stood in it (the breach door's fallback); prompted: its hint was given. */
 type Trigger = Marker & { fired: boolean; wait: number; prompted: boolean };
-export type Pickup = { id: string; item: string; amount: number; x: number; y: number; z: number; taken: boolean };
+/** pin: a Radbro Webring pin's Radbro id; secret: it lies inside a secret (the bot leaves it); behind: a
+ *  secret door or breakable's node id it waits behind (not taken until that is out of the world). */
+export type Pickup = { id: string; item: string; amount: number; x: number; y: number; z: number; taken: boolean; pin?: string; secret?: boolean; behind?: string };
 
 export class Game {
   readonly level: LevelData;
@@ -149,7 +166,19 @@ export class Game {
   private readonly v2: V3 = { x: 0, y: 0, z: 0 };
   private readonly v3: V3 = { x: 0, y: 0, z: 0 };
   private readonly scratchCaps = makeCapsules();
-  private lastPlayerKill: { from: V3; to: V3; enemy: number; headshot: boolean } | null = null;
+  private lastPlayerKill: { from: V3; to: V3; enemy: number; headshot: boolean; chase: boolean } | null = null;
+  /** #4764: the katana (else the strike). */
+  readonly katana: boolean;
+  /** Live grenades. */
+  readonly grenadesLive: Grenade[] = [];
+  private nextGrenade = 1;
+  /** Secret markers, the ones found (ids), secret doors opened and breakables broken (node ids). */
+  readonly secrets: Marker[];
+  readonly found: string[] = [];
+  readonly opened: string[] = [];
+  readonly broken: string[] = [];
+  /** Hit points left per breakable node. */
+  private readonly breakHp = new Map<string, number>();
 
   constructor(level: LevelData, opts: GameOptions = {}) {
     this.level = level;
@@ -157,6 +186,8 @@ export class Game {
     this.difficulty = opts.difficulty ?? "normal";
     this.diff = DIFFICULTY[this.difficulty];
     this.aiOn = opts.ai ?? true;
+    this.katana = opts.katana ?? false;
+    this.secrets = level.markers.filter(m => m.kind === "secret");
     this.rng = new Rand(this.seed ^ 0x5eed);
     this.world = new World(level.boxes);
     this.graph = new Graph(level.markers, this.world);
@@ -182,10 +213,13 @@ export class Game {
         e.perch = m.data.perch === true;
         e.deaf = m.data.deaf === true;
         e.hold = m.data.hold === true;
+        // a marker's gun overrides the kind's (the sniper goon on the perch, the hand-cannon heavy)
+        if ((m.data.weapon === "sniper" && kind === "goon") || (m.data.weapon === "handcannon" && kind === "heavy")) e.weapon = m.data.weapon as EnemyWeapon;
+        if (e.weapon === "handcannon") e.shells = ENEMY_ARMS.handcannon.shells;
         if (kind === "heavy") e.model = m.data.model === "rival723" || (m.data.model === undefined && n % 2 === 1) ? "rival723" : "rival652";
         if (kind === "rusher") e.engageAt = RUSHER.engage[0] + (RUSHER.engage[1] - RUSHER.engage[0]) * hash01(this.seed, n, 0x72, 1);
-        // the drop at the body: the marker's, else the room's per kind, else a heavy's shotgun
-        e.drop = m.data.drop === false ? "" : typeof m.data.drop === "string" ? m.data.drop : drops[kind] ?? (kind === "heavy" ? "shotgun" : "");
+        // the drop at the body: the marker's, else the room's per kind, else the gun in her hands
+        e.drop = m.data.drop === false ? "" : typeof m.data.drop === "string" ? m.data.drop : drops[kind] ?? e.weapon;
         const patrol = m.data.patrol;
         if (Array.isArray(patrol)) e.patrol = patrol.map(id => this.graph.nodes.findIndex(w => w.id === id)).filter(i => i >= 0);
         this.enemies.push(e);
@@ -194,16 +228,25 @@ export class Game {
         const item = (m.data.item as string) ?? "copium";
         const base = typeof m.data.amount === "number" ? (m.data.amount as number) : item === "copium" ? 1 : PICKUPS[item]?.amount ?? 1;
         // copium scales with the difficulty; weapons and ammo do not
-        this.pickups.push({ id: m.id, item, amount: item === "copium" ? Math.max(1, Math.floor(base * this.diff.copium)) : base, x: m.x, y: m.y, z: m.z, taken: false });
+        const pk: Pickup = { id: m.id, item, amount: item === "copium" ? Math.max(1, Math.floor(base * this.diff.copium)) : base, x: m.x, y: m.y, z: m.z, taken: false };
+        if (typeof m.data.pin === "string") pk.pin = m.data.pin;
+        if (typeof m.data.behind === "string") pk.behind = m.data.behind;
+        this.pickups.push(pk);
       } else if (m.kind === "trigger") this.triggers.push({ ...m, fired: false, wait: 0, prompted: false });
     }
     this.actors = [this.player.hit, ...this.enemies.map(e => e.hit)];
+    for (const k of this.pickups) k.secret = this.secrets.some(sm => insideTrigger(sm, k.x, k.y + 0.3, k.z));
+    for (const b of level.breakables) this.breakHp.set(b.node, b.hp);
+    this.player.grenades = Math.min(GRENADE.carry, opts.grenades ?? 0);
+    this.stats.secrets = 0;
+    this.stats.secretsTotal = this.secrets.length;
     for (const e of this.enemies) this.syncEnemyPose(e);
     this.crowd = new Crowd(level.markers, this.world, this.graph, { seed: this.seed, pockitCount: POCKIT_COUNT });
     for (const w of opts.loadout ?? []) this.giveWeapon(w);
     // a loadout starts with its last weapon in hand
     const last = opts.loadout?.[opts.loadout.length - 1];
     if (last && this.player.arsenal[last]) this.player.weapon = this.player.arsenal[last]!;
+    if (opts.carry) this.applyCarry(opts.carry);
     this.resumed = !!opts.resume;
     if (opts.resume) this.applyResume(opts.resume);
     // First aim state so the camera and crosshair are valid before the first step.
@@ -224,7 +267,32 @@ export class Game {
       owned: [...p.owned], weapon: p.weapon.id,
       ammo: p.owned.map(w => { const a = p.arsenal[w]!; return [w, a.mags[0], a.mags[1], a.reserve] as [WeaponId, number, number, number]; }),
       health: p.health, copium: p.copium, meter: this.meter, stats: { ...this.stats },
+      grenades: p.grenades, banked: p.banked, found: [...this.found], opened: [...this.opened], broken: [...this.broken],
     };
+  }
+
+  /** What he carries out of this room into the next (see Carry). */
+  carryOut(): Carry {
+    const p = this.player;
+    return {
+      owned: [...p.owned], weapon: p.weapon.id,
+      ammo: p.owned.map(w => { const a = p.arsenal[w]!; return [w, a.mags[0], a.mags[1], a.reserve] as [WeaponId, number, number, number]; }),
+      grenades: p.grenades, banked: p.banked,
+    };
+  }
+
+  /** Start the room with what he carried out of the last one (no events). */
+  private applyCarry(c: Carry): void {
+    const p = this.player;
+    for (const w of c.owned) if (w in WEAPONS) this.giveWeapon(w);
+    for (const [w, m0, m1, res] of c.ammo) {
+      const a = p.arsenal[w];
+      // a base gun keeps its endless reserve
+      if (a) { a.mags[0] = m0; a.mags[1] = m1; if (Number.isFinite(a.reserve)) a.reserve = res; }
+    }
+    if (p.arsenal[c.weapon]) p.weapon = p.arsenal[c.weapon]!;
+    p.grenades = Math.min(GRENADE.carry, Math.max(p.grenades, c.grenades));
+    p.banked = c.banked;
   }
 
   /** Rebuild the room as the checkpoint left it (no events: the views read the state). */
@@ -235,6 +303,11 @@ export class Game {
     this.checkpoint = { x: p.x, y: p.y, z: p.z, facing: r.facing };
     for (const id of r.breached) if (this.world.setEnabled(id, false)) this.breached.push(id);
     for (const d of r.drops) this.pickups.push({ ...d, amount: PICKUPS[d.item]?.amount ?? 1, taken: false });
+    for (const id of r.opened ?? []) if (this.world.setEnabled(id, false)) this.opened.push(id);
+    for (const id of r.broken ?? []) if (this.world.setEnabled(id, false)) { this.broken.push(id); this.breakHp.set(id, 0); }
+    for (const id of r.found ?? []) if (!this.found.includes(id)) this.found.push(id);
+    p.grenades = r.grenades ?? p.grenades;
+    p.banked = r.banked ?? 0;
     for (const k of this.pickups) if (r.taken.includes(k.id)) k.taken = true;
     for (const e of this.enemies) {
       if (!r.dead.includes(e.id)) continue;
@@ -257,7 +330,7 @@ export class Game {
     p.health = Math.max(r.health, CHECKPOINT_MIN_HEALTH);
     p.copium = r.copium;
     this.meter = Math.max(r.meter, METER.start * 0.5);
-    this.stats = { ...r.stats };
+    this.stats = { ...r.stats, secrets: this.found.length, secretsTotal: this.secrets.length };
     this.saved = r;
   }
 
@@ -314,7 +387,7 @@ export class Game {
     const pin = inControl ? inp : FROZEN_INPUT(inp, p);
     if (inControl && p.mode !== "dead") {
       if (inp.slot > 0) this.switchWeapon(inp.slot);
-      if (inp.reload && startReload(p.weapon)) this.emit({ type: "reload", hand: 0 });
+      if (inp.reload && p.meleeT <= 0 && startReload(p.weapon)) this.emit({ type: "reload", hand: 0 });
       if (inp.copium) this.useCopium();
       if (inp.dodge && p.mode === "normal" && p.dodgeCooldown <= 0) {
         const before = this.meter;
@@ -323,6 +396,12 @@ export class Game {
         this.stats.dodges++;
       }
     }
+    // the scope: held with the sniper up, standing, not reloading; a swap, a reload, a dive or a fall
+    // drops it until the button is let go
+    if (!pin.zoom) p.zoomBlock = false;
+    if (p.zoom && (p.weapon.reloadT > 0 || p.mode !== "normal" || p.weapon.id !== "sniper")) p.zoomBlock = true;
+    const zoom = inControl && !!pin.zoom && !p.zoomBlock && p.weapon.id === "sniper" && p.mode === "normal" && p.weapon.reloadT <= 0 && p.meleeT <= 0;
+    if (zoom !== p.zoom) { p.zoom = zoom; this.emit({ type: "zoom", on: zoom }); }
     const pm = stepPlayer(this.world, p, pin, DT, pdt);
     if (pm & PM_DIVE) this.emit({ type: "dodge" });
     if (pm & PM_JUMP) this.emit({ type: "jump" });
@@ -339,11 +418,23 @@ export class Game {
       p.health = Math.min(PLAYER.maxHealth, p.health + add);
     }
 
-    // aim + weapon
+    // aim + weapon; E, the melee and the throw go where he aims this step
     this.updateAim();
+    if (inControl && p.mode !== "dead") {
+      if (inp.interact) this.interact();
+      if (inp.melee) this.startMelee();
+      if (inp.throw) this.throwGrenade();
+    }
     const w = p.weapon;
     if (stepWeapon(w, pdt)) this.emit({ type: "reloaded" });
-    const canFire = inControl && p.mode !== "dead" && p.mode !== "getup";
+    // the melee (his clock): the hit resolves at the wind-up
+    if (p.throwT > 0) p.throwT = Math.max(0, p.throwT - pdt);
+    if (p.meleeT > 0) {
+      const M = this.katana ? MELEE.katana : MELEE.strike;
+      p.meleeT = Math.max(0, p.meleeT - pdt);
+      if (!p.meleeDone && M.time - p.meleeT >= MELEE.windup) { p.meleeDone = true; if (p.mode !== "dead") this.resolveMelee(); }
+    }
+    const canFire = inControl && p.mode !== "dead" && p.mode !== "getup" && p.meleeT <= 0;
     const hand = triggerWeapon(w, canFire && inp.fire);
     if (hand >= 0) this.firePlayer(hand);
     else if (canFire && inp.fire && !w.wasDown && w.reloadT > 0) this.emit({ type: "dryfire" });
@@ -358,13 +449,16 @@ export class Game {
     }
     this.crowd.step(wdt);
 
+    // grenades (world time) and the girls running from them
+    this.stepGrenades(wdt);
+
     // projectiles
     this.stepProjectiles(wdt);
 
     // pickups + triggers
     if (inControl && p.mode !== "dead") {
       for (const k of this.pickups) {
-        if (k.taken) continue;
+        if (k.taken || (k.behind && !this.world.off.has(k.behind))) continue;
         const dx = k.x - p.x, dz = k.z - p.z, dy = k.y - p.y;
         if (dx * dx + dz * dz > PLAYER.pickupRadius ** 2 || dy > 2 || dy < -1) continue;
         if (k.item === "copium") {
@@ -373,14 +467,20 @@ export class Game {
           p.copium += got;
           k.taken = true;
           this.emit({ type: "pickup", item: k.item, amount: got, id: k.id });
+        } else if (k.item === "pin") {
+          k.taken = true;
+          this.emit({ type: "pickup", item: "pin", amount: 1, id: k.id, ...(k.pin ? { pin: k.pin } : {}) });
         } else if (PICKUPS[k.item]) {
           const got = this.takeWeaponPickup(k.item, k.amount);
           if (got < 0) continue; // full: leave it lying there
           k.taken = true;
-          // the event names what it gave: the weapon ("shotgun") or ammo for it ("shotgun_ammo")
-          this.emit({ type: "pickup", item: this.lastPickupWeapon ? k.item.replace(/_ammo$/, "") : `${PICKUPS[k.item].ammo}_ammo`, amount: got, id: k.id });
+          // the event names what it gave: the weapon ("shotgun"), ammo for it ("shotgun_ammo"), grenades
+          const d = PICKUPS[k.item];
+          this.emit({ type: "pickup", item: d.grenades ? "grenade" : this.lastPickupWeapon && d.weapon ? d.weapon : `${d.ammo}_ammo`, amount: got, id: k.id });
         }
       }
+      // secrets: found the first time he steps into one
+      for (const sm of this.secrets) if (sm.data.via !== "break" && !this.found.includes(sm.id) && insideTrigger(sm, p.x, p.y + 0.9, p.z)) this.findSecret(sm.id);
       for (const t of this.triggers) {
         if (t.fired && t.data.once !== false) continue;
         // conditional triggers fire on their condition only; the breach door has its own rules
@@ -431,8 +531,16 @@ export class Game {
     if (slot >= 8) {
       const i = owned.indexOf(p.weapon.id);
       id = owned[(i + (slot === 9 ? 1 : owned.length - 1)) % owned.length];
-    } else id = owned.find(w => slotOf(w) === slot);
+    } else {
+      // a key is a category: the one used last in it, a second press the next one in it
+      const cat = owned.filter(w => slotOf(w) === slot);
+      if (!cat.length) return;
+      const last = p.lastInSlot[slot];
+      id = slotOf(p.weapon.id) === slot ? cat[(cat.indexOf(p.weapon.id) + 1) % cat.length] : last && cat.includes(last) ? last : cat[0];
+    }
     if (!id || p.weapon.id === id) return;
+    p.lastInSlot[slotOf(id)] = id;
+    if (p.zoom) p.zoomBlock = true;
     const w = p.arsenal[id] ?? (p.arsenal[id] = makeWeapon(id));
     // the clock resets: a reload in progress is dropped, the new gun comes up after SWAP_TIME
     p.weapon.reloadT = 0;
@@ -444,14 +552,32 @@ export class Game {
     this.emit({ type: "swap", weapon: id });
   }
 
-  /** Own a weapon (a full magazine + its reserve); false when already owned. */
-  giveWeapon(id: WeaponId): boolean {
+  /** Own a weapon (a full magazine + its reserve, or `first` rounds in reserve); false when already
+   *  owned. The SMGs take the banked 9 mm. */
+  giveWeapon(id: WeaponId, first?: number): boolean {
     const p = this.player;
     if (p.owned.includes(id)) return false;
     p.owned.push(id);
     p.owned.sort((a, b) => SLOT_ORDER.indexOf(a) - SLOT_ORDER.indexOf(b));
-    p.arsenal[id] = makeWeapon(id);
+    const w = (p.arsenal[id] = makeWeapon(id));
+    if (first !== undefined) w.reserve = first;
+    if (id === "smgs" && p.banked > 0) { w.reserve = Math.min(WEAPONS.smgs.reserveMax, w.reserve + p.banked); p.banked = 0; }
     return true;
+  }
+
+  /** Whether walking over this item would take it (the bot leaves the rest). */
+  canTake(item: string): boolean {
+    const p = this.player;
+    if (item === "copium") return p.copium < PLAYER.maxCopium;
+    if (item === "pin") return true;
+    const d = PICKUPS[item];
+    if (!d) return false;
+    if (d.grenades) return p.grenades < GRENADE.carry;
+    if (d.ammo === "rifle" && p.owned.includes("ak")) return false;
+    if (d.weapon && !p.owned.includes(d.weapon)) return true;
+    const w = p.arsenal[d.ammo];
+    if (!w) return !!d.bank && p.banked < WEAPONS[d.ammo].reserveMax;
+    return w.reserve < WEAPONS[d.ammo].reserveMax;
   }
 
   /** A weapon / ammo pickup: the weapon the first time, then ammo into its reserve. Returns the rounds
@@ -461,9 +587,26 @@ export class Game {
     const d = PICKUPS[item];
     const p = this.player;
     this.lastPickupWeapon = false;
-    if (d.weapon && this.giveWeapon(d.weapon)) { this.lastPickupWeapon = true; return p.arsenal[d.weapon]!.reserve; }
+    if (d.grenades) {
+      const room = GRENADE.carry - p.grenades;
+      if (room <= 0) return -1;
+      const got = Math.min(room, amount);
+      p.grenades += got;
+      return got;
+    }
+    // #250 carries his own AK: a rifle stays where it lies
+    if (d.ammo === "rifle" && p.owned.includes("ak")) return -1;
+    if (d.weapon && this.giveWeapon(d.weapon, d.first)) { this.lastPickupWeapon = true; return p.arsenal[d.weapon]!.reserve; }
     const w = p.arsenal[d.ammo];
-    if (!w) return -1; // ammo for a gun he does not have yet
+    if (!w) {
+      // the gang's 9 mm is banked for the SMGs; other ammo waits for its gun
+      if (!d.bank) return -1;
+      const room = WEAPONS[d.ammo].reserveMax - p.banked;
+      if (room <= 0) return -1;
+      const got = Math.min(room, amount);
+      p.banked += got;
+      return got;
+    }
     const room = WEAPONS[d.ammo].reserveMax - w.reserve;
     if (room <= 0) return -1;
     const got = Math.min(room, d.weapon ? d.amount : amount);
@@ -501,6 +644,254 @@ export class Game {
       if (this.phase === "clear") { this.setPhase("done"); this.emit({ type: "exit" }); }
       else t.fired = false; // not yet: try again once the room is clear
     }
+  }
+
+  // ---- melee, grenades, secrets (arsenal spec 3.2, 4) -------------------------------------------
+
+  /** F: the katana's draw-cut (#4764) or the strike; the guns wait for it (his clock). */
+  private startMelee(): void {
+    const p = this.player;
+    if (p.meleeT > 0 || p.mode !== "normal") return;
+    const M = this.katana ? MELEE.katana : MELEE.strike;
+    p.meleeT = M.time;
+    p.meleeDone = false;
+    p.weapon.reloadT = 0;
+    this.emit({ type: "melee", kind: this.katana ? "katana" : "strike", phase: "start", hits: 0 });
+  }
+
+  /** The melee lands: at most MELEE.max hostiles whose torso is in reach and inside the arc around the
+   *  aim, nearest first, with a clear line; no headshots; a strike flinches and shoves; breakables too. */
+  private resolveMelee(): void {
+    const p = this.player;
+    const M = this.katana ? MELEE.katana : MELEE.strike;
+    const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw), cosArc = Math.cos(M.arc);
+    const px = p.x, py = p.y + 1.1, pz = p.z;
+    const cands: Array<{ e: Enemy; d: number; x: number; y: number; z: number }> = [];
+    for (const e of this.enemies) {
+      if (e.state === "dead" || e.state === "inactive" || !e.hit.hittable) continue;
+      if (!aimPoint(e.hit.body, e.hit.pose, HB_TORSO, this.v, this.scratchCaps)) continue;
+      const dx = this.v.x - px, dz = this.v.z - pz, d = Math.hypot(dx, dz);
+      if (d > M.reach || Math.abs(this.v.y - py) > 1.2) continue;
+      if (d > 0.3 && (dx * fx + dz * fz) / d < cosArc) continue;
+      if (!this.world.clear(px, py, pz, this.v.x, this.v.y, this.v.z, true)) continue;
+      cands.push({ e, d, x: this.v.x, y: this.v.y, z: this.v.z });
+    }
+    cands.sort((a, b) => a.d - b.d || a.e.idx - b.e.idx);
+    let hits = 0;
+    for (const c of cands.slice(0, MELEE.max)) {
+      const e = c.e;
+      const dx = c.x - px, dz = c.z - pz, dl = Math.hypot(dx, dz) || 1;
+      hits++;
+      e.hp -= M.damage;
+      e.flinch = Math.max(e.flinch, M.flinch);
+      if (e.weapon === "sniper") e.tell = 0;
+      if (M.knock > 0 && e.kind !== "heavy" && !e.perch) { e.knockT = MELEE.knockTime; e.knockX = (dx / dl) * M.knock; e.knockZ = (dz / dl) * M.knock; }
+      this.emit({ type: "blood", x: c.x, y: c.y, z: c.z, dx: dx / dl, dy: 0, dz: dz / dl, target: e.idx, part: HB_TORSO });
+      this.emit({ type: "hurt", target: e.idx, amount: M.damage, part: HB_TORSO, hp: Math.max(0, e.hp) });
+      if (e.state === "idle") alertGoon(this, e, 0);
+      if (e.kind === "heavy" && e.hp > 0 && M.damage >= HEAVY.staggerAt && e.stagger <= 0) {
+        e.stagger = HEAVY.stagger;
+        e.tell = 0;
+        this.emit({ type: "stagger", enemy: e.idx });
+      }
+      if (e.hp <= 0) this.killEnemy(e, false, dx, dz, { ox: px, oy: py, oz: pz, x: c.x, y: c.y, z: c.z }, false, false);
+    }
+    // a breakable within reach in front of him takes the blow too
+    for (const b of this.level.breakables) {
+      if ((this.breakHp.get(b.node) ?? 0) <= 0) continue;
+      const box = this.level.boxes.find(x => x.node === b.node);
+      if (!box || boxDist(box, px, pz) > M.reach * 0.8 || py < box.bottom - 0.5 || py > box.top + 0.8) continue;
+      const dx = box.cx - px, dz = box.cz - pz, d = Math.hypot(dx, dz) || 1;
+      if ((dx * fx + dz * fz) / d < 0.2) continue;
+      this.damageBreakable(b.node, M.damage);
+    }
+    this.emit({ type: "melee", kind: this.katana ? "katana" : "strike", phase: "hit", hits });
+  }
+
+  /** G: a frag from his left hand on a 35 deg loft onto the aim point (3-20 m out). */
+  private throwGrenade(): void {
+    const p = this.player;
+    if (p.grenades <= 0 || p.throwT > 0 || p.mode !== "normal" || p.meleeT > 0) return;
+    p.grenades--;
+    p.throwT = GRENADE.cooldown;
+    const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw), rx = Math.cos(p.yaw), rz = -Math.sin(p.yaw);
+    const ox = p.x + fx * 0.3 - rx * 0.25, oy = p.y + 1.5, oz = p.z + fz * 0.3 - rz * 0.25;
+    const ap = this.aimPoint;
+    let hx = ap.x - ox, hz = ap.z - oz;
+    let R = Math.hypot(hx, hz);
+    if (R < 1e-3) { hx = fx; hz = fz; R = GRENADE.minRange; } else { hx /= R; hz /= R; }
+    // past the far clamp it lands on the ground at 20 m, not up the aim line
+    const dy = R > GRENADE.maxRange ? p.y - oy : ap.y - oy;
+    R = Math.max(GRENADE.minRange, Math.min(GRENADE.maxRange, R));
+    const th = GRENADE.loft, c = Math.cos(th), t = Math.tan(th);
+    const den = 2 * c * c * (R * t - dy);
+    let v = den > 0.05 ? Math.sqrt((GRENADE.gravity * R * R) / den) : GRENADE.maxSpeed;
+    v = Math.max(GRENADE.minSpeed, Math.min(GRENADE.maxSpeed, v));
+    const gr: Grenade = { id: this.nextGrenade++, x: ox, y: oy, z: oz, vx: hx * v * c, vy: v * Math.sin(th), vz: hz * v * c, fuse: GRENADE.fuse, landed: false, resting: false, bounces: 0 };
+    this.grenadesLive.push(gr);
+    this.emit({ type: "throw", id: gr.id, x: ox, y: oy, z: oz });
+    // they hear the pin
+    for (const e of this.enemies) if (e.state === "idle" && !e.deaf && (e.x - p.x) ** 2 + (e.z - p.z) ** 2 < 12 * 12) alertGoon(this, e, 0.3);
+  }
+
+  /** World-time flight with bounces off the boxes and the floor, the fuse, the girls running from it. */
+  private stepGrenades(wdt: number): void {
+    for (let i = 0; i < this.grenadesLive.length; i++) {
+      const gr = this.grenadesLive[i];
+      if (!gr.resting) {
+        const sp = Math.hypot(gr.vx, gr.vy, gr.vz);
+        const n = Math.min(8, Math.max(1, Math.ceil((sp * wdt) / 0.1)));
+        const dt = wdt / n;
+        for (let k = 0; k < n && !gr.resting; k++) {
+          gr.vy -= GRENADE.gravity * dt;
+          const len = Math.hypot(gr.vx, gr.vy, gr.vz) * dt;
+          if (len < 1e-7) continue;
+          const dx = (gr.vx * dt) / len, dy = (gr.vy * dt) / len, dz = (gr.vz * dt) / len;
+          const h = this.world.raycast(gr.x, gr.y, gr.z, dx, dy, dz, len + 0.06, false);
+          if (!h) { gr.x += dx * len; gr.y += dy * len; gr.z += dz * len; continue; }
+          const back = Math.max(0, h.t - 0.06);
+          gr.x += dx * back; gr.y += dy * back; gr.z += dz * back;
+          // bounce: the normal part reverses x restitution, the rest keeps a share
+          const vn = gr.vx * h.nx + gr.vy * h.ny + gr.vz * h.nz;
+          const tx = gr.vx - vn * h.nx, ty = gr.vy - vn * h.ny, tz = gr.vz - vn * h.nz;
+          const r = GRENADE.restitution, tk = GRENADE.tangential;
+          gr.vx = tx * tk - r * vn * h.nx; gr.vy = ty * tk - r * vn * h.ny; gr.vz = tz * tk - r * vn * h.nz;
+          gr.landed = true;
+          gr.bounces++;
+          const after = Math.hypot(gr.vx, gr.vy, gr.vz);
+          if (Math.abs(vn) > 1) this.emit({ type: "bounce", id: gr.id, x: gr.x, y: gr.y, z: gr.z, speed: Math.abs(vn) });
+          if (after < GRENADE.restSpeed && h.ny > 0.7) { gr.resting = true; gr.vx = gr.vy = gr.vz = 0; }
+        }
+      }
+      gr.fuse -= wdt;
+      if (gr.fuse <= 0) {
+        this.grenadesLive.splice(i--, 1);
+        this.explode(gr);
+        continue;
+      }
+      if (!gr.landed) continue;
+      // goons and rushers with a clear line to it run out of the radius after a beat (the idle hear it)
+      for (const e of this.enemies) {
+        if (e.kind === "heavy" || e.perch || e.state === "dead" || e.state === "inactive" || e.fleeWait > 0 || e.fleeT > 0) continue;
+        const dx = e.x - gr.x, dz = e.z - gr.z, d = Math.hypot(dx, dz);
+        if (d > GRENADE.fleeRadius || !this.world.clear(gr.x, gr.y + 0.2, gr.z, e.x, e.y + 1, e.z, true)) continue;
+        if (e.state === "idle") alertGoon(this, e, 0);
+        e.fleeWait = GRENADE.react;
+        const a = d > 1e-3 ? 1 / d : 0;
+        e.fleeX = d > 1e-3 ? dx * a : Math.sin(e.facing + Math.PI);
+        e.fleeZ = d > 1e-3 ? dz * a : Math.cos(e.facing + Math.PI);
+      }
+    }
+  }
+
+  /** The blast: everyone with a clear line from just above it takes damage x (1 - d / r) ^ falloff (he
+   *  takes GRENADE.self of it); a kill blows the body away from the centre. */
+  private explode(gr: Grenade): void {
+    const bx = gr.x, by = gr.y + 0.25, bz = gr.z, R = GRENADE.radius;
+    this.emit({ type: "explode", id: gr.id, x: gr.x, y: gr.y, z: gr.z });
+    if (this.firstShotAt < 0) { this.firstShotAt = this.time; this.crowd.scatter(this.time, bx, bz, this.player.x, this.player.z); this.emit({ type: "firstShot", x: bx, z: bz }); }
+    const dmgAt = (d: number) => GRENADE.damage * Math.pow(Math.max(0, 1 - d / R), GRENADE.falloff);
+    for (const e of this.enemies) {
+      if (e.state === "dead" || e.state === "inactive") continue;
+      if (!aimPoint(e.hit.body, e.hit.pose, HB_TORSO, this.v, this.scratchCaps)) continue;
+      const dx = this.v.x - bx, dy = this.v.y - by, dz = this.v.z - bz, d = Math.hypot(dx, dy, dz);
+      if (d >= R || !this.world.clear(bx, by, bz, this.v.x, this.v.y, this.v.z, true)) continue;
+      const dmg = dmgAt(d);
+      e.hp -= dmg;
+      e.flinch = Math.max(e.flinch, AI.flinch);
+      if (e.weapon === "sniper") e.tell = 0;
+      this.emit({ type: "hurt", target: e.idx, amount: dmg, part: HB_TORSO, hp: Math.max(0, e.hp) });
+      if (e.state === "idle") alertGoon(this, e, 0);
+      if (e.kind === "heavy" && e.hp > 0 && dmg >= HEAVY.staggerAt && e.stagger <= 0) { e.stagger = HEAVY.stagger; e.tell = 0; this.emit({ type: "stagger", enemy: e.idx }); }
+      const hl = Math.hypot(dx, dz) || 1;
+      if (e.hp <= 0) this.killEnemy(e, false, dx / hl, dz / hl, { ox: bx, oy: by, oz: bz, x: this.v.x, y: this.v.y, z: this.v.z }, true, false);
+    }
+    const p = this.player;
+    if (p.mode !== "dead") {
+      const tx = p.x, ty = p.y + (p.mode === "dive" || p.mode === "prone" ? 0.4 : 1.1), tz = p.z;
+      const d = Math.hypot(tx - bx, ty - by, tz - bz);
+      if (d < R && this.world.clear(bx, by, bz, tx, ty, tz, true)) this.hurtPlayer(dmgAt(d) * GRENADE.self, -1);
+    }
+    for (const b of this.level.breakables) {
+      const box = this.level.boxes.find(x => x.node === b.node);
+      if (!box || (this.breakHp.get(b.node) ?? 0) <= 0) continue;
+      const d = Math.hypot(boxDist(box, bx, bz), Math.max(0, box.bottom - by, by - box.top));
+      if (d < R) this.damageBreakable(b.node, dmgAt(d));
+    }
+    // everyone hears it
+    for (const e of this.enemies) if (e.state === "idle" && !e.deaf && (e.x - bx) ** 2 + (e.z - bz) ** 2 < AI.hearing * AI.hearing) alertGoon(this, e, 0.2);
+  }
+
+  /** A breakable takes damage; at 0 it goes (its drop lands below it, its secret counts). */
+  private damageBreakable(node: string, dmg: number): void {
+    const hp = this.breakHp.get(node);
+    if (hp === undefined || hp <= 0) return;
+    const left = hp - dmg;
+    this.breakHp.set(node, left);
+    if (left > 0) return;
+    const b = this.level.breakables.find(x => x.node === node)!;
+    const box = this.level.boxes.find(x => x.node === node);
+    this.world.setEnabled(node, false);
+    this.broken.push(node);
+    const x = box?.cx ?? 0, y = box?.cy ?? 0, z = box?.cz ?? 0;
+    this.emit({ type: "break", node, x, y, z, surface: box?.surface ?? "wood" });
+    if (b.drop && (PICKUPS[b.drop] || b.drop === "copium")) {
+      const gy = this.world.groundBelow(x, z, 0.1, (box?.bottom ?? y) + 0.01);
+      const k: Pickup = { id: `brk-${node}`, item: b.drop, amount: b.amount || (PICKUPS[b.drop]?.amount ?? 1), x, y: Number.isFinite(gy) ? gy : 0, z, taken: false };
+      this.pickups.push(k);
+      this.emit({ type: "drop", id: k.id, item: k.item, x: k.x, y: k.y, z: k.z, fromY: y });
+    }
+    if (b.secret) this.findSecret(b.secret);
+  }
+
+  private findSecret(id: string): void {
+    if (this.found.includes(id)) return;
+    const m = this.secrets.find(x => x.id === id);
+    if (!m) return;
+    this.found.push(id);
+    this.stats.secrets = this.found.length;
+    this.emit({ type: "secret", id, n: this.found.length, of: this.secrets.length, name: typeof m.data.name === "string" ? m.data.name : id });
+  }
+
+  /** What E would use right now (read only, the HUD's prompt reads it too): the nearest secret door in
+   *  reach in front of him, else the nearest egg in reach in front of him, else null. */
+  useTarget(): { door: string } | { egg: Marker } | null {
+    const p = this.player;
+    const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);
+    const inFront = (x: number, z: number, d: number) => d < 0.4 || ((x - p.x) * fx + (z - p.z) * fz) / d >= USE.cos;
+    let door: { node: string; d: number } | null = null;
+    for (const dr of this.level.doors) {
+      if (this.opened.includes(dr.node) || this.world.off.has(dr.node)) continue;
+      const box = this.level.boxes.find(b => b.node === dr.node);
+      if (!box || p.y + 1 < box.bottom || p.y > box.top) continue;
+      const d = boxDist(box, p.x, p.z);
+      // facing the nearest point of it (a long bookshelf: the end he stands at)
+      const c = boxNearest(box, p.x, p.z);
+      if (d > USE.reach || !inFront(c.x, c.z, Math.hypot(c.x - p.x, c.z - p.z))) continue;
+      if (!door || d < door.d) door = { node: dr.node, d };
+    }
+    if (door) return { door: door.node };
+    let egg: Marker | null = null, ed = Infinity;
+    for (const m of this.level.markers) {
+      if (m.kind !== "egg" || m.data.interact !== true) continue;
+      const d = Math.hypot(m.x - p.x, m.z - p.z);
+      if (d > USE.reach + 0.4 || Math.abs(m.y - (p.y + 0.9)) > 1.6 || !inFront(m.x, m.z, d) || d >= ed) continue;
+      egg = m; ed = d;
+    }
+    return egg ? { egg } : null;
+  }
+
+  /** E: the nearest secret door in reach in front of him opens; else an egg in reach reports it. */
+  private interact(): void {
+    const t = this.useTarget();
+    if (!t) return;
+    if ("door" in t) {
+      this.world.setEnabled(t.door, false);
+      this.opened.push(t.door);
+      this.emit({ type: "open", node: t.door });
+      return;
+    }
+    this.emit({ type: "interact", id: t.egg.id, egg: String(t.egg.data.egg ?? t.egg.id) });
   }
 
   // ---- the breach door ------------------------------------------------------------------------
@@ -606,9 +997,10 @@ export class Game {
       const ex = e.x - p.x, ez = e.z - p.z;
       if (ex * ex + ez * ez < AI.hearing * AI.hearing) alertGoon(this, e, 0.15);
     }
+    const cone = p.zoom ? def.zoomSpread : def.spread;
     for (let k = 0; k < def.pellets; k++) {
-      const s = this.spread(dx, dy, dz, def.spread);
-      this.shoot(0, PLAYER_ID, hand, m.x, m.y, m.z, s.x, s.y, s.z, def.damage, def.id, k);
+      const s = this.spread(dx, dy, dz, cone);
+      this.shoot(0, PLAYER_ID, hand, m.x, m.y, m.z, s.x, s.y, s.z, def.damage, def.id, k, def.pierce);
     }
   }
 
@@ -624,10 +1016,12 @@ export class Game {
     if (!aimPoint("radbro", p.hit.pose, p.hit.pose.stance === "dive" || p.hit.pose.stance === "prone" ? HB_TORSO : HB_TORSO, tgt, this.scratchCaps)) return;
     let dx = tgt.x - mx, dy = tgt.y - my, dz = tgt.z - mz;
     const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
-    const distF = dist <= AI.near ? 1 : dist >= AI.far ? AI.farFloor : 1 - ((1 - AI.farFloor) * (dist - AI.near)) / (AI.far - AI.near);
+    const sniper = e.weapon === "sniper", cannon = e.weapon === "handcannon";
+    // the sniper keeps her aim out to her range
+    const distF = sniper ? (dist <= ENEMY_ARMS.sniper.range ? 1 : AI.farFloor) : dist <= AI.near ? 1 : dist >= AI.far ? AI.farFloor : 1 - ((1 - AI.farFloor) * (dist - AI.near)) / (AI.far - AI.near);
     const fast = p.mode === "dive" || p.mode === "roll";
     const speedF = fast ? AI.dodgeMul : 1 - AI.speedK * Math.min(1, p.speed / PLAYER.runSpeed);
-    const chance = AI.baseHit * distF * speedF * this.diff.accuracy * (moving ? 0.55 : 1);
+    const chance = (sniper ? ENEMY_ARMS.sniper.hit : AI.baseHit) * distF * speedF * this.diff.accuracy * (moving ? 0.55 : 1);
     const hitRoll = this.rng.next() < chance;
     // aim offset in the plane across the line of fire
     let ox = 0, oy = 0, oz = 0;
@@ -643,7 +1037,7 @@ export class Game {
     dx += ox; dy += oy; dz += oz;
     const l = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
     e.shots++;
-    if (T.pellets > 1) {
+    if (T.pellets > 1 && !cannon) {
       // the heavy's pump gun: 8 pellets in a 6 deg cone, full damage within 6 m, 30 % from 16 m out
       const fall = dist <= HEAVY.near ? 1 : dist >= HEAVY.far ? HEAVY.farK : 1 - ((1 - HEAVY.farK) * (dist - HEAVY.near)) / (HEAVY.far - HEAVY.near);
       const bx = dx / l, by = dy / l, bz = dz / l;
@@ -653,7 +1047,8 @@ export class Game {
       }
       return;
     }
-    this.shoot(1, e.idx, 0, mx, my, mz, dx / l, dy / l, dz / l, T.damage * this.diff.damage, e.weapon, 0);
+    const dmg = sniper ? ENEMY_ARMS.sniper.damage : cannon ? ENEMY_ARMS.handcannon.damage : T.damage;
+    this.shoot(1, e.idx, 0, mx, my, mz, dx / l, dy / l, dz / l, dmg * this.diff.damage, e.weapon, 0);
   }
 
   /** Can the enemy's gun see the player (no wall between muzzle height and the body)? */
@@ -668,7 +1063,8 @@ export class Game {
     const dx = p.x - e.x, dz = p.z - e.z;
     const d2 = dx * dx + dz * dz;
     const G = ENEMY[e.kind];
-    if (d2 > G.sight * G.sight) return false;
+    const sight = e.weapon === "sniper" ? ENEMY_ARMS.sniper.sight : G.sight;
+    if (d2 > sight * sight) return false;
     if (e.state === "idle") {
       // not yet alerted: only a close player is noticed (the room's alert trigger wakes the rest)
       if (d2 > G.idleSight * G.idleSight) return false;
@@ -706,7 +1102,7 @@ export class Game {
   }
 
   /** Normal speed: hitscan now. Bullet time: a visible projectile at PROJECTILE_SPEED (world m/s). */
-  shoot(team: 0 | 1, shooter: number, hand: number, ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, damage: number, weapon = "pistols", pellet = 0): void {
+  shoot(team: 0 | 1, shooter: number, hand: number, ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, damage: number, weapon = "pistols", pellet = 0, pierce = 0): void {
     if (this.firstShotAt < 0) {
       // the first shot in the room: the crowd scatters; in the club it also wakes every armed girl
       this.firstShotAt = this.time;
@@ -717,13 +1113,40 @@ export class Game {
     const projectile = this.timeScale < 0.999;
     const id = this.nextProjectile++;
     if (projectile) {
-      this.projectiles.push({ id, team, shooter, x: ox, y: oy, z: oz, dx, dy, dz, left: MAX_RANGE, damage, alive: true, sx: ox, sy: oy, sz: oz, weapon });
+      this.projectiles.push({ id, team, shooter, x: ox, y: oy, z: oz, dx, dy, dz, left: MAX_RANGE, damage, alive: true, sx: ox, sy: oy, sz: oz, weapon, pierce, skip: [] });
       this.emit({ type: "shot", shooter, hand, ox, oy, oz, ex: ox + dx * MAX_RANGE, ey: oy + dy * MAX_RANGE, ez: oz + dz * MAX_RANGE, projectile: true, id, weapon, pellet });
       return;
     }
-    const h = trace(this.world, this.actors, team, ox, oy, oz, dx, dy, dz, MAX_RANGE, this.th);
-    this.emit({ type: "shot", shooter, hand, ox, oy, oz, ex: h.x, ey: h.y, ez: h.z, projectile: false, id, weapon, pellet });
-    this.resolveHit(h, ox, oy, oz, dx, dy, dz, damage, team, shooter, weapon);
+    if (pierce <= 0) {
+      const h = trace(this.world, this.actors, team, ox, oy, oz, dx, dy, dz, MAX_RANGE, this.th);
+      this.emit({ type: "shot", shooter, hand, ox, oy, oz, ex: h.x, ey: h.y, ez: h.z, projectile: false, id, weapon, pellet });
+      this.resolveHit(h, ox, oy, oz, dx, dy, dz, damage, team, shooter, weapon);
+      return;
+    }
+    // through up to `pierce` bodies: trace on past each one (out of the trace for the rest of the line),
+    // then resolve the hits in order at PIERCE_K of the damage each time
+    const hits: TraceHit[] = [];
+    const off: HitActor[] = [];
+    let x = ox, y = oy, z = oz, left = MAX_RANGE;
+    for (let n = 0; ; n++) {
+      const h = trace(this.world, this.actors, team, x, y, z, dx, dy, dz, left, makeTraceHit());
+      hits.push(h);
+      if (h.kind !== HIT_ACTOR || n >= pierce) break;
+      const a = this.actors[h.actor];
+      a.hittable = false;
+      off.push(a);
+      left -= h.t;
+      x = h.x; y = h.y; z = h.z;
+      if (left <= 1e-6) break;
+    }
+    for (const a of off) a.hittable = true;
+    const last = hits[hits.length - 1];
+    this.emit({ type: "shot", shooter, hand, ox, oy, oz, ex: last.x, ey: last.y, ez: last.z, projectile: false, id, weapon, pellet });
+    let dmg = damage;
+    for (const h of hits) {
+      this.resolveHit(h, ox, oy, oz, dx, dy, dz, dmg, team, shooter, weapon);
+      dmg *= PIERCE_K;
+    }
   }
 
   private stepProjectiles(wdt: number): void {
@@ -731,8 +1154,21 @@ export class Game {
     for (let i = 0; i < this.projectiles.length; i++) {
       const b = this.projectiles[i];
       const len = Math.min(step, b.left);
+      // bodies it already went through are out of its trace
+      const was = b.skip.map(k => this.actors[k].hittable);
+      for (const k of b.skip) this.actors[k].hittable = false;
       const h = trace(this.world, this.actors, b.team, b.x, b.y, b.z, b.dx, b.dy, b.dz, len, this.th);
-      if (h.kind !== HIT_NONE) {
+      b.skip.forEach((k, j) => { this.actors[k].hittable = was[j]; });
+      if (h.kind === HIT_ACTOR && b.pierce > 0) {
+        // on through the body: the rest of its flight goes on from there next step
+        b.pierce--;
+        b.skip.push(h.actor);
+        b.x = h.x; b.y = h.y; b.z = h.z;
+        b.left -= h.t;
+        this.resolveHit(h, b.sx, b.sy, b.sz, b.dx, b.dy, b.dz, b.damage, b.team, b.shooter, b.weapon);
+        b.damage *= PIERCE_K;
+        if (b.left <= 1e-6) b.alive = false;
+      } else if (h.kind !== HIT_NONE) {
         b.x = h.x; b.y = h.y; b.z = h.z;
         b.alive = false;
         this.resolveHit(h, b.sx, b.sy, b.sz, b.dx, b.dy, b.dz, b.damage, b.team, b.shooter, b.weapon);
@@ -753,6 +1189,7 @@ export class Game {
     if (h.kind === HIT_WORLD) {
       this.emit({ type: "impact", x: h.x, y: h.y, z: h.z, nx: h.nx, ny: h.ny, nz: h.nz, surface: h.surface, shooter });
       this.emit({ type: "decal", x: h.x, y: h.y, z: h.z, nx: h.nx, ny: h.ny, nz: h.nz, blood: false });
+      if (team === 0 && h.node) this.damageBreakable(h.node, damage);
       return;
     }
     if (h.kind !== HIT_ACTOR) return;
@@ -771,6 +1208,7 @@ export class Game {
     e.hp -= amount;
     if (team === 0) this.stats.hits++;
     e.flinch = AI.flinch;
+    if (e.weapon === "sniper") e.tell = 0; // a hit spoils her aim
     this.emit({ type: "hurt", target, amount, part: h.part, hp: Math.max(0, e.hp) });
     if (e.state === "idle") alertGoon(this, e, 0);
     if (e.kind === "heavy" && e.hp > 0) {
@@ -785,7 +1223,7 @@ export class Game {
       }
     }
     if (e.hp <= 0) {
-      const blast = team === 0 && weapon === "shotgun" && (e.x - ox) ** 2 + (e.z - oz) ** 2 < 4 * 4;
+      const blast = team === 0 && (weapon === "shotgun" || weapon === "sawedoff") && (e.x - ox) ** 2 + (e.z - oz) ** 2 < 4 * 4;
       this.killEnemy(e, h.part === HB_HEAD, dx, dz, team === 0 ? { ox, oy, oz, x: h.x, y: h.y, z: h.z } : null, blast);
     }
   }
@@ -794,7 +1232,7 @@ export class Game {
   private readonly heavyHit: number[] = [];
   private readonly heavyHitT: number[] = [];
 
-  private killEnemy(e: Enemy, headshot: boolean, dx: number, dz: number, shot: { ox: number; oy: number; oz: number; x: number; y: number; z: number } | null, blast = false): void {
+  private killEnemy(e: Enemy, headshot: boolean, dx: number, dz: number, shot: { ox: number; oy: number; oz: number; x: number; y: number; z: number } | null, blast = false, chase = true): void {
     setState(e, "dead");
     e.hit.hittable = false;
     e.hit.pose.stance = "dead";
@@ -806,17 +1244,32 @@ export class Game {
     e.tell = 0;
     e.stagger = 0;
     if (e.drop && PICKUPS[e.drop]) {
-      // the gun (or ammo) lands at the body
-      const k: Pickup = { id: `drop-${e.id}`, item: e.drop, amount: PICKUPS[e.drop].amount, x: e.x, y: e.y, z: e.z, taken: false };
+      // the gun (or ammo) lands at the body; off a perch it falls 1.3 m out toward him, to the ground below
+      let x = e.x, z = e.z, y = e.y;
+      if (e.perch) {
+        // off the perch to the ground below: the shortest way off it (1.3-4 m), the way toward him first
+        const a0 = Math.atan2(this.player.x - e.x, this.player.z - e.z);
+        let best: { x: number; y: number; z: number; d: number } | null = null;
+        for (let i = 0; i < 8 && !(best && best.d <= 1.3); i++) {
+          const a = a0 + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * (Math.PI / 4);
+          for (let d = 1.3; d <= 4.01 && (!best || d < best.d); d += 0.45) {
+            const tx = e.x + Math.sin(a) * d, tz = e.z + Math.cos(a) * d;
+            const gy = this.world.groundBelow(tx, tz, 0.1, e.y + 0.5);
+            if (Number.isFinite(gy) && gy < e.y - 1) { best = { x: tx, y: gy, z: tz, d }; break; }
+          }
+        }
+        if (best) { x = best.x; y = best.y; z = best.z; }
+      }
+      const k: Pickup = { id: `drop-${e.id}`, item: e.drop, amount: PICKUPS[e.drop].amount, x, y, z, taken: false };
       this.pickups.push(k);
-      this.emit({ type: "drop", id: k.id, item: k.item, x: k.x, y: k.y, z: k.z });
+      this.emit({ type: "drop", id: k.id, item: k.item, x: k.x, y: k.y, z: k.z, fromY: e.y + 1 });
     }
     const final = this.alive === 0;
     if (shot) {
       this.stats.kills++;
       if (headshot) this.stats.headshots++;
       this.meter = Math.min(METER.max, this.meter + (headshot ? METER.headshotRefill : METER.killRefill));
-      this.lastPlayerKill = { from: { x: shot.ox, y: shot.oy, z: shot.oz }, to: { x: shot.x, y: shot.y, z: shot.z }, enemy: e.idx, headshot };
+      this.lastPlayerKill = { from: { x: shot.ox, y: shot.oy, z: shot.oz }, to: { x: shot.x, y: shot.y, z: shot.z }, enemy: e.idx, headshot, chase };
     }
     this.emit({ type: "kill", target: e.idx, headshot, final, ...(blast ? { blast } : {}) });
     if (final && this.phase === "play") {
@@ -826,14 +1279,14 @@ export class Game {
     }
   }
 
-  private startKillcam(k: { from: V3; to: V3; enemy: number; headshot: boolean }): void {
+  private startKillcam(k: { from: V3; to: V3; enemy: number; headshot: boolean; chase: boolean }): void {
     this.setBulletTime(false);
     const e = this.enemies[k.enemy];
     e.deathHold = true;
     const dist = Math.sqrt((k.to.x - k.from.x) ** 2 + (k.to.y - k.from.y) ** 2 + (k.to.z - k.from.z) ** 2);
     // the bullet crosses in real time at world speed x 0.1, capped to fit the cam
     const flightReal = Math.min(KILLCAM.real - KILLCAM.hold, Math.max(0.35, dist / (PROJECTILE_SPEED * TIME.killCam)));
-    this.killcam = { t: 0, dur: flightReal + KILLCAM.hold, flight: flightReal, from: { ...k.from }, to: { ...k.to }, enemy: k.enemy, headshot: k.headshot };
+    this.killcam = { t: 0, dur: flightReal + KILLCAM.hold, flight: flightReal, from: { ...k.from }, to: { ...k.to }, enemy: k.enemy, headshot: k.headshot, chase: k.chase };
     this.setPhase("killcam");
     this.emit({ type: "killcam", on: true });
   }
@@ -879,6 +1332,10 @@ export class Game {
       return;
     }
     if (e.state === "inactive") { e.hit.hittable = false; return; }
+    // a grenade at her feet: run out of it (after a beat); a strike's shove on top of whatever she does
+    if (e.fleeWait > 0) { e.fleeWait -= dt; if (e.fleeWait <= 0) e.fleeT = GRENADE.flee; }
+    else if (e.fleeT > 0) { e.fleeT -= dt; const run = ENEMY[e.kind].run; e.vx = e.fleeX * run; e.vz = e.fleeZ * run; }
+    if (e.knockT > 0) { e.knockT -= dt; e.vx += e.knockX; e.vz += e.knockZ; }
     const r = ENEMY[e.kind].radius;
     if (e.vx || e.vz) {
       let nx = e.x + e.vx * dt, nz = e.z + e.vz * dt;
@@ -918,8 +1375,25 @@ export class Game {
     for (const e of this.enemies) h.f64(e.x).f64(e.z).f64(e.facing).f64(e.hp).str(e.state).f64(e.timer).i32(e.cover).f64(e.tell).f64(e.stagger);
     h.i32(this.projectiles.length).i32(this.breached.length).f64(this.breachSlow);
     for (const b of this.projectiles) h.f64(b.x).f64(b.y).f64(b.z);
+    h.i32(p.grenades).i32(p.banked).f64(p.meleeT).i32(p.zoom ? 1 : 0).i32(this.found.length).i32(this.opened.length).i32(this.broken.length).i32(this.grenadesLive.length);
+    for (const gr of this.grenadesLive) h.f64(gr.x).f64(gr.y).f64(gr.z).f64(gr.fuse);
     return h.hex();
   }
+}
+
+/** The point of a yawed box's footprint nearest to (x, z). */
+export function boxNearest(b: Box, x: number, z: number): { x: number; z: number } {
+  const dx = x - b.cx, dz = z - b.cz;
+  const lx = Math.max(-b.hx, Math.min(b.hx, dx * b.cos - dz * b.sin)), lz = Math.max(-b.hz, Math.min(b.hz, dx * b.sin + dz * b.cos));
+  return { x: b.cx + lx * b.cos + lz * b.sin, z: b.cz - lx * b.sin + lz * b.cos };
+}
+
+/** Horizontal distance from (x, z) to a yawed box's footprint (0 inside it). */
+export function boxDist(b: Box, x: number, z: number): number {
+  const dx = x - b.cx, dz = z - b.cz;
+  const lx = dx * b.cos - dz * b.sin, lz = dx * b.sin + dz * b.cos;
+  const ex = Math.max(0, Math.abs(lx) - b.hx), ez = Math.max(0, Math.abs(lz) - b.hz);
+  return Math.hypot(ex, ez);
 }
 
 export function insideTrigger(t: Marker, x: number, y: number, z: number): boolean {
@@ -929,7 +1403,7 @@ export function insideTrigger(t: Marker, x: number, y: number, z: number): boole
   return Math.abs(lx) <= t.hx && Math.abs(lz) <= t.hz && Math.abs(y - t.y) <= Math.max(t.hy, 1.5);
 }
 
-const frozen: InputFrame = { moveX: 0, moveY: 0, yaw: 0, pitch: 0, fire: false, bt: false, dodge: false, jump: false, reload: false, copium: false, slot: 0, skip: false };
+const frozen: InputFrame = { moveX: 0, moveY: 0, yaw: 0, pitch: 0, fire: false, bt: false, dodge: false, jump: false, reload: false, copium: false, slot: 0, skip: false, melee: false, throw: false, interact: false, zoom: false };
 /** Outside control (kill cam, results) the player keeps the aim but does nothing else. */
 function FROZEN_INPUT(_inp: InputFrame, p: Player): InputFrame {
   frozen.yaw = p.yaw;

@@ -8,7 +8,7 @@ import { shareShaders } from "../src/app/look/shaderShare.ts";
 import { readTokens } from "../src/app/look/tokens.ts";
 import fs from "node:fs";
 import { FRESH_MIN, pickPockits } from "../src/vrm/picks.ts";
-import { sampleGroup } from "../src/audio/sfx.ts";
+import { FILES, sampleGroup } from "../src/audio/sfx.ts";
 import { Game, goonSlots } from "../src/sim/game.ts";
 import { room1 } from "./helpers.ts";
 
@@ -137,7 +137,13 @@ test("sound groups: cutscene 1's lines first, the fight loop after the room's so
   assert.equal(sampleGroup("music/fight_tense"), "fight");
   assert.equal(sampleGroup("music/street_calm"), "music");
   for (const k of ["sfx/pistol_shot", "sfx/rain_loop", "voices/goon_a/alert_1", "voices/radbro/hurt_1", "voices/narrator/tut_shoot", "sfx/smg_shot", "sfx/weapon_pickup"]) assert.equal(sampleGroup(k), "room", k);
-  for (const k of ["music/rave_club", "music/backrooms_calm", "voices/crowd/scream_1", "voices/pa/pa_1", "voices/heavy/alert_1", "voices/narrator/r2_enter", "voices/narrator/cs2_01", "voices/goon_a/charge_1", "sfx/shotgun_shot", "sfx/door_breach", "sfx/footsteps_hard_loop", "sfx/shell_casing_floor"]) assert.equal(sampleGroup(k), "later", k);
+  for (const k of ["music/rave_club", "music/backrooms_calm", "voices/crowd/scream_1", "voices/pa/pa_1", "voices/heavy/alert_1", "voices/narrator/r2_enter", "voices/narrator/cs2_01", "voices/goon_a/charge_1", "sfx/shotgun_tail_club", "sfx/door_breach", "sfx/footsteps_hard_loop", "sfx/shell_casing_floor"]) assert.equal(sampleGroup(k), "later", k);
+  // the arsenal: room 1 has the perch goon's sniper, frags, melee, George and a shotgun at the barrier;
+  // the hand cannon, the sawed-off, the secret doors and the plywood wall are rooms 2-3
+  for (const k of ["sfx/shotgun_shot", "sfx/shotgun_pump", "sfx/shotgun_tail_street", "sfx/sniper_shot", "sfx/sniper_bolt", "sfx/scope_in", "sfx/grenade_explode", "sfx/katana_slash", "sfx/melee_hit", "sfx/meow_happy"]) assert.equal(sampleGroup(k), "room", k);
+  for (const k of ["sfx/handcannon_shot", "sfx/handcannon_mag_in", "sfx/sawedoff_shot", "sfx/sawedoff_close", "sfx/secret_door", "sfx/plywood_break"]) assert.equal(sampleGroup(k), "later", k);
+  // every arsenal file is in the preload lists
+  for (const k of ["sniper_shot_2", "handcannon_shot_3", "sawedoff_shot_2", "grenade_bounce_2", "katana_hit", "meow_sulky_3", "secret_door", "plywood_break", "scope_out"]) assert.ok((FILES as readonly string[]).includes(`sfx/${k}`), k);
   // a file nobody listed is a room-1 file (never silent in room 1)
   assert.equal(sampleGroup("sfx/brand_new_sound"), "room");
 });

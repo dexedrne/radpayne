@@ -23,10 +23,16 @@ export type InputFrame = {
   slot: number;
   /** Skip the final-kill cam (any key). */
   skip: boolean;
+  /** Melee (F), throw a grenade (G), use (E: secret doors, the eggs): press edges. */
+  melee?: boolean;
+  throw?: boolean;
+  interact?: boolean;
+  /** The sniper's scope (right mouse / LT held while the sniper is in hand). */
+  zoom?: boolean;
 };
 
 export function emptyInput(): InputFrame {
-  return { moveX: 0, moveY: 0, yaw: 0, pitch: 0, fire: false, bt: false, dodge: false, jump: false, reload: false, copium: false, slot: 0, skip: false };
+  return { moveX: 0, moveY: 0, yaw: 0, pitch: 0, fire: false, bt: false, dodge: false, jump: false, reload: false, copium: false, slot: 0, skip: false, melee: false, throw: false, interact: false, zoom: false };
 }
 
 export type V3 = { x: number; y: number; z: number };
@@ -54,11 +60,11 @@ export type GameEvent =
   | { type: "reload"; hand: number }
   | { type: "reloaded" }
   | { type: "dryfire" }
-  | { type: "pickup"; item: string; amount: number; id: string }
+  | { type: "pickup"; item: string; amount: number; id: string; pin?: string }
   /** A weapon switch (the new weapon's id); a pickup that dropped at a body; the first shot in the room
    *  (the crowd scatters, the club's lights change); a heavy staggered by a big hit. */
   | { type: "swap"; weapon: string }
-  | { type: "drop"; id: string; item: string; x: number; y: number; z: number }
+  | { type: "drop"; id: string; item: string; x: number; y: number; z: number; fromY?: number }
   | { type: "firstShot"; x: number; z: number }
   | { type: "stagger"; enemy: number }
   /** A door taken out of the world: `kick` = kicked open from inside (the fallback), else the player's
@@ -71,4 +77,16 @@ export type GameEvent =
   | { type: "trigger"; id: string; action: string; group?: string }
   | { type: "exit" }
   /** Bullet time asked for with too little meter (the HUD flashes the hourglass). */
-  | { type: "btRefused" };
+  | { type: "btRefused" }
+  // the arsenal: a grenade leaves his left hand (id), bounces, goes off (x, y, z; kills in it)
+  | { type: "throw"; id: number; x: number; y: number; z: number }
+  | { type: "bounce"; id: number; x: number; y: number; z: number; speed: number }
+  | { type: "explode"; id: number; x: number; y: number; z: number }
+  /** A melee: `phase` start (the swing begins) / hit (it resolved: `hits` bodies); kind katana | strike. */
+  | { type: "melee"; kind: "katana" | "strike"; phase: "start" | "hit"; hits: number }
+  | { type: "zoom"; on: boolean }
+  // secrets: found (n of `of` in the room), a secret door opened, a breakable broke, E at an egg
+  | { type: "secret"; id: string; n: number; of: number; name: string }
+  | { type: "open"; node: string }
+  | { type: "break"; node: string; x: number; y: number; z: number; surface: string }
+  | { type: "interact"; id: string; egg: string };

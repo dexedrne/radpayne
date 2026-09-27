@@ -45,9 +45,13 @@ const sgTube = new CylinderGeometry(0.015, 0.015, 0.4, 10);
 const sgPump = new CylinderGeometry(0.027, 0.027, 0.16, 12);
 const sgStock = new BoxGeometry(0.046, 0.09, 0.3);
 const sgGuard = new BoxGeometry(0.01, 0.03, 0.06);
+const sgBead = new BoxGeometry(0.008, 0.01, 0.012);
+const sgBand = new BoxGeometry(0.036, 0.05, 0.02);
 
-/** The pump shotgun (plan section 4). The pump is gun.userData.pump (rack it by moving it along -z). */
-export function makeShotgun(): Group {
+/** The pump shotgun (plan section 4). The pump is gun.userData.pump (rack it by moving it along -z).
+ *  `front`: the barrel and magazine tube run this much further ahead of the pump (the player's copy, so
+ *  the gun still reads from the shoulder camera once it is shouldered; the grip, pump and stock stay put). */
+export function makeShotgun(front = 0): Group {
   const g = new Group();
   const grip = new Mesh(sgGrip, walnut);
   grip.rotation.x = 0.22;
@@ -55,10 +59,12 @@ export function makeShotgun(): Group {
   receiver.position.set(0, 0.05, 0.1);
   const barrel = new Mesh(sgBarrel, gunmetal);
   barrel.rotation.x = Math.PI / 2;
-  barrel.position.set(0, 0.07, 0.43);
+  barrel.position.set(0, 0.07, 0.43 + front / 2);
+  barrel.scale.y = (0.46 + front) / 0.46;
   const tube = new Mesh(sgTube, gunmetal);
   tube.rotation.x = Math.PI / 2;
-  tube.position.set(0, 0.035, 0.4);
+  tube.position.set(0, 0.035, 0.4 + front / 2);
+  tube.scale.y = (0.4 + front) / 0.4;
   const pump = new Mesh(sgPump, walnut);
   pump.rotation.x = Math.PI / 2;
   pump.position.copy(SHOTGUN_PUMP);
@@ -67,8 +73,16 @@ export function makeShotgun(): Group {
   const guard = new Mesh(sgGuard, gunmetal);
   guard.position.set(0, 0.0, 0.05);
   g.add(grip, receiver, barrel, tube, pump, stock, guard);
+  if (front > 0) {
+    // a bead sight at the new muzzle and a barrel band where the longer tube meets it
+    const bead = new Mesh(sgBead, chrome);
+    bead.position.set(0, 0.092, 0.66 + front);
+    const band = new Mesh(sgBand, gunmetal);
+    band.position.set(0, 0.052, 0.62 + front * 0.8);
+    g.add(bead, band);
+  }
   g.userData.rpGun = true;
-  g.userData.muzzle = SHOTGUN_MUZZLE;
+  g.userData.muzzle = front ? new Vector3(SHOTGUN_MUZZLE.x, SHOTGUN_MUZZLE.y, SHOTGUN_MUZZLE.z + front) : SHOTGUN_MUZZLE;
   g.userData.pump = pump;
   g.traverse(o => { o.frustumCulled = false; });
   return g;
@@ -95,8 +109,9 @@ const akMag = new BoxGeometry(0.03, 0.052, 0.048);
 const akStock = new BoxGeometry(0.04, 0.07, 0.28);
 const akButt = new BoxGeometry(0.044, 0.12, 0.03);
 
-/** #250's AK-47 (see AK_MUZZLE / AK_HANDGUARD). */
-export function makeAk(): Group {
+/** #250's AK-47 (see AK_MUZZLE / AK_HANDGUARD). `front`: the barrel runs this much further out (the
+ *  player's copy, as the shotgun's). */
+export function makeAk(front = 0): Group {
   const g = new Group();
   const receiver = new Mesh(akReceiver, akSteel);
   receiver.position.set(0, 0.045, 0.1);
@@ -113,12 +128,13 @@ export function makeAk(): Group {
   gas.position.set(0, 0.085, 0.38);
   const barrel = new Mesh(akBarrel, akSteel);
   barrel.rotation.x = Math.PI / 2;
-  barrel.position.set(0, 0.06, 0.58);
+  barrel.position.set(0, 0.06, 0.58 + front / 2);
+  barrel.scale.y = (0.2 + front) / 0.2;
   const brake = new Mesh(akBrake, akSteel);
   brake.rotation.x = Math.PI / 2;
-  brake.position.set(0, 0.06, 0.66);
+  brake.position.set(0, 0.06, 0.66 + front);
   const sight = new Mesh(akSight, akSteel);
-  sight.position.set(0, 0.088, 0.6);
+  sight.position.set(0, 0.088, 0.6 + front);
   // the banana mag: three short segments curving forward under the receiver, in front of the guard
   // (short: the gun is attached 1.55x over true height for the shoulder camera, the mag with it)
   const mag = new Group();
@@ -137,7 +153,7 @@ export function makeAk(): Group {
   butt.position.set(0, 0.01, -0.28);
   g.add(receiver, cover, grip, guard, hand, gas, barrel, brake, sight, mag, stock, butt);
   g.userData.rpGun = true;
-  g.userData.muzzle = AK_MUZZLE;
+  g.userData.muzzle = front ? new Vector3(AK_MUZZLE.x, AK_MUZZLE.y, AK_MUZZLE.z + front) : AK_MUZZLE;
   g.userData.mag = mag;
   g.traverse(o => { o.frustumCulled = false; });
   return g;
@@ -196,6 +212,7 @@ export function attachGun(gun: Object3D, hand: Object3D, g: Grip, k = 1, scale: 
   if (typeof scale === "number") gun.scale.setScalar(scale);
   else gun.scale.set(scale[0], scale[1], scale[2]);
   gun.userData.grip = gun.quaternion.clone();
+  gun.userData.gripPos = gun.position.clone();
 }
 
 const va = new Vector3();
@@ -228,7 +245,226 @@ export function aimGun(gun: Object3D, target: Vector3 | null, weight: number, ma
   gun.updateMatrixWorld(true);
 }
 
+/**
+ * The wrist, not the gun (arsenal spec 1.6): reset the gun to its grip, then bend the HAND bone in world
+ * space so the gun's barrel points from its muzzle at `target`, by at most `maxAngle` radians, blended by
+ * `weight`. The gun stays in the palm exactly as the grip puts it.
+ */
+export function aimHand(hand: Object3D | undefined, gun: Object3D, target: Vector3 | null, weight: number, maxAngle = 0.75): void {
+  const gq = gun.userData.grip as Quaternion | undefined;
+  const gp = gun.userData.gripPos as Vector3 | undefined;
+  if (gq) gun.quaternion.copy(gq);
+  if (gp) gun.position.copy(gp);
+  gun.updateMatrixWorld(true);
+  if (!hand || !hand.parent || !target || weight <= 0.001) return;
+  const muzzle = gun.localToWorld(va.copy((gun.userData.muzzle as Vector3 | undefined) ?? MUZZLE));
+  const cur = vb.set(0, 0, 1).applyQuaternion(gun.getWorldQuaternion(qb));
+  const want = vc.copy(target).sub(muzzle).normalize();
+  qa.setFromUnitVectors(cur, want);
+  const ang = 2 * Math.acos(Math.min(1, Math.abs(qa.w)));
+  const k = Math.min(1, ang > 1e-4 ? maxAngle / ang : 1) * weight;
+  if (k < 1) qa.slerp(qi.identity(), 1 - k);
+  hand.parent.getWorldQuaternion(qb);
+  const inv = qb.clone().invert();
+  hand.quaternion.premultiply(qb).premultiply(qa).premultiply(inv);
+  hand.updateMatrixWorld(true);
+}
+
 /** Muzzle world position of a gun (after its matrix is up to date). */
 export function muzzleWorld(gun: Object3D, out: Vector3): Vector3 {
   return gun.localToWorld(out.copy((gun.userData.muzzle as Vector3 | undefined) ?? MUZZLE));
+}
+
+// ---- the arsenal's guns (arsenal spec 3.2): the pistol frame for the one-handed ones (the grip at the
+// origin, +Z the barrel), the shotgun frame for the sniper; every one satin, never black-hole metal ----
+
+export const HANDCANNON_MUZZLE = new Vector3(0, 0.055, 0.26);
+const hcSlide = new BoxGeometry(0.046, 0.05, 0.27);
+const hcFrame = new BoxGeometry(0.04, 0.03, 0.2);
+const hcGrip = new BoxGeometry(0.04, 0.12, 0.055);
+const hcGuard = new BoxGeometry(0.01, 0.034, 0.06);
+const hcPort = new BoxGeometry(0.048, 0.02, 0.07);
+const hcBore = new CylinderGeometry(0.011, 0.011, 0.012, 10);
+const darkSteel = new MeshStandardMaterial({ color: "#3a3e46", roughness: 0.5, metalness: 0.2, emissive: "#1a1c21" });
+/** The hand cannon's chrome: brighter than the pistols' slides, so the big gun reads in the rain. */
+const hcChrome = new MeshStandardMaterial({ color: "#dfe3ea", roughness: 0.22, metalness: 0.4, emissive: "#4c5059" });
+
+/** The hand cannon: a long-slide .50 pistol in bright chrome with a big squared slide and a dark grip. */
+export function makeHandCannon(): Group {
+  const g = new Group();
+  const slide = new Mesh(hcSlide, hcChrome);
+  slide.position.set(0, 0.058, 0.12);
+  const frame = new Mesh(hcFrame, hcChrome);
+  frame.position.set(0, 0.025, 0.1);
+  const gr = new Mesh(hcGrip, darkSteel);
+  gr.rotation.x = 0.22;
+  const guard = new Mesh(hcGuard, hcChrome);
+  guard.position.set(0, 0.006, 0.05);
+  const port = new Mesh(hcPort, darkSteel);
+  port.position.set(0, 0.078, 0.1);
+  const bore = new Mesh(hcBore, darkSteel);
+  bore.rotation.x = Math.PI / 2;
+  bore.position.set(0, 0.055, 0.257);
+  g.add(slide, frame, gr, guard, port, bore);
+  g.userData.rpGun = true;
+  g.userData.muzzle = HANDCANNON_MUZZLE;
+  g.userData.slide = slide;
+  g.traverse(o => { o.frustumCulled = false; });
+  return g;
+}
+
+export const SAWEDOFF_MUZZLE = new Vector3(0, 0.06, 0.42);
+const soBarrel = new CylinderGeometry(0.02, 0.02, 0.36, 12);
+const soRib = new BoxGeometry(0.012, 0.012, 0.34);
+const soBlock = new BoxGeometry(0.07, 0.06, 0.1);
+const soFore = new BoxGeometry(0.06, 0.035, 0.14);
+const soGrip = new BoxGeometry(0.04, 0.11, 0.055);
+const soStub = new BoxGeometry(0.045, 0.06, 0.07);
+const soGuard = new BoxGeometry(0.01, 0.03, 0.06);
+
+/** The sawed-off: a stubby side-by-side on a pistol-grip stock stub, walnut and gunmetal, one-handed.
+ *  The barrels are gun.userData.barrels (they hinge down at z 0.12 for the reload). */
+export function makeSawedOff(): Group {
+  const g = new Group();
+  const barrels = new Group();
+  barrels.position.set(0, 0.06, 0.12);
+  for (const x of [-0.021, 0.021]) {
+    const b = new Mesh(soBarrel, gunmetal);
+    b.rotation.x = Math.PI / 2;
+    b.position.set(x, 0, 0.18);
+    barrels.add(b);
+  }
+  const rib = new Mesh(soRib, chrome);
+  rib.position.set(0, 0.022, 0.18);
+  const fore = new Mesh(soFore, walnut);
+  fore.position.set(0, -0.03, 0.1);
+  barrels.add(rib, fore);
+  const block = new Mesh(soBlock, gunmetal);
+  block.position.set(0, 0.05, 0.06);
+  const gr = new Mesh(soGrip, walnut);
+  gr.rotation.x = 0.28;
+  const stub = new Mesh(soStub, walnut);
+  stub.position.set(0, -0.04, -0.035);
+  stub.rotation.x = 0.28;
+  const guard = new Mesh(soGuard, gunmetal);
+  guard.position.set(0, 0.01, 0.045);
+  g.add(barrels, block, gr, stub, guard);
+  g.userData.rpGun = true;
+  g.userData.muzzle = SAWEDOFF_MUZZLE;
+  g.userData.barrels = barrels;
+  g.traverse(o => { o.frustumCulled = false; });
+  return g;
+}
+
+export const SNIPER_MUZZLE = new Vector3(0, 0.07, 0.8);
+// dark green-grey furniture, steel, the scope's glass a cold blue
+const snFurn = new MeshStandardMaterial({ color: "#4d5a4a", roughness: 0.6, metalness: 0.05, emissive: "#1c221b" });
+const snGlass = new MeshStandardMaterial({ color: "#5fb4d9", roughness: 0.15, metalness: 0.3, emissive: "#1d4658" });
+const snStock = new BoxGeometry(0.05, 0.1, 0.34);
+const snGrip = new BoxGeometry(0.034, 0.1, 0.05);
+const snReceiver = new BoxGeometry(0.05, 0.06, 0.26);
+const snFore = new BoxGeometry(0.055, 0.05, 0.3);
+const snBarrel = new CylinderGeometry(0.012, 0.014, 0.5, 10);
+const snTube = new CylinderGeometry(0.024, 0.024, 0.2, 12);
+const snBell = new CylinderGeometry(0.032, 0.026, 0.06, 12);
+const snLens = new CylinderGeometry(0.03, 0.03, 0.006, 12);
+const snRing = new BoxGeometry(0.014, 0.05, 0.02);
+const snBolt = new CylinderGeometry(0.008, 0.008, 0.06, 8);
+const snKnob = new BoxGeometry(0.022, 0.022, 0.022);
+const snMag = new BoxGeometry(0.03, 0.05, 0.08);
+
+/** The sniper rifle: a long bolt gun in the shotgun frame, a scope on top ((0, 0.12, 0.05-0.25)), the bolt
+ *  handle at (0.03, 0.08, 0.02) (gun.userData.bolt: cycle it along -z). `front`: the barrel runs further. */
+export function makeSniper(front = 0): Group {
+  const g = new Group();
+  const stock = new Mesh(snStock, snFurn);
+  stock.position.set(0, 0.02, -0.17);
+  const grip = new Mesh(snGrip, snFurn);
+  grip.rotation.x = 0.3;
+  const receiver = new Mesh(snReceiver, akSteel);
+  receiver.position.set(0, 0.055, 0.08);
+  const fore = new Mesh(snFore, snFurn);
+  fore.position.set(0, 0.035, 0.36);
+  const barrel = new Mesh(snBarrel, akSteel);
+  barrel.rotation.x = Math.PI / 2;
+  barrel.position.set(0, 0.07, 0.55 + front / 2);
+  barrel.scale.y = (0.5 + front) / 0.5;
+  const tube = new Mesh(snTube, akSteel);
+  tube.rotation.x = Math.PI / 2;
+  tube.position.set(0, 0.125, 0.15);
+  const bellF = new Mesh(snBell, akSteel);
+  bellF.rotation.x = Math.PI / 2;
+  bellF.position.set(0, 0.125, 0.27);
+  const bellB = new Mesh(snBell, akSteel);
+  bellB.rotation.x = -Math.PI / 2;
+  bellB.position.set(0, 0.125, 0.03);
+  const lens = new Mesh(snLens, snGlass);
+  lens.rotation.x = Math.PI / 2;
+  lens.position.set(0, 0.125, 0.302);
+  const r1 = new Mesh(snRing, akSteel);
+  r1.position.set(0, 0.095, 0.08);
+  const r2 = new Mesh(snRing, akSteel);
+  r2.position.set(0, 0.095, 0.21);
+  const bolt = new Group();
+  bolt.position.set(0.03, 0.08, 0.02);
+  const shaft = new Mesh(snBolt, akSteel);
+  shaft.rotation.z = Math.PI / 2;
+  const knob = new Mesh(snKnob, akSteel);
+  knob.position.set(0.035, -0.01, 0);
+  bolt.add(shaft, knob);
+  const mag = new Mesh(snMag, akSteel);
+  mag.position.set(0, -0.005, 0.12);
+  g.add(stock, grip, receiver, fore, barrel, tube, bellF, bellB, lens, r1, r2, bolt, mag);
+  g.userData.rpGun = true;
+  g.userData.muzzle = new Vector3(SNIPER_MUZZLE.x, SNIPER_MUZZLE.y, SNIPER_MUZZLE.z + front);
+  g.userData.bolt = bolt;
+  g.traverse(o => { o.frustumCulled = false; });
+  return g;
+}
+
+const frBody = new CylinderGeometry(0.036, 0.036, 0.075, 10);
+const frCap = new CylinderGeometry(0.018, 0.022, 0.03, 8);
+const frSpoon = new BoxGeometry(0.012, 0.07, 0.02);
+const frag = new MeshStandardMaterial({ color: "#5f6a3e", roughness: 0.6, metalness: 0.1, emissive: "#20250f" });
+
+/** A frag grenade: a dark olive body, a steel cap and spoon (about 11 cm). */
+export function makeGrenade(): Group {
+  const g = new Group();
+  const body = new Mesh(frBody, frag);
+  body.scale.set(1, 1.15, 1);
+  const cap = new Mesh(frCap, metal);
+  cap.position.y = 0.05;
+  const spoon = new Mesh(frSpoon, metal);
+  spoon.position.set(0.03, 0.02, 0);
+  g.add(body, cap, spoon);
+  g.userData.rpGun = true;
+  g.traverse(o => { o.frustumCulled = false; });
+  return g;
+}
+
+const kBlade = new BoxGeometry(0.008, 0.032, 0.75);
+const kEdge = new BoxGeometry(0.003, 0.012, 0.73);
+const kGuard = new CylinderGeometry(0.042, 0.042, 0.012, 14);
+const kHilt = new BoxGeometry(0.03, 0.034, 0.26);
+const bladeMat = new MeshStandardMaterial({ color: "#d9dde3", roughness: 0.18, metalness: 0.55, emissive: "#4a4e56" });
+const goldMat = new MeshStandardMaterial({ color: "#c9a045", roughness: 0.35, metalness: 0.6, emissive: "#3a2a0c" });
+const wrapMat = new MeshStandardMaterial({ color: "#1d1f26", roughness: 0.8, metalness: 0, emissive: "#0c0d10" });
+
+/** #4764's drawn katana in the pistol frame: the grip at the origin, the 0.75 m blade along +Z. */
+export function makeKatana(): Group {
+  const g = new Group();
+  const hilt = new Mesh(kHilt, wrapMat);
+  hilt.position.set(0, 0.02, -0.05);
+  const guard = new Mesh(kGuard, goldMat);
+  guard.rotation.x = Math.PI / 2;
+  guard.position.set(0, 0.02, 0.085);
+  const blade = new Mesh(kBlade, bladeMat);
+  blade.position.set(0, 0.024, 0.47);
+  const edge = new Mesh(kEdge, chrome);
+  edge.position.set(0, 0.003, 0.47);
+  g.add(hilt, guard, blade, edge);
+  g.userData.rpGun = true;
+  g.userData.muzzle = new Vector3(0, 0.024, 0.84);
+  g.traverse(o => { o.frustumCulled = false; });
+  return g;
 }
