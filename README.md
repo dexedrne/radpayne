@@ -1,7 +1,7 @@
 # RadPayne
 
 A third-person noir shooter in the browser. You play a Radbro who got rugged and shoots his way into
-a Milady gang's rave in bullet time: dual pistols, slow motion, shootdodges, and a final-kill cam.
+a Milady gang's rave in bullet time: dual pistols, slow motion, shootdodges, and a kill cam.
 
 > they took everything I had. I went back for it.
 
@@ -59,6 +59,13 @@ After you land from a dive you lie prone and can keep shooting. Press a move key
 you hold a move key as you land, you roll straight into a run. Kill the whole room, watch the last
 bullet land, then walk to the club door.
 
+**The kill cam.** The room's last kill, and now and then a special shot (a sniper kill, a headshot past
+25 m, one hand-cannon or sniper round through two bodies, a grenade that takes two), stops the fight:
+the lens rides the round from the muzzle in deep slow motion with the world drained of colour, then
+freezes on the impact in a noir X-ray (her skeleton glowing through a dark halftone body, the bone it
+hit cracked in gold), holds a beat and snaps back. At most one special shot every 20 s; any key skips
+it. Pause menu, Display: **Kill cam** Always / Special shots (the default) / Final kill only / Off.
+
 In the back of the house, a locked door does not open: shootdodge through it. The room behind it runs
 in slow motion for a moment and wakes late. Wait too long in front of it and the heavy inside kicks it
 open himself. Clearing the security office is a checkpoint: dying after it retries from there.
@@ -66,7 +73,7 @@ open himself. Clearing the security office is a checkpoint: dying after it retri
 ## Develop
 
 ```bash
-npm test           # node --test: time scale, weapons, hitboxes, projectiles vs hitscan, AI, the breach, checkpoints, replay, smoke bots, kill-cam framing
+npm test           # node --test: time scale, weapons, hitboxes, projectiles vs hitscan, AI, the breach, checkpoints, replay, smoke bots, kill-cam framing and picks, the talk budget
 npm run typecheck
 npm run build      # production build in dist/
 npm run greybox    # regenerate public/levels/greybox.json
@@ -122,8 +129,9 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
     cyan glow sticks and is never a target (bullets pass through them).
   - The back rooms have almost no haze and mid-dark walls under flat white light; every hostile keeps
     the pink-red rim and outline. The outline never draws over the player's own body.
-  - The final-kill cam keeps posts, pillars and steam away from its lens; when the bullet's path runs
-    through steam it skips the chase and holds on the victim.
+  - The kill cam keeps posts, pillars and steam away from its lens; when the bullet's path runs
+    through steam it skips the ride and holds on the victim. Its X-ray is stylised (a clean
+    skeleton, a crack line, no organs, no blood) and hides every HUD layer but its letterbox.
 - **Graphics settings** (pause menu, Display; the preset is on the title too), saved in the browser:
   - Presets: Low (no bloom, no puddle reflections, a light drizzle, 75 % resolution, a smaller rave
     crowd and fewer lasers), Medium (subtle bloom, a plain wet road, thin rain; the default on the WebGL2
@@ -173,6 +181,15 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
 
 The simulation runs at a fixed 120 Hz and is deterministic for a given level, seed, difficulty and
 input log. Bullet time is a time scale on it.
+
+- **The kill cam** is presentation only (`src/app/cine.ts`: which kills, the timeline, `CINE` at the
+  top). It holds the fight with `Session.hold`: no steps run while it plays, so the sim never sees it
+  and a recorded input log replays the same with or without it; the views crawl at `CINE.crawl`
+  (`Session.viewScale`). The lens is `CameraView`'s (on `killcam.ts`'s plan), the X-ray is
+  `src/app/xray.ts` (the joints come from each view's rig: `xrayRigs`), projected by `CineView` and
+  drawn by `src/ui/hud/XrayOverlay.tsx`; its sounds are procedural (`sfxCine` in `src/audio/sfx.ts`).
+  The room's last kill keeps the sim's own final-kill cam, which plays on after the ride as the swing
+  around her; Kill cam: Off skips it through the input frame (`Session.skipNext`).
 
 - **Assets** (all generated outputs, web-ready):
   - `public/models/radbro<id>.gun.glb`: the shooter clip set per Radbro (aimed idle / walk / back /
@@ -232,7 +249,9 @@ input log. Bullet time is a time scale on it.
   bot clears the room, and saves screenshots. `?bot=demo&cutscene&seed=1&webgl2` does it in one go:
   cutscene 1, the fight, the ending, the results, with every panel shot and the voice lines listed.
   From room 1 the chain runs on through room 2, cutscene 2 and room 3 to the results
-  (`RADPAYNE_MAX_S=620` gives it the time).
+  (`RADPAYNE_MAX_S=620` gives it the time). The first four kill cams are shot on their ride and in
+  their X-ray (`kc<n>-a-ride`, `kc<n>-b-xray`; the tour does the same), and the voice lines are
+  counted per fight minute by speaker (`VOICE RATE`).
   `RADPAYNE_GPU=1` uses the machine's GPU (WebGL2); without it Chromium falls back to SwiftShader
   (very slow).
 - **Hold check:** with the dev server up, `RADPAYNE_CHROME_PROFILE=<throwaway dir> node tools/holdcheck.ts

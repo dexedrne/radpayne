@@ -247,7 +247,7 @@ export function EggsView({ s }: { s: Session }) {
   useFrame((_, raw) => {
     const dt = Math.min(raw, 0.1);
     const g = s.game;
-    const wdt = s.paused ? 0 : dt * g.timeScale;
+    const wdt = dt * s.viewScale;
     if (cat.g) {
       const c = cat.g;
       c.mixer.update(wdt);

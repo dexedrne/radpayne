@@ -36,6 +36,7 @@ import { playerMuzzles } from "../PlayerView.tsx";
 import { FRAME } from "../frame.ts";
 import { useUi } from "../../ui/store.ts";
 import { lookOwns } from "./fx.ts";
+import { cine } from "../cine.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type N = any;
@@ -359,11 +360,11 @@ export function CombatRead({ s }: { s: Session }) {
   useFrame((st, raw) => {
     const g = s.game;
     const dt = Math.min(raw, 0.1);
-    const ts = s.paused ? 0 : g.timeScale;
+    const ts = s.viewScale;
     if (o.run !== s.run) { o.run = s.run; o.fx.length = 0; readFx.fire.length = 0; readFx.hit.length = 0; }
     // strength: only in play (not on the title, in the cutscene or the kill cam)
     const scr = useUi.getState().screen;
-    const want = (scr === "play" || scr === "paused" || scr === "results") && g.phase !== "killcam" ? 1 : 0;
+    const want = (scr === "play" || scr === "paused" || scr === "results") && g.phase !== "killcam" && !cine.holding ? 1 : 0;
     readFx.strength.value += (want - readFx.strength.value) * Math.min(1, dt * 6);
     const size = st.gl.domElement;
     readFx.aspect.value = size.clientWidth / Math.max(1, size.clientHeight);

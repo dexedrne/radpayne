@@ -20,6 +20,7 @@ import { SecretsView } from "./SecretsView.tsx";
 import { AssetsBridge } from "./characters.ts";
 import { RoomLook } from "./look/index.tsx";
 import { DebugView } from "./DebugView.tsx";
+import { CineView } from "./CineView.tsx";
 import { HudFrame } from "../ui/hud/HudFrame.tsx";
 import { backendIs, dprFor, useGfx } from "./look/gfx.ts";
 import { shareShaders } from "./look/shaderShare.ts";
@@ -94,6 +95,7 @@ export function Scene({ s, onPhase, bootRef }: { s: Session; onPhase: (p: string
         <EggsView s={s} />
         <SecretsView s={s} />
         <CameraView s={s} />
+        <CineView s={s} />
         <DebugView s={s} />
         <HudFrame s={s} />
       </PrefabRoot>

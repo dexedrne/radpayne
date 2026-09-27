@@ -694,7 +694,7 @@ export class Game {
         e.tell = 0;
         this.emit({ type: "stagger", enemy: e.idx });
       }
-      if (e.hp <= 0) this.killEnemy(e, false, dx, dz, { ox: px, oy: py, oz: pz, x: c.x, y: c.y, z: c.z }, false, false);
+      if (e.hp <= 0) this.killEnemy(e, false, dx, dz, { ox: px, oy: py, oz: pz, x: c.x, y: c.y, z: c.z }, false, false, "melee");
     }
     // a breakable within reach in front of him takes the blow too
     for (const b of this.level.breakables) {
@@ -804,7 +804,7 @@ export class Game {
       if (e.state === "idle") alertGoon(this, e, 0);
       if (e.kind === "heavy" && e.hp > 0 && dmg >= HEAVY.staggerAt && e.stagger <= 0) { e.stagger = HEAVY.stagger; e.tell = 0; this.emit({ type: "stagger", enemy: e.idx }); }
       const hl = Math.hypot(dx, dz) || 1;
-      if (e.hp <= 0) this.killEnemy(e, false, dx / hl, dz / hl, { ox: bx, oy: by, oz: bz, x: this.v.x, y: this.v.y, z: this.v.z }, true, false);
+      if (e.hp <= 0) this.killEnemy(e, false, dx / hl, dz / hl, { ox: bx, oy: by, oz: bz, x: this.v.x, y: this.v.y, z: this.v.z }, true, false, "grenade");
     }
     const p = this.player;
     if (p.mode !== "dead") {
@@ -1224,7 +1224,7 @@ export class Game {
     }
     if (e.hp <= 0) {
       const blast = team === 0 && (weapon === "shotgun" || weapon === "sawedoff") && (e.x - ox) ** 2 + (e.z - oz) ** 2 < 4 * 4;
-      this.killEnemy(e, h.part === HB_HEAD, dx, dz, team === 0 ? { ox, oy, oz, x: h.x, y: h.y, z: h.z } : null, blast);
+      this.killEnemy(e, h.part === HB_HEAD, dx, dz, team === 0 ? { ox, oy, oz, x: h.x, y: h.y, z: h.z } : null, blast, true, weapon);
     }
   }
 
@@ -1232,7 +1232,7 @@ export class Game {
   private readonly heavyHit: number[] = [];
   private readonly heavyHitT: number[] = [];
 
-  private killEnemy(e: Enemy, headshot: boolean, dx: number, dz: number, shot: { ox: number; oy: number; oz: number; x: number; y: number; z: number } | null, blast = false, chase = true): void {
+  private killEnemy(e: Enemy, headshot: boolean, dx: number, dz: number, shot: { ox: number; oy: number; oz: number; x: number; y: number; z: number } | null, blast = false, chase = true, weapon = ""): void {
     setState(e, "dead");
     e.hit.hittable = false;
     e.hit.pose.stance = "dead";
@@ -1271,7 +1271,7 @@ export class Game {
       this.meter = Math.min(METER.max, this.meter + (headshot ? METER.headshotRefill : METER.killRefill));
       this.lastPlayerKill = { from: { x: shot.ox, y: shot.oy, z: shot.oz }, to: { x: shot.x, y: shot.y, z: shot.z }, enemy: e.idx, headshot, chase };
     }
-    this.emit({ type: "kill", target: e.idx, headshot, final, ...(blast ? { blast } : {}) });
+    this.emit({ type: "kill", target: e.idx, headshot, final, ...(blast ? { blast } : {}), ...(shot ? { weapon, shot: { ...shot } } : {}) });
     if (final && this.phase === "play") {
       this.emit({ type: "roomClear" });
       if (shot && this.lastPlayerKill) this.startKillcam(this.lastPlayerKill);

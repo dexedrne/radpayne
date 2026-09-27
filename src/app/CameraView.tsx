@@ -5,6 +5,11 @@
 // lands where the shot goes) instead of pushing the lens into the facade.
 // The final-kill cam follows the replayed bullet from behind, then swings around the target while it
 // drops, as planned by killcam.ts (clear lines, no wall, hot light, post or steam at the lens).
+// The kill cam (cine.ts) rides its bullet from the muzzle on the same plan: the lens starts just past
+// the muzzle, slows into her with the view opening out to her side, and holds there, pushing in a
+// little, through the X-ray; with no bullet to ride (a grenade, a melee) or no clean line along it, it
+// holds the swing's opening angle and pushes in. After the last kill's ride the sim's own final-kill
+// cam plays on as the swing only.
 // A long gun out (arsenal spec 1.4) moves the lens out and down (LONG_CAM, eased over 0.3 s): a
 // shouldered gun points away from a camera behind him, so the view goes wider of his shoulder and below
 // his big head, where the gun's length shows. Shouldered (a shot in the last 1.2 s, bullet time) the lens
@@ -24,6 +29,8 @@ import { SHOULDER, aimDir } from "../sim/aim.ts";
 import { FRAME } from "./frame.ts";
 import type { V3 } from "../sim/types.ts";
 import { KC, planKillcam, type KcPlan } from "./killcam.ts";
+import { CINE, cine, rideEase, type Cine } from "./cine.ts";
+import type { KillCam } from "../sim/game.ts";
 import { isLongGun, isOneHand } from "../combat/weapons.ts";
 import { holdDev } from "./dev/holdcheck.ts";
 import { holdView, playerChest } from "./PlayerView.tsx";
@@ -59,6 +66,9 @@ export function CameraView({ s }: { s: Session }) {
     /** How much of the long gun's drop the lens takes (it gives way when the lowered line is blocked). */
     dropK: 1,
     plan: null as KcPlan | null,
+    /** The kill cam's plan and the cam it is for. */
+    cplan: null as KcPlan | null,
+    cfor: null as Cine | null,
   }), []);
   // what the camera collides with: every visible box, decor included (a tall decor box must not sit
   // between the camera and the shoulder), not the invisible play-area walls
@@ -116,12 +126,53 @@ export function CameraView({ s }: { s: Session }) {
       tmp.at.set(at[0], at[1], at[2]);
       fovWant = FOV;
       camView.arm = SHOULDER.arm;
+    } else if (cine.cur && cine.cur.phase !== "out") {
+      const c = cine.cur;
+      const last = c.kills[c.kills.length - 1];
+      const e = g.enemies[last.enemy];
+      const blast = c.kind === "grenade";
+      // a blast: from him to its centre, the swing around the centre
+      const from = blast ? { x: p.x, y: p.y + 1.4, z: p.z } : c.from, to = blast ? c.from : c.to;
+      if (tmp.cfor !== c) {
+        tmp.cfor = c;
+        const kc: KillCam = { t: 0, dur: 1, flight: 1, from, to, enemy: last.enemy, headshot: last.headshot, chase: c.ride };
+        const at = blast || !e ? { x: to.x, y: e?.y ?? to.y - 1, z: to.z, killDX: 0, killDZ: 0 } : e;
+        tmp.cplan = planKillcam(kc, at, camWorld, s.level, viewWorld);
+      }
+      const pl = tmp.cplan!;
+      let dx = to.x - from.x, dy = to.y - from.y, dz = to.z - from.z;
+      const l = Math.hypot(dx, dy, dz) || 1;
+      dx /= l; dy /= l; dz /= l;
+      const hl = Math.hypot(dx, dz) || 1;
+      const hx = dx / hl, hz = dz / hl, sx = hz, sz = -hx;
+      const xk = c.phase === "xray" ? Math.min(1, (c.t - c.flight) / CINE.xray) : 0;
+      if (c.ride && pl.chase) {
+        // ride: 0.9 m behind the round, never closer than 2.4 m to where it hits; the view opens out
+        // to her side as it slows in, then pushes in a little through the freeze
+        const sb = cine.bulletAt(c);
+        const endK = Math.max(0, Math.min(1, (rideEase(Math.min(1, c.t / c.flight)) - 0.55) / 0.45));
+        const along = Math.min(sb - 0.9, c.dist - 2.4) + xk * 0.35;
+        const sd = pl.side * (1 + 1.3 * endK), up = pl.lift * (1 + 0.8 * endK);
+        tmp.eye.set(from.x + dx * along + sx * sd, from.y + dy * along + up, from.z + dz * along + sz * sd);
+        const bx = from.x + dx * sb, by = from.y + dy * sb, bz = from.z + dz * sb;
+        tmp.at.set(bx + dx * 2 + (to.x - bx - dx * 2) * endK, by + dy * 2 + (to.y - by - dy * 2) * endK, bz + dz * 2 + (to.z - bz - dz * 2) * endK);
+        fovWant = KC.chaseFov - 4 * endK - 3 * xk;
+      } else {
+        // push: the swing's opening angle (a clear line to her / the blast), easing in and round
+        const R = (blast ? 4.4 : KC.radius) * (1 - 0.2 * Math.min(1, c.t / (c.flight + CINE.xray)));
+        const a = pl.a0 + pl.dir * 0.22 * c.t;
+        const ey = blast ? (e?.y ?? to.y) + 2.1 : (e?.y ?? 0) + KC.eyeY;
+        tmp.eye.set(pl.kx + (-hx * Math.cos(a) + sx * Math.sin(a)) * R, ey, pl.kz + (-hz * Math.cos(a) + sz * Math.sin(a)) * R);
+        tmp.at.set(pl.kx, (blast ? to.y : e?.y ?? 0) + KC.atY, pl.kz);
+        fovWant = KC.fov - 4 * xk;
+      }
+      camView.arm = SHOULDER.arm;
     } else if (k) {
       const e = g.enemies[k.enemy];
-      if (!tmp.plan || tmp.plan.kc !== k) tmp.plan = planKillcam(k, e ?? { x: k.to.x, y: 0, z: k.to.z, killDX: 0, killDZ: 1 }, camWorld, s.level, viewWorld);
+      if (!tmp.plan || tmp.plan.kc !== k) { tmp.plan = planKillcam(k, e ?? { x: k.to.x, y: 0, z: k.to.z, killDX: 0, killDZ: 1 }, camWorld, s.level, viewWorld); tmp.orbit = 0; }
       const pl = tmp.plan;
-      // bullet position along the replayed shot
-      const f = Math.min(1, k.t / k.flight);
+      // bullet position along the replayed shot (after the kill cam's ride: the swing only)
+      const f = cine.flownFinal ? 1 : Math.min(1, k.t / k.flight);
       const bx = k.from.x + (k.to.x - k.from.x) * f, by = k.from.y + (k.to.y - k.from.y) * f, bz = k.from.z + (k.to.z - k.from.z) * f;
       let dx = k.to.x - k.from.x, dy = k.to.y - k.from.y, dz = k.to.z - k.from.z;
       const l = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;

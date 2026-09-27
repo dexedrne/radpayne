@@ -630,7 +630,7 @@ export function StreetLook({ level, s }: { level: LevelData; s?: Session; lowQua
   const st = useRef({ beat: 0, flickT: 0, flick: 1 });
   useFrame((three, raw) => {
     const dt = Math.min(raw, 0.1);
-    const ts = !s || s.paused ? 1 : s.game.timeScale;
+    const ts = !s || s.paused ? 1 : s.hold ? s.crawl : s.game.timeScale;
     const fx = streetFx;
     fx.time.value += dt * ts;
     const want = Math.max(0.05, 0.4 * ts);

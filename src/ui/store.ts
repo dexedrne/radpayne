@@ -56,8 +56,11 @@ export type Hud = {
   refill: { amount: number; at: number } | null;
   /** Bullet time asked for with too little meter (performance.now()). */
   btRefusedAt: number;
-  /** 0..1 through the final-kill cam. */
+  /** 0..1 through the final-kill cam (or the kill cam holding the fight). */
   killcamProgress: number;
+  /** The kill cam (app/cine.ts): 0 off, 1 the ride, 2 the X-ray; its tag ("SNIPER · 41 M", "FINAL KILL"). */
+  cine: number;
+  cineTag: string;
   /** Any Milady awake (the caption budget allows one cream caption while they are). */
   awake: boolean;
   /** Session attempt counter (per-attempt HUD state resets when it changes). */
@@ -155,7 +158,7 @@ export const HUD_INITIAL: Hud = {
   health: 100, copium: 0, healing: false, meter: 10, bt: false, timeScale: 1, mags: [12, 12], magSize: 12, reloading: 0, weapon: "Dual pistols",
   alive: 0, total: 0, phase: "play", onTarget: false, mode: "normal", fps: 60, hurtAgo: 99, killcam: false,
   roomLabel: "", objective: "", objectiveAt: 0, weaponId: "pistols", owned: ["pistols"], reserve: Infinity, hands: 2, ammo: { pistols: Infinity },
-  refill: null, btRefusedAt: 0, killcamProgress: 0, awake: false, run: 0,
+  refill: null, btRefusedAt: 0, killcamProgress: 0, cine: 0, cineTag: "", awake: false, run: 0,
   grenades: 0, lastInSlot: {}, zoom: false, secrets: 0, secretsTotal: 0, pins: [], use: "",
 };
 

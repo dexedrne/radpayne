@@ -248,7 +248,7 @@ export const rowLow = (n: number): boolean => n <= 3;
 
 // ---- the canvas filter ---------------------------------------------------------------------------
 
-export type CanvasFxIn = { screen: string; timeScale: number; health: number; deadAt: number; now: number; killcam?: boolean };
+export type CanvasFxIn = { screen: string; timeScale: number; health: number; deadAt: number; now: number; killcam?: boolean; cine?: number };
 
 /** Warm, desaturated grade while the world is slowed (bullet time, shootdodge, kill cam): 0..1. */
 export const btGrade = (timeScale: number): number => clamp01((1 - timeScale) / 0.7);
@@ -269,6 +269,9 @@ export function canvasFx(i: CanvasFxIn): { filter: string; transition: string } 
   if (i.screen === "paused") { gray = 0.75; bri *= 0.42; blur = 3; transition = "filter 0.2s"; }
   else if (i.screen === "results") { sepia = 0; sat = 1; con = 1; gray = 0.5; bri = 0.38; blur = 2; transition = "filter 0.4s"; }
   else if (i.deadAt && i.screen === "play") { gray = 1; bri *= 0.6; transition = "filter 1.2s ease-out"; }
+  // the kill cam: the ride dims and drains the world; the X-ray snaps it dark and grey (xray.ts draws on it)
+  else if (i.cine === 1 && i.screen === "play") { sepia = 0.1; sat = 0.35; con = 1.12; bri = 0.74; transition = "filter 0.12s"; }
+  else if (i.cine === 2 && i.screen === "play") { sepia = 0; sat = 1; gray = 1; con = 1.4; bri = 0.32; transition = "filter 0.05s"; }
   const id = sepia < 0.002 && Math.abs(sat - 1) < 0.002 && Math.abs(con - 1) < 0.002 && gray < 0.002 && Math.abs(bri - 1) < 0.002 && blur <= 0;
   if (id) return { filter: "none", transition };
   const f = (n: number) => n.toFixed(3);

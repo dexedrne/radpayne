@@ -280,7 +280,7 @@ export function PropsView({ s }: { s: Session }) {
   useFrame((_, raw) => {
     const g = s.game;
     const dt = Math.min(raw, 0.1);
-    const wdt = s.paused ? 0 : dt * g.timeScale;
+    const wdt = dt * s.viewScale;
     const floorY = (x: number, z: number) => { const y = g.world.groundBelow(x, z, 0.05, 0.6); return Number.isFinite(y) ? y : 0; };
     if (props.run !== s.run) {
       props.run = s.run;

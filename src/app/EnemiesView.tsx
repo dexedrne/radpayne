@@ -30,6 +30,9 @@ import { wrapAngle } from "../sim/aim.ts";
 import { goonTalk } from "./director.ts";
 import { setHostileRim } from "./look/tokens.ts";
 import { GOON_LOOK, animateStandIn, makeStandIn, type StandIn } from "./standIn.ts";
+import { heldByCam } from "./cine.ts";
+import { VRM_JOINTS, boneReader, xrayRigs } from "./xray.ts";
+import type { VRMHumanBoneName } from "@pixiv/three-vrm";
 
 const UP = new Vector3(0, 1, 0);
 const params = new URLSearchParams(location.search);
@@ -153,6 +156,9 @@ export function EnemiesView({ s }: { s: Session }) {
           attachGun(v.gun, hand, grip, m.forearm / MILADY_GRIP.forearm, (v.gun.userData.rpScale as number | undefined ?? 1) / m.scale);
           v.gunInHand = true;
         }
+        // the kill cam's X-ray reads her skeleton off the drawn body (once she is shown)
+        const read = boneReader(n => m.vrm.humanoid.getRawBoneNode(n as VRMHumanBoneName), VRM_JOINTS);
+        xrayRigs[v.idx] = out => v.posed && m.body.visible && read(out);
         console.info(`[milady] goon ${v.idx}: #${v.n} ready (${m.clips.length} clips, scale ${m.scale.toFixed(2)}, blink ${m.blink ? "yes" : "no"}, talk ${m.talk ?? "no"})`);
       };
       void (async () => {
@@ -184,6 +190,7 @@ export function EnemiesView({ s }: { s: Session }) {
       cancelled = true;
       off();
       for (const v of views) {
+        xrayRigs[v.idx] = undefined;
         group.remove(v.root);
         v.gun.removeFromParent();
         v.player?.dispose();
@@ -217,7 +224,7 @@ export function EnemiesView({ s }: { s: Session }) {
       if (!v.root.visible) continue;
       // facing: the sim's, eased; the dead fall along the killing shot
       if (e.state === "dead") {
-        if (!v.deadShown && !e.deathHold) {
+        if (!v.deadShown && !heldByCam(e)) {
           v.deadShown = true;
           v.fallYaw = Math.atan2(-e.killDX, -e.killDZ); // facing the shot: the back deaths fly away from it
           v.yaw = v.fallYaw;
@@ -237,7 +244,7 @@ export function EnemiesView({ s }: { s: Session }) {
           if (death) { v.player.play(death, { hold: true, fade: 0, startAt: 1e3 }); v.deathTried.add(death); } else v.deathFallback = true;
           v.deathFrames = 0;
           v.deathPlayed = true;
-        } else if (!v.deadShown && e.deathHold && v.player && !v.clip) {
+        } else if (!v.deadShown && heldByCam(e) && v.player && !v.clip) {
           // mounted while the kill cam holds her (its mixer is frozen): give her a pose now, not the bind pose
           const idle = pick(v.player, CLIPS.idle);
           if (idle) { v.player.force(idle, 0); v.player.update(0); v.clip = idle; }
@@ -254,10 +261,10 @@ export function EnemiesView({ s }: { s: Session }) {
         // she walks where the sim moves her (the legs keep pace: never a slide)
         const sp = Math.sqrt(e.vx * e.vx + e.vz * e.vz);
         v.standIn.rotation.y = e.state !== "dead" && sp > 0.2 ? wrapAngle(Math.atan2(e.vx, e.vz) - v.yaw) : 0;
-        animateStandIn(v.si, e.state === "dead" ? "dead" : sp > 0.2 ? "walk" : "idle", dt * (s.paused ? 0 : g.timeScale), sp);
+        animateStandIn(v.si, e.state === "dead" ? "dead" : sp > 0.2 ? "walk" : "idle", dt * s.viewScale, sp);
       }
       // a body is not a threat: the pink-red rim fades once she is down (kept while the kill cam holds her)
-      const rimWant = e.state === "dead" && !e.deathHold ? 0 : 1;
+      const rimWant = e.state === "dead" && !heldByCam(e) ? 0 : 1;
       if (v.rim !== rimWant) { v.rim = rimWant > v.rim ? 1 : Math.max(0, v.rim - dt / 0.6); setHostileRim(v.root, v.rim); }
       else if (rimWant === 0 && (g.stepN + v.idx) % 30 === 0) setHostileRim(v.root, 0); // a late-mounted model
       const pl = v.player;
@@ -290,12 +297,12 @@ export function EnemiesView({ s }: { s: Session }) {
 
   // -4: mixers on world time (bullet time slows the gang)
   useFrame((_, rawDelta) => {
-    const ts = s.paused ? 0 : s.game.timeScale;
+    const ts = s.viewScale;
     const dt = Math.min(rawDelta, 0.1) * ts;
     for (const v of views) {
       if (!v.player || !v.root.visible) continue;
       const e = s.game.enemies[v.idx];
-      if (e?.deathHold) continue; // the kill cam holds the victim until its bullet lands
+      if (e && heldByCam(e)) continue; // the kill cam holds the victim until its bullet lands
       v.player.update(dt);
     }
   }, FRAME.animator);
@@ -305,7 +312,7 @@ export function EnemiesView({ s }: { s: Session }) {
     const cam = state.camera;
     const g = s.game;
     const dt = Math.min(rawDelta, 0.1);
-    const wdt = dt * (s.paused ? 0 : g.timeScale);
+    const wdt = dt * s.viewScale;
     const pr = s.renderP;
     const now = performance.now();
     for (const v of views) {

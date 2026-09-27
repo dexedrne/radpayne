@@ -163,7 +163,7 @@ export function BackroomsLook({ level, s }: { level: LevelData; s?: Session; low
   useFrame((_, raw) => {
     const dt = Math.min(raw, 0.1);
     const g = s?.game;
-    const ts = !s || s.paused ? 1 : g!.timeScale;
+    const ts = !s || s.paused ? 1 : s.hold ? s.crawl : g!.timeScale;
     const c = st.current;
     c.t -= dt * ts;
     if (c.t <= 0) {

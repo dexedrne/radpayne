@@ -15,6 +15,7 @@ import { HB_HEAD, aimPoint, makeCapsules, poseHitboxes } from "../../combat/hitb
 import { MARK_FADED, arrowDir, arrowPx, arrowRing, damageAngle, markerFades, markerScale, reticleFadePx, ringPin, starPath, type Ring, type ScreenCapsule } from "./logic.ts";
 import { hudFrame } from "./HudFrame.tsx";
 import { hudScaleNow } from "./scale.ts";
+import { cine } from "../../app/cine.ts";
 
 const INK = "#0b0a0d";
 const BURST = starPath(0, 0, 21, 13, 9, -Math.PI / 2);
@@ -161,7 +162,7 @@ export const ThreatLayer = memo(function ThreatLayer({ s }: { s: Session }) {
       const g = ss.game;
       const mode = ui.threats;
       threatProbe.length = 0;
-      if (ui.screen !== "play" || g.phase === "killcam" || ui.deadAt || mode === "off" && g.phase !== "clear") { hideAll(); return; }
+      if (ui.screen !== "play" || g.phase === "killcam" || cine.holding || ui.deadAt || mode === "off" && g.phase !== "clear") { hideAll(); return; }
       const W = innerWidth, H = innerHeight, S = hudScaleNow();
       const p = ss.renderP;
       camera.getWorldDirection(tmp.fwd);

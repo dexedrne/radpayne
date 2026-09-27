@@ -49,7 +49,9 @@ export type GameEvent =
   | { type: "decal"; x: number; y: number; z: number; nx: number; ny: number; nz: number; blood: boolean }
   | { type: "hurt"; target: number; amount: number; part: number; hp: number; shooter?: number; fromX?: number; fromZ?: number }
   /** blast: a point-blank shotgun kill by the player (the body is blown back). */
-  | { type: "kill"; target: number; headshot: boolean; final: boolean; blast?: boolean }
+  /** A kill; by his hand it carries the weapon ("grenade", "melee" or a gun id) and the shot line: from
+   *  the muzzle (a projectile's start, the blast's centre) to where it hit her (the kill cam rides it). */
+  | { type: "kill"; target: number; headshot: boolean; final: boolean; blast?: boolean; weapon?: string; shot?: { ox: number; oy: number; oz: number; x: number; y: number; z: number } }
   | { type: "projectileEnd"; id: number }
   | { type: "alert"; enemy: number }
   | { type: "dodge" }

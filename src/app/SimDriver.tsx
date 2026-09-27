@@ -1,6 +1,8 @@
 // Runs the session every frame (input -> fixed steps -> events), feeds the audio (one-shots from the
 // events, loops from the state: rain, the club's bass, footsteps, heartbeat, the music cue) and the
 // voice director, pushes the HUD to the UI store at ~15 Hz and exposes window.__rp (a smoke probe).
+// It also runs the kill cam (cine.ts): his kills go to it, after each step it may hold the fight, and
+// its clock runs here in real time (any key skips it; the aim he had comes back with the fight).
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { Session } from "./session.ts";
@@ -18,13 +20,18 @@ import { SLOT_ORDER, ammoLeft, type WeaponId } from "../combat/weapons.ts";
 import { addPin } from "../ui/pins.ts";
 import type { Player } from "../sim/actors.ts";
 import { METER } from "../sim/tuning.ts";
+import { bossBusy, cine } from "./cine.ts";
+import { sfxCine } from "../audio/sfx.ts";
+
+/** Dev builds: window.__rp.cineCtl is the kill cam (a browser check can stage one). */
+const DEV = import.meta.env.MODE !== "production";
 
 /** Guns whose reloads have their own sounds in the arsenal block. */
 const ARSENAL_GUNS = new Set(["handcannon", "sawedoff", "sniper"]);
 
 declare global {
   interface Window {
-    __rp?: { session: Session; fps: number; frames: number; audio: string; voices: string[]; guns: string[] };
+    __rp?: { session: Session; fps: number; frames: number; audio: string; voices: string[]; guns: string[]; cine: { phase: string; kind: string; tag: string; n: number; t: number; flight: number }; cineCtl?: typeof cine };
   }
 }
 
@@ -48,6 +55,41 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
   const room = useMemo(() => roomText(s.roomId, s.level.room), [s]);
   /** World seconds to each heavy's next footstep (they are heard before they are seen). */
   const heavySteps = useRef<number[]>([]);
+  /** The kill cam: the aim he had when it took over, how many played (the probe), the boss's phase. */
+  const kc = useMemo(() => ({ yaw: 0, pitch: 0, n: 0, boss: { phase: -1, at: -1e9 } }), []);
+  /** The kill cam's state on the HUD at once (the ride, the X-ray, the release), not at the next push. */
+  const cineHud = () => {
+    const c = cine.cur, g = s.game;
+    useUi.setState(u => ({ hud: { ...u.hud, killcam: cine.holding || g.phase === "killcam", cine: c && c.phase !== "out" ? (c.phase === "flight" ? 1 : 2) : 0, cineTag: cine.holding ? c!.tag : "", killcamProgress: cine.holding ? cine.progress : u.hud.killcamProgress } }));
+  };
+  const release = () => {
+    s.hold = false;
+    s.input.yaw = kc.yaw;
+    s.input.pitch = kc.pitch;
+  };
+
+  // after each step: his kills may start a kill cam (it holds the fight from here); Kill cam: Off skips
+  // the sim's own final-kill cam
+  useEffect(() => {
+    cine.reset();
+    s.afterStep = () => {
+      const g = s.game;
+      const now = performance.now() / 1000;
+      const mode = useUi.getState().killcam;
+      const blocked = g.phase !== "play" || g.player.mode === "dead" || g.breachSlow > 0 || bossBusy(g, now, kc.boss);
+      const c = cine.decide(now, mode, blocked);
+      if (c) {
+        s.hold = true;
+        kc.yaw = s.input.yaw;
+        kc.pitch = s.input.pitch;
+        kc.n++;
+        s.input.anyPress = false;
+        sfxCine.whoosh(c.flight);
+        cineHud();
+      } else if (mode === "off" && g.phase === "killcam") s.skipNext = true;
+    };
+    return () => { s.afterStep = null; s.hold = false; cine.reset(); };
+  }, [s, kc]);
 
   useEffect(() => s.on((e, ss) => {
     const g = ss.game, p = g.player;
@@ -91,6 +133,7 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
         break;
       case "kill": {
         sfx.kill(e.headshot);
+        if (e.shot) cine.kill({ enemy: e.target, weapon: e.weapon ?? "", headshot: e.headshot, part: e.headshot ? 0 : 1, from: { x: e.shot.ox, y: e.shot.oy, z: e.shot.oz }, to: { x: e.shot.x, y: e.shot.y, z: e.shot.z }, final: e.final, at: performance.now() / 1000 });
         // the hourglass refill chip (+1.5 / +2.5), unless the meter was already full
         if (meterSeen.current < METER.max - 1e-6) {
           const hud = useUi.getState().hud;
@@ -142,7 +185,24 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
       hudRun.current = s.run;
       objective.current = { text: "", at: 0 };
       heavySteps.current = [];
-      useUi.setState(u => ({ deadAt: 0, hurts: [], hud: { ...u.hud, refill: null, btRefusedAt: 0, objective: "", objectiveAt: 0, run: s.run, pins: [] } }));
+      useUi.setState(u => ({ deadAt: 0, hurts: [], hud: { ...u.hud, refill: null, btRefusedAt: 0, objective: "", objectiveAt: 0, run: s.run, pins: [], cine: 0, cineTag: "" } }));
+      cine.reset();
+    }
+    // the kill cam's clock (real time; it waits while the game is paused); any key ends it
+    if (cine.cur && !s.paused) {
+      if (cine.holding && s.input.anyPress) {
+        const fin = cine.cur.final;
+        cine.skip();
+        release();
+        s.input.flush(); // the key that skipped does nothing else
+        if (fin) s.skipNext = true; // ...and it skips the sim's own final-kill cam after it
+        cineHud();
+      } else {
+        const r = cine.step(Math.min(delta, 0.1));
+        if (r.impact) sfxCine.impact();
+        if (r.release) { release(); sfxCine.release(); }
+        if (r.impact || r.release || r.done) cineHud();
+      }
     }
     meterSeen.current = s.game.meter;
     s.frame(delta);
@@ -151,7 +211,7 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
     fps.current = fps.current * 0.95 + (1 / Math.max(delta, 1e-3)) * 0.05;
     const screen = useUi.getState().screen;
     const inRoom = screen === "play" || screen === "paused";
-    setTimeScaleAudio(s.paused ? 1 : g.timeScale);
+    setTimeScaleAudio(s.paused ? 1 : s.hold ? 0.15 : g.timeScale);
     if (inRoom) {
       const room = g.level.room;
       const indoor = room.footsteps === "hard";
@@ -198,7 +258,7 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
       }
       if (!s.paused) director.frame();
     } else setFootsteps(0);
-    window.__rp = { session: s, fps: fps.current, frames: frames.current, audio: audioState(), voices: voiceLog, guns: gunLog };
+    window.__rp = { session: s, fps: fps.current, frames: frames.current, audio: audioState(), voices: voiceLog, guns: gunLog, cine: { phase: cine.cur?.phase ?? "", kind: cine.cur?.kind ?? "", tag: cine.cur?.tag ?? "", n: kc.n, t: cine.cur?.t ?? 0, flight: cine.cur?.flight ?? 0 }, ...(DEV ? { cineCtl: cine } : {}) };
     if (g.phase !== lastPhase.current) {
       lastPhase.current = g.phase;
       onPhase(g.phase);
@@ -218,11 +278,12 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
         health: p.health, copium: p.copium, healing: p.healLeft > 0, meter: g.meter, bt: g.bulletTime, timeScale: g.timeScale,
         mags: [w.mags[0], w.mags[1]], magSize: def.mag, reloading: w.reloadT > 0 ? 1 - w.reloadT / def.reload : 0,
         weapon: def.name, alive: g.alive, total: g.enemies.length, phase: g.phase, onTarget: g.aimEnemy >= 0, mode: p.mode,
-        fps: fps.current, hurtAgo: g.realTime - g.hurtAt, killcam: g.phase === "killcam",
+        fps: fps.current, hurtAgo: g.realTime - g.hurtAt, killcam: g.phase === "killcam" || cine.holding,
+        cine: cine.cur && cine.cur.phase !== "out" ? (cine.cur.phase === "flight" ? 1 : 2) : 0, cineTag: cine.holding ? cine.cur!.tag : "",
         roomLabel: roomLabel(room), objective: objective.current.text, objectiveAt: objective.current.at,
         weaponId: w.id, owned: SLOT_ORDER.filter(id => p.owned.includes(id)), reserve: w.reserve, hands: def.hands,
         ammo: ammoByWeapon(p),
-        killcamProgress: g.killcam ? Math.min(1, g.killcam.t / g.killcam.dur) : 0,
+        killcamProgress: cine.holding ? cine.progress : g.killcam ? Math.min(1, g.killcam.t / g.killcam.dur) : 0,
         awake: g.enemies.some(e => e.state !== "idle" && e.state !== "inactive" && e.state !== "dead"), run: s.run,
         grenades: p.grenades, lastInSlot: { ...p.lastInSlot }, zoom: p.zoom, secrets: g.found.length, secretsTotal: g.secrets.length,
         use: promptOf(g.phase === "play" || g.phase === "clear" ? g.useTarget() : null, p.health > 0 && !s.paused),

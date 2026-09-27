@@ -9,7 +9,9 @@
 //                        url's room carries over; e.g. "cam-floor|still;cam-dj|look=fight&still")
 // With &cutscene in the url the bot run itself starts with cutscene 1, and with ?bot=demo (or &ending)
 // the ending cutscene plays after the clear: every panel of both is shot ("c-<id>-<panel>") and the
-// voice lines that played are printed at the end. A room chain (room 1 -> 2 -> 3) runs until the results;
+// voice lines that played are printed at the end, with their rate per fight minute by speaker. Each of
+// the first four kill cams is shot on its ride and in its X-ray ("kc<n>-a-ride", "kc<n>-b-xray").
+// A room chain (room 1 -> 2 -> 3) runs until the results;
 // RADPAYNE_MAX_S sets the time limit (default 300 s). A breach through a door is shot twice ("3-breach").
 // Always launches Chromium with a THROWAWAY --user-data-dir (required; never a real profile).
 import fs from "node:fs";
@@ -106,6 +108,12 @@ try {
     if (last && !last.cut && last.phase === "play" && last.t > 0) playS += (nowMs - lastT) / 1000;
     lastT = nowMs;
     if (last && Date.now() - lastLog > 10_000) { lastLog = Date.now(); console.log(`  ${((Date.now() - t0) / 1000).toFixed(0)} s: ${JSON.stringify(last)}`); }
+    // the kill cam (app/cine.ts): its ride halfway in, the X-ray a moment in
+    const kc = (await page.evaluate(() => (window as unknown as { __rp?: { cine?: { phase: string; kind: string; tag: string; n: number; t: number; flight: number } } }).__rp?.cine ?? null)) as { phase: string; kind: string; tag: string; n: number; t: number; flight: number } | null;
+    if (kc && kc.n <= 4) {
+      if (kc.phase === "flight" && kc.t > kc.flight * 0.45 && !shots.has(`kc${kc.n}-a-ride`)) { shots.add(`kc${kc.n}-a-ride`); await page.screenshot({ path: path.join(outDir, `kc${kc.n}-a-ride.png`) }); log.push(`SHOT kc${kc.n}-a-ride (${kc.kind}: ${kc.tag}) at ${((Date.now() - t0) / 1000).toFixed(1)} s`); }
+      if (kc.phase === "xray" && kc.t > kc.flight + 0.2 && !shots.has(`kc${kc.n}-b-xray`)) { shots.add(`kc${kc.n}-b-xray`); await page.screenshot({ path: path.join(outDir, `kc${kc.n}-b-xray.png`) }); log.push(`SHOT kc${kc.n}-b-xray (${kc.kind}: ${kc.tag}) at ${((Date.now() - t0) / 1000).toFixed(1)} s`); }
+    }
     if (last?.cut) {
       // a cutscene panel: shoot it once its caption is in
       cutSeen[last.cut] ??= Date.now();

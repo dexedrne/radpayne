@@ -137,7 +137,7 @@ export function ArsenalFx({ s }: { s: Session }) {
   useFrame((_, rawDelta) => {
     const g = s.game;
     const dt = Math.min(rawDelta, 0.1);
-    const wdt = s.paused ? 0 : dt * g.timeScale;
+    const wdt = dt * s.viewScale;
     if (fx.run !== s.run) {
       fx.run = s.run;
       for (const b of fx.blasts) for (const m of [b.flash, b.ring, b.scorch, ...b.smoke, ...b.sparks.map(sp => sp.m)]) fx.group.remove(m);
@@ -194,7 +194,7 @@ export function ArsenalFx({ s }: { s: Session }) {
     // slashes fade on his clock (real time, halved in bullet time like his hands)
     for (let i = 0; i < fx.slashes.length; i++) {
       const sl = fx.slashes[i];
-      sl.t += s.paused ? 0 : dt * Math.max(g.timeScale, 0.5);
+      sl.t += dt * s.playerScale;
       const k = 1 - sl.t / sl.life;
       sl.g.children.forEach((c, j) => { ((c as Mesh).material as MeshBasicMaterial).opacity = Math.max(0, k) * (j === 0 ? 0.95 : 0.55); });
       if (k <= 0) { fx.group.remove(sl.g); fx.slashes.splice(i--, 1); }
