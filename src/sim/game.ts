@@ -221,7 +221,7 @@ export class Game {
     this.secrets = level.markers.filter(m => m.kind === "secret");
     this.rng = new Rand(this.seed ^ 0x5eed);
     this.world = new World(level.boxes);
-    this.graph = new Graph(level.markers, this.world);
+    this.graph = new Graph(level.markers, this.world, typeof level.room.maxRise === "number" ? level.room.maxRise : Infinity);
     const spawn = level.markers.find(m => m.kind === "spawn");
     const sx = spawn?.x ?? 0, sz = spawn?.z ?? 0;
     const sy = this.world.groundBelow(sx, sz, PLAYER.radius, (spawn?.y ?? 0) + 1);

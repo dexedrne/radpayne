@@ -23,6 +23,12 @@ export class RoomKit {
     return this;
   }
 
+  /** A decor box (no collider) by two corners. */
+  deco(id: string, a: V3, b: V3, mat: string, o: Parameters<typeof boxMM>[4] = {}): this {
+    this.decor.push(boxMM(id, a, b, mat, o));
+    return this;
+  }
+
   /** A box that is cover: the box, and cover points around it (facing = through the box). */
   cover(id: string, a: V3, b: V3, mat: string, o: Parameters<typeof boxMM>[4] = {}, c: CoverOpts = {}): this {
     this.box(id, a, b, mat, o);
@@ -77,12 +83,12 @@ export class RoomKit {
 
   /** A flight of steps from (x, z) going `dir` ("n"|"s"|"e"|"w": the way DOWN), `n` steps of rise / run,
    *  `w` wide, topping out at `top` (the first step's top = top - rise). Returns the bottom's far edge. */
-  stairs(id: string, x: number, z: number, dir: "n" | "s" | "e" | "w", n: number, rise: number, run: number, w: number, top: number, mat: string): this {
+  stairs(id: string, x: number, z: number, dir: "n" | "s" | "e" | "w", n: number, rise: number, run: number, w: number, top: number, mat: string, base = 0): this {
     for (let i = 0; i < n; i++) {
       const h = top - rise * (i + 1);
-      if (h <= 0.01) break;
+      if (h <= base + 0.01) break;
       const d0 = run * i, d1 = run * (i + 1);
-      const a: V3 = dir === "e" ? [x + d0, 0, z - w / 2] : dir === "w" ? [x - d1, 0, z - w / 2] : dir === "s" ? [x - w / 2, 0, z + d0] : [x - w / 2, 0, z - d1];
+      const a: V3 = dir === "e" ? [x + d0, base, z - w / 2] : dir === "w" ? [x - d1, base, z - w / 2] : dir === "s" ? [x - w / 2, base, z + d0] : [x - w / 2, base, z - d1];
       const b: V3 = dir === "e" ? [x + d1, h, z + w / 2] : dir === "w" ? [x - d0, h, z + w / 2] : dir === "s" ? [x + w / 2, h, z + d1] : [x + w / 2, h, z - d0];
       this.box(`${id}-${i}`, a, b, mat);
     }
@@ -92,6 +98,32 @@ export class RoomKit {
   /** A volume marker from two corners. */
   volume(id: string, kind: string, a: V3, b: V3, data: Record<string, unknown>): this {
     this.markers.push(marker(id, kind, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2], data, 0, [Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1]), Math.abs(b[2] - a[2])]));
+    return this;
+  }
+
+  /** Drop the cover points that ended up inside a box added after them. */
+  clean(): this {
+    const inside = (n: Node) => {
+      const d = (n.components?.data as { properties: { data: { marker?: string } } } | undefined)?.properties.data;
+      if (d?.marker !== "cover") return false;
+      const p = (n.components!.transform as { properties: { position: number[] } }).properties.position;
+      return this.blocked(p[0], p[1], p[2], 0.3);
+    };
+    for (let i = this.markers.length - 1; i >= 0; i--) if (inside(this.markers[i])) this.markers.splice(i, 1);
+    return this;
+  }
+
+  /** Lift the whole room by dy (the sim's world has a floor at y 0 everywhere: a room with a pit keeps
+   *  its lowest floor there). Camera markers' `at` points move too. */
+  shift(dy: number): this {
+    const mv = (n: Node) => {
+      const t = (n.components?.transform as { properties: { position: number[] } } | undefined)?.properties;
+      if (t) t.position = [t.position[0], Math.round((t.position[1] + dy) * 1000) / 1000, t.position[2]];
+      const d = (n.components?.data as { properties: { data: { at?: number[] } } } | undefined)?.properties.data;
+      if (d && Array.isArray(d.at)) d.at = [d.at[0], d.at[1] + dy, d.at[2]];
+      for (const c of n.children ?? []) mv(c);
+    };
+    for (const n of [...this.solid, ...this.decor, ...this.markers]) mv(n);
     return this;
   }
 

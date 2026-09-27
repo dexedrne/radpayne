@@ -279,14 +279,14 @@ const materials: Record<string, Record<string, unknown>> = {
 };
 
 writeLevel("room6", "Room 6: the roof", {
-  name: "The Roof", next: "room7", cutsceneAfter: "ch2b", music: "roof", look: "roof", footsteps: "wet", ambience: "storm", tutorial: false, chapter: 2,
+  name: "The Roof", next: "room7", cutsceneAfter: "ch2b", music: "roof", look: "roof", footsteps: "wet", ambience: "storm", tutorial: false, chapter: 2, maxRise: 1.2,
   enterLine: "r6_enter", clearLine: "r6_clear",
   stage: {
     kind: "roof", heli: [2, 15, -34], pad: [0, 1, -14],
     path: [[-12, 4], [4, 10], [16, -2], [6, -8], [-6, -6]],
     drops: [{ group: "drop1", ropes: [[-2.5, -15.5], [2.5, -15.5], [-2.5, -12.5], [2.5, -12.5]] }, { group: "drop2", ropes: [[-3, -16], [3, -16], [0, -11.5], [0, -18]] }],
   },
-}, materials, k.solid, k.decor, k.markers);
+}, materials, k.solid, k.decor, k.clean().markers);
 
 function box2(id: string, a: [number, number, number], b: [number, number, number], mat: string) {
   return { id, components: { transform: { type: "Transform", properties: { position: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2].map(v => Math.round(v * 1000) / 1000), scale: [Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1]), Math.abs(b[2] - a[2])].map(v => Math.round(v * 1000) / 1000) } }, geometry: { type: "Geometry", properties: { geometryType: "box", args: [1, 1, 1] } }, material: { type: "Material", properties: { materialId: mat } }, mesh: { type: "Mesh", properties: { castShadow: false, receiveShadow: false } } } };

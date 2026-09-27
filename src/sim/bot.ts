@@ -57,6 +57,12 @@ export class Bot {
   private fired = false;
   /** Seconds without a target (bullet time goes off only after a moment: no on / off every step). */
   private lost = 0;
+  /** Chapter 2: seconds of firing at the same target without a hit (behind a rail, over a pit's edge),
+   *  and the targets it walks toward for a while instead of shooting at (enemy index -> world time). */
+  private dry = 0;
+  private dryFor = -1;
+  private hitsSeen = 0;
+  private readonly ignore = new Map<number, number>();
   constructor(turnRate = 3.5, settle = 0.3, demo = false) {
     this.turnRate = turnRate;
     this.settle = settle;
@@ -93,6 +99,7 @@ export class Bot {
     let best = -1, bd = Infinity;
     for (const e of g.enemies) {
       if (e.state === "dead" || e.state === "inactive") continue;
+      if (g.stage && (this.ignore.get(e.idx) ?? -1) > g.time) continue;
       const part = HB_TORSO;
       if (!aimPoint(e.hit.body, e.hit.pose, part, this.v, this.caps)) continue;
       const d = (this.v.x - piv.x) ** 2 + (this.v.z - piv.z) ** 2;
@@ -156,15 +163,17 @@ export class Bot {
       if (g.bulletTime && this.lost > 0.6) f.bt = true; // off again (not the moment a target blinks out of sight)
       // walk toward the nearest live goon (or the exit once clear)
       let tx = NaN, tz = NaN, key = -1;
+      // (chapter 2 rooms have floors above 0 and platforms: the target's own height; rooms 1-5 path at 0 as always)
+      let ty = 0;
       if (g.phase === "clear") {
         const ex = g.level.markers.find(m => m.kind === "trigger" && m.data.action === "exit");
-        if (ex) { tx = ex.x; tz = ex.z; key = 999; }
+        if (ex) { tx = ex.x; tz = ex.z; ty = ex.y - 1; key = 999; }
       } else {
         let nd = Infinity;
         for (const e of g.enemies) {
           if (e.state === "dead" || e.state === "inactive") continue;
           const d = (e.x - p.x) ** 2 + (e.z - p.z) ** 2;
-          if (d < nd) { nd = d; tx = e.x; tz = e.z; key = e.idx; }
+          if (d < nd) { nd = d; tx = e.x; tz = e.z; ty = e.y; key = e.idx; }
         }
         // a weapon or ammo lying within 20 m that it can use: fetch it first
         let kd = 20 * 20;
@@ -174,23 +183,24 @@ export class Bot {
           // not the secrets, nothing up a climb, nothing it cannot take, nowhere it found no way to lately
           if (k.taken || !d || k.secret || k.behind || k.y > p.y + 1.2 || !g.canTake(k.item) || (this.noWay.get(i) ?? -1) > g.time) continue;
           const dd = (k.x - p.x) ** 2 + (k.z - p.z) ** 2;
-          if (dd < kd) { kd = dd; tx = k.x; tz = k.z; key = 700 + i; }
+          if (dd < kd) { kd = dd; tx = k.x; tz = k.z; ty = k.y; key = 700 + i; }
         }
         // room 4: a finished stop waits for him in the car
         if (g.ride?.wantsIn(g)) { const c = g.ride.car; tx = (c[0] + c[2]) / 2; tz = (c[1] + c[3]) / 2; key = 600; }
         if (key < 0) {
           // nothing alive and awake: walk to the next trigger we have not fired (not the fallbacks)
           const t = g.triggers.find(tr => !tr.fired && tr.data.action !== "exit" && typeof tr.data.afterKills !== "number");
-          if (t) { tx = t.x; tz = t.z; key = 500; }
+          if (t) { tx = t.x; tz = t.z; ty = p.y; key = 500; }
         }
       }
       if (!Number.isNaN(tx)) {
         this.repath -= 1 / 120;
         if (key !== this.pathFor || this.repath <= 0) {
           // a goon walled into her spot (a booth) has no path: go to the waypoint nearest to her instead
-          let path = g.graph.path(p.x, p.y, p.z, tx, 0, tz);
+          if (!g.stage) ty = 0;
+          let path = g.graph.path(p.x, p.y, p.z, tx, ty, tz);
           if (!path) {
-            const n = g.graph.nearest(tx, 0, tz, false);
+            const n = g.graph.nearest(tx, ty, tz, false);
             const w = n >= 0 ? g.graph.nodes[n] : null;
             path = w ? g.graph.path(p.x, p.y, p.z, w.x, w.y, w.z) : null;
             // a pickup with no way to it (a landing whose doors have shut): leave it for now
@@ -226,6 +236,12 @@ export class Bot {
       }
     }
     if (this.blade && g.katana) this.guard(g, f, shooting);
+    // chapter 2: shooting and shooting at one it cannot hit: go to her instead for a few seconds
+    if (g.stage) {
+      if (g.stats.hits !== this.hitsSeen || best !== this.dryFor) { this.hitsSeen = g.stats.hits; this.dryFor = best; this.dry = 0; }
+      else if (f.fire && best >= 0) this.dry += 1 / 120;
+      if (this.dry > 3 && best >= 0) { this.ignore.set(best, g.time + 4); this.dry = 0; }
+    }
     // out of a heart grenade's ring
     const esc = g.boss ? grenadeEscape(g) : null;
     if (esc && p.mode === "normal") {

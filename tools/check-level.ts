@@ -17,7 +17,7 @@ for (const f of files) {
   const doc = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
   const level = readLevel(doc);
   const world = new World(level.boxes);
-  const graph = new Graph(level.markers, world);
+  const graph = new Graph(level.markers, world, typeof level.room.maxRise === "number" ? level.room.maxRise : Infinity);
   const count = (k: string) => level.markers.filter(m => m.kind === k).length;
   const issues = [...level.warnings];
   // the engine refuses a prefab with duplicate node ids

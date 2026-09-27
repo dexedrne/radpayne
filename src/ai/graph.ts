@@ -35,8 +35,13 @@ export class Graph {
    *  while that door is out of the world (the elevator's landing doors, the penthouse's add doors). */
   private readonly gates = new Map<number, string>();
 
-  constructor(markers: Marker[], world: World) {
+  /** Chapter 2 (room setting maxRise): no auto-link, path start or goal across more height than this
+   *  (a pit, a gallery: the stairs link them explicitly). Infinity elsewhere. */
+  private readonly maxRise: number;
+
+  constructor(markers: Marker[], world: World, maxRise = Infinity) {
     this.world = world;
+    this.maxRise = maxRise;
     const wps = markers.filter(m => m.kind === "waypoint");
     const byId = new Map<string, number>();
     for (const m of wps) {
@@ -63,7 +68,7 @@ export class Graph {
         if (j === i || this.nodes[j].solo) continue;
         const a = this.nodes[i], b = this.nodes[j];
         const d = Math.sqrt((a.x - b.x) ** 2 + (a.z - b.z) ** 2);
-        if (d <= AUTO_LINK && this.walkClear(a.x, a.y, a.z, b.x, b.y, b.z)) link(i, j);
+        if (d <= AUTO_LINK && Math.abs(a.y - b.y) <= this.maxRise && this.walkClear(a.x, a.y, a.z, b.x, b.y, b.z)) link(i, j);
       }
     });
     for (const m of markers) {
@@ -84,7 +89,7 @@ export class Graph {
       const n = this.nodes[i];
       const d = (n.x - x) ** 2 + (n.z - z) ** 2;
       if (d >= bd) continue;
-      if (n.solo && Math.abs(n.y - y) > 1.2) continue;
+      if ((n.solo || this.maxRise < Infinity) && Math.abs(n.y - y) > Math.min(1.2, this.maxRise)) continue;
       if (needClear && !this.walkClear(x, y, z, n.x, n.y, n.z)) continue;
       best = i;
       bd = d;
