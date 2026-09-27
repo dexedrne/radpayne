@@ -247,7 +247,7 @@ let prate = 1;
 let slow: { filter: BiquadFilterNode; out: GainNode } | null = null;
 let voiceBus: BiquadFilterNode | null = null;
 let gunBus: BiquadFilterNode | null = null;
-/** His guns dip under the narrator (as the music does): -4.4 dB, so a held burst never buries a line. */
+/** His guns dip under the narrator (as the music does): -2.5 dB, so a held burst never buries a line. */
 let gunDuck: GainNode | null = null;
 
 /** World sounds go through this low-pass (it closes in bullet time). */
@@ -891,20 +891,23 @@ let narrating: AudioBufferSourceNode | null = null;
  * in seconds (0 when silent or not loaded). A new line cuts the previous one. `speaker` = another
  * voice folder for a cutscene line (the girls', goon_a / goon_b; the DJ's, pa: e1_pa has the door baked in).
  */
+/** The narrator sits about 4.4 dB under the other voices (owner: he was too loud over the room). */
+const NARRATOR_GAIN = 0.6;
+
 export function narrate(line: string, speaker = "narrator"): number {
   const e = voiceOn();
   if (!e) return 0;
   try { narrating?.stop(); } catch { /* already ended */ }
-  const src = play(e, `voices/${speaker}/${line}`, { gain: 1, rate: 1, dest: e.voiceGain });
+  const src = play(e, `voices/${speaker}/${line}`, { gain: speaker === "narrator" ? NARRATOR_GAIN : 1, rate: 1, dest: e.voiceGain });
   if (!src) return 0;
   narrating = src;
   const t = e.ac.currentTime, d = src.buffer!.duration;
   e.talk.gain.cancelScheduledValues(t);
-  e.talk.gain.setTargetAtTime(0.4, t, 0.15);
+  e.talk.gain.setTargetAtTime(0.55, t, 0.15);
   e.talk.gain.setTargetAtTime(1, t + d, 0.4);
   if (gunDuck) {
     gunDuck.gain.cancelScheduledValues(t);
-    gunDuck.gain.setTargetAtTime(0.6, t, 0.1);
+    gunDuck.gain.setTargetAtTime(0.75, t, 0.1);
     gunDuck.gain.setTargetAtTime(1, t + d, 0.3);
   }
   src.onended = () => { if (narrating === src) narrating = null; };
