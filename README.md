@@ -13,7 +13,8 @@ full, and only some of the girls are armed. The first shot kills the music, the 
 lights come up, and the backup charges in with SMGs. Cutscene 2 follows, then room 3, the back of the
 house: a service corridor where the first rival Radbro comes round the corner with a pump shotgun, a
 storage room, a locked office door you go through with a shootdodge, the security office with the dual
-SMGs, the manager's office behind glass and the service elevator. Room 4 is the elevator ride itself:
+SMGs, the manager's office behind glass and the service elevator. The elevator cutscene takes you up,
+and room 4 is the ride itself:
 the car stops three times and its doors open on three floors of the gang (the laundry, the gallery, an
 unfinished floor they pry the doors open onto), a rival heavy drops through the roof hatch on the way,
 and the cables snap before the last stop. Cutscene 3 is the penthouse and the call; room 5 is the boss,
@@ -202,11 +203,10 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
   title is up (the street fades in behind it), and PLAY works at once. The Radbro files, the gang's
   models and the sounds load behind the title and cutscene 1, and each room gets ready (its gang, its
   shaders, its sounds) under the cutscene before it: rooms 2 and 3 swap in behind the ending panels and
-  cutscene 2, room 5 behind cutscene 3. Room 4 has no cutscene before it: its gang loads during the walk
-  to the elevator, and once the doors are open that last frame becomes a panel (it pushes in, "The
-  Elevator" under it) that room 4 gets ready behind, turning when it is. A loading card only shows what
-  is still not there when the panels end (or are skipped). The later rooms'
-  sounds and clips load while room 1 plays; rooms 4-5's own (the "end" group) from room 3 on. Files in `public/` (the fonts too) are
+  cutscene 2, room 4 behind the elevator cutscene (once room 3's doors are open), room 5 behind
+  cutscene 3. A loading card only shows what is still not there when the panels end (or are skipped).
+  The later rooms' sounds and clips load while room 1 plays; from room 3 on, the elevator cutscene's
+  lines (the "cs3a" group) and then rooms 4-5's own (the "end" group). Files in `public/` (the fonts too) are
   fetched by content-hashed URLs and cached for good (`vercel.json`); the Pockit models are
   kept in the browser's cache, and each visit's gang mixes girls already there with a couple of new ones.
 - **Dev URL flags:**
@@ -300,7 +300,8 @@ input log. Bullet time is a time scale on it.
     box position, voice lines and hold time. `e1.json` + `e1/panel_e*.webp`: the room 1 ending (the
     first clear, after the walk to the door, voiced). `c2.json`: cutscene 2 after the rave. A line
     with a `speaker` plays that voice instead of the narrator's (the girls at the door and on the
-    floor, the DJ through the door); a panel's lines play in order, one after another. A panel's
+    floor, the DJ through the door); a panel's lines play in order, one after another. `cs3a.json`:
+    the elevator between room 3 and room 4 (room 3's `cutsceneAfter`). A panel's
     `maxW` / `size` keep a long caption off the faces, and `push` (the push-in's end scale) keeps the
     caption box inside the frame through a long hold.
   - Round 2: `radbro<id>.r2.glb` (the shotgun set, the heavy's stagger, the weapon swap),
