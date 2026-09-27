@@ -69,7 +69,7 @@ const NOTES = {
 
 export const CONTROLS: Array<[string[], string]> = [
   [["W", "A", "S", "D"], "move"], [["MOUSE"], "aim"], [["LMB"], "fire"], [["RMB", "Q"], "bullet time"], [["SHIFT"], "shootdodge"],
-  [["SPACE"], "jump low cover"], [["R"], "reload"], [["H"], "copium"], [["1", "5"], "weapon (again: its twin; or wheel)"], [["F"], "melee (#4764: tap cut, hold guard)"], [["G"], "grenade"],
+  [["C"], "cover (again: dash to the marked cover)"], [["RMB"], "in cover: hold to pop out and aim"], [["SPACE"], "jump (in cover: vault)"], [["R"], "reload"], [["H"], "copium"], [["1", "5"], "weapon (again: its twin; or wheel)"], [["F"], "melee (#4764: tap cut, hold guard)"], [["G"], "grenade"],
   [["E"], "use"], [["RMB"], "scope (sniper, hold)"], [["ESC"], "pause"], [["M"], "mute"],
 ];
 

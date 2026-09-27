@@ -5,7 +5,9 @@
 // (RMB), the first frag (G) and #4764's katana: the cut and the guard (F / Circle; the keycap turns into
 // the pad's button on a pad), then, his first bullet time with it, the round sent back. A prompt goes at once when
 // its reason does (the can is drunk, the health is back, the gun is switched).
-import { useUi, type Hud } from "../store.ts";
+// The cover tutorial (once per browser, `radpayne.coverTut`): cover in reach in the first fight ([C] / L1),
+// then in it how to pop out, blind fire and vault (low) or lean out (high), then the dash to marked cover.
+import { store, stored, useUi, type Hud } from "../store.ts";
 import { slotOf, type WeaponId } from "../../combat/weapons.ts";
 import { NUDGE_HOLD, OBJECTIVE_HOLD, captionBudget } from "./logic.ts";
 
@@ -18,10 +20,19 @@ type Nudge = { text: string; at: number };
 /** #4764's katana, taught once a session: the cut and the guard, then the round sent back. */
 export const GUARD_HINT = "tap [F]: cut. hold [F]: guard.";
 export const RETURN_HINT = "hold [F] in bullet time: they get it back.";
+/** The cover tutorial's lines ([K|act]: the key, and the pad button of that action). */
+export const COVER_HINTS = {
+  near: "cover close by. [C]: take it.",
+  low: "behind cover. hold [RMB|aimHold]: up and shoot. fire from down here: blind. [SPACE|vault]: over it.",
+  high: "behind a wall. hold [RMB|aimHold] at its edge: out and shoot. pull away: leave it.",
+  dash: "the gold ring: [C] runs you to it.",
+} as const;
+
 /** Why a nudge is up: heal / dry / empty last only while their condition holds; a pickup runs its 4 s. */
 type Why = "heal" | "dry" | "empty" | "pickup" | "secret";
 
 // module state, not component state: the HUD unmounts while paused and an episode must not replay
+const tut = { step: stored("coverTut", "0") === "done" ? 4 : 0 };
 const s = { run: -1, heal: false, dry: false, empty: false, owned: [] as WeaponId[], secrets: 0, pins: 0, zoomHint: false, nadeHint: false, meleeHint: false, returnHint: false, nades: 0, pending: [] as string[], nudge: null as (Nudge & { why: Why }) | null };
 
 /** Nudge episodes (edge-triggered): returns the latest nudge while it is fresh and still true. */
@@ -57,6 +68,17 @@ export function useNudge(h: Hud, now: number): Nudge | null {
   s.nades = h.grenades;
   if (h.awake && alive && h.alive < h.total && !s.meleeHint && h.katana) { s.meleeHint = true; s.pending.push(GUARD_HINT); }
   if (h.katana && h.bt && s.meleeHint && !s.returnHint && alive) { s.returnHint = true; s.pending.push(RETURN_HINT); }
+  // the cover tutorial: in the fight, one step at a time (each waits until the last one is off screen)
+  if (tut.step < 4 && alive && h.awake && !s.pending.some(t => (Object.values(COVER_HINTS) as string[]).includes(t))) {
+    const next = tut.step === 0 && h.cover === "near" ? COVER_HINTS.near
+      : tut.step <= 1 && (h.cover === "low" || h.cover === "high" || h.cover === "edge") ? (h.cover === "low" ? COVER_HINTS.low : COVER_HINTS.high)
+      : tut.step === 2 && h.cover !== "" && h.cover !== "near" && h.coverDash ? COVER_HINTS.dash : "";
+    if (next) {
+      tut.step = next === COVER_HINTS.near ? 1 : next === COVER_HINTS.dash ? 4 : 2;
+      if (tut.step === 4) store("coverTut", "done");
+      s.pending.push(next);
+    }
+  }
   // secrets and pins
   if (h.secrets > s.secrets) fire("secret", h.secrets >= h.secretsTotal && h.secretsTotal > 1 ? "all three." : `a secret. ${h.secrets} of ${h.secretsTotal}.`);
   s.secrets = h.secrets;
