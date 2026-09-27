@@ -6823,29 +6823,6 @@
       }
      },
      {
-      "id": "liftE-5",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [16.2, 0, 1.2],
-         "rotation": [0, -1.571, 0]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "enemy",
-          "kind": "goon",
-          "group": "liftE",
-          "deaf": true
-         }
-        }
-       }
-      }
-     },
-     {
       "id": "liftW-1",
       "components": {
        "transform": {
@@ -6930,29 +6907,6 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "rusher",
-          "group": "liftW",
-          "deaf": true
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "liftW-5",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [-16.2, 0, 1.2],
-         "rotation": [0, 1.571, 0]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "enemy",
           "kind": "goon",
           "group": "liftW",
           "deaf": true
@@ -6999,7 +6953,7 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "rusher",
+          "kind": "goon",
           "group": "liftE2",
           "deaf": true
          }
@@ -7014,29 +6968,6 @@
         "type": "Transform",
         "properties": {
          "position": [16.2, 0, 0.49999999999999994],
-         "rotation": [0, -1.571, 0]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "enemy",
-          "kind": "goon",
-          "group": "liftE2",
-          "deaf": true
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "liftE2-4",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [17.6, 0, 0.49999999999999994],
          "rotation": [0, -1.571, 0]
         }
        },
@@ -7106,29 +7037,6 @@
         "type": "Transform",
         "properties": {
          "position": [-16.2, 0, 0.49999999999999994],
-         "rotation": [0, 1.571, 0]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "enemy",
-          "kind": "rusher",
-          "group": "liftW2",
-          "deaf": true
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "liftW2-4",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [-17.6, 0, 0.49999999999999994],
          "rotation": [0, 1.571, 0]
         }
        },

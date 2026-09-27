@@ -750,7 +750,7 @@ export class Game {
       const dmg = this.bossShare(e, M.damage);
       e.hp -= dmg;
       e.flinch = Math.max(e.flinch, M.flinch);
-      if (e.weapon === "sniper") e.tell = 0;
+      if (e.weapon === "sniper" && e.kind !== "countess") e.tell = 0;
       if (M.knock > 0 && e.kind !== "heavy" && e.kind !== "madame" && e.kind !== "countess" && !e.perch) { e.knockT = MELEE.knockTime; e.knockX = (dx / dl) * M.knock; e.knockZ = (dz / dl) * M.knock; }
       this.emit({ type: "blood", x: c.x, y: c.y, z: c.z, dx: dx / dl, dy: 0, dz: dz / dl, target: e.idx, part: HB_TORSO, ...(this.katana ? { ink: true } : {}) });
       this.emit({ type: "hurt", target: e.idx, amount: dmg, part: HB_TORSO, hp: Math.max(0, e.hp) });
@@ -1017,7 +1017,7 @@ export class Game {
       const dmg = this.bossShare(e, dmgAt(d));
       e.hp -= dmg;
       e.flinch = Math.max(e.flinch, AI.flinch);
-      if (e.weapon === "sniper") e.tell = 0;
+      if (e.weapon === "sniper" && e.kind !== "countess") e.tell = 0;
       this.emit({ type: "hurt", target: e.idx, amount: dmg, part: HB_TORSO, hp: Math.max(0, e.hp) });
       if (e.state === "idle") alertGoon(this, e, 0);
       if (e.kind === "heavy" && e.hp > 0 && dmg >= HEAVY.staggerAt && e.stagger <= 0) { e.stagger = HEAVY.stagger; e.tell = 0; this.emit({ type: "stagger", enemy: e.idx }); }
@@ -1492,7 +1492,7 @@ export class Game {
     if (this.stage?.clampDamage) amount = this.stage.clampDamage(e, amount);
     e.hp -= amount;
     e.flinch = e.kind === "madame" ? MADAME.flinch : e.kind === "countess" ? COUNTESS.flinch : AI.flinch;
-    if (e.weapon === "sniper") e.tell = 0; // a hit spoils her aim
+    if (e.weapon === "sniper" && e.kind !== "countess") e.tell = 0; // a hit spoils her aim
     this.emit({ type: "hurt", target, amount, part, hp: Math.max(0, e.hp) });
     if (e.state === "idle") alertGoon(this, e, 0);
     if (e.kind === "heavy" && e.hp > 0) {

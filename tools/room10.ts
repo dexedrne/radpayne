@@ -141,10 +141,10 @@ const adds = (side: "e" | "w", group: string, kinds: string[]) => kinds.map((kd,
 k.m(
   E("countess", 0, DESK, -1.7, FACE_N, { kind: "countess", drop: false }),
   E("guard-1", -6.5, 0, 3, FACE_W), E("guard-2", 6, 0, 2.6, FACE_E), E("guard-3", 0, 0, -9.4, FACE_N, { kind: "rusher" }),
-  ...adds("e", "liftE", ["goon", "rusher", "goon", "rusher", "goon"]),
-  ...adds("w", "liftW", ["rusher", "goon", "heavy", "rusher", "goon"]),
-  ...adds("e", "liftE2", ["rusher", "rusher", "goon", "goon"]).map(n => { const t = (n.components!.transform as { properties: { position: number[] } }).properties; t.position = [t.position[0], t.position[1], t.position[2] + 0.7]; return n; }),
-  ...adds("w", "liftW2", ["goon", "rusher", "rusher", "goon"]).map(n => { const t = (n.components!.transform as { properties: { position: number[] } }).properties; t.position = [t.position[0], t.position[1], t.position[2] + 0.7]; return n; }),
+  ...adds("e", "liftE", ["goon", "rusher", "goon", "rusher"]),
+  ...adds("w", "liftW", ["rusher", "goon", "heavy", "goon"]),
+  ...adds("e", "liftE2", ["rusher", "goon", "goon"]).map(n => { const t = (n.components!.transform as { properties: { position: number[] } }).properties; t.position = [t.position[0], t.position[1], t.position[2] + 0.7]; return n; }),
+  ...adds("w", "liftW2", ["goon", "rusher", "goon"]).map(n => { const t = (n.components!.transform as { properties: { position: number[] } }).properties; t.position = [t.position[0], t.position[1], t.position[2] + 0.7]; return n; }),
 );
 
 // ---------------------------------------------------------------- triggers, pickups, eggs, lights

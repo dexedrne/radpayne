@@ -92,7 +92,7 @@ export const COUNTESS = {
   lastStandReal: 2,
   lastStandRun: 5.2,
   /** The lift doors: the lamp before one opens, the first batch, then a pair every `every` while few stand. */
-  doors: { lamp: 2, first: 4, pair: 2, every: 6, maxLive: 5 },
+  doors: { lamp: 2, first: 3, pair: 2, every: 7, maxLive: 4 },
 } as const;
 
 /** Room 10's security lasers: a beam turns about the vault's column, high (dive under) or low (jump). */
