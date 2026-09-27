@@ -14,6 +14,7 @@
 // The guns (see "guns" below): each gun has its own dry shots and its own tail per room (the street, the
 // club, the back rooms); the gang's guns are voiced from across the room. His own shots stay brighter
 // than the world in bullet time and get a low boom under them.
+import { CH2_VOICED } from "./chapter2.ts";
 import { engine, live, sfxOn, voiceOn, whenCreated, type Engine } from "./engine.ts";
 import { assetUrl } from "../app/assets.ts";
 import { isRound3, ROUND3_FILES } from "./round3.ts";
@@ -89,6 +90,7 @@ export const CS3A_FILES = ["cs3a_01", "cs3a_02", "cs3a_03", "cs3a_04"].map(k => 
 
 /** Files under public/audio (no extension). Keys are the paths. */
 export const FILES = [
+  ...CH2_VOICED, // chapter 2 (rooms 6-10, cutscenes ch2a-f): the lines recorded so far (the "end" group)
   ...ROUND3_FILES, // round 3: rooms 4-5, cutscenes 3-4 (the "end" group)
   ...CS3A_FILES, // the elevator cutscene after room 3 (the "cs3a" group)
   ...GUN_FILES, "sfx/dry_fire", "sfx/reload_mag_out", "sfx/reload_mag_in", "sfx/reload_slide",
@@ -145,7 +147,7 @@ const LATER = [
   /^sfx\/(handcannon_|sawedoff_|secret_door|plywood_break)/,
 ];
 export function sampleGroup(k: string): SampleGroup {
-  if (isRound3(k)) return "end";
+  if (isRound3(k) || CH2_VOICED.includes(k)) return "end";
   if (/^voices\/narrator\/cs3a_/.test(k)) return "cs3a";
   if (/^voices\/narrator\/cs1_/.test(k)) return "cs1";
   if (k === "music/fight_tense") return "fight";

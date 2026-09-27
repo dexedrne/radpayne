@@ -94,7 +94,7 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
       const mode = useUi.getState().killcam;
       // no special-shot cam: out of the fight, him down, a breach's (or her last stand's) slow motion,
       // her big moments, the car between stops (the room's last kill always passes)
-      const blocked = g.phase !== "play" || g.player.mode === "dead" || g.breachSlow > 0 || bossBusy(g.boss, now, kc.boss) || rideMoving(g.ride);
+      const blocked = g.phase !== "play" || g.player.mode === "dead" || g.breachSlow > 0 || bossBusy(g.boss, now, kc.boss) || rideMoving(g.ride) || !!g.stage?.busy?.(g);
       // a hand-cannon / sniper round still in the air, with a body left in it: its next kill joins the cam
       const flying = (k: { weapon: string; from: { x: number; y: number; z: number } }) => g.projectiles.some(b => b.team === 0 && b.alive && b.pierce > 0 && b.weapon === k.weapon && Math.abs(b.sx - k.from.x) + Math.abs(b.sy - k.from.y) + Math.abs(b.sz - k.from.z) < 1e-4);
       const c = cine.decide(now, mode, blocked, flying);

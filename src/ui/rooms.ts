@@ -4,6 +4,7 @@
 // objective once the room is clear. (`clearLine` in the level data is the narrator's voice line id,
 // so the results line is `clearText` there.) Unknown rooms fall back to the level's name.
 import { ROUND3_ROOMS } from "../app/round3Lines.ts";
+import { CH2_ROOMS } from "../app/chapter2Lines.ts";
 
 export type RoomText = {
   /** Room number in the chapter (the tag reads "ROOM n · LABEL"). */
@@ -31,6 +32,7 @@ export const RUGGED_LINE = "the street took this one. get up. the bag is still i
 
 const ROOMS: Record<string, Partial<RoomText>> = {
   ...ROUND3_ROOMS,
+  ...CH2_ROOMS,
   room1: {
     number: 1,
     label: "OUTSIDE CLUB MILADY",
