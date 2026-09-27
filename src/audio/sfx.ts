@@ -807,6 +807,14 @@ const MUSIC: Record<string, MusicSet> = {
   // room 4 after the cables snap: the muzak warps and dies; from the third stop only the fight loop
   elevatorWarped: { calm: "music/elevator_muzak_warped", fight: "music/fight_tense", calmGain: 0.7, fightGain: 0.95 },
   elevatorDead: { calm: "music/none", fight: "music/fight_tense", calmGain: 0, fightGain: 0.95 },
+  // chapter 2 (placeholders from chapter 1's tracks until its own: docs/chapter2-assets.md): the roof in the
+  // rain, the garden and the counting floor on the back rooms' calm loop, the airship's lounge muzak, the
+  // Countess to the boss loop
+  roof: { calm: "music/street_calm", fight: "music/fight_tense", calmGain: 0.75, fightGain: 0.95 },
+  garden: { calm: "music/backrooms_calm", fight: "music/fight_tense", calmGain: 0.8, fightGain: 0.95 },
+  airship: { calm: "music/elevator_muzak", fight: "music/fight_tense", calmGain: 0.7, fightGain: 0.95 },
+  counting: { calm: "music/backrooms_calm", fight: "music/fight_tense", calmGain: 0.8, fightGain: 0.95 },
+  vault: { calm: "music/elevator_muzak", fight: "music/boss_madame", calmGain: 0.4, fightGain: 0.95, hardCut: true },
 };
 
 /** The cue asked for last (a track that was still loading then comes in when it lands). */

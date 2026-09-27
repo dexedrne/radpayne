@@ -9,6 +9,7 @@ import { StreetLook } from "./street.tsx";
 import { ClubLook } from "./club.tsx";
 import { BackroomsLook } from "./backrooms.tsx";
 import { ElevatorLook, PenthouseLook } from "./tower.tsx";
+import { AirshipLook, CountingLook, GardenLook, RoofLook, VaultLook } from "./sky.tsx";
 
 export const FOG = "#0b0f1c";
 
@@ -39,6 +40,12 @@ export const LOOKS: Record<string, (p: LookProps) => React.ReactNode> = {
   // round 3 (tower.tsx): room 4's car and landings, room 5's penthouse
   elevator: ElevatorLook,
   penthouse: PenthouseLook,
+  // chapter 2 (sky.tsx): the roof, the sky garden, the airship, the counting floor, the vault
+  roof: RoofLook,
+  garden: GardenLook,
+  airship: AirshipLook,
+  counting: CountingLook,
+  vault: VaultLook,
 };
 
 export function RoomLook(p: LookProps) {

@@ -55,6 +55,8 @@ import { roomText } from "../ui/rooms.ts";
 import { bridge, roomResult } from "../radbro/bridge.ts";
 import { BossBar } from "../ui/hud/BossBar.tsx";
 import { MADAME } from "../sim/tuning.ts";
+import { COUNTESS } from "../sim/tuning2.ts";
+import { CHAPTERS, chapterOf, markCleared } from "../ui/chapters.ts";
 import type { Stats } from "../sim/game.ts";
 
 const DEV = import.meta.env.MODE !== "production";
@@ -165,7 +167,7 @@ function loadLater(): void {
   prefetchCutscene("e1");
 }
 /** Model numbers used this visit (a later room's gang gets other girls). Madame Pockit's is never a goon's. */
-const usedPockits = new Set<number>([MADAME.pockit]);
+const usedPockits = new Set<number>([MADAME.pockit, COUNTESS.pockit]);
 /** Round 3: each room cleared this run, its stats (a retry overwrites; the chapter's results add them up). */
 const chapterRun = new Map<string, Stats>();
 function chapterTotals(): { stats: Stats; rooms: number } {
@@ -180,7 +182,11 @@ function aheadOf(roomId: string): void {
   if (roomId === "room3" || roomId === "room4" || roomId === "room5") loadEndSamples();
   if (roomId === "room4") prefetchCutscene("c3", 1);
   if (roomId === "room5") prefetchCutscene("c4", 1);
+  // chapter 2: its rooms share the end group's music; each prefetches the cutscene after it
+  const after = CH2_AFTER[roomId];
+  if (after) { loadEndSamples(); prefetchCutscene(after, 1); }
 }
+const CH2_AFTER: Record<string, string> = { room6: "ch2b", room7: "ch2c", room8: "ch2d", room9: "ch2e", room10: "ch2f" };
 const hashId = (id: string) => { let h = 2166136261; for (const c of id) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
 
 const canvasEl = () => document.querySelector("canvas");
@@ -453,7 +459,7 @@ export default function PlayPage() {
       // asks for them here)
       if (s.roomId !== "room1") loadLaterSamples();
       // rooms 4-5: their own group too (the ride, the boss, her voice)
-      const end = !!(s.game.ride || s.game.boss);
+      const end = !!(s.game.ride || s.game.boss || s.game.stage);
       if (end) loadEndSamples();
       await groupReady(s.roomId === "room1" ? "room" : "later", 6000);
       if (end) await groupReady("end", 8000);
@@ -504,6 +510,7 @@ export default function PlayPage() {
 
   const play = useCallback(async () => {
     if (!session) return;
+    if (useUi.getState().chapter === 2 && !params.has("room")) { void startChapter2(); return; }
     unlockAudio();
     void loadSamples();
     chapterRun.clear();
@@ -555,6 +562,30 @@ export default function PlayPage() {
     if (!BOT) void (canvasEl()?.requestPointerLock() as unknown as Promise<void> | undefined)?.catch?.(() => undefined);
   }, []);
 
+  /** Chapter 2 from the title's chapter select or chapter 1's results: its intro (ch2a) while its first
+   *  room (the roof) loads and gets ready behind the panels, then the room. The carried guns start fresh. */
+  const startChapter2 = useCallback(async () => {
+    unlockAudio();
+    void loadSamples();
+    loadEndSamples();
+    chapterRun.clear();
+    setPadFight(false);
+    stopRoomAudio(true);
+    useUi.setState({ screen: "loading", load: { progress: 0, label: CHAPTERS[2].name.toLowerCase(), error: null }, results: null });
+    if (session) session.paused = true;
+    const ready = loadRoom(CHAPTERS[2].first, true, false).then(ns => { warmRoom(ns); return ns; });
+    const c = !SKIP || CUTSCENE ? await loadCutscene(CHAPTERS[2].intro) : null;
+    if (c) {
+      setCut({ data: c, then: () => void ready.then(ns => enterRoom(ns)) });
+      useUi.setState({ screen: "cutscene" });
+      if (typeof c.music === "string") void loadSamples().then(() => setMusic("calm", c.music));
+      void ready.then(ns => { if (useUi.getState().screen === "cutscene") { mount(ns); void readyRoom(ns); } });
+      return;
+    }
+    await enterRoom(await ready);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
+
   /** Load the next room's level and start warming its models (once per room, from its clear). */
   const prepareNext = useCallback((from: Session) => {
     if (nextRoom.current?.from === from) return nextRoom.current.ready;
@@ -584,9 +615,11 @@ export default function PlayPage() {
       setFootsteps(0);
       const g = session.game;
       if (phase === "done") chapterRun.set(session.roomId, { ...g.stats });
+      // a chapter's last room cleared: remembered (chapter 1 opens the title's chapter select)
+      if (phase === "done" && session.level.room.chapterEnd === true) markCleared(chapterOf(session.level.room));
       // the chapter's last room (room 5): its results are the chapter's (after cutscene 4's card)
       const chapterEnd = phase === "done" && session.level.room.chapterEnd === true;
-      const results = { cleared: phase === "done", stats: { ...g.stats }, room: session.roomId, difficulty: g.difficulty, radbro: useUi.getState().radbro, pins: useUi.getState().hud.pins, ...(chapterEnd ? { chapter: chapterTotals() } : {}) };
+      const results = { cleared: phase === "done", stats: { ...g.stats }, room: session.roomId, difficulty: g.difficulty, radbro: useUi.getState().radbro, pins: useUi.getState().hud.pins, ...(chapterEnd ? { chapter: { ...chapterTotals(), n: chapterOf(session.level.room) } } : {}) };
       const show = () => { useUi.setState({ screen: "results", results }); unlock(); };
       if (!results.cleared) { later(show); return; }
       // the next room (when its level exists), else the results: "to be continued"
@@ -676,7 +709,7 @@ export default function PlayPage() {
       {screen === "play" && <BossBar />}
       {screen === "play" && !locked && !padFight && !AUTO && !STILL && <FightPrompt onLock={() => { session?.input.flush(); lock(); }} />}
       {screen === "paused" && <Pause onResume={() => { resumedAt.current = performance.now(); useUi.setState({ screen: "play" }); if (session) { session.input.flush(); session.paused = !BOT && !document.pointerLockElement && !padFightRef.current; } lock(); }} onRestart={retry} onQuit={toTitle} />}
-      {screen === "results" && <ResultsScreen onRetry={retry} onTitle={toTitle} />}
+      {screen === "results" && <ResultsScreen onRetry={retry} onTitle={toTitle} onNext={useUi.getState().results?.chapter?.n === 1 ? () => void startChapter2() : undefined} />}
       {!session && <div style={{ ...layer, background: "#05060c" }}>{useUi.getState().load.error ?? "loading…"}</div>}
       <UiEffects />
     </>
