@@ -2,7 +2,8 @@
 // are the only cream captions; at most two show at once, one while the gang is awake, priority
 // nudge > subtitle > objective (a lower one fades out). Nudges fire once per episode for up to 4 s:
 // the low-health heal prompt, out of copium, a dry gun, a weapon pickup; once a session, the scope
-// (RMB), the first frag (G) and #4764's katana (F). A prompt goes at once when
+// (RMB), the first frag (G) and #4764's katana: the cut and the guard (F / Circle; the keycap turns into
+// the pad's button on a pad), then, his first bullet time with it, the round sent back. A prompt goes at once when
 // its reason does (the can is drunk, the health is back, the gun is switched).
 import { useUi, type Hud } from "../store.ts";
 import { slotOf, type WeaponId } from "../../combat/weapons.ts";
@@ -13,11 +14,15 @@ const NAMES: Record<WeaponId, string> = {
 };
 
 type Nudge = { text: string; at: number };
+
+/** #4764's katana, taught once a session: the cut and the guard, then the round sent back. */
+export const GUARD_HINT = "tap [F]: cut. hold [F]: guard.";
+export const RETURN_HINT = "hold [F] in bullet time: they get it back.";
 /** Why a nudge is up: heal / dry / empty last only while their condition holds; a pickup runs its 4 s. */
 type Why = "heal" | "dry" | "empty" | "pickup" | "secret";
 
 // module state, not component state: the HUD unmounts while paused and an episode must not replay
-const s = { run: -1, heal: false, dry: false, empty: false, owned: [] as WeaponId[], secrets: 0, pins: 0, zoomHint: false, nadeHint: false, meleeHint: false, nades: 0, pending: [] as string[], nudge: null as (Nudge & { why: Why }) | null };
+const s = { run: -1, heal: false, dry: false, empty: false, owned: [] as WeaponId[], secrets: 0, pins: 0, zoomHint: false, nadeHint: false, meleeHint: false, returnHint: false, nades: 0, pending: [] as string[], nudge: null as (Nudge & { why: Why }) | null };
 
 /** Nudge episodes (edge-triggered): returns the latest nudge while it is fresh and still true. */
 export function useNudge(h: Hud, now: number): Nudge | null {
@@ -50,7 +55,8 @@ export function useNudge(h: Hud, now: number): Nudge | null {
   // secret: the secret's line goes first)
   if (h.grenades > s.nades && !s.nadeHint) { s.nadeHint = true; s.pending.push("a frag. throw it. [G]"); }
   s.nades = h.grenades;
-  if (h.awake && alive && h.alive < h.total && !s.meleeHint && useUi.getState().radbro === "4764") { s.meleeHint = true; s.pending.push("the katana. up close. [F]"); }
+  if (h.awake && alive && h.alive < h.total && !s.meleeHint && h.katana) { s.meleeHint = true; s.pending.push(GUARD_HINT); }
+  if (h.katana && h.bt && s.meleeHint && !s.returnHint && alive) { s.returnHint = true; s.pending.push(RETURN_HINT); }
   // secrets and pins
   if (h.secrets > s.secrets) fire("secret", h.secrets >= h.secretsTotal && h.secretsTotal > 1 ? "all three." : `a secret. ${h.secrets} of ${h.secretsTotal}.`);
   s.secrets = h.secrets;

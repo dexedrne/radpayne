@@ -330,6 +330,51 @@ export const MELEE = {
   knockTime: 0.3,
 } as const;
 
+/** #4764's guard (hold the melee button; a tap still cuts). His clock unless "world" / "real". Rounds from
+ *  the front arc (120 deg around the aim) meet the blade: no damage, a spark and a clang. The meter drains
+ *  while it is held and per round, and refills once it is down; empty, the guard breaks. A shotgun blast
+ *  is one heavy charge and a shove back; grenades, her heart grenades and anything from behind are not
+ *  blocked. Inside `parry` of raising it (after `reParry` with it down) a round costs nothing: the perfect
+ *  parry. In bullet time a deflected round goes back as his own (the one under the crosshair, else the
+ *  shooter); outside it the round glances off, harmless. */
+export const GUARD = {
+  max: 100,
+  /** Meter per second while held; refill per second once it has been down `refillDelay` s. */
+  hold: 7,
+  refill: 32,
+  refillDelay: 0.6,
+  /** Meter per round, per shotgun blast (all its pellets), and the blast's shove back (m/s, s). */
+  deflect: 9,
+  blast: 40,
+  shove: 3.4,
+  shoveTime: 0.28,
+  /** Half the front arc: 60 deg. */
+  arcCos: Math.cos((60 * Math.PI) / 180),
+  /** The perfect parry's window after the raise, and how long the guard must have been down before. */
+  parry: 0.2,
+  reParry: 0.35,
+  /** A tap (real seconds from the press to the release): the cut instead of the guard. */
+  tap: 0.18,
+  /** Broken: no guard for this long, and none until the meter is back to `minRaise`. */
+  broken: 1.0,
+  minRaise: 25,
+  /** His speed while guarding. */
+  move: 0.5,
+  /** A goon in front of him holds her fire this long (world s) after the guard goes up. */
+  hesitate: 0.6,
+  /** A heavy steps in this close while he guards (the shotgun is the answer); a rusher circles this much
+   *  faster to get out of the arc. */
+  heavyIn: 2.6,
+  flank: 1.7,
+  /** A returned round's damage (x the part it hits): a goon's torso, a heavy's head. */
+  returnDamage: 70,
+  /** The blade's reach: a disc `r` across, `at` in front of him at `y` over his feet, facing the aim (a
+   *  round that crosses it is caught, near misses too); a round that reaches his body from the front
+   *  anyway meets the blade `blade` back up its line. */
+  disc: { at: 0.45, y: 1.2, r: 0.6 },
+  blade: 0.4,
+} as const;
+
 /** The sniper's scope: he moves this much slower while scoped. */
 export const ZOOM = { move: 0.45 } as const;
 

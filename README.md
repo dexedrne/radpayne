@@ -26,6 +26,18 @@ on: the hand cannon, a sawed-off, an assault rifle, a sniper rifle with a scope,
 katana (a strike with the gun for everyone else). Rooms 1-3 each hide three secrets, two of the six Radbro
 Webring pins among them, and a few easter eggs; the results count what you found.
 
+**#4764's katana:** he wears it on his left hip in every room and draws it for the melee: tap F (Circle)
+for a cut with reach that takes up to three in its arc (no blood: ink and sparks). Hold F (Circle) and
+it is his guard, the blade across his body in both hands: he moves at half speed and cannot shoot, and
+rounds from the front (a 120 degree arc) glance off the blade. The guard meter by the ammo drains while
+he holds it and with every round it stops, refills once it is down, and breaks when it runs out; a
+round inside the first 0.2 s of raising it is a perfect parry and costs nothing. A heavy's shotgun blast
+drains a lot and pushes him back; grenades, Madame Pockit's heart grenades and anything from behind are
+not blocked. In bullet time the guard sends the round back: at the Milady under the crosshair, else at
+the one who fired it, as his own round, and a kill with it plays the kill cam's RETURN TO SENDER. The
+gang notices: the goons in front hold their fire for a beat when the guard goes up, the rushers circle
+for his side, and the heavies walk in with the pump gun.
+
 ## Play
 
 ```bash
@@ -46,7 +58,7 @@ Pick a Radbro and a difficulty, then press **PLAY**. Click the game to lock the 
 | H | copium (+35 HP over 1 s, carry up to 8) |
 | 1-5 / wheel | weapon by kind: 1 the dual pistols (#250: his AK), 2 the shotgun / sawed-off, 3 the dual SMGs, 4 the hand cannon, 5 the rifle / sniper. Press a key again for its twin |
 | Right button (sniper in hand) | hold to scope (Q stays bullet time) |
-| F | melee: #4764 draws his katana, everyone else strikes with the gun |
+| F | melee: everyone strikes with the gun; #4764 taps it for a katana cut and holds it to guard (in bullet time the guard sends rounds back) |
 | G | throw a grenade (it lands where you aim, 3-20 m) |
 | E | use: secret doors, the cat, the arcade cabinet |
 | Esc | pause |
@@ -64,7 +76,7 @@ shooters' (PlayStation names, Xbox in brackets):
 | Cross (A) | jump |
 | Square (X) | reload, or use what is in reach (a secret door, the cat, the cabinet) |
 | Triangle (Y) | throw a grenade |
-| Circle (B) | melee (#4764: the katana) |
+| Circle (B) | melee (#4764: tap for the katana cut, hold to guard) |
 | L1 (LB) / d-pad left-right | weapon (next / previous, twins included) |
 | D-pad up / down | copium / use |
 | Options (Menu) | pause |
@@ -214,7 +226,8 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
   - `?skip` skips the title and the cutscenes (`&cutscene` plays cutscene 1 anyway, `&ending` the
     ending).
   - `?bot` lets a bot play the room (`?bot=demo`: it also pops bullet time, shootdodges once and
-    watches the whole kill cam).
+    watches the whole kill cam; `?bot&blade&radbro=4764`: it plays #4764's guard, bullet time on and
+    the guard up, the rounds sent back).
   - `?seed=N` fixes the seed.
   - `?hitboxes` shows the hit skeletons.
   - `?markers` shows the level markers.
@@ -250,6 +263,9 @@ input log. Bullet time is a time scale on it.
   around her; Kill cam: Off skips it through the input frame (`Session.skipNext`).
 
 - **Assets** (all generated outputs, web-ready):
+  - `public/models/radbro4764.glb` wears his katana (1.03 m) on the left hip as its own rigid node
+    (`Katana`, on the hips): the game splits its hilt off to hide while the blade is drawn, and the
+    drawn katana (`src/app/guns.ts`) takes the same hilt.
   - `public/models/radbro<id>.gun.glb`: the shooter clip set per Radbro (aimed idle / walk / back /
     strafe / run, Shootdodge -> Prone_Idle -> Prone_GetUp, Land_Roll, Hit_Small, Reload, cover crouch,
     four deaths). `milady.gun.glb` is the same set as the source the Miladys are retargeted from.
@@ -268,7 +284,8 @@ input log. Bullet time is a time scale on it.
     go. The rifle and the sniper take the same hold; the hand cannon and the sawed-off are one-handed
     (the left arm drops to a guard). The new guns are procedural (`src/app/guns.ts`).
   - The arsenal's sounds (`public/audio/sfx/handcannon_*`, `sawedoff_*`, `sniper_*`, `scope_*`,
-    `grenade_*`, `katana_*`, `melee_*`, `plywood_break`, `secret_door`) are generated layers mixed
+    `grenade_*`, `katana_*` (the guard's too: `katana_guard`, `_deflect`, `_parry`, `_return`, `_break`,
+    `_sheathe`), `melee_*`, `plywood_break`, `secret_door`) are generated layers mixed
     offline; George's meows (`meow_*`) and `models/george.glb` come from RadRun. The block at the end of
     `src/audio/sfx.ts` plays them (a missing file falls back to the round-1 / round-2 samples).
   - `public/textures/eggs/`: the posters and the arcade cabinet's screen.
@@ -337,6 +354,12 @@ input log. Bullet time is a time scale on it.
   prints the grip error, the left palm's distance to the gun, the wrist bend, elbow flips and the gun's
   visible pixels from the gameplay camera, and saves a gameplay shot and a close-up per state in
   `.local/shots/hold/`. It fails a shouldered state (fire, bullet time, dive, prone) under 1,200 px.
+  `node tools/holdcheck.ts http://localhost:4880 4764 pistols guard,slash` shoots #4764's katana guard
+  and cut (`RADPAYNE_HOLD_VIEWS=game,side,front`).
+- **Katana check:** with the dev server up, `RADPAYNE_CHROME_PROFILE=<throwaway dir> RADPAYNE_GPU=1 node
+  tools/katanasmoke.ts "http://localhost:4880/?bot&blade&radbro=4764&seed=1&webgl2" .local/shots/katana`
+  plays room 1 as #4764 with the blade bot and shoots the guard, the rounds off the blade, the rounds
+  sent back and the RETURN TO SENDER kill cam; it fails when no round went back.
 - **Arsenal tour:** with the dev server up, `RADPAYNE_CHROME_PROFILE=<throwaway dir> node tools/tour.ts
   "http://localhost:4880/?bot&tour&seed=1&webgl2&room=room1&loadout=handcannon,sawedoff,rifle&grenades=3"
   .local/shots/tour1` shoots the first shot with each gun, a melee, a grenade, the scope, the drops

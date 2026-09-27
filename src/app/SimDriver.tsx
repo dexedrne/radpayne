@@ -14,7 +14,7 @@ import { WEAPONS } from "../combat/weapons.ts";
 import { gunLog, setAmbience, setClubBass, setCrowd, setFootsteps, setHeartbeat, setIndoor, setMusic, setNeonBuzz, setRoomTone, setSpace, setTimeScaleAudio, sfx, sfxArsenal, voiceLog } from "../audio/sfx.ts";
 import { audioState } from "../audio/engine.ts";
 import { Director } from "./director.ts";
-import { PLAYER, TIME } from "../sim/tuning.ts";
+import { GUARD, MELEE, PLAYER, TIME } from "../sim/tuning.ts";
 // the HUD's data: hits on the player, refills, objectives, weapons owned
 import { pushHurt } from "../ui/store.ts";
 import { roomLabel, roomText } from "../ui/rooms.ts";
@@ -58,6 +58,8 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
   const room = useMemo(() => roomText(s.roomId, s.level.room), [s]);
   /** World seconds to each heavy's next footstep (they are heard before they are seen). */
   const heavySteps = useRef<number[]>([]);
+  /** #4764's guard has rung since it went up (the ring waits out a tap). */
+  const guardRing = useRef(true);
   /** The kill cam: the aim he had when it took over, how many played (the probe), the boss's phase. */
   const kc = useMemo(() => ({ yaw: 0, pitch: 0, n: 0, boss: { phase: -1, stand: 0, at: -1e9 } }), []);
   /** The step's events for the voice director, handed over after the kill cam's decision. */
@@ -144,7 +146,7 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
         break;
       }
       case "impact": { const w = where(e.x, e.z); sfx.impact(e.surface, w.dist, w.pan); break; }
-      case "blood": if (e.target >= 0) { const w = where(e.x, e.z); if (g.enemies[e.target]?.kind === "heavy") sfx.fleshHeavy(w.dist, w.pan); else sfx.flesh(w.dist, w.pan); } break;
+      case "blood": if (e.target >= 0 && !e.ink) { const w = where(e.x, e.z); if (g.enemies[e.target]?.kind === "heavy") sfx.fleshHeavy(w.dist, w.pan); else sfx.flesh(w.dist, w.pan); } break;
       case "hurt":
         if (e.target === -1) {
           sfx.hurt();
@@ -190,7 +192,18 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
       case "throw": sfxArsenal.grenade("throw"); break;
       case "bounce": { const w = where(e.x, e.z); sfxArsenal.grenade("bounce", w.dist, w.pan, e.speed); break; }
       case "explode": { const w = where(e.x, e.z); sfxArsenal.grenade("explode", w.dist, w.pan); break; }
-      case "melee": sfxArsenal.melee(e.kind, e.phase === "hit" && e.hits > 0); break;
+      case "melee":
+        sfxArsenal.melee(e.kind, e.phase === "hit" && e.hits > 0);
+        // #4764 sheathes the blade after the cut (his clock: half speed in bullet time)
+        if (e.kind === "katana" && e.phase === "start") sfxArsenal.guard("sheathe", (MELEE.katana.time + 0.1) / Math.max(g.timeScale, TIME.playerInBulletTime));
+        break;
+      case "guard":
+        // (the ring waits for the frame loop: a tap's guard, down again in a moment, makes no sound)
+        if (e.what === "up") guardRing.current = false;
+        else if (e.what === "break") sfxArsenal.guard("break");
+        else if (guardRing.current) sfxArsenal.guard("sheathe", 0.05);
+        break;
+      case "deflect": if (e.first) sfxArsenal.deflect(e); break;
       case "zoom": sfxArsenal.zoom(e.on); break;
       case "secret": sfxArsenal.secret(false); break;
       case "open": sfxArsenal.door(); break;
@@ -228,6 +241,7 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
     meterSeen.current = s.game.meter;
     s.frame(delta);
     const g = s.game;
+    if (g.player.guard && !guardRing.current && g.player.guardPress >= GUARD.tap) { guardRing.current = true; sfxArsenal.guard("up"); }
     frames.current++;
     fps.current = fps.current * 0.95 + (1 / Math.max(delta, 1e-3)) * 0.05;
     const screen = useUi.getState().screen;
@@ -309,6 +323,7 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
         awake: g.enemies.some(e => e.state !== "idle" && e.state !== "inactive" && e.state !== "dead"), run: s.run,
         grenades: p.grenades, lastInSlot: { ...p.lastInSlot }, zoom: p.zoom, secrets: g.found.length, secretsTotal: g.secrets.length,
         use: promptOf(g.phase === "play" || g.phase === "clear" ? g.useTarget() : null, p.health > 0 && !s.paused),
+        katana: g.katana, guard: p.guardMeter / GUARD.max, guardUp: p.guard, guardBroken: p.guardLock,
       },
     }));
   }, FRAME.sim);

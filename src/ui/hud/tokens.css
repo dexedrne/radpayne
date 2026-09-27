@@ -132,6 +132,19 @@
 .rp-slot .rp-pip { font-style: normal; font-size: 13px; margin-left: 4px; vertical-align: 3px; color: var(--gold, #d9a441); }
 .rp-slot.dry::after { content: ""; position: absolute; left: 3px; right: 3px; bottom: -6px; height: 3px; background: var(--red); }
 .rp-ammo { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; min-width: 330px; }
+/* #4764's guard meter (GuardMeter.tsx): paper blade; up = white hot; broken = red */
+.rp-guard { display: flex; align-items: center; gap: 10px; padding: 7px 14px 6px; min-width: 330px; box-sizing: border-box; transition: border-color 120ms; }
+.rp-guard .rp-lbl { width: 70px; }
+.rp-guard .blade { flex: 1; height: 18px; display: block; }
+.rp-guard .blade .back { fill: rgba(243, 234, 216, 0.12); }
+.rp-guard .blade .fill { fill: var(--paper); opacity: 0.8; transition: width 80ms linear; }
+.rp-guard .blade .edge { fill: none; stroke: var(--ink); stroke-width: 1.4; }
+.rp-guard .hold { display: inline-flex; align-items: center; gap: 6px; font: 400 16px/1 var(--display); letter-spacing: 1.5px; color: rgba(243, 234, 216, 0.7); }
+.rp-guard.up { border-color: #ffffff; }
+.rp-guard.up .blade .fill { fill: #ffffff; opacity: 1; }
+.rp-guard.broken { border-color: var(--red); }
+.rp-guard.broken .rp-lbl { color: var(--red); }
+.rp-guard.broken .blade .fill { fill: var(--red); }
 .rp-ammo.low { border-color: var(--red); }
 .rp-ammo .row { display: flex; align-items: center; gap: 10px; transition: opacity 120ms; }
 .rp-ammo.reloading .row { opacity: 0.35; }

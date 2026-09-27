@@ -221,6 +221,29 @@ export function FxView({ s }: { s: Session }) {
 
   useEffect(() => {
     const tmpA = new Vector3(), tmpB = new Vector3();
+    /** #4764's blade on a body: no blood, a comic cut: black ink flecks thrown along the stroke and a
+     *  burst of white-hot sparks off the edge. */
+    const inkCut = (e: Extract<GameEvent, { type: "blood" }>) => {
+      for (let i = 0; i < 14; i++) {
+        fx.blood.spawn(0.25 + Math.random() * 0.25);
+        const idx = fx.blood.last;
+        const b = fx.blood.items[idx];
+        b.p.set(e.x, e.y + (Math.random() - 0.5) * 0.3, e.z);
+        const sp = 1.4 + Math.random() * 2.2;
+        b.v.set(e.dx * sp + (Math.random() - 0.5) * 2.8, (Math.random() - 0.3) * 2.2, e.dz * sp + (Math.random() - 0.5) * 2.8);
+        b.s = 0.035 + Math.random() * 0.045;
+        fx.blood.mesh.setColorAt(idx, col.setRGB(0.02, 0.02, 0.03, SRGBColorSpace));
+      }
+      for (let i = 0; i < 10; i++) {
+        const k = fx.sparks.spawn(0.16 + Math.random() * 0.14);
+        k.p.set(e.x, e.y, e.z);
+        k.v.set((Math.random() - 0.5) * 6 - e.dz * 2, Math.random() * 3.5, (Math.random() - 0.5) * 6 + e.dx * 2);
+        k.s = 0.02;
+        fx.sparks.mesh.setColorAt(fx.sparks.last, col.setRGB(1.6, 1.6, 1.7));
+      }
+      if (fx.blood.mesh.instanceColor) fx.blood.mesh.instanceColor.needsUpdate = true;
+      if (fx.sparks.mesh.instanceColor) fx.sparks.mesh.instanceColor.needsUpdate = true;
+    };
     const onEvent = (e: GameEvent) => {
       switch (e.type) {
         case "shot": {
@@ -247,6 +270,7 @@ export function FxView({ s }: { s: Session }) {
           break;
         }
         case "blood": {
+          if (e.ink) { inkCut(e); if (e.target >= 0) useUi.setState({ hitAt: performance.now() }); break; }
           const heavy = e.target >= 0 && s.game.enemies[e.target]?.kind === "heavy";
           const n = heavy ? 20 : 16;
           for (let i = 0; i < n; i++) {

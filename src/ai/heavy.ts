@@ -4,11 +4,12 @@
 //   the gun for 0.35 s with a faint red laser sight on (e.tell > 0), stands still, then fires 8 pellets.
 //   A single hit of 40+ damage staggers him for 0.6 s (e.stagger > 0), which cancels the shot in the
 //   tell. Six shells, then a 1.6 s reload. A heavy with marker data {hold: true} (the manager behind his
-//   desk) never walks: he turns to the player and fires from his spot.
+//   desk) never walks: he turns to the player and fires from his spot. Against #4764's katana guard he
+//   is the answer: he fires without waiting for a shooter slot and walks in to GUARD.heavyIn.
 // Runs on world time like the goon.
 import type { Enemy } from "../sim/actors.ts";
 import type { Game } from "../sim/game.ts";
-import { ENEMY, ENEMY_ARMS, HEAVY } from "../sim/tuning.ts";
+import { ENEMY, ENEMY_ARMS, GUARD, HEAVY } from "../sim/tuning.ts";
 import { alertGoon, faceToward, followPath, perceive, setState, slotFree } from "./goon.ts";
 
 const H = ENEMY.heavy;
@@ -76,8 +77,10 @@ export function stepHeavy(g: Game, e: Enemy, dt: number): void {
     return;
   }
 
+  // #4764's katana guard toward him: the pump gun is the answer (no waiting for a slot, and he walks in)
+  const guarded = p.guard && g.inGuardArc(e.x, e.z);
   // start a shot: in range, seen, gun ready, a shooter slot free
-  if (playerAlive && e.sees && dist <= (cannon ? HEAVY.range * 1.5 : HEAVY.range) && e.fireT <= 0 && e.reloadT <= 0 && e.flinch <= 0 && g.canShoot(e) && slotFree(g, e)) {
+  if (playerAlive && e.sees && dist <= (cannon ? HEAVY.range * 1.5 : HEAVY.range) && e.fireT <= 0 && e.reloadT <= 0 && e.flinch <= 0 && g.canShoot(e) && (slotFree(g, e) || guarded)) {
     e.tell = HEAVY.tell;
     e.lastShotT = g.time; // holds his slot through the tell
     faceToward(e, p.x, p.z, 7, dt);
@@ -85,7 +88,7 @@ export function stepHeavy(g: Game, e: Enemy, dt: number): void {
   }
 
   // advance (not while reloading: he stands and racks shells in; a holding heavy stays put)
-  if (playerAlive && !e.hold && dist > HEAVY.holdAt && e.reloadT <= 0) {
+  if (playerAlive && !e.hold && dist > (guarded ? GUARD.heavyIn : HEAVY.holdAt) && e.reloadT <= 0) {
     e.repath -= dt;
     if (e.repath <= 0 || e.pathI >= e.path.length) {
       e.repath = HEAVY.repath;

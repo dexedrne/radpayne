@@ -8,6 +8,7 @@
 // then print a pass / fail table. Needs the dev server up.
 //   RADPAYNE_CHROME_PROFILE=<throwaway dir> node tools/holdcheck.ts [baseUrl] [rigs] [guns] [states]
 //   e.g. node tools/holdcheck.ts http://localhost:4880 652,250 shotgun idle,walk,dive
+//   #4764's katana guard and cut (named, not in the default list): ... 4764 pistols guard,slash
 // Always a THROWAWAY --user-data-dir; the browser is killed by its PID at the end. GPU through ANGLE/GL
 // (RADPAYNE_GPU=0 for SwiftShader).
 import fs from "node:fs";
@@ -37,6 +38,7 @@ const gfx = gpu
 const FREEZE: Record<string, number> = {
   idle: 1.2, "aim-up": 1.0, "aim-down": 1.0, turn: 1.0, walk: 1.3, back: 1.3, "strafe-l": 1.1, "strafe-r": 1.1, run: 1.2,
   fire: 0.12, bt: 0.5, reload: 0.55, "reload-2": 1.25, jump: 0.3, dive: 0.42, prone: 1.7, getup: 0.35, roll: 1.35, swap: 1.25,
+  guard: 0.6, slash: 0.2,
 };
 /** The script state each check state runs. */
 const SCRIPT: Record<string, string> = { "reload-2": "reload" };

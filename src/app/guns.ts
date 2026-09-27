@@ -9,7 +9,7 @@
 //   makeAk(): #250's AK in the shotgun's frame (grip at the origin, handguard where the pump is, muzzle as
 //     far out), so the long-gun clips and the left hand's reach fit it unchanged; attached like the shotgun.
 //   makeSmg(): a compact machine pistol with the magazine in the grip; the pistol grips fit it as is.
-import { BoxGeometry, CylinderGeometry, Group, Mesh, MeshStandardMaterial, Quaternion, Vector3, type Object3D } from "three";
+import { BoxGeometry, CylinderGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, Quaternion, Vector3, type Object3D } from "three";
 import type { Grip } from "../anim/grips.ts";
 
 export const MUZZLE = new Vector3(0, 0.052, 0.2);
@@ -442,13 +442,16 @@ export function makeGrenade(): Group {
   return g;
 }
 
-const kBlade = new BoxGeometry(0.008, 0.032, 0.75);
-const kEdge = new BoxGeometry(0.003, 0.012, 0.73);
+// the blade a size up across (like the long guns): true to scale it is a hairline from the shoulder camera
+const kBlade = new BoxGeometry(0.014, 0.05, 0.75);
+const kEdge = new BoxGeometry(0.005, 0.016, 0.73);
 const kGuard = new CylinderGeometry(0.042, 0.042, 0.012, 14);
 const kHilt = new BoxGeometry(0.03, 0.034, 0.26);
-const bladeMat = new MeshStandardMaterial({ color: "#d9dde3", roughness: 0.18, metalness: 0.55, emissive: "#4a4e56" });
+const bladeMat = new MeshStandardMaterial({ color: "#e3e7ee", roughness: 0.16, metalness: 0.5, emissive: "#6a707a" });
 const goldMat = new MeshStandardMaterial({ color: "#c9a045", roughness: 0.35, metalness: 0.6, emissive: "#3a2a0c" });
 const wrapMat = new MeshStandardMaterial({ color: "#1d1f26", roughness: 0.8, metalness: 0, emissive: "#0c0d10" });
+/** The edge: a white-hot line, so the blade reads against the night (unlit, never in the bloom's way). */
+const kEdgeMat = new MeshBasicMaterial({ color: "#f4f7ff", toneMapped: false });
 
 /** #4764's drawn katana in the pistol frame: the grip at the origin, the 0.75 m blade along +Z. */
 export function makeKatana(): Group {
@@ -460,11 +463,13 @@ export function makeKatana(): Group {
   guard.position.set(0, 0.02, 0.085);
   const blade = new Mesh(kBlade, bladeMat);
   blade.position.set(0, 0.024, 0.47);
-  const edge = new Mesh(kEdge, chrome);
-  edge.position.set(0, 0.003, 0.47);
+  const edge = new Mesh(kEdge, kEdgeMat);
+  edge.position.set(0, -0.004, 0.47);
   g.add(hilt, guard, blade, edge);
   g.userData.rpGun = true;
   g.userData.muzzle = new Vector3(0, 0.024, 0.84);
+  /** The hilt and guard (a Radbro who wears his own katana swaps his in). */
+  g.userData.hilt = [hilt, guard];
   g.traverse(o => { o.frustumCulled = false; });
   return g;
 }

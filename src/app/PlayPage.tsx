@@ -82,7 +82,9 @@ const LOADOUT = HOLDCHECK && HOLDCHECK !== "pistols" ? [HOLDCHECK] : (DEV ? para
 const GRENADES = DEV ? Number(params.get("grenades") ?? 0) || 0 : 0;
 /** Dev: ?botgun=shotgun|smgs keeps the bot on that weapon while it has rounds (the gun view checks). */
 const BOT_GUN = DEV ? (params.get("botgun") as WeaponId | null) : null;
-const newBot = () => { const b = new Bot(3.5, 0.3, BOT_DEMO); b.only = BOT_GUN; return b; };
+/** Dev: ?bot&blade: #4764's bot plays the katana's guard (bullet time, the rounds sent back). */
+const BOT_BLADE = DEV && params.has("blade");
+const newBot = () => { const b = new Bot(3.5, 0.3, BOT_DEMO); b.only = BOT_GUN; b.blade = BOT_BLADE; return b; };
 /** The page's driver: the bot, the hold check's script, or the player. */
 const driver = (s: Session) => (HOLDCHECK ? new HoldScript() : BOT && TOUR ? new TourDriver(newBot(), s) : BOT ? newBot() : null);
 const AUTO = BOT || !!HOLDCHECK;
