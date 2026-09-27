@@ -636,7 +636,7 @@ const markers: Node[] = [
 
 // ---------------------------------------------------------------- materials
 const T = "/textures/";
-const facade = (tex: string, color = "#ffffff", name = "lit 1.8") => ({ color, texture: `${T}${tex}.webp`, repeat: true, repeatCount: [1 / 13.2, 1 / 13.2], roughness: 0.92, name });
+const facade = (tex: string, color = "#ffffff", name = "lit 1.8 orig 2.4") => ({ color, texture: `${T}${tex}.webp`, repeat: true, repeatCount: [1 / 13.2, 1 / 13.2], roughness: 0.92, name });
 const glow = (color: string, g: number, extra = "") => ({ materialType: "basic", color, toneMapped: false, name: `glow ${g}${extra ? ` ${extra}` : ""}` });
 const materials: Record<string, Record<string, unknown>> = {
   asphalt: { color: "#ffffff", texture: `${T}asphalt.webp`, repeat: true, repeatCount: [0.25, 0.25], roughness: 0.42, name: "wet 1" },
@@ -700,8 +700,10 @@ const materials: Record<string, Record<string, unknown>> = {
   // unlit / glowing
   sodium: glow("#ffa24a", 6),
   bulbs: glow("#ffd9a0", 3),
-  shopGlow: glow("#ffcf8f", 0.3), // shop windows stay under the bloom threshold: the neon in front must win
-  shopCool: glow("#d9f2ff", 0.24),
+  // shop windows stay under the bloom threshold: the neon in front must win (orig: the first preview's
+  // bright windows, for the street's Bloom: Original)
+  shopGlow: glow("#ffcf8f", 0.3, "orig 0.95"),
+  shopCool: glow("#d9f2ff", 0.24, "orig 1"),
   billboardGlow: glow("#1b1030", 1),
   neonPink: glow("#ff2f9e", 4, "pulse"),
   neonCyan: glow("#2ff0ff", 3.6, "pulse"),

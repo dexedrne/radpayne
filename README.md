@@ -102,19 +102,24 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
   - The final-kill cam keeps posts, pillars and steam away from its lens; when the bullet's path runs
     through steam it skips the chase and holds on the victim.
 - **Graphics settings** (pause menu, Display; the preset is on the title too), saved in the browser:
-  - Presets: Low (no bloom, no puddle reflections, a light drizzle, 75 % resolution, no MSAA), Medium
-    (subtle bloom, a plain wet road, thin rain; the default on the WebGL2 fallback), High (subtle bloom,
-    soft reflections, thin rain; the default with WebGPU) and Cinematic (the original bloom and the sharp
-    half-res mirror puddles, thin rain).
-  - Or one control at a time: Bloom (Off / Subtle / Original), Reflections (Off / Soft / Sharp), Rain
-    (Off / Thin / Light: a drizzle; never denser than the thin default) and Resolution (50-100 %).
+  - Presets: Low (no bloom, no puddle reflections, a light drizzle, 75 % resolution, a smaller rave
+    crowd and fewer lasers), Medium (subtle bloom, a plain wet road, thin rain; the default on the WebGL2
+    fallback), High (subtle bloom, soft reflections, thin rain; the default with WebGPU) and Cinematic
+    (the original bloom and the sharp half-res mirror puddles, thin rain). MSAA stays on in all of them
+    (without it the thin neon letters break up).
+  - Or one control at a time: Bloom (Off / Subtle / Original: the first night's glow, with its
+    full-strength shop windows, exposure, blue grade, vignette and haze), Reflections (Off / Soft / Sharp),
+    Rain (Off / Thin / Light: a drizzle; never denser than the thin default) and Resolution (50-100 %;
+    75 % never drops under the screen's own pixels, so the thin neon stays whole on a standard screen).
   - Changing one applies at once. Turning the puddle mirror on or off recompiles the street's shaders
     in the background, so the picture holds for a moment.
 - **Loading:** the title only needs the page. The room's shaders compile in the background while the
   title is up (the street fades in behind it), and PLAY works at once. The Radbro files, the gang's
-  models and the sounds load behind the title and cutscene 1; the loading card before a room shows
-  what it is still waiting for. The later rooms' sounds and clips load while room 1 plays. Files in
-  `public/` are fetched by content-hashed URLs and cached for good (`vercel.json`); the Pockit models are
+  models and the sounds load behind the title and cutscene 1, and each room gets ready (its gang, its
+  shaders, its sounds) under the cutscene before it: rooms 2 and 3 swap in behind the ending panels and
+  cutscene 2. A loading card only shows what is still not there when the panels end (or are skipped).
+  The later rooms' sounds and clips load while room 1 plays. Files in `public/` (the fonts too) are
+  fetched by content-hashed URLs and cached for good (`vercel.json`); the Pockit models are
   kept in the browser's cache, and each visit's gang mixes girls already there with a couple of new ones.
 - **Dev URL flags:**
   - `?room=<id>` loads a level file.
@@ -134,8 +139,8 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
   - `?loadout=shotgun,smgs` starts with those weapons (the last one in hand).
   - `?look=fight` holds the club in its fight lighting; `?extra=heavy` adds a heavy by the staff door
     (`?cam=cam-heavy`); `?still` hides the click-to-fight veil (for screenshots without the bot).
-  - `?fx=clean` picks the Low preset for one page load (`?fx=full`: High). Works in production builds
-    too.
+  - `?fx=clean` is the old Effects: Clean for one page load (no bloom, no puddle mirror, the drizzle, at
+    full resolution; `?fx=full`: High). Works in production builds too.
 
 The simulation runs at a fixed 120 Hz and is deterministic for a given level, seed, difficulty and
 input log. Bullet time is a time scale on it.

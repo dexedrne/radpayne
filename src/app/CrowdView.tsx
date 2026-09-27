@@ -71,7 +71,7 @@ const k01 = (i: number, salt: number) => { const x = Math.sin(i * 12.9898 + salt
 export function CrowdView({ s }: { s: Session }) {
   const assets = useAssetRuntime();
   const version = useUi(st => st.assetsVersion);
-  const low = !useGfx(g => g.msaa); // the Low preset: every other girl
+  const low = useGfx(g => g.lite); // the Low preset: every other girl
   // the crowd is the same on every attempt of a room (same level, same seed): build it once per session
   const people = useMemo(() => s.game.crowd.people, [s]);
   const source = version > 0 ? assets.getModel(MILADY_R2) : null;

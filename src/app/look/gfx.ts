@@ -6,12 +6,19 @@
 //                half-res mirror puddles)
 //   rain         off | thin (the default: 2,600 thin streaks) | light (a drizzle: fewer, clear further
 //                out from the lens). Never the first preview's 7,000 heavy streaks.
-//   res          render resolution, % of the screen's pixels (capped at 1.75 device pixels)
-//   msaa         4x MSAA on the scene pass (a preset thing, not a live control: it rebuilds the pass)
+//   res          render resolution, % of the screen's pixels (capped at 1.75 device pixels). 75 % never
+//                goes under one pixel per screen pixel (on a standard 1x screen it is the full picture:
+//                below that the thin neon letters break up); only 50 % does, for the slowest machines.
+//   msaa         4x MSAA on the scene pass (a preset thing, not a live control: it rebuilds the pass). On
+//                in every preset: without it the thin neon letters break up into dashes at any resolution
+//   lite         Low's lighter scene: every other crowd girl, fewer lasers and moving lights (a preset
+//                thing too)
 // The goon outlines, the gold (his) vs red (theirs) gunfire and the rest of the readability layer are
 // on in every preset.
-// Compatibility: ?q=low and ?fx=clean pick Low for one page load, ?fx=full High, ?gfx=<preset> any
-// preset; an old saved Effects: Clean or Quality: Low becomes Low.
+// Compatibility: ?q=low picks Low for one page load, ?fx=full High, ?gfx=<preset> any preset; an old
+// saved Quality: Low becomes Low. The old Effects: Clean (?fx=clean, or saved) was a choice for a clear
+// view, not for speed: it becomes CLEAN (no bloom, no mirror, the drizzle that clears further out) at
+// full resolution, with the full crowd and lasers.
 // Default (nothing saved): High on WebGPU; Medium on the WebGL2 fallback (no puddle mirror: on WebGL2
 // every shader is linked through the GPU process one at a time and the mirror is ~a third of them, the
 // load audit's slowest path). Either can pick any preset; a choice is saved.
@@ -22,15 +29,17 @@ export type Bloom = "off" | "subtle" | "original";
 export type Reflections = "off" | "soft" | "sharp";
 export type Rain = "off" | "thin" | "light";
 export type Res = 50 | 75 | 100;
-export type Gfx = { preset: Preset | "custom"; bloom: Bloom; reflections: Reflections; rain: Rain; res: Res; msaa: boolean };
+export type Gfx = { preset: Preset | "custom"; bloom: Bloom; reflections: Reflections; rain: Rain; res: Res; msaa: boolean; lite: boolean };
 
 export const PRESETS: Record<Preset, Omit<Gfx, "preset">> = {
-  low: { bloom: "off", reflections: "off", rain: "light", res: 75, msaa: false },
-  medium: { bloom: "subtle", reflections: "off", rain: "thin", res: 100, msaa: true },
-  high: { bloom: "subtle", reflections: "soft", rain: "thin", res: 100, msaa: true },
-  cinematic: { bloom: "original", reflections: "sharp", rain: "thin", res: 100, msaa: true },
+  low: { bloom: "off", reflections: "off", rain: "light", res: 75, msaa: true, lite: true },
+  medium: { bloom: "subtle", reflections: "off", rain: "thin", res: 100, msaa: true, lite: false },
+  high: { bloom: "subtle", reflections: "soft", rain: "thin", res: 100, msaa: true, lite: false },
+  cinematic: { bloom: "original", reflections: "sharp", rain: "thin", res: 100, msaa: true, lite: false },
 };
 export const PRESET_ORDER: readonly Preset[] = ["low", "medium", "high", "cinematic"];
+/** The old Effects: Clean (readability, not speed): a custom mix, not the Low preset. */
+export const CLEAN: Omit<Gfx, "preset"> = { bloom: "off", reflections: "off", rain: "light", res: 100, msaa: true, lite: false };
 export const DEFAULT_PRESET: Preset = "high";
 /** The default on the WebGL2 fallback (no WebGPU, or ?webgl2). */
 export const DEFAULT_WEBGL2: Preset = "medium";
@@ -47,11 +56,15 @@ export function fromPreset(p: Preset): Gfx {
   return { preset: p, ...PRESETS[p] };
 }
 
+function clean(): Gfx {
+  return { preset: presetOf(CLEAN), ...CLEAN };
+}
+
 /** The preset these settings match exactly, else "custom". */
 export function presetOf(g: Omit<Gfx, "preset">): Preset | "custom" {
   for (const p of PRESET_ORDER) {
     const q = PRESETS[p];
-    if (q.bloom === g.bloom && q.reflections === g.reflections && q.rain === g.rain && q.res === g.res && q.msaa === g.msaa) return p;
+    if (q.bloom === g.bloom && q.reflections === g.reflections && q.rain === g.rain && q.res === g.res && q.msaa === g.msaa && q.lite === g.lite) return p;
   }
   return "custom";
 }
@@ -68,6 +81,7 @@ export function parseGfx(raw: string | null): Gfx | null {
       rain: RAINS.includes(o.rain as Rain) ? (o.rain as Rain) : d.rain,
       res: RESES.includes(o.res as Res) ? (o.res as Res) : d.res,
       msaa: typeof o.msaa === "boolean" ? o.msaa : d.msaa,
+      lite: typeof o.lite === "boolean" ? o.lite : d.lite,
     };
     return { preset: presetOf(g), ...g };
   } catch {
@@ -83,12 +97,14 @@ export function initialGfx(search: string, st: Store | null, webgl2 = false): Gf
   const q = new URLSearchParams(search);
   const gp = q.get("gfx");
   if (gp && (PRESET_ORDER as readonly string[]).includes(gp)) return fromPreset(gp as Preset);
-  if (q.get("q") === "low" || q.get("fx") === "clean") return fromPreset("low");
+  if (q.get("q") === "low") return fromPreset("low");
+  if (q.get("fx") === "clean") return clean();
   if (q.get("fx") === "full") return fromPreset("high");
   const get = (k: string) => { try { return st?.getItem(k) ?? null; } catch { return null; } };
   const saved = parseGfx(get("radpayne.gfx"));
   if (saved) return saved;
-  if (get("radpayne.fx") === "clean" || get("radpayne.quality") === "low") return fromPreset("low");
+  if (get("radpayne.quality") === "low") return fromPreset("low"); // Low has everything Clean had, too
+  if (get("radpayne.fx") === "clean") return clean();
   return fromPreset(webgl2 ? DEFAULT_WEBGL2 : DEFAULT_PRESET);
 }
 
@@ -126,7 +142,7 @@ export function backendIs(webgl2: boolean): void {
 
 function save(g: Gfx): void {
   try {
-    storage()?.setItem("radpayne.gfx", JSON.stringify({ bloom: g.bloom, reflections: g.reflections, rain: g.rain, res: g.res, msaa: g.msaa }));
+    storage()?.setItem("radpayne.gfx", JSON.stringify({ bloom: g.bloom, reflections: g.reflections, rain: g.rain, res: g.res, msaa: g.msaa, lite: g.lite }));
   } catch {
     /* private mode */
   }
@@ -149,7 +165,11 @@ export function setGfx<K extends "bloom" | "reflections" | "rain" | "res">(k: K,
   save(g);
 }
 
-/** Canvas pixel ratio for a resolution setting (100 % = the screen's own, capped at 1.75). */
+/** Canvas pixel ratio for a resolution setting (100 % = the screen's own, capped at 1.75; 75 % never
+ *  under one pixel per screen pixel, so the thin neon stays whole; 50 % the only one that goes under). */
 export function dprFor(res: Res, deviceRatio: number): number {
-  return Math.max(0.5, Math.min(1.75, deviceRatio || 1) * (res / 100));
+  const dr = deviceRatio || 1;
+  const full = Math.min(1.75, dr);
+  const r = full * (res / 100);
+  return Math.max(0.5, res >= 75 ? Math.max(Math.min(1, dr), r) : r);
 }

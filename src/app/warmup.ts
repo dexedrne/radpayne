@@ -10,8 +10,9 @@
 // cutscene and 60 ms behind the loading card (the room does not render under either: frame.ts renderGate). Retargeted clips are shared between models with the same rig (see
 // vrm/retarget.ts), so most girls after the first cost a parse and little else.
 // PlayPage starts the next room's warm-up once the room before it is clear (the walk to the door, the
-// ending panels or cutscene 2 run while it builds) and holds a room's start behind a short loading card
-// for whatever is still building (capped: a model that never comes keeps its stand-in).
+// ending panels or cutscene 2 run while it builds), swaps the next room in behind those panels so its
+// shaders compile there too, and holds a room's start behind a short loading card only for whatever is
+// still building (capped: a model that never comes keeps its stand-in).
 // The load audit: a room's start waits only for the goons that are there from the start (and the crowd,
 // the heavies' files, the textures); the ones a spawn trigger brings in later keep building during the
 // fight (their downloads come after the others, at low priority). The Pockit downloads themselves start
@@ -219,21 +220,4 @@ export function roomWarm(s: Session): boolean {
 /** Resolves after `n` rendered frames. */
 export async function frames(n: number): Promise<void> {
   for (let i = 0; i < n; i++) await nextFrame();
-}
-
-/** Wait (at most `capMs`) for the room's warm-up, reporting its progress; true when it all landed. */
-export async function awaitRoom(s: Session, capMs: number, onProgress?: (f: number) => void): Promise<boolean> {
-  const t0 = performance.now();
-  let w = warmRoom(s);
-  while (!w && performance.now() - t0 < capMs) { await wait(100); w = warmRoom(s); }
-  if (!w) return false;
-  let settled = false;
-  void w.promise.then(() => { settled = true; });
-  while (!settled && performance.now() - t0 < capMs) {
-    onProgress?.(w.total ? w.done / w.total : 1);
-    await wait(100);
-  }
-  onProgress?.(1);
-  if (!settled) console.info(`[warm] ${s.roomId}: ${w.done}/${w.total} ready after ${Math.round(performance.now() - t0)} ms, starting anyway`);
-  return settled;
 }

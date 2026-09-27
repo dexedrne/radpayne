@@ -393,7 +393,7 @@ function ClubPost({ msaa, level }: { msaa: boolean; level: Bloom }) {
 export function ClubLook({ level, s }: { level: LevelData; s?: Session; lowQuality?: boolean }) {
   const scene = useThree(st => st.scene);
   const gfx = useGfx();
-  const low = !gfx.msaa; // the Low preset: fewer lasers and moving lights
+  const low = gfx.lite; // the Low preset: fewer lasers and moving lights
   useEffect(() => {
     const prevBg = scene.backgroundNode, prevFog = scene.fogNode;
     scene.backgroundNode = color(CLUB.background);

@@ -6,22 +6,24 @@
 // Start plays without it (the right stick aims), and a later click on the game switches to the mouse.
 // Round 2: a cleared room with a `next` room goes on: its cutscene (room.cutsceneAfter; room 1's is the
 // e1 ending panels), then the next room's session replaces this one in the same canvas (the room is a
-// checkpoint: dying there retries that room). The results come at the end of the chain, or when the
-// next room's level file does not exist yet ("to be continued").
+// checkpoint: dying there retries that room). The swap happens behind the cutscene's panels as soon as
+// the next level is read, so that room gets ready there. The results come at the end of the chain, or
+// when the next room's level file does not exist yet ("to be continued").
 // Dev / test builds: ?bot plays the room by itself (smoke test), ?room=<id> picks a level file,
 // ?seed=N fixes the seed, ?skip skips the title and the cutscene.
-// Loading (the load audit, AUDIT.md): the title needs only the page and the level; PLAY is live at once.
+// Loading (the load audit): the title needs only the page and the level; PLAY is live at once.
 // The room's shaders are compiled off the critical frame (look/compile.ts) while the title is up: the
 // room does not render until they are (the title sits on the dark page, the street fades in). The
 // Radbro files load behind the title, the gang's Pockit downloads start as the level is read, the sounds
 // load in order (cutscene 1's lines, room 1, the fight loop; rooms 2-3 once room 1 runs) and the rave's
-// clip pack after room 1 starts. A room's start (holdRoom) waits for what it needs, with the progress
-// on the loading card: the Radbro, the gang that is there from the start, their shaders, the sounds.
+// clip pack after room 1 starts. A room gets ready (readyRoom: the Radbro, the gang that is there from
+// the start, their shaders, the sounds) under the cutscene before it when there is one; its start
+// (holdRoom) waits behind the loading card, with the progress, only for what is not done by then.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Session } from "./session.ts";
 import { Scene } from "./Scene.tsx";
 import { assetsRef, loadManifest, manifestFor, loadOptional, gunClipsPath, r2ClipsPath, MILADY_CLIPS, MILADY_R2 } from "./characters.ts";
-import { assetUrl } from "./assets.ts";
+import { assetExists, assetUrl } from "./assets.ts";
 import { goonSlots } from "../sim/game.ts";
 import { cachedPockits, pickPockits } from "../vrm/pockit.ts";
 import { warmLook } from "./look/compile.ts";
@@ -38,7 +40,7 @@ import { setMuted, unlockAudio } from "../audio/engine.ts";
 import { groupReady, loadLaterSamples, loadSamples, setFootsteps, setHeartbeat, setMusic, setMusicGate, stopNarration, stopRoomAudio } from "../audio/sfx.ts";
 import { Bot } from "../sim/bot.ts";
 import type { WeaponId } from "../combat/weapons.ts";
-import { awaitRoom, frames, prefetchGoons, roomWarm, warmRoom } from "./warmup.ts";
+import { frames, prefetchGoons, roomWarm, warmRoom } from "./warmup.ts";
 import { renderGate } from "./frame.ts";
 import { roomText } from "../ui/rooms.ts";
 
@@ -66,9 +68,28 @@ const newBot = () => { const b = new Bot(3.5, 0.3, BOT_DEMO); b.only = BOT_GUN; 
 const SEED = params.has("seed") ? Number(params.get("seed")) >>> 0 : (Math.random() * 2 ** 31) >>> 0;
 /** The longest a room's start waits for its models (then it goes on: a model still missing is a stand-in girl). */
 const HOLD_CAP_MS = 20_000;
-/** The room renders behind the loading card for its last frames (the post chain settles there). */
+/** The room renders behind the loading card or a cutscene's panels for its last frames (the post chain
+ *  settles there, out of sight). */
 let compiling = false;
-const gate = (screen: string) => { renderGate.card = screen === "cutscene" || (screen === "loading" && !compiling); };
+const gate = (screen: string) => { renderGate.card = (screen === "cutscene" || screen === "loading") && !compiling; };
+/** Resolves true once `ok()`, false after `capMs` of it not being so; time under a cutscene's panels does
+ *  not count (they last as long as they last, and nothing waits on screen). */
+async function until(ok: () => boolean, capMs: number, onTick?: () => void): Promise<boolean> {
+  let spent = 0, last = performance.now();
+  while (!ok()) {
+    const now = performance.now();
+    if (useUi.getState().screen !== "cutscene") spent += now - last;
+    last = now;
+    if (spent >= capMs) return false;
+    onTick?.();
+    await wait(100);
+  }
+  return true;
+}
+/** A room's start preparation (readyRoom), once per session. `show` is the loading card while one is up
+ *  for it (under a cutscene nothing shows); `last` is where it is. */
+type Prep = { promise: Promise<void>; done: boolean; last: { progress: number; what: string }; show: ((progress: number, what: string) => void) | null };
+const preps = new WeakMap<Session, Prep>();
 /** The first room holds its render until its shaders are compiled (taken when the page mounts, released
  *  by the title's warm-up). */
 let bootHold = false;
@@ -152,6 +173,9 @@ async function loadRoom(id: string, exact = false, current = true): Promise<Sess
  *  (`exact`: no fallback, null when the file is not there: the next room is not built yet). */
 async function fetchRoom(id: string, exact = false): Promise<{ id: string; prefab: unknown }> {
   for (const f of exact ? [id] : [id, "greybox"]) {
+    // a build knows its level files (the dev server does not): one it does not have is never asked for
+    // (room 3's next room is not built yet: no 404 in the console)
+    if (assetExists(`/levels/${f}.json`) === false) continue;
     try {
       // dev: never cached (the editor saves while the page is open); a build: the versioned URL
       const r = await fetch(DEV ? `/levels/${f}.json?v=${Date.now()}` : assetUrl(`/levels/${f}.json`));
@@ -183,10 +207,13 @@ export default function PlayPage() {
   const invertY = useUi(s => s.invertY);
   const locked = useUi(s => s.locked);
   const filterRef = useRef<HTMLDivElement>(null);
-  /** Sessions whose room has been on screen (their materials compiled behind the loading card). */
+  /** Sessions whose room is ready to start (the gang, every shader, the sounds, its first frames). */
   const shown = useRef(new WeakSet<Session>());
   /** The next room, loaded and warming up while this one finishes (from its clear). */
   const nextRoom = useRef<{ from: Session; ready: Promise<Session | null> } | null>(null);
+  /** The session in the canvas (set at once when one is swapped in, before React renders it). */
+  const mounted = useRef<Session | null>(null);
+  useEffect(() => { mounted.current = session; }, [session]);
   /** Playing on a gamepad without the pointer lock (started from the prompt with A / Start). */
   const [padFight, setPadFightState] = useState(false);
   const padFightRef = useRef(false);
@@ -319,44 +346,76 @@ export default function PlayPage() {
     lock();
   }, [session]);
 
-  /** A room's start waits behind the loading card (with its progress) for what it needs: the Radbro, the
-   *  gang that is there from the start (built ahead by the warm-up, usually already done: the later ones
-   *  keep building in the fight), every shader compiled off the frame (look/compile.ts, the models not
-   *  shown yet included) and the room's sounds; then a few frames render behind the card. */
+  /** Get a room ready to start (once per session; the room must be the one in the canvas): the Radbro,
+   *  the gang that is there from the start (built ahead by the warm-up, usually already done: the later
+   *  ones keep building in the fight), every shader compiled off the frame (look/compile.ts, the models
+   *  not shown yet included), the room's sounds, then a few frames rendered out of sight. It starts under
+   *  a cutscene's panels when there is one before the room (cutscene 1, the ending panels, c2: the next
+   *  room is swapped in behind them), else behind the loading card (holdRoom), which shows its progress. */
+  function readyRoom(s: Session): Prep {
+    const had = preps.get(s);
+    if (had) return had;
+    const prep: Prep = { promise: Promise.resolve(), done: false, last: { progress: 0, what: "" }, show: null };
+    preps.set(s, prep);
+    const step = (progress: number, what: string) => { prep.last = { progress, what }; prep.show?.(progress, what); };
+    prep.promise = (async () => {
+      const t0 = performance.now();
+      if (!useUi.getState().assetsVersion) {
+        step(0, "radbro");
+        await until(() => useUi.getState().assetsVersion > 0, HOLD_CAP_MS);
+      }
+      if (!roomWarm(s)) {
+        step(0.1, "the gang");
+        const all = await until(() => { warmRoom(s); return roomWarm(s); }, HOLD_CAP_MS, () => { const w = warmRoom(s); step(0.1 + 0.5 * (w?.total ? w.done / w.total : 0), "the gang"); });
+        if (!all) console.info(`[warm] ${s.roomId}: the gang is not all in, starting anyway`);
+      }
+      step(0.6, "shaders");
+      // the level's textures in, the models mount (hidden until posed) and the look's material rules
+      // reach them, then every shader compiles off the frame
+      await levelTextures(s);
+      await frames(12);
+      const tf = performance.now();
+      await warmLook({ hidden: true, onProgress: f => step(0.6 + 0.3 * f, "shaders") });
+      step(0.9, "sounds");
+      // room 1's own sounds; a later room's (already loading since room 1 started; a dev ?room= start
+      // asks for them here)
+      if (s.roomId !== "room1") loadLaterSamples();
+      await groupReady(s.roomId === "room1" ? "room" : "later", 6000);
+      // a few frames out of sight (the card or the panels cover the canvas): the post chain, anything
+      // that changed since
+      compiling = true;
+      gate(useUi.getState().screen);
+      try { await frames(3); } finally { compiling = false; gate(useUi.getState().screen); }
+      shown.current.add(s);
+      console.info(`[radpayne] ${s.roomId}: ready in ${Math.round(performance.now() - t0)} ms (shaders + first frames ${Math.round(performance.now() - tf)} ms)${useUi.getState().screen === "cutscene" ? ", under the panels" : ""}`);
+    })().catch(e => console.info(`[radpayne] ${s.roomId}: getting ready failed: ${String(e)}`)).finally(() => { prep.done = true; prep.show = null; });
+    return prep;
+  }
+
+  /** A room's start waits behind the loading card (with its progress) for whatever readyRoom has not
+   *  done yet (nothing, when it all happened under the cutscene before it). */
   async function holdRoom(s: Session): Promise<void> {
     if (useUi.getState().assetsVersion > 0 && roomWarm(s) && shown.current.has(s)) return;
     const t0 = performance.now();
     const label = roomText(s.roomId, s.level.room).label.toLowerCase();
     const card = (progress: number, what: string) => useUi.setState({ screen: "loading", load: { progress, label: what ? `${label} · ${what}` : label, error: null } });
-    if (!useUi.getState().assetsVersion) {
-      card(0, "radbro");
-      for (let i = 0; i < 400 && !useUi.getState().assetsVersion; i++) await wait(50);
+    const prep = readyRoom(s);
+    if (!prep.done) {
+      prep.show = card;
+      card(prep.last.progress, prep.last.what);
+      await prep.promise;
     }
-    if (!roomWarm(s)) {
-      card(0.1, "the gang");
-      await awaitRoom(s, HOLD_CAP_MS, f => card(0.1 + 0.5 * f, "the gang"));
-    }
-    if (!shown.current.has(s)) {
-      shown.current.add(s);
-      card(0.6, "shaders");
-      // the models mount (hidden until posed) and the look's material rules reach them, then every
-      // shader compiles off the frame
-      await frames(12);
-      const tf = performance.now();
-      await warmLook({ hidden: true, onProgress: f => card(0.6 + 0.3 * f, "shaders") });
-      card(0.9, "sounds");
-      // room 1's own sounds; a later room's (already loading since room 1 started; a dev ?room= start
-      // asks for them here)
-      if (s.roomId !== "room1") loadLaterSamples();
-      await groupReady(s.roomId === "room1" ? "room" : "later", 6000);
-      // a few frames behind the card: the post chain, anything that changed since
-      compiling = true;
-      gate("loading");
-      await frames(3);
-      compiling = false;
-      console.info(`[radpayne] ${s.roomId}: shaders + first frames ${Math.round(performance.now() - tf)} ms`);
-    }
-    console.info(`[radpayne] ${s.roomId}: held ${Math.round(performance.now() - t0)} ms for its models`);
+    console.info(`[radpayne] ${s.roomId}: held ${Math.round(performance.now() - t0)} ms`);
+  }
+
+  /** The next room into the canvas (its scene mounts; the sim waits paused). */
+  function mount(ns: Session): void {
+    if (mounted.current === ns) return;
+    mounted.current = ns;
+    ns.bot = BOT ? newBot() : null;
+    ns.paused = true;
+    (window as unknown as { __session?: Session }).__session = ns;
+    setSession(ns);
   }
 
   function pause() {
@@ -381,7 +440,13 @@ export default function PlayPage() {
     if (!seenCutscene.current && (!SKIP || CUTSCENE)) {
       seenCutscene.current = true;
       const c = await loadCutscene("c1");
-      if (c) { setCut({ data: c, then: () => void startPlay() }); useUi.setState({ screen: "cutscene" }); void loadSamples().then(() => setMusic("calm")); return; }
+      if (c) {
+        setCut({ data: c, then: () => void startPlay() });
+        useUi.setState({ screen: "cutscene" });
+        void loadSamples().then(() => setMusic("calm"));
+        void readyRoom(session); // room 1 gets ready under the panels
+        return;
+      }
     }
     void startPlay();
   }, [session, startPlay]);
@@ -395,10 +460,7 @@ export default function PlayPage() {
   /** The next room's session takes over the canvas and play goes straight on (the bot too). */
   const enterRoom = useCallback(async (ns: Session) => {
     stopRoomAudio(false);
-    ns.bot = BOT ? newBot() : null;
-    ns.paused = true;
-    (window as unknown as { __session?: Session }).__session = ns;
-    setSession(ns);
+    mount(ns); // (already there when it got ready under the cutscene before it)
     await holdRoom(ns);
     useUi.setState({ screen: "play" });
     ns.input.flush();
@@ -453,6 +515,9 @@ export default function PlayPage() {
           useUi.setState({ screen: "cutscene" });
           // the next room's music under the panels (c2: the back of the house)
           if (typeof c.music === "string") void loadSamples().then(() => setMusic("calm", c.music));
+          // and the next room itself: its scene mounts behind the panels and gets ready there (the gang,
+          // its shaders, its sounds, its first frames), so it starts when they end, not behind a card
+          if (next) void prepareNext(session).then(ns => { if (ns && useUi.getState().screen === "cutscene") { mount(ns); void readyRoom(ns); } });
         });
         return;
       }

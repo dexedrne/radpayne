@@ -60,21 +60,38 @@ function assetHashes(root: string): Record<string, string> {
       else out["/" + path.relative(path.join(root, "public"), p).split(path.sep).join("/")] = crypto.createHash("sha1").update(fs.readFileSync(p)).digest("hex").slice(0, 10);
     }
   };
-  for (const d of ["models", "audio", "textures", "cutscenes", "ui", "levels"]) walk(path.join(root, "public", d));
+  for (const d of ["models", "audio", "textures", "cutscenes", "ui", "levels", "fonts"]) walk(path.join(root, "public", d));
   return out;
 }
 
-export default defineConfig(({ command }) => ({
-  plugins: [react(), devSave()],
+/** Build: the fonts index.html asks for (the preloads and the @font-face urls, the same URL for both)
+ *  by their versioned URLs too, so a changed font file is never an old copy from the browser's cache. */
+function fontVersions(hashes: Record<string, string>): Plugin {
+  return {
+    name: "radpayne-font-versions",
+    apply: "build",
+    // before Vite's own pass, which takes the inline <style> through its CSS pipeline
+    transformIndexHtml: {
+      order: "pre",
+      handler: html => html.replace(/\/fonts\/[A-Za-z0-9._-]+\.woff2/g, p => (hashes[p] ? `${p}?v=${hashes[p]}` : p)),
+    },
+  };
+}
+
+export default defineConfig(({ command }) => {
   // dev: no hashes (the editor saves levels while the page is open); build: every public runtime file
-  define: { __ASSET_V__: command === "build" ? JSON.stringify(assetHashes(import.meta.dirname)) : "undefined" },
-  resolve: {
-    alias: [
-      // react-three-game's SoundManager makes an AudioContext at import; the game never uses it
-      { find: /^.*\/helpers\/SoundManager(\.js)?$/, replacement: path.join(import.meta.dirname, "src/stubs/r3gSound.ts") },
-    ],
-  },
-  server: { port: 4880, strictPort: false },
-  preview: { port: 4881 },
-  build: { chunkSizeWarningLimit: 4000 },
-}));
+  const hashes = command === "build" ? assetHashes(import.meta.dirname) : null;
+  return {
+    plugins: [react(), devSave(), ...(hashes ? [fontVersions(hashes)] : [])],
+    define: { __ASSET_V__: hashes ? JSON.stringify(hashes) : "undefined" },
+    resolve: {
+      alias: [
+        // react-three-game's SoundManager makes an AudioContext at import; the game never uses it
+        { find: /^.*\/helpers\/SoundManager(\.js)?$/, replacement: path.join(import.meta.dirname, "src/stubs/r3gSound.ts") },
+      ],
+    },
+    server: { port: 4880, strictPort: false },
+    preview: { port: 4881 },
+    build: { chunkSizeWarningLimit: 4000 },
+  };
+});

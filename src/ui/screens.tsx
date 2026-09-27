@@ -44,7 +44,7 @@ const DMG_SW: Record<DmgColour, string> = { red: "#ff3148", yellow: "#ffd23f", w
 const ONOFF: ReadonlyArray<readonly ["on" | "off", string]> = [["on", "ON"], ["off", "OFF"]];
 /** What each preset looks like (the title and the settings say it the same way). */
 export const PRESET_NOTES: Record<Preset | "custom", string> = {
-  low: "low: no bloom, no mirror, a drizzle. fastest.",
+  low: "low: no bloom, no mirror, a drizzle, a smaller crowd. fastest.",
   medium: "medium: soft glow, a wet road, thin rain.",
   high: "high: soft glow, soft reflections, thin rain.",
   cinematic: "cinematic: the original glow, sharp mirror puddles, thin rain.",
@@ -52,6 +52,7 @@ export const PRESET_NOTES: Record<Preset | "custom", string> = {
 };
 const NOTES = {
   mix: "Original bloom / sharp reflections: the first night's look. Light rain: a drizzle.",
+  res: "75 % never drops under your screen's own pixels (the neon stays whole). 50 %: the slowest machines.",
   outlines: "Goon outlines, gold vs red fire: in every setting.",
 };
 
@@ -230,7 +231,7 @@ function useSettingRows(tab: Tab): Row[] {
       seg("bloom", undefined, "Bloom", gfx.bloom, BLOOMS, v => setGfx("bloom", v)),
       seg("reflections", undefined, "Reflections", gfx.reflections, REFLS, v => setGfx("reflections", v)),
       seg("rain", undefined, "Rain", gfx.rain, RAINS, v => setGfx("rain", v), { note: NOTES.mix }),
-      seg("res", undefined, "Resolution", `${gfx.res}` as `${Res}`, RESES, v => setGfx("res", Number(v) as Res)),
+      seg("res", undefined, "Resolution", `${gfx.res}` as `${Res}`, RESES, v => setGfx("res", Number(v) as Res), { note: NOTES.res }),
       { id: "outlines", name: "Outlines", control: <span className="rp-fixed">ALWAYS ON</span>, note: NOTES.outlines },
       seg("hudSize", "HUD", "HUD size", ui.hudSize, SIZES, v => setSetting("hudSize", v)),
       seg("threats", undefined, "Threat markers", ui.threats, THREATS, v => setSetting("threats", v)),

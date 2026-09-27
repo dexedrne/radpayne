@@ -7,7 +7,8 @@
 // 311 distinct vertex shaders and 40 distinct fragment shaders.
 // Here each built shader has those buffers renamed by what they hold (element type and length:
 // NodeBuffer_mat4_24), the same name for the same layout, and the matching binding renamed with it
-// (WebGL2 looks uniform blocks up by name; WebGPU binds by index). Identical materials on identical
+// (WebGL2 looks uniform blocks up by name; WebGPU binds by index; the buffer node keeps its own name,
+// which other builds read). Identical materials on identical
 // layouts then share one program / pipeline; each object keeps its own buffer and uploads its own data.
 // The instance buffer's length is part of the shader too (an array of that many matrices), so an
 // InstancedMesh's matrix buffer is padded to the next power of two (padInstances: it still draws only
@@ -106,10 +107,15 @@ export function shareShaders(gl: WebGPURenderer): void {
         if (b.vertexShader) b.vertexShader = codes[0];
         if (b.fragmentShader) b.fragmentShader = codes[1];
         if (b.computeShader) b.computeShader = codes[2];
+        // only this build's binding objects: never the buffer node's own name. A node like the neon
+        // dim's goon array is shared by many materials, and its name is read again when a later build
+        // writes its GLSL declaration; with builds interleaved (compileAsync yields), a renamed node
+        // name reached another build's shader after its binding was made, so that binding kept the
+        // numbered name, found no block in the linked program (WebGL2: "uniformBlockBinding: invalid
+        // uniform block index") and left the program's buffers on binding 0
         for (const group of b.getBindings()) for (const binding of group.bindings ?? []) {
           const n = names.get(binding.name);
           if (n) binding.name = n;
-          if (binding.nodeUniform?.name && names.has(binding.nodeUniform.name)) binding.nodeUniform.name = names.get(binding.nodeUniform.name);
         }
       }
     } catch (e) {

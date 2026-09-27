@@ -11,17 +11,19 @@
 //    vignette. Sky gradient + exponential fog thinned with height (towers poke out of the haze).
 //  - Rain streaks around the camera, drips off awnings and fire escapes, steam from the manholes. All
 //    of it runs on a world clock that follows the sim's timeScale: bullet time slows the rain too.
-//  - Graphics settings (gfx.ts): Bloom off / subtle / original (the first preview's 0.85 glow), Reflections
+//  - Graphics settings (gfx.ts): Bloom off / subtle / original (the first preview's look: its 0.85
+//    glow, the windows at their first gains, its exposure, blue grade, vignette, haze), Reflections
 //    off (a plain wet sheen) / soft (quarter-res, blurred, dimmed) / sharp (the first preview's half-res
-//    mirror puddles), Rain off / thin / light (never denser than 2,600 thin streaks), MSAA per preset.
-//    Soft vs sharp and the bloom levels are uniforms (no recompile); turning the mirror on or off, or
-//    MSAA, rebuilds shaders behind the render gate (compile.ts).
+//    mirror puddles), Rain off / thin / light (never denser than 2,600 thin streaks), MSAA (on in every
+//    preset). Soft vs sharp, the bloom levels and the grade are uniforms (no recompile); turning the
+//    mirror on or off, or MSAA, rebuilds shaders behind the render gate (compile.ts).
 //  - Readability first (READ below): the fight must read through the mood. Characters get a camera
 //    key light and a small self-lift so they never sink into the dark; the rain clears out near the
 //    camera and thins in the middle of the screen; bloom only takes the HDR neon / lamps; puddle
 //    reflections are soft-clipped and kept dimmer than the characters; the big shop windows are
-//    toned down; vignette and blue grade are light. The readability layer (read.tsx) is on in every
-//    graphics preset.
+//    toned down; vignette and blue grade are light (Bloom: Original trades these back for the first
+//    night's glow). The lighting, the character lift and the readability layer (read.tsx) are on in
+//    every graphics setting.
 //  - The fight is 23-46 m out, so read.tsx adds a combat layer on top: a warm outline and a far fill
 //    on every visible live goon (post), red enemy fire that lights up the shooter, gold player tracers
 //    from the muzzle, and impact / hit glows that keep a minimum size downrange. The steam plumes fade
@@ -58,11 +60,9 @@ type N = any; // TSL node graphs: the three typings are too narrow for chained s
 /** Sky + fog (sRGB). The fog is close to the horizon so the far blocks melt into the rain haze. */
 const SKY = { horizon: "#2f2638", mid: "#151829", zenith: "#05060b" };
 const FOG_COLOR = "#211e2e";
-const FOG_DENSITY = 0.0046; // light: the whole street stays clear, only the far blocks and skyline haze
 
 /** Readability tuning: the one place to trade mood for a clear view of the fight. */
 const READ = {
-  exposure: 1.4,
   hemi: { sky: "#5b6fae", ground: "#2a2130", intensity: 1.25 },
   moon: 0.5,
   /** Directional key from just above the camera along the view: lights whatever faces the camera
@@ -71,11 +71,21 @@ const READ = {
   /** Characters' albedo added back as emissive: a floor so a goon in a dark doorway still reads. */
   actorLift: 0.15,
   /** Big low-gain emitters are dimmed so they stop pulling the eye: the shop windows (gain ~1) a lot,
-   *  the skyline's windows (1.5) a little; neon and lamps (2.2+) keep their full gain. */
+   *  the skyline's windows (1.5) a little; neon and lamps (2.2+) keep their full gain. Not with Bloom:
+   *  Original (the first night's look: the windows at full gain are what its glow took). */
   softGlow: [[1.2, 0.45], [2, 0.75]],
   /** Bloom per graphics setting: subtle (the default: only the HDR neon / lamps / tracers, never a lit
    *  character or a wall) and the first preview's original glow. */
   bloom: { subtle: { strength: 0.2, radius: 0.3, threshold: 1.05 }, original: { strength: 0.85, radius: 0.55, threshold: 0.62 } },
+  /** The grade after the bloom and the air: the readable one (light blue shadows, a light vignette, a
+   *  light fog: the whole street stays clear, only the far blocks and the skyline haze; thin steam) and,
+   *  with Bloom: Original, the first preview's own (its exposure, the deeper blue in the shadows, the
+   *  heavy vignette, its haze and steam). The lighting, the character lift, the thin rain and the combat
+   *  layer stay in both. */
+  grade: {
+    readable: { exposure: 1.4, tint: [0.92, 0.97, 1.1], lift: [0.004, 0.005, 0.008], vignette: 0.2, vignetteAt: [0.45, 1.05], fog: 0.0046, steam: 0.12 },
+    original: { exposure: 1.12, tint: [0.8, 0.92, 1.24], lift: [0.003, 0.005, 0.011], vignette: 0.5, vignetteAt: [0.3, 0.95], fog: 0.0072, steam: 0.2 },
+  },
   /** Reflections per graphics setting. soft (the default): the mirror at quarter res, blurred even in the
    *  puddles, gain after a soft clip (no hot lamp blobs), faded over `near` metres from the camera (the
    *  overhead lamps mirror right at the player's feet, the bottom of the frame: nearGain there, rougher
@@ -88,14 +98,17 @@ const READ = {
    *  = the drizzle, clear further out); thinner in the screen centre. */
   rainNear: { thin: [4, 7], light: [10, 15] },
   rainCentre: 0.3,
-  vignette: 0.2,
-  steam: 0.12,
   /** Steam fades out where a plume sits between the camera and a live goon (or on the aim line). */
   steamClear: 0.9,
 } as const;
 
 /** Shared clocks / hooks (one street scene at a time). time = world seconds (x timeScale). */
 export const streetFx = {
+  /** 1 with Bloom: Original: the emitters at the first preview's gains (READ.softGlow off, "orig"). */
+  glowFull: uniform(0),
+  /** The fog's density and the steam's opacity (READ.grade). */
+  fog: uniform(READ.grade.readable.fog as number),
+  steam: uniform(READ.grade.readable.steam as number),
   time: uniform(0),
   streak: uniform(0.4),
   pulse: uniform(0),
@@ -130,9 +143,18 @@ const tokens = readTokens;
 /** A material's gain is a per-material uniform (userData.rpGain), not a constant in its shader: the
  *  33 token-named street materials share a handful of shaders instead of one each. */
 const GAIN: N = materialReference("userData.rpGain", "float");
-const gainOf = (t: Tokens) => { const soft = READ.softGlow.find(([below]) => t.k < below); return soft ? t.k * soft[1] : t.k; };
+/** The gain the material had in the first preview (its "orig" token, else its gain). */
+const ORIG: N = materialReference("userData.rpOrig", "float");
+/** The emitter gain: the readable one (the gain, the big low-gain emitters dimmed further: READ.softGlow)
+ *  or, with Bloom: Original, the first preview's (no dimming, the "orig" gain): a uniform blend, so the
+ *  switch never rebuilds a shader. */
+function baseGain(): N {
+  let soft: N = float(1);
+  for (const [below, k] of [...READ.softGlow].reverse()) soft = GAIN.lessThan(below).select(float(k), soft);
+  return mix(GAIN.mul(soft), ORIG, streetFx.glowFull);
+}
 function gain(t: Tokens): N {
-  let g: N = GAIN;
+  let g: N = baseGain();
   if (t.pulse) g = g.mul(mix(0.72, 1.45, streetFx.pulse));
   if (t.flicker) g = g.mul(streetFx.flicker);
   if (t.blink) g = g.mul(streetFx.blink);
@@ -228,7 +250,8 @@ function applyRules(m: Material, ground: Ground | null): void {
   ground?.mats.delete(m);
   m.colorNode = null;
   if (std) { std.emissiveNode = null; std.roughnessNode = null; }
-  m.userData.rpGain = gainOf(t);
+  m.userData.rpGain = t.k;
+  m.userData.rpOrig = t.orig ?? t.k;
   m.userData.rpWet = t.k;
   if (t.kind === "glow") m.colorNode = materialColor.mul(gain(t)).mul(neonDim("glow"));
   else if (t.kind === "lit" && std) {
@@ -406,7 +429,7 @@ function makeSteam(ms: Marker[]): Mesh | null {
   const soft = smoothstep(1.0, 0.15, length(q));
   const n = mx_noise_float(vec3(q.mul(1.4).add(seedV), streetFx.time.mul(0.3))).mul(0.5).add(0.5);
   m.colorNode = vec4(0.58, 0.6, 0.68, 1);
-  m.opacityNode = soft.mul(n).mul(sin(lifeV.mul(Math.PI))).mul(READ.steam).mul(fadeV);
+  m.opacityNode = soft.mul(n).mul(sin(lifeV.mul(Math.PI))).mul(streetFx.steam).mul(fadeV);
   const mesh = particleMesh(g, m, 4);
   mesh.userData.steam = { markers: ms, fade, want: ms.map(() => 1) };
   return mesh;
@@ -461,9 +484,34 @@ function clearSteam(mesh: Mesh, s: Session, camera: Object3D, dt: number): void 
 const smooth = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
 // ------------------------------------------------------------------ render pipeline
+/** The grade's numbers (readable or the first preview's: READ.grade), live. */
+const G0 = READ.grade.readable;
+const gradeFx = {
+  exposure: uniform(G0.exposure as number),
+  tint: uniform(new Vector3(...G0.tint)),
+  lift: uniform(new Vector3(...G0.lift)),
+  vignette: uniform(G0.vignette as number),
+  vignetteIn: uniform(G0.vignetteAt[0] as number),
+  vignetteOut: uniform(G0.vignetteAt[1] as number),
+};
+/** Bloom: Original brings the first night's look back whole: its glow, the windows at their first
+ *  gains, its grade and haze. Off and Subtle keep the readable ones. */
+function setGrade(level: Bloom): void {
+  const g = level === "original" ? READ.grade.original : READ.grade.readable;
+  gradeFx.exposure.value = g.exposure;
+  (gradeFx.tint.value as Vector3).fromArray(g.tint);
+  (gradeFx.lift.value as Vector3).fromArray(g.lift);
+  gradeFx.vignette.value = g.vignette;
+  gradeFx.vignetteIn.value = g.vignetteAt[0];
+  gradeFx.vignetteOut.value = g.vignetteAt[1];
+  streetFx.glowFull.value = level === "original" ? 1 : 0;
+  streetFx.fog.value = g.fog;
+  streetFx.steam.value = g.steam;
+}
+
 /** The passes (rebuilt only for the renderer or MSAA) and the output graph (rebuilt when bloom goes on /
- *  off; its strength, radius and threshold are live). Registers its render contexts for the shader
- *  warm-up (compile.ts): the scene pass, the puddle mirror's target and the goon mask pass. */
+ *  off; its strength, radius and threshold and the grade are live). Registers its render contexts for
+ *  the shader warm-up (compile.ts): the scene pass, the puddle mirror's target and the goon mask pass. */
 function StreetPost({ msaa, level, ground }: { msaa: boolean; level: Bloom; ground: Ground }) {
   const gl = useThree(s => s.gl) as unknown as WebGPURenderer;
   const scene = useThree(s => s.scene);
@@ -490,18 +538,20 @@ function StreetPost({ msaa, level, ground }: { msaa: boolean; level: Bloom; grou
       b.setResolutionScale(0.5);
       hdr = hdr.add(b.rgb);
     }
-    // a light cool tint on the shadows and mids; the bright neon / lamps keep their own colour
+    // a cool tint on the shadows and mids (light, or the first preview's deeper blue); the bright neon /
+    // lamps keep their own colour, and so do the gold and red tracers
     const l = luminance(hdr);
-    let c: N = mix(hdr.mul(vec3(0.92, 0.97, 1.1)), hdr, smoothstep(0.05, 0.55, l));
-    c = c.add(vec3(0.004, 0.005, 0.008));
+    let c: N = mix(hdr.mul(gradeFx.tint), hdr, smoothstep(0.05, 0.55, l));
+    c = c.add(gradeFx.lift);
     c = enemyOutline(c, maskPass); // the goons read at range (read.tsx), whatever the graphics settings
-    c = neutralToneMapping(c, float(READ.exposure));
-    const v = smoothstep(0.45, 1.05, length(uv().sub(0.5).mul(vec2(1.0, 0.8))));
-    c = c.mul(float(1).sub(v.mul(READ.vignette)));
+    c = neutralToneMapping(c, gradeFx.exposure);
+    const v = smoothstep(gradeFx.vignetteIn, gradeFx.vignetteOut, length(uv().sub(0.5).mul(vec2(1.0, 0.8))));
+    c = c.mul(float(1).sub(v.mul(gradeFx.vignette)));
     pipeline.outputNode = vec4(c, 1);
     pipeline.needsUpdate = true;
     return b;
   }, [passes, bloomOn]);
+  useEffect(() => { setGrade(level); }, [level]);
   useEffect(() => {
     if (!bloomNode) return;
     const B = level === "original" ? READ.bloom.original : READ.bloom.subtle;
@@ -563,7 +613,7 @@ export function StreetLook({ level, s }: { level: LevelData; s?: Session; lowQua
     const sky = mix(mix(low, color(SKY.mid), smoothstep(0.02, 0.22, y)), color(SKY.zenith), smoothstep(0.18, 0.75, y));
     const prevBg = scene.backgroundNode, prevFog = scene.fogNode;
     scene.backgroundNode = sky;
-    scene.fogNode = fog(color(FOG_COLOR), (densityFogFactor as N)(float(FOG_DENSITY)).mul(mix(float(1.0), float(0.42), smoothstep(10, 140, positionWorld.y)))) as N;
+    scene.fogNode = fog(color(FOG_COLOR), (densityFogFactor as N)(streetFx.fog).mul(mix(float(1.0), float(0.42), smoothstep(10, 140, positionWorld.y)))) as N;
     return () => { scene.backgroundNode = prevBg; scene.fogNode = prevFog; };
   }, [scene]);
 

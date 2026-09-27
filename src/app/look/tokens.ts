@@ -9,7 +9,9 @@
 //   "worklight <g>"  a fixture that is dark at the party and lights up for the fight
 //   "ledfloor <g>"   the LED dance floor (cells tinted on the beat; dim red in the fight)
 //   "ledwall <g>"    the LED wall (an atlas of frames through a dot mask)
-// with the flags "pulse" (the club's kick), "flicker" (a dying tube), "blink" (a flasher).
+// with the flags "pulse" (the club's kick), "flicker" (a dying tube), "blink" (a flasher), and
+// "orig <g>": the gain the first preview had, which the street's Bloom: Original brings back (room 1's
+// shop windows and facades were toned down since: "glow 0.3 orig 0.95").
 // Repeat textures (wrapS = RepeatWrapping) are sampled in world space (metres x repeatCount).
 import { Fragment, createElement, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
@@ -22,13 +24,16 @@ import { FRAME } from "../frame.ts";
 type N = any;
 
 export type TokenKind = "" | "wet" | "lit" | "glow" | "party" | "worklight" | "ledfloor" | "ledwall";
-export type Tokens = { kind: TokenKind; k: number; pulse: boolean; flicker: boolean; blink: boolean };
+export type Tokens = { kind: TokenKind; k: number; pulse: boolean; flicker: boolean; blink: boolean; orig: number | null };
 const KINDS = new Set<string>(["wet", "lit", "glow", "party", "worklight", "ledfloor", "ledwall"]);
 
 export function readTokens(name: string): Tokens {
   const t = name.trim().toLowerCase().split(/\s+/);
   const kind = (KINDS.has(t[0]) ? t[0] : "") as TokenKind;
-  return { kind, k: Number(t[1]) || 1, pulse: t.includes("pulse"), flicker: t.includes("flicker"), blink: t.includes("blink") };
+  const o = t.indexOf("orig");
+  const v = o > 0 ? Number(t[o + 1]) : NaN; // (a missing number is NaN)
+  const orig = Number.isFinite(v) ? v : null;
+  return { kind, k: Number(t[1]) || 1, pulse: t.includes("pulse"), flicker: t.includes("flicker"), blink: t.includes("blink"), orig };
 }
 
 /** World-space UV: walls along x use (-+z, y), walls along z use (x, y), floors / ceilings (x, z). */
