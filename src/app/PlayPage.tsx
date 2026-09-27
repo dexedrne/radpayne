@@ -33,7 +33,7 @@ import { warmLook } from "./look/compile.ts";
 import { useGfx } from "./look/gfx.ts";
 import { scenePending } from "./Scene.tsx";
 import { readLevel } from "../world/level.ts";
-import { baseWeaponOf, useUi, type RadbroId } from "../ui/store.ts";
+import { baseWeaponOf, startLoadoutOf, useUi, type RadbroId } from "../ui/store.ts";
 import { WEAPONS } from "../combat/weapons.ts";
 import { Hud, canvasFx } from "../ui/Hud.tsx";
 import { UiEffects } from "../ui/hud/UiEffects.tsx";
@@ -201,7 +201,7 @@ async function loadRoom(id: string, exact = false, current = true): Promise<Sess
   // the gang: mostly girls already in the browser's cache, a couple of new faces (vrm/pockit.ts)
   const pockit = pickPockits(goonSlots(level), (SEED ^ hashId(got)) >>> 0, await cachedPockits(), usedPockits);
   for (const n of Object.values(pockit)) usedPockits.add(n);
-  const s = new Session(level, prefab, got, { seed: SEED, difficulty: useUi.getState().difficulty, base: baseWeaponOf(useUi.getState().radbro), katana: useUi.getState().radbro === "4764", pockit, ...(LOADOUT.length ? { loadout: LOADOUT } : {}), ...(GRENADES ? { grenades: GRENADES } : {}), ...(HOLDCHECK ? { ai: false } : {}) });
+  const s = new Session(level, prefab, got, { seed: SEED, difficulty: useUi.getState().difficulty, base: baseWeaponOf(useUi.getState().radbro), katana: useUi.getState().radbro === "4764", pockit, loadout: LOADOUT.length ? LOADOUT : startLoadoutOf(useUi.getState().radbro), ...(GRENADES ? { grenades: GRENADES } : {}), ...(HOLDCHECK ? { ai: false } : {}) });
   // their downloads start now, not when the Radbro files are in; room 1's music waits for them
   const gang = prefetchGoons(s);
   if (current && got === "room1") setMusicGate(gang);
@@ -506,7 +506,7 @@ export default function PlayPage() {
     // start waits for the rest: holdRoom)
     useUi.setState({ screen: "loading", load: { progress: 0, label: "", error: null } });
     await groupReady("cs1", 4000);
-    session.restart({ difficulty: useUi.getState().difficulty, base: baseWeaponOf(useUi.getState().radbro), katana: useUi.getState().radbro === "4764" });
+    session.restart({ difficulty: useUi.getState().difficulty, base: baseWeaponOf(useUi.getState().radbro), katana: useUi.getState().radbro === "4764", ...(LOADOUT.length ? {} : { loadout: startLoadoutOf(useUi.getState().radbro) }) });
     session.bot = driver(session);
     if (HOLDCHECK) {
       const hp = session.game.player;
