@@ -60,7 +60,7 @@ export const COUNT = {
 
 /** Room 10, the vault: the Countess (Pockit #COUNTESS.pockit, a size up, a rifle with a white laser). */
 export const COUNTESS = {
-  hp: { easy: 1800, normal: 2400, hard: 3000 } as PerDiff,
+  hp: { easy: 1800, normal: 2300, hard: 2800 } as PerDiff,
   scale: 1.3,
   pockit: 1847,
   phase2: 0.66,
@@ -76,7 +76,13 @@ export const COUNTESS = {
   every: [1.6, 2.4] as const,
   /** Phase 3: a quicker tell, and she runs. */
   tell3: { easy: 0.85, normal: 0.65, hard: 0.5 } as PerDiff,
-  damage: 24,
+  /** One round of hers: its damage (x difficulty) and its chance (x the usual falloffs: distance, his speed, a dive). */
+  damage: 18,
+  hit: 0.62,
+  /** During her tell she takes this much more, and this much damage in one tell breaks her aim (a stagger). */
+  tellOpen: 1.5,
+  breakAt: 70,
+  stagger: 0.8,
   /** Her walk on the desk, her cover distance on the floor (phase 2), her charge distance (phase 3). */
   walk: 1.8,
   range: 14,

@@ -1,0 +1,7719 @@
+{
+ "id": "room10",
+ "name": "Room 10: the vault",
+ "materials": {
+  "marbleBlack": {
+   "color": "#ffffff",
+   "texture": "/textures/penthouse/floor_marble_black.webp",
+   "repeat": true,
+   "repeatCount": [0.5, 0.5],
+   "roughness": 0.25
+  },
+  "goldWall": {
+   "color": "#c8a060",
+   "texture": "/textures/penthouse/wall_ebony_slats.webp",
+   "repeat": true,
+   "repeatCount": [0.5, 0.5],
+   "roughness": 0.45,
+   "metalness": 0.3
+  },
+  "steel": {
+   "color": "#2e3238",
+   "roughness": 0.45,
+   "metalness": 0.6
+  },
+  "brass": {
+   "color": "#c09050",
+   "roughness": 0.3,
+   "metalness": 0.85
+  },
+  "brassDark": {
+   "color": "#6a5230",
+   "roughness": 0.35,
+   "metalness": 0.8
+  },
+  "plinth": {
+   "color": "#e8e0d0",
+   "texture": "/textures/elevator/marble_grey.webp",
+   "repeat": true,
+   "repeatCount": [0.6666666666666666, 0.6666666666666666],
+   "roughness": 0.3
+  },
+  "ledgerDesk": {
+   "color": "#1e1715",
+   "roughness": 0.35
+  },
+  "paper": {
+   "materialType": "basic",
+   "color": "#f4ecd8",
+   "toneMapped": false,
+   "name": "glow 0.7"
+  },
+  "gold": {
+   "materialType": "basic",
+   "color": "#ffc24a",
+   "toneMapped": false,
+   "name": "glow 0.55"
+  },
+  "pillar": {
+   "color": "#d8d0c0",
+   "texture": "/textures/elevator/marble_grey.webp",
+   "repeat": true,
+   "repeatCount": [0.5, 0.5],
+   "roughness": 0.3
+  },
+  "shelfBags": {
+   "color": "#8a6a4a",
+   "texture": "/textures/backrooms/boxes_cardboard.webp",
+   "repeat": true,
+   "repeatCount": [1.25, 1.25],
+   "roughness": 0.85
+  },
+  "case": {
+   "color": "#3a2a1a",
+   "roughness": 0.5
+  },
+  "liftDoor": {
+   "color": "#b08a4a",
+   "roughness": 0.3,
+   "metalness": 0.8
+  },
+  "lamp": {
+   "materialType": "basic",
+   "color": "#ff5040",
+   "toneMapped": false,
+   "name": "glow 1.2"
+  },
+  "bars": {
+   "color": "#b08a4a",
+   "roughness": 0.3,
+   "metalness": 0.8
+  },
+  "domeGlass": {
+   "color": "#ffd8a8",
+   "roughness": 0.05,
+   "transparent": true,
+   "opacity": 0.18
+  },
+  "sunrise": {
+   "materialType": "basic",
+   "color": "#ffb070",
+   "toneMapped": false,
+   "name": "glow 0.8"
+  },
+  "sun": {
+   "materialType": "basic",
+   "color": "#fff0c8",
+   "toneMapped": false,
+   "name": "glow 2.4"
+  },
+  "beamRing": {
+   "materialType": "basic",
+   "color": "#ff3040",
+   "toneMapped": false,
+   "name": "glow 0.35"
+  }
+ },
+ "root": {
+  "id": "room",
+  "components": {
+   "data": {
+    "type": "Data",
+    "properties": {
+     "data": {
+      "room": {
+       "name": "The Vault",
+       "cutsceneAfter": "ch2f",
+       "music": "vault",
+       "look": "vault",
+       "footsteps": "hard",
+       "tutorial": false,
+       "chapter": 2,
+       "maxRise": 1.2,
+       "clearLine": "",
+       "later": [
+        "liftE",
+        "liftW",
+        "liftE2",
+        "liftW2"
+       ],
+       "chapterEnd": true,
+       "stage": {
+        "kind": "vault",
+        "lock": "vault-gate",
+        "center": [0, 0],
+        "column": 3.5,
+        "radius": 14.6,
+        "deskR": 1.7,
+        "door": [0, 13.4],
+        "floorY": 0,
+        "waves": [
+         {
+          "group": "liftE",
+          "door": "lift-e",
+          "phase": 1
+         },
+         {
+          "group": "liftW",
+          "door": "lift-w",
+          "phase": 2
+         },
+         {
+          "group": "liftE2",
+          "door": "lift-e",
+          "phase": 3
+         },
+         {
+          "group": "liftW2",
+          "door": "lift-w",
+          "phase": 3
+         }
+        ]
+       }
+      }
+     }
+    }
+   }
+  },
+  "children": [
+   {
+    "id": "geometry",
+    "children": [
+     {
+      "id": "floor",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, -0.25, 2],
+         "scale": [40, 0.5, 44]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "marbleBlack"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "wall-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 4.5, -15.1],
+         "scale": [12.6, 9, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "goldWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "wall-s1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4.05, 4.5, 15.1],
+         "scale": [4.5, 9, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "goldWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "wall-s2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.05, 4.5, 15.1],
+         "scale": [4.5, 9, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "goldWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "wall-w1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-15.1, 4.5, -3.9],
+         "scale": [0.2, 9, 4.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "goldWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "wall-w2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-15.1, 4.5, 3.9],
+         "scale": [0.2, 9, 4.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "goldWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "wall-e1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [15.1, 4.5, -3.9],
+         "scale": [0.2, 9, 4.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "goldWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "wall-e2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [15.1, 4.5, 3.9],
+         "scale": [0.2, 9, 4.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "goldWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "wall-s-top",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 6.2, 15.1],
+         "scale": [3.6, 5.6, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "goldWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "wall-w-top",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-15.1, 6, 0],
+         "scale": [0.2, 6, 3]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "goldWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "wall-e-top",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [15.1, 6, 0],
+         "scale": [0.2, 6, 3]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "goldWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "wall-d-ne",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.65, 4.5, -10.65],
+         "rotation": [0, -0.785, 0],
+         "scale": [12.4, 9, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "goldWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "wall-d-se",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.65, 4.5, 10.65],
+         "rotation": [0, 0.785, 0],
+         "scale": [12.4, 9, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "goldWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "wall-d-sw",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.65, 4.5, 10.65],
+         "rotation": [0, -0.785, 0],
+         "scale": [12.4, 9, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "goldWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "vault-gate",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 1.7, 15.1],
+         "scale": [3.6, 3.4, 0.16]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "bars"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false,
+         "visible": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal",
+          "camera": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cor-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2.9, 1.7, 18.6],
+         "scale": [0.2, 3.4, 6.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "cor-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2.9, 1.7, 16.7],
+         "scale": [0.2, 3.4, 3]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "cor-e2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2.9, 1.7, 21.2],
+         "scale": [0.2, 3.4, 1.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "cor-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 1.7, 22.1],
+         "scale": [6, 3.4, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "cor-roof",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 3.5, 18.7],
+         "scale": [6, 0.2, 7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "cage-floor",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.5, -0.25, 19.5],
+         "scale": [3, 0.5, 3]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "marbleBlack"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "cage-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.1, 1.5, 19.5],
+         "scale": [0.2, 3, 3]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "cage-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.6, 1.5, 17.9],
+         "scale": [3.2, 3, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "cage-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.6, 1.5, 21.1],
+         "scale": [3.2, 3, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "cage-roof",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.6, 3.1, 19.5],
+         "scale": [3.2, 0.2, 3.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "desk-plinth",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0.8, 0],
+         "scale": [4.8, 1.6, 4.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "plinth"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "concrete"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "desk-top",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 2, 0],
+         "scale": [1, 0.8, 1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "ledgerDesk"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "desk-st-n-0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0.64, -2.7],
+         "scale": [1.6, 1.28, 0.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "plinth"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "desk-st-n-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0.48, -3.3],
+         "scale": [1.6, 0.96, 0.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "plinth"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "desk-st-n-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0.32, -3.9],
+         "scale": [1.6, 0.64, 0.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "plinth"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "desk-st-n-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0.16, -4.5],
+         "scale": [1.6, 0.32, 0.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "plinth"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "desk-st-s-0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0.64, 2.7],
+         "scale": [1.6, 1.28, 0.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "plinth"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "desk-st-s-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0.48, 3.3],
+         "scale": [1.6, 0.96, 0.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "plinth"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "desk-st-s-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0.32, 3.9],
+         "scale": [1.6, 0.64, 0.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "plinth"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "desk-st-s-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0.16, 4.5],
+         "scale": [1.6, 0.32, 0.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "plinth"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "desk-st-n-r-0.95",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.875, 1.25, -3.9],
+         "scale": [0.15, 2.5, 3]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brass"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "shootThrough": true,
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "desk-st-s-r-0.95",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.875, 1.25, 3.9],
+         "scale": [0.15, 2.5, 3]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brass"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "shootThrough": true,
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "desk-st-n-r0.8",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0.875, 1.25, -3.9],
+         "scale": [0.15, 2.5, 3]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brass"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "shootThrough": true,
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "desk-st-s-r0.8",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0.875, 1.25, 3.9],
+         "scale": [0.15, 2.5, 3]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brass"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "shootThrough": true,
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "gold-0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.061, 0.5, 7.391],
+         "scale": [2, 1, 1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "gold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "gold-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.391, 0.5, 3.061],
+         "scale": [1, 1, 2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "gold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "gold-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.391, 0.5, -3.061],
+         "scale": [1, 1, 2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "gold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "gold-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.061, 0.5, -7.391],
+         "scale": [2, 1, 1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "gold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "gold-4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3.061, 0.5, -7.391],
+         "scale": [2, 1, 1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "gold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "gold-5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.391, 0.5, -3.061],
+         "scale": [1, 1, 2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "gold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "gold-6",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.391, 0.5, 3.061],
+         "scale": [1, 1, 2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "gold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "gold-7",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3.061, 0.5, 7.391],
+         "scale": [2, 1, 1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "gold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "pillar--7.8--7.8",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.8, 4.5, -7.8],
+         "scale": [1.2, 9, 1.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "pillar"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "pillar-7.8--7.8",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.8, 4.5, -7.8],
+         "scale": [1.2, 9, 1.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "pillar"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "pillar--7.8-7.8",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.8, 4.5, 7.8],
+         "scale": [1.2, 9, 1.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "pillar"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "pillar-7.8-7.8",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.8, 4.5, 7.8],
+         "scale": [1.2, 9, 1.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "pillar"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "shelf-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 1.3, -14.4],
+         "scale": [10, 2.6, 0.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "shelfBags"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "shelf-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-14.4, 1.3, 4.1],
+         "scale": [0.8, 2.6, 3.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "shelfBags"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "shelf-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [14.4, 1.3, -4.1],
+         "scale": [0.8, 2.6, 3.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "shelfBags"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "shelf-e2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [14.4, 1.3, 4.1],
+         "scale": [0.8, 2.6, 3.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "shelfBags"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "bonds",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.1, 0.45, 10.9],
+         "scale": [1.4, 0.9, 1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "case"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "breakable": 30,
+          "surface": "wood",
+          "drop": "grenade",
+          "amount": 3,
+          "secret": "secret-bonds"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "nw-room-floor",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13.5, -0.25, -13.5],
+         "scale": [4.2, 0.5, 4.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "marbleBlack"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "wall-d-nw-a",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13.25, 4.5, -8.05],
+         "rotation": [0, 0.785, 0],
+         "scale": [4.95, 9, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "goldWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "wall-d-nw-b",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8.05, 4.5, -13.25],
+         "rotation": [0, 0.785, 0],
+         "scale": [4.95, 9, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "goldWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "wall-d-nw-top",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.65, 5.7, -10.65],
+         "rotation": [0, 0.785, 0],
+         "scale": [2.4, 6.6, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "goldWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "nw-shelf",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.65, 1.2, -10.65],
+         "rotation": [0, 0.785, 0],
+         "scale": [2.4, 2.4, 0.3]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "shelfBags"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "secretDoor": "stash",
+          "open": "slide",
+          "slide": [-1.7, 1.7],
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "nw-room-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-15.5, 4.5, -10.95],
+         "scale": [0.2, 9, 9.3]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "goldWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "nw-room-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.95, 4.5, -15.5],
+         "scale": [9.3, 9, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "goldWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "nw-room-roof",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-12.6, 3.3, -12.6],
+         "scale": [6, 0.2, 6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "goldWall"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "lift-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [15.1, 1.5, 0],
+         "scale": [0.2, 3, 3]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "liftDoor"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false,
+         "visible": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal",
+          "camera": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "vest-e-floor",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [17.2, -0.25, 0],
+         "scale": [4, 0.5, 4.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "marbleBlack"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "vest-e-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [17.2, 1.6, -2.5],
+         "scale": [4, 3.2, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "vest-e-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [17.2, 1.6, 2.5],
+         "scale": [4, 3.2, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "vest-e-back",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [19.3, 1.6, 0],
+         "scale": [0.2, 3.2, 5.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "vest-e-roof",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [17.2, 3.3, 0],
+         "scale": [4, 0.2, 5.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "lift-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-15.1, 1.5, 0],
+         "scale": [0.2, 3, 3]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "liftDoor"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false,
+         "visible": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal",
+          "camera": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "vest-w-floor",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17.2, -0.25, 0],
+         "scale": [4, 0.5, 4.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "marbleBlack"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "vest-w-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17.2, 1.6, -2.5],
+         "scale": [4, 3.2, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "vest-w-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17.2, 1.6, 2.5],
+         "scale": [4, 3.2, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "vest-w-back",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.3, 1.6, 0],
+         "scale": [0.2, 3.2, 5.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "vest-w-roof",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17.2, 3.3, 0],
+         "scale": [4, 0.2, 5.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     }
+    ]
+   },
+   {
+    "id": "decor",
+    "components": {
+     "data": {
+      "type": "Data",
+      "properties": {
+       "data": {
+        "collider": false
+       }
+      }
+     }
+    },
+    "children": [
+     {
+      "id": "dome",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 9.05, 0],
+         "scale": [30, 0.1, 30]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "domeGlass"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "dome-rib-0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 9.15, 7.5],
+         "scale": [0.2, 0.2, 15]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brass"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "dome-rib-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [5.303, 9.15, 5.303],
+         "rotation": [0, 0.785, 0],
+         "scale": [0.2, 0.2, 15]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brass"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "dome-rib-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.5, 9.15, 0],
+         "rotation": [0, 1.571, 0],
+         "scale": [0.2, 0.2, 15]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brass"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "dome-rib-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [5.303, 9.15, -5.303],
+         "rotation": [0, 2.356, 0],
+         "scale": [0.2, 0.2, 15]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brass"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "dome-rib-4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 9.15, -7.5],
+         "rotation": [0, 3.142, 0],
+         "scale": [0.2, 0.2, 15]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brass"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "dome-rib-5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-5.303, 9.15, -5.303],
+         "rotation": [0, 3.927, 0],
+         "scale": [0.2, 0.2, 15]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brass"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "dome-rib-6",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.5, 9.15, 0],
+         "rotation": [0, 4.712, 0],
+         "scale": [0.2, 0.2, 15]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brass"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "dome-rib-7",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-5.303, 9.15, 5.303],
+         "rotation": [0, 5.498, 0],
+         "scale": [0.2, 0.2, 15]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brass"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "sky",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 40.5, 0],
+         "scale": [160, 1, 160]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "sunrise"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "sun",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 26, -60]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "sphere",
+         "args": [9, 20, 12]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "sun"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "vault-door",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3.4, 1.9, 16.6],
+         "rotation": [1.571, 0.6, 0]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [1.9, 1.9, 0.5, 32]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brassDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "vault-frame",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 1.8, 15.24],
+         "scale": [4.2, 3.6, 0.12]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brassDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bar-18.4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2.9, 1.3, 18.4],
+         "scale": [0.1, 2.6, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brass"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bar-18.7",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2.9, 1.3, 18.7],
+         "scale": [0.1, 2.6, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brass"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bar-19.0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2.9, 1.3, 19],
+         "scale": [0.1, 2.6, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brass"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bar-19.3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2.9, 1.3, 19.3],
+         "scale": [0.1, 2.6, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brass"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bar-19.6",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2.9, 1.3, 19.6],
+         "scale": [0.1, 2.6, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brass"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bar-19.9",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2.9, 1.3, 19.9],
+         "scale": [0.1, 2.6, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brass"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bar-20.2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2.9, 1.3, 20.2],
+         "scale": [0.1, 2.6, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "brass"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ledger",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 2.42, 0],
+         "scale": [0.7, 0.04, 0.5]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "paper"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "beam-ring",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0.02, 0]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [3.5, 3.5, 0.02, 40]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "beamRing"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "lift-e-lamp",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [14.96, 3.2, 0],
+         "scale": [0.04, 0.2, 0.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "lamp"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "lift-w-lamp",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-14.96, 3.2, 0],
+         "scale": [0.04, 0.2, 0.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "lamp"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     }
+    ]
+   },
+   {
+    "id": "markers",
+    "children": [
+     {
+      "id": "cv-desk-plinth-0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.02, 0, -2.15],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-desk-plinth-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.02, 0, 2.15],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-desk-plinth-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3.02, 0, 2.15],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-desk-plinth-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3.02, 0, -2.15],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-0-4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.061, 0, 6.271]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-0-5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.061, 0, 8.511],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-0-6",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.681, 0, 7.391],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-0-7",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [1.441, 0, 7.391],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-1-8",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.391, 0, 1.441]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-1-9",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.391, 0, 4.681],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-1-10",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.511, 0, 3.061],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-1-11",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.271, 0, 3.061],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-2-12",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.391, 0, -4.681]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-2-13",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.391, 0, -1.441],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-2-14",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.511, 0, -3.061],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-2-15",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.271, 0, -3.061],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-3-16",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.061, 0, -8.511]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-3-17",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.061, 0, -6.271],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-3-18",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.681, 0, -7.391],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-3-19",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [1.441, 0, -7.391],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-4-20",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3.061, 0, -8.511]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-4-21",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3.061, 0, -6.271],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-4-22",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.441, 0, -7.391],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-4-23",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4.681, 0, -7.391],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-5-24",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.391, 0, -4.681]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-5-25",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.391, 0, -1.441],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-5-26",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6.271, 0, -3.061],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-5-27",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8.511, 0, -3.061],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-6-28",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.391, 0, 1.441]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-6-29",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.391, 0, 4.681],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-6-30",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6.271, 0, 3.061],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-6-31",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8.511, 0, 3.061],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-7-32",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3.061, 0, 6.271]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-7-33",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3.061, 0, 8.511],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-7-34",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.441, 0, 7.391],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gold-7-35",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4.681, 0, 7.391],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar--7.8--7.8-36",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8.15, 0, -9.02]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar--7.8--7.8-37",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.45, 0, -9.02]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar--7.8--7.8-38",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.45, 0, -6.58],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar--7.8--7.8-39",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8.15, 0, -6.58],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar--7.8--7.8-40",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6.58, 0, -8.15],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar--7.8--7.8-41",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6.58, 0, -7.45],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar--7.8--7.8-42",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-9.02, 0, -7.45],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar--7.8--7.8-43",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-9.02, 0, -8.15],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar-7.8--7.8-44",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.45, 0, -9.02]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar-7.8--7.8-45",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.15, 0, -9.02]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar-7.8--7.8-46",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.15, 0, -6.58],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar-7.8--7.8-47",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.45, 0, -6.58],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar-7.8--7.8-48",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.02, 0, -8.15],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar-7.8--7.8-49",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.02, 0, -7.45],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar-7.8--7.8-50",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.58, 0, -7.45],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar-7.8--7.8-51",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.58, 0, -8.15],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar--7.8-7.8-52",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8.15, 0, 6.58]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar--7.8-7.8-53",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.45, 0, 6.58]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar--7.8-7.8-54",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.45, 0, 9.02],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar--7.8-7.8-55",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8.15, 0, 9.02],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar--7.8-7.8-56",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6.58, 0, 7.45],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar--7.8-7.8-57",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6.58, 0, 8.15],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar--7.8-7.8-58",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-9.02, 0, 8.15],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar--7.8-7.8-59",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-9.02, 0, 7.45],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar-7.8-7.8-60",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.45, 0, 6.58]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar-7.8-7.8-61",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.15, 0, 6.58]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar-7.8-7.8-62",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.15, 0, 9.02],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar-7.8-7.8-63",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.45, 0, 9.02],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar-7.8-7.8-64",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.02, 0, 7.45],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar-7.8-7.8-65",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.02, 0, 8.15],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar-7.8-7.8-66",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.58, 0, 8.15],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pillar-7.8-7.8-67",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.58, 0, 7.45],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-shelf-n-68",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.75, 0, -13.38],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-shelf-n-69",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4.75, 0, -13.38],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-shelf-w-70",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13.38, 0, 2.45],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-shelf-w-71",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13.38, 0, 5.75],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-shelf-e-72",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [13.38, 0, -2.45],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-shelf-e-73",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [13.38, 0, -5.75],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-shelf-e2-74",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [13.38, 0, 5.75],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-shelf-e2-75",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [13.38, 0, 2.45],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "secret-stash",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13.25, 1.3, -13.25],
+         "scale": [4.1, 2.6, 4.1]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "secret",
+          "name": "her own shelf"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "secret-bonds",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.1, 0.45, 10.9],
+         "scale": [1.4, 0.9, 1]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "secret",
+          "name": "the bearer bonds",
+          "via": "break"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "secret-cage",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.5, 1.3, 19.5],
+         "scale": [3, 2.6, 3]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "secret",
+          "name": "the teller's cage"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13.5, 0, -4.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13.5, 0, -1.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13.5, 0, 1.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 0, -7.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 0, -4.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 0, -1.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-6",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 0, 1.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-7",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 0, 4.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-8",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 0, 7.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-9",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.5, 0, -10.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-10",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.5, 0, -1.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-11",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.5, 0, 1.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-12",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-7.5, 0, 10.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-13",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4.5, 0, -10.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-14",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4.5, 0, -4.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-15",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4.5, 0, -1.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-16",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4.5, 0, 1.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-17",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4.5, 0, 4.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-18",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4.5, 0, 10.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-19",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4.5, 0, 13.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-20",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.5, 0, -10.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-21",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.5, 0, -7.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-22",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.5, 0, 7.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-23",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.5, 0, 10.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-24",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.5, 0, 13.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-25",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [1.5, 0, -10.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-26",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [1.5, 0, -7.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-27",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [1.5, 0, 7.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-28",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [1.5, 0, 10.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-29",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [1.5, 0, 13.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-30",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.5, 0, -10.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-31",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.5, 0, -4.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-32",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.5, 0, -1.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-33",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.5, 0, 1.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-34",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.5, 0, 4.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-35",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.5, 0, 10.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-36",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.5, 0, 13.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-37",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.5, 0, -10.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-38",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.5, 0, -1.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-39",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.5, 0, 1.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-40",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.5, 0, 10.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-41",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 0, -7.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-42",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 0, -4.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-43",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 0, -1.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-44",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 0, 1.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-45",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 0, 4.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-46",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 0, 7.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-47",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [13.5, 0, -1.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-floor-48",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [13.5, 0, 1.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-st-n-bot",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0, -6.4]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-st-n-top"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-st-n-top",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 1.6, -1.8]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-st-n-bot",
+           "wp-desk-e",
+           "wp-desk-w"
+          ],
+          "solo": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-st-s-bot",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0, 6.4]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-st-s-top"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-st-s-top",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 1.6, 1.8]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-st-s-bot",
+           "wp-desk-e",
+           "wp-desk-w"
+          ],
+          "solo": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-desk-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [1.8, 1.6, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-st-n-top",
+           "wp-st-s-top"
+          ],
+          "solo": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-desk-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.8, 1.6, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-st-n-top",
+           "wp-st-s-top"
+          ],
+          "solo": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-cor-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0, 16.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-cor-2",
+           "wp-cor-in"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-cor-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0, 20.4]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-cor-1",
+           "wp-cage-in"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-cor-in",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0, 13.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-cor-1"
+          ],
+          "door": "vault-gate"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-cage-in",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.4, 0, 19.4]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-cor-2"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-nw-in",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13, 0, -13]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-nw-out"
+          ],
+          "door": "nw-shelf"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-nw-out",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-9.6, 0, -9.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-nw-in"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-lift-e-in",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [13.6, 0, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-lift-e-out"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-lift-e-out",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.8, 0, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-lift-e-in",
+           "wp-lift-e-back"
+          ],
+          "door": "lift-e"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-lift-e-back",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [18.6, 0, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-lift-e-out"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-lift-w-in",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13.6, 0, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-lift-w-out"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-lift-w-out",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-16.8, 0, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-lift-w-in",
+           "wp-lift-w-back"
+          ],
+          "door": "lift-w"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-lift-w-back",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-18.6, 0, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-lift-w-out"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "countess",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 1.6, -1.7],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "countess",
+          "drop": false
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "guard-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6.5, 0, 3],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "guard-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6, 0, 2.6],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "guard-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0, -9.4],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "liftE-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.2, 0, -1.6],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "liftE",
+          "deaf": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "liftE-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [17.6, 0, -1.6],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher",
+          "group": "liftE",
+          "deaf": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "liftE-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.2, 0, -0.2],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "liftE",
+          "deaf": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "liftE-4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [17.6, 0, -0.2],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher",
+          "group": "liftE",
+          "deaf": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "liftE-5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.2, 0, 1.2],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "liftE",
+          "deaf": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "liftW-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-16.2, 0, -1.6],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher",
+          "group": "liftW",
+          "deaf": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "liftW-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17.6, 0, -1.6],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "liftW",
+          "deaf": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "liftW-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-16.2, 0, -0.2],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "heavy",
+          "group": "liftW",
+          "deaf": true,
+          "model": "rival723"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "liftW-4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17.6, 0, -0.2],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher",
+          "group": "liftW",
+          "deaf": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "liftW-5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-16.2, 0, 1.2],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "liftW",
+          "deaf": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "liftE2-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.2, 0, -0.9000000000000001],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher",
+          "group": "liftE2",
+          "deaf": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "liftE2-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [17.6, 0, -0.9000000000000001],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher",
+          "group": "liftE2",
+          "deaf": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "liftE2-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.2, 0, 0.49999999999999994],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "liftE2",
+          "deaf": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "liftE2-4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [17.6, 0, 0.49999999999999994],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "liftE2",
+          "deaf": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "liftW2-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-16.2, 0, -0.9000000000000001],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "liftW2",
+          "deaf": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "liftW2-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17.6, 0, -0.9000000000000001],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher",
+          "group": "liftW2",
+          "deaf": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "liftW2-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-16.2, 0, 0.49999999999999994],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher",
+          "group": "liftW2",
+          "deaf": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "liftW2-4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17.6, 0, 0.49999999999999994],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "goon",
+          "group": "liftW2",
+          "deaf": true
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "spawn",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0, 18.4],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "spawn"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "checkpoint-0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 0, 18.4],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "checkpoint"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "t-vault",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 1, 12.6],
+         "scale": [26, 3, 3]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "trigger",
+          "action": "alert"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cop-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-12, 0, 8]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cop-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [12, 0, -8]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cop-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-11.5, 0, -4]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cop-4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [11.5, 0, 4.4]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cop-door",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.6, 0, 16.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "sniper",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [1.6, 0, 16.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "sniper"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "shotgun",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8.6, 0, -6.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "shotgun"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "nades",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.6, 0, 6.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "grenade",
+          "amount": 2
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "pin-g250",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13.4, 0, -13.4]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "pin",
+          "pin": "g250",
+          "behind": "nw-shelf"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "stash-copium",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-12.2, 0, -14.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium",
+          "amount": 2,
+          "behind": "nw-shelf"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cage-ammo",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.6, 0, 18.8]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "sniper_ammo",
+          "amount": 10
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cage-copium",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.6, 0, 20.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium",
+          "amount": 2
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "egg-photos",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [13.85, 1.6, 4.1],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "egg",
+          "egg": "photowall"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-sun-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 8, -6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ffc88a",
+          "intensity": 12,
+          "distance": 26
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-sun-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8, 7, 6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ffb870",
+          "intensity": 8,
+          "distance": 18
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-sun-3",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8, 7, 6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ffb870",
+          "intensity": 8,
+          "distance": 18
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-desk",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 4, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ffe0a0",
+          "intensity": 5,
+          "distance": 8
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-lift-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [13.8, 2.6, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ff9060",
+          "intensity": 3,
+          "distance": 6
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-lift-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13.8, 2.6, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ff9060",
+          "intensity": 3,
+          "distance": 6
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-cor",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 3, 19]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ffcf90",
+          "intensity": 4,
+          "distance": 7
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-nw",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13, 2.8, -13]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ffc07a",
+          "intensity": 2,
+          "distance": 4
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "light-cage",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.5, 2.6, 19.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "light",
+          "color": "#ffc07a",
+          "intensity": 2,
+          "distance": 4
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cam-vault",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 2, 13.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "camera",
+          "at": [0, 2.2, 0]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cam-desk",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6, 2.6, 6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "camera",
+          "at": [0, 2.8, -1.7]
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

@@ -35,6 +35,9 @@ export class Vault implements Stage {
   readonly deskR: number;
   readonly door: [number, number];
   readonly floorY: number;
+  /** A collider out of the world until the fight starts (the vault door's gate: no fighting from the corridor). */
+  readonly lock: string;
+  locked = false;
   readonly waves: Wave[];
   phase = 1;
   started = false;
@@ -47,6 +50,8 @@ export class Vault implements Stage {
   beamNext = 0;
   beams = 0;
   downed = false;
+  /** Her health when her rifle's tell began (-1: no tell): enough damage during it breaks her aim. */
+  tellHp = -1;
 
   constructor(g: Game, s: StageSettings) {
     this.idx = g.enemies.findIndex(e => e.kind === "countess");
@@ -56,6 +61,8 @@ export class Vault implements Stage {
     this.deskR = typeof s.deskR === "number" ? s.deskR : 2;
     this.door = (s.door as [number, number]) ?? this.center;
     this.floorY = typeof s.floorY === "number" ? s.floorY : 0;
+    this.lock = typeof s.lock === "string" ? s.lock : "";
+    if (this.lock) g.world.setEnabled(this.lock, false);
     const her = g.enemies[this.idx];
     if (her) { her.perch = true; her.coverUsed = true; }
     this.waves = ((s.waves as Array<{ group: string; door: string; phase: number }>) ?? []).map(w => {
@@ -73,7 +80,8 @@ export class Vault implements Stage {
   damageMul(e: Enemy, part: number): number {
     if (e.kind !== "countess") return 1;
     if (this.introT > 0 || this.shiftT > 0) return 0;
-    return part === HB_HEAD ? COUNTESS.head : 1;
+    // standing still for the tell, she is open: that is the moment (in bullet time, the long one)
+    return (part === HB_HEAD ? COUNTESS.head : 1) * (e.tell > 0 ? COUNTESS.tellOpen : 1);
   }
 
   clampDamage(e: Enemy, amount: number): number {
@@ -122,6 +130,8 @@ export class Vault implements Stage {
     const wasShift = this.shiftT > 0;
     this.shiftT = Math.max(0, this.shiftT - dt);
     const alive = e.state !== "dead" && e.state !== "inactive";
+    // the gate shuts behind him once she has seen him and he is in the vault
+    if (this.started && this.lock && !this.locked && Math.hypot(g.player.x - this.center[0], g.player.z - this.center[1]) < this.radius - 0.6) { this.locked = true; g.world.setEnabled(this.lock, true); g.emit({ type: "stage", what: "locked" }); }
     // the phases
     if (alive && this.started) {
       const f = e.hp / e.maxHp;
@@ -170,6 +180,16 @@ export class Vault implements Stage {
         if (w.next <= 0 && this.liveOf(g, w.group) < COUNTESS.doors.maxLive) { this.spawn(g, w, COUNTESS.doors.pair); w.next = COUNTESS.doors.every; }
       }
     }
+    // her aim broken: enough damage during the tell and the round never comes (a stagger)
+    if (alive && e.tell > 0) {
+      if (this.tellHp < 0) this.tellHp = e.hp;
+      else if (this.tellHp - e.hp >= COUNTESS.breakAt && this.lastStand !== 1) {
+        e.tell = 0;
+        e.stagger = COUNTESS.stagger;
+        this.tellHp = -1;
+        g.emit({ type: "stage", what: "stagger", id: e.idx });
+      }
+    } else this.tellHp = -1;
     this.stepBeam(g, dt, alive);
   }
 
@@ -256,9 +276,12 @@ export class Vault implements Stage {
   }
 
   botHint(g: Game): StageHint | null {
+    const p = g.player;
+    const e = this.her(g);
+    // her tell about to end with the line on him: dive (as a player watching the laser would)
+    if (e && e.tell > 0 && e.tell < 0.22 && p.mode === "normal" && p.grounded && g.canShoot(e)) return { dodge: true };
     const t = this.timeToHim(g);
     if (!Number.isFinite(t)) return null;
-    const p = g.player;
     if (this.beam.high) return t < 0.3 && p.mode === "normal" && p.grounded ? { dodge: true } : null;
     return t < 0.3 && t > 0.08 && p.mode === "normal" && p.grounded ? { jump: true } : null;
   }
@@ -287,7 +310,7 @@ export class Vault implements Stage {
   }
 
   hashInto(h: Fnv1a): void {
-    h.i32(this.phase).i32(this.started ? 1 : 0).f64(this.introT).f64(this.shiftT).i32(this.lastStand).f64(this.shotNext).f64(this.beamNext).i32(this.beams);
+    h.i32(this.phase).i32(this.locked ? 1 : 0).i32(this.started ? 1 : 0).f64(this.introT).f64(this.shiftT).i32(this.lastStand).f64(this.shotNext).f64(this.beamNext).i32(this.beams);
     h.i32(this.beam.state).f64(this.beam.t).f64(this.beam.a).i32(this.beam.high ? 1 : 0).i32(this.beam.hit ? 1 : 0);
     for (const w of this.waves) h.f64(w.lamp).i32(w.lit ? 1 : 0).i32(w.queue.length).f64(w.next);
   }

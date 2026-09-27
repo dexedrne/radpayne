@@ -1244,7 +1244,7 @@ export class Game {
     const distF = sniper ? (dist <= ENEMY_ARMS.sniper.range ? 1 : AI.farFloor) : dist <= AI.near ? 1 : dist >= AI.far ? AI.farFloor : 1 - ((1 - AI.farFloor) * (dist - AI.near)) / (AI.far - AI.near);
     const fast = p.mode === "dive" || p.mode === "roll";
     const speedF = fast ? AI.dodgeMul : 1 - AI.speedK * Math.min(1, p.speed / PLAYER.runSpeed);
-    const chance = (sniper ? ENEMY_ARMS.sniper.hit : AI.baseHit) * distF * speedF * this.diff.accuracy * (moving ? 0.55 : 1) * (this.stage?.accuracy?.(this, e) ?? 1);
+    const chance = (e.kind === "countess" ? COUNTESS.hit : sniper ? ENEMY_ARMS.sniper.hit : AI.baseHit) * distF * speedF * this.diff.accuracy * (moving ? 0.55 : 1) * (this.stage?.accuracy?.(this, e) ?? 1);
     const hitRoll = this.rng.next() < chance;
     // aim offset in the plane across the line of fire
     let ox = 0, oy = 0, oz = 0;
@@ -1270,7 +1270,7 @@ export class Game {
       }
       return;
     }
-    const dmg = sniper ? ENEMY_ARMS.sniper.damage : cannon ? ENEMY_ARMS.handcannon.damage : T.damage;
+    const dmg = e.kind === "countess" ? COUNTESS.damage : sniper ? ENEMY_ARMS.sniper.damage : cannon ? ENEMY_ARMS.handcannon.damage : T.damage;
     this.shoot(1, e.idx, 0, mx, my, mz, dx / l, dy / l, dz / l, dmg * this.diff.damage, e.weapon, 0);
   }
 
