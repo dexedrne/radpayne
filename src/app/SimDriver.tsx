@@ -60,7 +60,16 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
   /** The kill cam's state on the HUD at once (the ride, the X-ray, the release), not at the next push. */
   const cineHud = () => {
     const c = cine.cur, g = s.game;
-    useUi.setState(u => ({ hud: { ...u.hud, killcam: cine.holding || g.phase === "killcam", cine: c && c.phase !== "out" ? (c.phase === "flight" ? 1 : 2) : 0, cineTag: cine.holding ? c!.tag : "", killcamProgress: cine.holding ? cine.progress : u.hud.killcamProgress } }));
+    useUi.setState(u => ({ hud: { ...u.hud, killcam: cine.holding || g.phase === "killcam", cine: c && c.phase !== "out" ? (c.phase === "flight" ? 1 : 2) : 0, cineTag: cine.holding ? c!.tag : "", killcamProgress: kcProgress() } }));
+  };
+  /** The letterbox's progress line: the kill cam's; for the last kill its ride and X-ray fill the first
+   *  60 % and the sim's final-kill cam (the swing after it) the rest. */
+  const kcProgress = (): number => {
+    const k = s.game.killcam;
+    if (cine.holding) return (cine.cur!.final ? 0.6 : 1) * cine.progress;
+    if (!k) return 0;
+    const f = Math.min(1, k.t / k.dur);
+    return cine.flownFinal ? 0.6 + 0.4 * f : f;
   };
   const release = () => {
     s.hold = false;
@@ -283,7 +292,7 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
         roomLabel: roomLabel(room), objective: objective.current.text, objectiveAt: objective.current.at,
         weaponId: w.id, owned: SLOT_ORDER.filter(id => p.owned.includes(id)), reserve: w.reserve, hands: def.hands,
         ammo: ammoByWeapon(p),
-        killcamProgress: cine.holding ? cine.progress : g.killcam ? Math.min(1, g.killcam.t / g.killcam.dur) : 0,
+        killcamProgress: kcProgress(),
         awake: g.enemies.some(e => e.state !== "idle" && e.state !== "inactive" && e.state !== "dead"), run: s.run,
         grenades: p.grenades, lastInSlot: { ...p.lastInSlot }, zoom: p.zoom, secrets: g.found.length, secretsTotal: g.secrets.length,
         use: promptOf(g.phase === "play" || g.phase === "clear" ? g.useTarget() : null, p.health > 0 && !s.paused),

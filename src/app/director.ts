@@ -268,9 +268,10 @@ export class Director {
     if (delay > 0) this.io.later(cue, delay * 1000); else cue();
   }
 
-  /** The air is taken: the narrator mid-line, or any other voice still playing. */
+  /** The air is taken: the narrator mid-line, any other voice still playing, or a kill cam holding the
+   *  fight (a held PA / heavy line waits it out, or expires). */
   private airBusy(now: number): boolean {
-    return this.narrating() || now < this.otherUntil || now < this.airUntil;
+    return this.narrating() || now < this.otherUntil || now < this.airUntil || this.s.hold;
   }
 
   /** A PA / heavy line: now if the air is clear, else held (up to `wait` s) until it is. */
