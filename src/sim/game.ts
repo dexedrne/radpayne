@@ -67,8 +67,13 @@ export type KillCam = {
 
 /** loadout: extra weapons owned from the start (tests, dev ?loadout=); the base gun is always owned.
  *  base: that base gun (slot 1, never runs dry): the dual pistols, or the AK for #250.
- *  resume: start from a checkpoint saved in an earlier attempt (Game.saved). */
-export type GameOptions = { seed?: number; difficulty?: Difficulty; ai?: boolean; loadout?: WeaponId[]; base?: BaseWeapon; resume?: Resume; katana?: boolean; grenades?: number };
+ *  resume: start from a checkpoint saved in an earlier attempt (Game.saved); carry: the guns from the last room. */
+export type GameOptions = { seed?: number; difficulty?: Difficulty; ai?: boolean; loadout?: WeaponId[]; base?: BaseWeapon; resume?: Resume; katana?: boolean; grenades?: number; carry?: Carry };
+
+/** What he walks into the next room with (Game.carryOut at the last room's exit): the guns he picked up
+ *  and their rounds, the one in hand, the frags and the banked 9 mm. A retry of that room starts with it
+ *  again (the session keeps it in its options). */
+export type Carry = { owned: WeaponId[]; weapon: WeaponId; ammo: Array<[WeaponId, number, number, number]>; grenades: number; banked: number };
 
 /** What a checkpoint keeps (room 3's, after the security office): where he stands, who is down, which
  *  doors are open, what was picked up and fired, his guns and ammo, health, copium and the stats so far.
@@ -230,6 +235,7 @@ export class Game {
     // a loadout starts with its last weapon in hand
     const last = opts.loadout?.[opts.loadout.length - 1];
     if (last && this.player.arsenal[last]) this.player.weapon = this.player.arsenal[last]!;
+    if (opts.carry) this.applyCarry(opts.carry);
     this.resumed = !!opts.resume;
     if (opts.resume) this.applyResume(opts.resume);
     // First aim state so the camera and crosshair are valid before the first step.
@@ -252,6 +258,30 @@ export class Game {
       health: p.health, copium: p.copium, meter: this.meter, stats: { ...this.stats },
       grenades: p.grenades, banked: p.banked, found: [...this.found], opened: [...this.opened], broken: [...this.broken],
     };
+  }
+
+  /** What he carries out of this room into the next (see Carry). */
+  carryOut(): Carry {
+    const p = this.player;
+    return {
+      owned: [...p.owned], weapon: p.weapon.id,
+      ammo: p.owned.map(w => { const a = p.arsenal[w]!; return [w, a.mags[0], a.mags[1], a.reserve] as [WeaponId, number, number, number]; }),
+      grenades: p.grenades, banked: p.banked,
+    };
+  }
+
+  /** Start the room with what he carried out of the last one (no events). */
+  private applyCarry(c: Carry): void {
+    const p = this.player;
+    for (const w of c.owned) if (w in WEAPONS) this.giveWeapon(w);
+    for (const [w, m0, m1, res] of c.ammo) {
+      const a = p.arsenal[w];
+      // a base gun keeps its endless reserve
+      if (a) { a.mags[0] = m0; a.mags[1] = m1; if (Number.isFinite(a.reserve)) a.reserve = res; }
+    }
+    if (p.arsenal[c.weapon]) p.weapon = p.arsenal[c.weapon]!;
+    p.grenades = Math.min(GRENADE.carry, Math.max(p.grenades, c.grenades));
+    p.banked = c.banked;
   }
 
   /** Rebuild the room as the checkpoint left it (no events: the views read the state). */
@@ -812,8 +842,9 @@ export class Game {
     this.emit({ type: "secret", id, n: this.found.length, of: this.secrets.length, name: typeof m.data.name === "string" ? m.data.name : id });
   }
 
-  /** E: the nearest secret door in reach in front of him opens; else an egg in reach reports it. */
-  private interact(): void {
+  /** What E would use right now (read only, the HUD's prompt reads it too): the nearest secret door in
+   *  reach in front of him, else the nearest egg in reach in front of him, else null. */
+  useTarget(): { door: string } | { egg: Marker } | null {
     const p = this.player;
     const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);
     const inFront = (x: number, z: number, d: number) => d < 0.4 || ((x - p.x) * fx + (z - p.z) * fz) / d >= USE.cos;
@@ -828,12 +859,7 @@ export class Game {
       if (d > USE.reach || !inFront(c.x, c.z, Math.hypot(c.x - p.x, c.z - p.z))) continue;
       if (!door || d < door.d) door = { node: dr.node, d };
     }
-    if (door) {
-      this.world.setEnabled(door.node, false);
-      this.opened.push(door.node);
-      this.emit({ type: "open", node: door.node });
-      return;
-    }
+    if (door) return { door: door.node };
     let egg: Marker | null = null, ed = Infinity;
     for (const m of this.level.markers) {
       if (m.kind !== "egg" || m.data.interact !== true) continue;
@@ -841,7 +867,20 @@ export class Game {
       if (d > USE.reach + 0.4 || Math.abs(m.y - (p.y + 0.9)) > 1.6 || !inFront(m.x, m.z, d) || d >= ed) continue;
       egg = m; ed = d;
     }
-    if (egg) this.emit({ type: "interact", id: egg.id, egg: String(egg.data.egg ?? egg.id) });
+    return egg ? { egg } : null;
+  }
+
+  /** E: the nearest secret door in reach in front of him opens; else an egg in reach reports it. */
+  private interact(): void {
+    const t = this.useTarget();
+    if (!t) return;
+    if ("door" in t) {
+      this.world.setEnabled(t.door, false);
+      this.opened.push(t.door);
+      this.emit({ type: "open", node: t.door });
+      return;
+    }
+    this.emit({ type: "interact", id: t.egg.id, egg: String(t.egg.data.egg ?? t.egg.id) });
   }
 
   // ---- the breach door ------------------------------------------------------------------------

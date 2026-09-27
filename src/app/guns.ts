@@ -286,17 +286,19 @@ const hcGuard = new BoxGeometry(0.01, 0.034, 0.06);
 const hcPort = new BoxGeometry(0.048, 0.02, 0.07);
 const hcBore = new CylinderGeometry(0.011, 0.011, 0.012, 10);
 const darkSteel = new MeshStandardMaterial({ color: "#3a3e46", roughness: 0.5, metalness: 0.2, emissive: "#1a1c21" });
+/** The hand cannon's chrome: brighter than the pistols' slides, so the big gun reads in the rain. */
+const hcChrome = new MeshStandardMaterial({ color: "#dfe3ea", roughness: 0.22, metalness: 0.4, emissive: "#4c5059" });
 
 /** The hand cannon: a long-slide .50 pistol in bright chrome with a big squared slide and a dark grip. */
 export function makeHandCannon(): Group {
   const g = new Group();
-  const slide = new Mesh(hcSlide, chrome);
+  const slide = new Mesh(hcSlide, hcChrome);
   slide.position.set(0, 0.058, 0.12);
-  const frame = new Mesh(hcFrame, chrome);
+  const frame = new Mesh(hcFrame, hcChrome);
   frame.position.set(0, 0.025, 0.1);
   const gr = new Mesh(hcGrip, darkSteel);
   gr.rotation.x = 0.22;
-  const guard = new Mesh(hcGuard, chrome);
+  const guard = new Mesh(hcGuard, hcChrome);
   guard.position.set(0, 0.006, 0.05);
   const port = new Mesh(hcPort, darkSteel);
   port.position.set(0, 0.078, 0.1);

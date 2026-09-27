@@ -208,6 +208,20 @@ test("nudges: the heal prompt goes once the can is drunk; out of copium goes onc
   assert.equal(useNudge(h({ health: 60, copium: 1, owned: ["pistols", "shotgun"] }), 6000 + NUDGE_HOLD), null);
 });
 
+test("nudges: the first frag's G hint waits for a secret found with it, then shows once", async () => {
+  const { useNudge } = await import("../src/ui/hud/captions.ts");
+  const { useUi } = await import("../src/ui/store.ts");
+  const base = useUi.getState().hud;
+  const h = (o: Partial<Hud>): Hud => ({ ...base, run: 78, health: 100, copium: 2, healing: false, owned: ["pistols"], secretsTotal: 3, ...o });
+  assert.equal(useNudge(h({}), 0), null);
+  // the frags lie in the secret: both in one HUD update, the secret's line first
+  assert.equal(useNudge(h({ grenades: 2, secrets: 1 }), 100)?.text, "a secret. 1 of 3.");
+  assert.equal(useNudge(h({ grenades: 2, secrets: 1 }), 100 + NUDGE_HOLD)?.text, "a frag. throw it. [G]");
+  assert.equal(useNudge(h({ grenades: 1, secrets: 1 }), 100 + 2 * NUDGE_HOLD), null);
+  // once a session: the next frags say nothing
+  assert.equal(useNudge(h({ grenades: 3, secrets: 1 }), 100 + 3 * NUDGE_HOLD), null);
+});
+
 test("canvas filter: none at rest; BT grade; low-HP desaturation; pause blur; death greyout; results dim", () => {
   const base = { screen: "play", timeScale: 1, health: 100, deadAt: 0, now: 0 };
   assert.equal(canvasFx(base).filter, "none");

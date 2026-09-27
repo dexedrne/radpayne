@@ -1,7 +1,8 @@
 // The transient-text budget in one hook: the TL objective, the BC narrator subtitle and the BL nudge
 // are the only cream captions; at most two show at once, one while the gang is awake, priority
 // nudge > subtitle > objective (a lower one fades out). Nudges fire once per episode for up to 4 s:
-// the low-health heal prompt, out of copium, a dry gun, a weapon pickup. A prompt goes at once when
+// the low-health heal prompt, out of copium, a dry gun, a weapon pickup; once a session, the scope
+// (RMB), the first frag (G) and #4764's katana (F). A prompt goes at once when
 // its reason does (the can is drunk, the health is back, the gun is switched).
 import { useUi, type Hud } from "../store.ts";
 import { slotOf, type WeaponId } from "../../combat/weapons.ts";
@@ -16,11 +17,11 @@ type Nudge = { text: string; at: number };
 type Why = "heal" | "dry" | "empty" | "pickup" | "secret";
 
 // module state, not component state: the HUD unmounts while paused and an episode must not replay
-const s = { run: -1, heal: false, dry: false, empty: false, owned: [] as WeaponId[], secrets: 0, pins: 0, zoomHint: false, nudge: null as (Nudge & { why: Why }) | null };
+const s = { run: -1, heal: false, dry: false, empty: false, owned: [] as WeaponId[], secrets: 0, pins: 0, zoomHint: false, nadeHint: false, meleeHint: false, nades: 0, pending: [] as string[], nudge: null as (Nudge & { why: Why }) | null };
 
 /** Nudge episodes (edge-triggered): returns the latest nudge while it is fresh and still true. */
 export function useNudge(h: Hud, now: number): Nudge | null {
-  if (s.run !== h.run) { s.run = h.run; s.heal = s.dry = s.empty = false; s.owned = h.owned; s.secrets = h.secrets; s.pins = h.pins.length; s.nudge = null; }
+  if (s.run !== h.run) { s.run = h.run; s.heal = s.dry = s.empty = false; s.owned = h.owned; s.secrets = h.secrets; s.pins = h.pins.length; s.nades = h.grenades; s.nudge = null; }
   const fire = (why: Why, text: string) => { s.nudge = { text, at: now, why }; };
   const alive = h.health > 0 && !h.killcam;
   const low = alive && h.health <= 25;
@@ -44,6 +45,12 @@ export function useNudge(h: Hud, now: number): Nudge | null {
   s.owned = h.owned;
   // the sniper's first draw: how to scope
   if (h.weaponId === "sniper" && !s.zoomHint) { s.zoomHint = true; fire("pickup", "hold right mouse: scope."); }
+  // the first frag in the pouch: how to throw it; #4764's katana, in the first fight after its first kill
+  // (the opening lines are said). Once a session each, and they wait for a free slot (frags found in a
+  // secret: the secret's line goes first)
+  if (h.grenades > s.nades && !s.nadeHint) { s.nadeHint = true; s.pending.push("a frag. throw it. [G]"); }
+  s.nades = h.grenades;
+  if (h.awake && alive && h.alive < h.total && !s.meleeHint && useUi.getState().radbro === "4764") { s.meleeHint = true; s.pending.push("the katana. up close. [F]"); }
   // secrets and pins
   if (h.secrets > s.secrets) fire("secret", h.secrets >= h.secretsTotal && h.secretsTotal > 1 ? "all three." : `a secret. ${h.secrets} of ${h.secretsTotal}.`);
   s.secrets = h.secrets;
@@ -51,6 +58,7 @@ export function useNudge(h: Hud, now: number): Nudge | null {
   s.pins = h.pins.length;
   const n = s.nudge;
   if (n && (now - n.at >= NUDGE_HOLD || n.why !== "pickup" && n.why !== "secret" && !s[n.why])) s.nudge = null;
+  if (!s.nudge && s.pending.length && alive) fire("pickup", s.pending.shift()!);
   return s.nudge ? { text: s.nudge.text, at: s.nudge.at } : null;
 }
 

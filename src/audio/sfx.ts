@@ -680,7 +680,8 @@ export const sfxArsenal = {
   shot(weapon: string, player: boolean, dist = 0, pan = 0): void {
     const e = sfxOn();
     if (!e) return;
-    const g = player ? 0.9 : 0.6 * att(dist);
+    // the big guns sit a little over the pistols (their files are mastered to the same level)
+    const g = player ? 1.0 : 0.65 * att(dist);
     const p = player ? 0 : pan * 0.8;
     const r = rate * (player ? 1 : 0.95 + Math.random() * 0.08);
     const t = e.ac.currentTime;

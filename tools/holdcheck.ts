@@ -40,9 +40,12 @@ const FREEZE: Record<string, number> = {
 };
 /** The script state each check state runs. */
 const SCRIPT: Record<string, string> = { "reload-2": "reload" };
-/** Acceptance (spec 1.7): grip < 0.3 cm, left palm < 1.5 cm, bend < 60 deg, no flips; pixels at rest. */
+/** Acceptance (spec 1.7): grip < 0.3 cm, left palm < 1.5 cm, bend < 60 deg, no flips; pixels at rest (a
+ *  one-handed gun: 600 with the arm out). */
 const AIMED = new Set(["fire", "bt", "dive", "prone"]);
-const LIMIT = { grip: 0.003, left: 0.015, bend: (60 * Math.PI) / 180, aimedPx: 1200, readyPx: 2000 };
+const LIMIT = { grip: 0.003, left: 0.015, bend: (60 * Math.PI) / 180, aimedPx: 1200, readyPx: 2000, oneHandPx: 600 };
+/** The one-handed guns' states with the arm out (the reload lowers the gun on purpose). */
+const ONE_HAND_OUT = new Set(["idle", "walk", "fire", "bt"]);
 
 const browser = await puppeteer.launch({
   executablePath: process.env.CHROME_PATH ?? "/usr/bin/chromium",
@@ -167,8 +170,11 @@ for (const r of rows) {
     if (s.bend > LIMIT.bend) why.push(`bend ${((s.bend * 180) / Math.PI).toFixed(0)} deg`);
     if (s.flips > 0) why.push(`${s.flips} elbow flips`);
   }
-  // the pixel targets are the long guns' (the one-handed guns are small by nature)
+  // the pixel targets: the long guns' at rest and shouldered; the one-handed guns' with the arm out (they
+  // must not read as a pistol-sized speck)
   const long = r.gun === "shotgun" || r.gun === "ak" || r.gun === "rifle" || r.gun === "sniper";
+  const oneHand = r.gun === "handcannon" || r.gun === "sawedoff";
+  if (oneHand && ONE_HAND_OUT.has(r.state) && r.px < LIMIT.oneHandPx) why.push(`one-handed ${r.px} px`);
   if (long && r.state === "idle" && r.px < LIMIT.readyPx) why.push(`ready ${r.px} px`);
   // shouldered: shooting, in bullet time, in the dive and prone
   if (long && AIMED.has(r.state) && r.px < LIMIT.aimedPx) why.push(`aimed ${r.px} px`);

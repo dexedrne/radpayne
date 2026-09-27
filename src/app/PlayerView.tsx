@@ -48,8 +48,9 @@ const SHOTGUN_THICK_PLAYER = 1.55;
 /** His long guns run this much further ahead of the pump / handguard (gun space, before the length
  *  scale): the front reaches past his shoulder into the clear zone below-left of the crosshair. */
 const PLAYER_FRONT = { shotgun: 0.13, ak: 0.12, sniper: 0.1 } as const;
-/** The one-handed guns' size over true scale, and their recoil at the elbow (rad). */
-const ONE_HAND = { handcannon: { scale: 1.25, kick: 0.45 }, sawedoff: { scale: 1.2, kick: 0.4 } } as const;
+/** The one-handed guns' size over true scale, and their recoil at the elbow (rad). Well over the pistols'
+ *  size: from over the shoulder the hand cannon must not read as one more pistol, nor the sawed-off as a speck. */
+const ONE_HAND = { handcannon: { scale: 1.65, kick: 0.45 }, sawedoff: { scale: 1.5, kick: 0.4 } } as const;
 /** The melee's arm arc (his frame: right, up, forward from the chest, metres) from its start to its end,
  *  the share of the swing spent cutting, the spine's turn over it (rad). */
 const SWING = {

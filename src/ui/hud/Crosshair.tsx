@@ -1,6 +1,7 @@
 // The crosshair cluster (centre): dot + four ticks (white; pink and 3px closer on a target), hit and
 // kill marks, the HEADSHOT sticker, the bullet-time ring (only while slowed: how much slow-mo is
-// left), the low-ammo cue. Stamp-driven CSS animations restart with `key`; no per-frame renders.
+// left), the low-ammo cue, the E prompt (a secret door or an egg in reach, faced). Stamp-driven CSS
+// animations restart with `key`; no per-frame renders.
 import { useUi } from "../store.ts";
 import { METER } from "../../sim/tuning.ts";
 import { Keycap } from "./Keycap.tsx";
@@ -63,6 +64,7 @@ export function Crosshair({ now }: { now: number }) {
       </svg>
       {hs && <div key={hsAt} className="rp-hs">HEADSHOT</div>}
       {lowAmmo && <div className="rp-xh-ammo"><span className="c">{total}</span><Keycap k="R" /></div>}
+      {h.use && <div className="rp-xh-use" data-testid="use-prompt"><Keycap k="E" /><span>{h.use}</span></div>}
     </div>
   );
 }

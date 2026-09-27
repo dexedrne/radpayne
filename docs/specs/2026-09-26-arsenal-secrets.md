@@ -305,9 +305,9 @@ Existing rows are unchanged except where noted. Headshots stay ×3.
 | `ak` | AK | 1 (#250) | 30 | 30 | 1 | 0.10 | 0.9° | 2.2 | ∞ | yes | 0 | #250's base |
 | `shotgun` | SHOTGUN | 2 | 6 | 14 | 8 | 0.8 | 3° | 2.0 | 24 / 48 | no | 0 | close |
 | `sawedoff` | SAWED-OFF | 2, press again | 2 | 13 | 10 | 0.22 | 8° | 1.5 | 10 / 24 | no | 0 | point blank; two barrels in a blink |
-| `smgs` | SMGS | 3 | 2×30 | 14 | 1 | 0.06 | 1.5° | 1.8 | 180 / 360 | yes | 0 | spray; fed by the goons' 9 mm |
+| `smgs` | SMGS | 3 | 2×30 | 20 | 1 | 0.06 | 1.2° | 1.8 | 180 / 360 | yes | 0 | spray; fed by the goons' 9 mm; ~220/s sustained (pistols ~195) |
 | `handcannon` | CANNON | 4 | 7 | 95 | 1 | 0.42 | 0.2° | 1.6 | 14 / 35 | no | 1 at 70% | one torso shot kills a goon; heavies in two |
-| `rifle` | RIFLE | 5 | 30 | 30 | 1 | 0.10 | 0.9° | 2.2 | 60 / 180 | yes | 0 | the AK for everyone else (same model and feel) |
+| `rifle` | RIFLE | 5 | 30 | 42 | 1 | 0.10 | 0.6° | 2.2 | 60 / 180 | yes | 0 | the AK's model, a heavier round and a tighter cone; ~240/s sustained |
 | `sniper` | SNIPER | 5, press again | 5 | 160 | 1 | 1.1 (bolt) | 2.5° unscoped, 0 scoped | 2.4 | 10 / 25 | no | 2 | the long street |
 | grenade | (count) | G | carry 3 | 150 at the centre | | throw cooldown 0.8 | | | +1 or +2 per pickup | | | clusters, cover |
 | katana (#4764) | | F | | 120 | | 0.45 | reach 2.0 m, ±55° | | | | | #4764's melee |

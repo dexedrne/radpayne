@@ -33,7 +33,10 @@ test("the table: magazines, intervals, reloads, cones, pierce; long and one-hand
   assert.deepEqual([W.sawedoff.mag, W.sawedoff.pellets, W.sawedoff.interval, W.sawedoff.reload], [2, 10, 0.22, 1.5]);
   assert.ok(Math.abs(W.sawedoff.spread - 8 * DEG) < 1e-9);
   assert.deepEqual([W.handcannon.mag, W.handcannon.damage, W.handcannon.interval, W.handcannon.reload, W.handcannon.pierce], [7, 95, 0.42, 1.6, 1]);
-  assert.deepEqual([W.rifle.mag, W.rifle.damage, W.rifle.interval, W.rifle.reload, W.rifle.reserve, W.rifle.reserveMax], [30, 30, 0.1, 2.2, 60, 180]);
+  assert.deepEqual([W.rifle.mag, W.rifle.damage, W.rifle.interval, W.rifle.reload, W.rifle.reserve, W.rifle.reserveMax], [30, 42, 0.1, 2.2, 60, 180]);
+  // both automatic pickups beat the pistols on sustained damage (a pickup is never a downgrade)
+  const sustained = (w: (typeof W)[keyof typeof W]) => (w.damage * w.pellets * w.mag * w.hands) / (w.mag * w.hands * w.interval + w.reload);
+  assert.ok(sustained(W.rifle) > sustained(W.pistols) * 1.15 && sustained(W.smgs) > sustained(W.pistols) * 1.1, `rifle ${sustained(W.rifle).toFixed(0)} smgs ${sustained(W.smgs).toFixed(0)} pistols ${sustained(W.pistols).toFixed(0)}`);
   assert.deepEqual([W.sniper.mag, W.sniper.damage, W.sniper.interval, W.sniper.reload, W.sniper.pierce, W.sniper.zoomSpread], [5, 160, 1.1, 2.4, 2, 0]);
   assert.equal(W.ak.reserve, Infinity);
   assert.equal(makeWeapon("rifle").reserve, 60);
@@ -108,6 +111,28 @@ test("drops: every hostile drops its gun; 9 mm banked for the SMGs; the rusher's
   take("handcannon");
   assert.equal(p.arsenal.handcannon!.reserve, 7);
   assert.equal(p.arsenal.handcannon!.mags[0], 7);
+});
+
+test("the next room: he walks in with the guns, rounds and frags he walked out with", () => {
+  const a = new Game(level([spawn]), { ai: false, seed: 1, loadout: ["shotgun", "sniper", "smgs"], grenades: 2 });
+  a.player.arsenal.sniper!.mags[0] = 3;
+  a.player.arsenal.sniper!.reserve = 4;
+  a.player.arsenal.pistols!.mags = [5, 7];
+  a.player.banked = 15;
+  const carry = a.carryOut();
+  const b = new Game(level([spawn]), { ai: false, seed: 2, carry });
+  const p = b.player;
+  assert.deepEqual(p.owned, ["pistols", "shotgun", "smgs", "sniper"]);
+  assert.equal(p.weapon.id, "smgs");
+  assert.deepEqual([p.arsenal.sniper!.mags[0], p.arsenal.sniper!.reserve], [3, 4]);
+  assert.deepEqual(p.arsenal.pistols!.mags, [5, 7]);
+  assert.equal(p.arsenal.pistols!.reserve, Infinity, "the base gun keeps its endless reserve");
+  assert.equal(p.grenades, 2);
+  assert.equal(p.banked, 15);
+  // #250: his AK stays his base gun
+  const c = new Game(level([spawn]), { ai: false, seed: 1, base: "ak", carry: new Game(level([spawn]), { ai: false, seed: 1, base: "ak", loadout: ["sniper"] }).carryOut() });
+  assert.deepEqual(c.player.owned, ["ak", "sniper"]);
+  assert.equal(c.player.arsenal.ak!.reserve, Infinity);
 });
 
 test("#250 carries his own AK: a rifle stays where it lies", () => {

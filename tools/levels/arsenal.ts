@@ -195,7 +195,9 @@ function room2(p: Prefab, a: Adds): void {
     box("ars-coat-rail", [-19.8, 1.8, -8.3], [-17.5, 1.84, -8.26], "chrome"),
   );
   a.markers.push(
-    marker("ars-coat-light", "light", [-17.6, 2.8, -6.8], { color: "#ffc98a", intensity: 1.5, distance: 5 }),
+    marker("ars-coat-light", "light", [-17.6, 2.8, -6.8], { color: "#ffc98a", intensity: 2.4, distance: 6 }),
+    // a low fill off the rail's end onto the flight case's front (the sticker) and the floor by the pin
+    marker("ars-coat-fill", "light", [-16.6, 1.3, -6.0], { color: "#ffd9a8", intensity: 1.0, distance: 3 }),
     volume("ars-secret-coat", "secret", [-20.0, 0, -8.6], [-15.2, 3, -5.3], { name: "the coat room" }),
     marker("ars-coat-handcannon", "pickup", [-16.1, 0.8, -7.9], { item: "handcannon", behind: "ars-coat-door" }),
     marker("ars-pin-4764", "pickup", [-19.3, 0, -7.7], { item: "pin", pin: "4764", behind: "ars-coat-door" }),

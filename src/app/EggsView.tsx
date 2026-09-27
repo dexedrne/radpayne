@@ -57,8 +57,8 @@ function sticker(): CanvasTexture {
   stickerTex.colorSpace = SRGBColorSpace;
   return stickerTex;
 }
-function stickerMesh(size = 0.16): Mesh {
-  const m = new Mesh(new PlaneGeometry(size, size), own(new MeshStandardMaterial({ map: sticker(), roughness: 0.6, emissive: "#ffffff", emissiveMap: sticker(), emissiveIntensity: 0.25, transparent: true })));
+function stickerMesh(size = 0.16, glow = 0.25): Mesh {
+  const m = new Mesh(new PlaneGeometry(size, size), own(new MeshStandardMaterial({ map: sticker(), roughness: 0.6, emissive: "#ffffff", emissiveMap: sticker(), emissiveIntensity: glow, transparent: true })));
   m.rotation.z = 0.12;
   return m;
 }
@@ -119,7 +119,8 @@ function build(m: Marker, playing: string): Built | null {
     return { root };
   }
   if (egg === "sticker") {
-    root.add(stickerMesh());
+    // on the coat room's flight case: a size up and lit from within a little (the room is dim)
+    root.add(stickerMesh(0.24, 0.55));
     return { root };
   }
   if (egg === "cabinet") {

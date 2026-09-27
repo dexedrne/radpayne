@@ -6,8 +6,9 @@
 // Start plays without it (the right stick aims), and a later click on the game switches to the mouse.
 // Round 2: a cleared room with a `next` room goes on: its cutscene (room.cutsceneAfter; room 1's is the
 // e1 ending panels), then the next room's session replaces this one in the same canvas (the room is a
-// checkpoint: dying there retries that room). The results come at the end of the chain, or when the
-// next room's level file does not exist yet ("to be continued").
+// checkpoint: dying there retries that room, with the guns, rounds and frags he walked in with). The
+// results come at the end of the chain, or when the next room's level file does not exist yet ("to be
+// continued").
 // Dev / test builds: ?bot plays the room by itself (smoke test), ?room=<id> picks a level file,
 // ?seed=N fixes the seed, ?skip skips the title and the cutscene, ?radbro=<id> picks the Radbro,
 // ?holdcheck=<weapon> runs the long-gun hold check (dev/holdcheck.ts: no gang, a scripted player).
@@ -328,6 +329,8 @@ export default function PlayPage() {
         if (!next) { show(); return; }
         void prepareNext(session).then(ns => {
           nextRoom.current = null;
+          // he keeps what he picked up: the guns, their rounds, the frags (a retry of the room too)
+          if (ns) ns.restart({ carry: session.game.carryOut() });
           if (ns) void enterRoom(ns);
           else { console.info(`[radpayne] ${next} is not built yet`); show(); }
         });

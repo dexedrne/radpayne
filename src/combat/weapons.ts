@@ -50,13 +50,16 @@ export const WEAPONS: Record<WeaponId, WeaponDef> = {
   // #250's rifle, instead of the pistols: shouldered two-handed, a touch more damage per second than the
   // pistols at range but a wider cone on full auto and a slower mag change; never runs dry (a base gun)
   ak: def({ id: "ak", name: "AK", mag: 30, hands: 1, damage: 30, pellets: 1, interval: 0.1, spread: 0.9 * DEG, reload: 2.2, reserve: Infinity, auto: true, reserveMax: Infinity }),
-  smgs: def({ id: "smgs", name: "Dual SMGs", mag: 30, hands: 2, damage: 14, pellets: 1, interval: 0.06, spread: 1.5 * DEG, reload: 1.8, reserve: 180, auto: true, reserveMax: 360 }),
+  // a hose: three rounds drop a goon, more rounds a second than anything else he can carry (about 220 a
+  // second sustained against the pistols' 195), a cone that stays usable at room range
+  smgs: def({ id: "smgs", name: "Dual SMGs", mag: 30, hands: 2, damage: 20, pellets: 1, interval: 0.06, spread: 1.2 * DEG, reload: 1.8, reserve: 180, auto: true, reserveMax: 360 }),
   // two barrels in a blink, a wide cone: devastating inside 5 m, one-handed with the arm out
   sawedoff: def({ id: "sawedoff", name: "Sawed-off", mag: 2, hands: 1, damage: 13, pellets: 10, interval: 0.22, spread: 8 * DEG, reload: 1.5, reserve: 10, auto: false, reserveMax: 24 }),
   // one torso round drops a goon, a heavy takes two; the round goes on through the first body
   handcannon: def({ id: "handcannon", name: "Hand cannon", mag: 7, hands: 1, damage: 95, pellets: 1, interval: 0.42, spread: 0.2 * DEG, reload: 1.6, reserve: 14, auto: false, reserveMax: 35, pierce: 1 }),
-  // the AK for everyone else: the same model and feel, a reserve that runs dry
-  rifle: def({ id: "rifle", name: "Rifle", mag: 30, hands: 1, damage: 30, pellets: 1, interval: 0.1, spread: 0.9 * DEG, reload: 2.2, reserve: 60, auto: true, reserveMax: 180 }),
+  // the AK for everyone else: the same model, a heavier round and a tighter cone (a pickup is worth
+  // having: about 240 a second sustained against the pistols' 195; a heavy in four), a reserve that runs dry
+  rifle: def({ id: "rifle", name: "Rifle", mag: 30, hands: 1, damage: 42, pellets: 1, interval: 0.1, spread: 0.6 * DEG, reload: 2.2, reserve: 60, auto: true, reserveMax: 180 }),
   // the bolt gun: loose from the hip, dead on through the scope, through two bodies
   sniper: def({ id: "sniper", name: "Sniper", mag: 5, hands: 1, damage: 160, pellets: 1, interval: 1.1, spread: 2.5 * DEG, zoomSpread: 0, reload: 2.4, reserve: 10, auto: false, reserveMax: 25, pierce: 2 }),
 };

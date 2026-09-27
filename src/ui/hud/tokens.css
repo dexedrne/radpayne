@@ -158,6 +158,8 @@
 .rp-xh-ammo { position: absolute; left: 66px; top: -15px; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 .rp-xh-ammo .c { font: 400 28px/1 var(--display); color: var(--red); letter-spacing: 1px; text-shadow: -1.5px 0 var(--ink), 1.5px 0 var(--ink), 0 -1.5px var(--ink), 0 1.5px var(--ink), 2px 2px 0 var(--ink); }
 .rp-xh-ammo .rp-key { outline: 2px solid var(--red); }
+.rp-xh-use { position: absolute; left: 0; top: 64px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.rp-xh-use span { font: 400 20px/1 var(--display); color: var(--paper); letter-spacing: 1px; text-shadow: -1.5px 0 var(--ink), 1.5px 0 var(--ink), 0 -1.5px var(--ink), 0 1.5px var(--ink), 2px 2px 0 var(--ink); }
 
 /* world-anchored layers (positioned from JS every frame) */
 .rp-threats { position: fixed; inset: 0; z-index: 8; overflow: hidden; pointer-events: none; }

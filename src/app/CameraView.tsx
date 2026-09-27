@@ -12,7 +12,7 @@
 // the crosshair, and only a lens below the head line and wide of it sees that stretch past the hair. In a
 // dive or prone (LONG_CAM_LYING) it climbs and swings wide of him, so the gun ahead of his head shows. The
 // view always turns onto the sim's aim point, so the crosshair stays exactly where shots go (the sim's
-// SHOULDER is unchanged).
+// SHOULDER is unchanged). A one-handed gun gets part of the long-gun lens (ONE_HAND_CAM).
 import { useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { usePrefab } from "react-three-game";
@@ -24,7 +24,7 @@ import { SHOULDER, aimDir } from "../sim/aim.ts";
 import { FRAME } from "./frame.ts";
 import type { V3 } from "../sim/types.ts";
 import { KC, planKillcam, type KcPlan } from "./killcam.ts";
-import { isLongGun } from "../combat/weapons.ts";
+import { isLongGun, isOneHand } from "../combat/weapons.ts";
 import { holdDev } from "./dev/holdcheck.ts";
 import { holdView, playerChest } from "./PlayerView.tsx";
 import { blastShake } from "./ArsenalFx.tsx";
@@ -35,14 +35,17 @@ const DEV_CAM = import.meta.env.MODE !== "production" ? new URLSearchParams(loca
 export const FOV = 68;
 /** The long-gun camera: the pivot further out to his right, a shorter arm, the eye below the pivot. */
 export const LONG_CAM = { right: 1.0, arm: 2.1, down: 0.25, ease: 0.3 };
+/** The share of LONG_CAM a one-handed gun (the hand cannon, the sawed-off) gets: the arm out to his right
+ *  is in view and a size up, not a speck by his shoulder. */
+export const ONE_HAND_CAM = 0.55;
 /** Added to LONG_CAM while the long gun is shouldered (PlayerView's `holdView.aimed`), in / out (s). */
 export const LONG_CAM_AIMED = { right: 0.15, arm: -0.3, down: 0.1, in: 0.15, out: 0.45 };
 /** Added to LONG_CAM in a dive / prone (the eye `up` over the lying pivot; `getup` = its weight through
  *  the get-up, where he is upright again and a close lens would lose him off the left edge), in / out (s). */
 export const LONG_CAM_LYING = { right: 0.2, arm: -0.55, up: 0.3, getup: 0, in: 0.2, out: 0.35 };
 /** The current camera arm and shoulder offset, and the offset it would have with no wall (the player fades
- *  out when a wall pulls the camera into his head or slides the pivot in). */
-export const camView = { arm: SHOULDER.arm as number, right: SHOULDER.right as number, baseRight: SHOULDER.right as number };
+ *  out when a wall pulls the camera into his head or slides the pivot in); the lens this frame (probes). */
+export const camView = { arm: SHOULDER.arm as number, right: SHOULDER.right as number, baseRight: SHOULDER.right as number, eye: { x: 0, y: 0, z: 0 } };
 const FOV_BT = 60;
 /** The sniper's scope: the lens at the sim's pivot, looking down the aim ray (the crosshair is exact). */
 export const FOV_SCOPE = 17;
@@ -53,6 +56,8 @@ export function CameraView({ s }: { s: Session }) {
     arm: SHOULDER.arm as number, fov: FOV, kick: 0, orbit: 0, piv: new Vector3(), right: SHOULDER.right as number, aimT: 20, long: 0,
     /** Shouldered / lying weights (eased), and how far a wall at his right pulls the pivot in. */
     aimed: 0, lying: 0, pull: 0,
+    /** How much of the long gun's drop the lens takes (it gives way when the lowered line is blocked). */
+    dropK: 1,
     plan: null as KcPlan | null,
   }), []);
   // what the camera collides with: every visible box, decor included (a tall decor box must not sit
@@ -85,7 +90,7 @@ export function CameraView({ s }: { s: Session }) {
     }
     // the long-gun offsets ease in / out with the gun in hand, shouldered, lying
     const ease = (v: number, want: number, tin: number, tout: number) => v + (want - v) * Math.min(1, dt / (want > v ? tin : tout));
-    tmp.long = ease(tmp.long, isLongGun(p.weapon.id) ? 1 : 0, LONG_CAM.ease, LONG_CAM.ease);
+    tmp.long = ease(tmp.long, isLongGun(p.weapon.id) ? 1 : isOneHand(p.weapon.id) ? ONE_HAND_CAM : 0, LONG_CAM.ease, LONG_CAM.ease);
     tmp.aimed = ease(tmp.aimed, holdView.aimed, LONG_CAM_AIMED.in, LONG_CAM_AIMED.out);
     tmp.lying = ease(tmp.lying, p.mode === "dive" || p.mode === "prone" ? 1 : p.mode === "getup" ? LONG_CAM_LYING.getup : 0, LONG_CAM_LYING.in, LONG_CAM_LYING.out);
     const ll = tmp.long * tmp.lying, la = tmp.long * tmp.aimed * (1 - tmp.lying);
@@ -163,16 +168,29 @@ export function CameraView({ s }: { s: Session }) {
       tmp.right = Math.max(0, baseRight - tmp.pull);
       tmp.piv.set(r.x + c * tmp.right, by, r.z - sn * tmp.right);
       camView.right = tmp.right;
-      // wall collision along the arm (the sim's own boxes), then ease back out
-      const hit = camWorld.raycast(tmp.piv.x, tmp.piv.y, tmp.piv.z, -d.x, -d.y, -d.z, baseArm + 0.3, false);
-      const want = hit ? Math.max(SHOULDER.minArm, hit.t - 0.3) : baseArm;
+      // the eye drops below the pivot with a long gun (the head then sits above the gun line), or climbs
+      // over it lying down; never below a floor under the lens. The wall check runs along the line from
+      // the pivot to the FINAL (lowered / raised) eye: a lens that only clears a car roof before it drops
+      // must not end up in the cab. When the lowered line is blocked sooner than the level one, the drop
+      // gives way (eased) rather than the arm, so he stays in view over the roof instead of the lens
+      // jamming into his head; a wall still pulls the eye in along the line that was checked.
+      const ey0 = tmp.piv.y - d.y * baseArm;
+      const dropFull = eyeDown > 0 ? Math.min(eyeDown, Math.max(0, ey0 - (r.y + 0.3))) : eyeDown;
+      /** The arm a line with this drop allows (the drop scales with the arm, so the eye stays on it). */
+      const armFor = (drop: number) => {
+        const ox = -d.x * baseArm, oy = -d.y * baseArm - drop, oz = -d.z * baseArm;
+        const ol = Math.hypot(ox, oy, oz) || 1;
+        const hit = camWorld.raycast(tmp.piv.x, tmp.piv.y, tmp.piv.z, ox / ol, oy / ol, oz / ol, ol + 0.3, false);
+        return hit ? Math.max(SHOULDER.minArm, (hit.t - 0.3) * (baseArm / ol)) : baseArm;
+      };
+      const dropWant = dropFull > 0 && armFor(dropFull) < armFor(0) - 0.05 ? 0 : 1;
+      tmp.dropK += (dropWant - tmp.dropK) * Math.min(1, dt / 0.15);
+      const drop = dropFull * tmp.dropK;
+      const want = armFor(drop);
       tmp.arm = want < tmp.arm ? want : tmp.arm + (want - tmp.arm) * Math.min(1, 6 * dt);
       camView.arm = tmp.arm;
-      // the eye drops below the pivot with a long gun (the head then sits above the gun line), or climbs
-      // over it lying down; never below a floor under the lens
-      const ey = tmp.piv.y - d.y * tmp.arm;
-      const drop = eyeDown > 0 ? Math.min(eyeDown, Math.max(0, ey - (r.y + 0.3))) : eyeDown;
-      tmp.eye.set(tmp.piv.x - d.x * tmp.arm, ey - drop, tmp.piv.z - d.z * tmp.arm);
+      const f = tmp.arm / baseArm;
+      tmp.eye.set(tmp.piv.x - d.x * baseArm * f, tmp.piv.y + (-d.y * baseArm - drop) * f, tmp.piv.z - d.z * baseArm * f);
       // look at the point on the sim's aim ray at the aim point's distance: the same view as along the
       // ray when the shoulder is free; with the pivot slid in, the crosshair still sits on the aim point
       const simRight = shoulderRight(g.world, p); // the sim's pivot, pulled in by a wall like this one
@@ -189,6 +207,7 @@ export function CameraView({ s }: { s: Session }) {
       }
     }
     tmp.m.lookAt(tmp.eye, tmp.at, tmp.up);
+    camView.eye.x = tmp.eye.x; camView.eye.y = tmp.eye.y; camView.eye.z = tmp.eye.z;
     const node = prefab.getObject(CAMERA_NODE);
     const cam = state.camera;
     let under = false;

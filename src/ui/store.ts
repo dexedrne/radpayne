@@ -71,6 +71,8 @@ export type Hud = {
   secretsTotal: number;
   /** Pins picked up this attempt (Radbro ids, in order). */
   pins: string[];
+  /** What E would do right now (a secret door or an egg in reach, faced): the prompt's label, "" = none. */
+  use: string;
 };
 
 /** One hit on the player: where the shooter stood (NaN = no shooter: a fall), when, how hard. */
@@ -148,7 +150,7 @@ export const HUD_INITIAL: Hud = {
   alive: 0, total: 0, phase: "play", onTarget: false, mode: "normal", fps: 60, hurtAgo: 99, killcam: false,
   roomLabel: "", objective: "", objectiveAt: 0, weaponId: "pistols", owned: ["pistols"], reserve: Infinity, hands: 2, ammo: { pistols: Infinity },
   refill: null, btRefusedAt: 0, killcamProgress: 0, awake: false, run: 0,
-  grenades: 0, lastInSlot: {}, zoom: false, secrets: 0, secretsTotal: 0, pins: [],
+  grenades: 0, lastInSlot: {}, zoom: false, secrets: 0, secretsTotal: 0, pins: [], use: "",
 };
 
 export const useUi = create<Ui>(() => ({

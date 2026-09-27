@@ -221,8 +221,17 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
         killcamProgress: g.killcam ? Math.min(1, g.killcam.t / g.killcam.dur) : 0,
         awake: g.enemies.some(e => e.state !== "idle" && e.state !== "inactive" && e.state !== "dead"), run: s.run,
         grenades: p.grenades, lastInSlot: { ...p.lastInSlot }, zoom: p.zoom, secrets: g.found.length, secretsTotal: g.secrets.length,
+        use: promptOf(g.phase === "play" || g.phase === "clear" ? g.useTarget() : null, p.health > 0 && !s.paused),
       },
     }));
   }, FRAME.sim);
   return null;
+}
+
+/** The E prompt by the crosshair: what E would do facing a secret door or an egg in reach ("" = none). */
+function promptOf(t: ReturnType<Session["game"]["useTarget"]>, alive: boolean): string {
+  if (!t || !alive) return "";
+  if ("door" in t) return "open";
+  const egg = String(t.egg.data.egg ?? "");
+  return egg === "george" ? "pet george" : egg === "cabinet" ? "play" : "use";
 }
