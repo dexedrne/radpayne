@@ -36,16 +36,16 @@
    "texture": "/textures/elevator/car_wall_steel.webp",
    "repeat": true,
    "repeatCount": [0.5, 0.5],
-   "roughness": 0.4,
-   "metalness": 0.55
+   "roughness": 0.78,
+   "metalness": 0.22
   },
   "carCeil": {
    "color": "#ffffff",
    "texture": "/textures/elevator/car_wall_steel.webp",
    "repeat": true,
    "repeatCount": [0.5, 0.5],
-   "roughness": 0.5,
-   "metalness": 0.4
+   "roughness": 0.85,
+   "metalness": 0.15
   },
   "carPanel": {
    "materialType": "basic",
@@ -288,7 +288,8 @@
            "door-e"
           ],
           "groups": [
-           "L1"
+           "L1",
+           "L1b"
           ],
           "slow": true,
           "checkpoint": "cp-s1"
@@ -1250,8 +1251,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [13.3, 1.6, -0.9],
-         "scale": [0.2, 3.2, 7.4]
+         "position": [13.3, 1.6, 0],
+         "scale": [0.2, 3.2, 5.6]
         }
        },
        "geometry": {
@@ -1265,6 +1266,166 @@
         "type": "Material",
         "properties": {
          "materialId": "block"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-wall-e-head",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [13.3, 2.8, -3.7],
+         "scale": [0.2, 0.8, 1.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "block"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-back-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [14.2, 1.6, -4.7],
+         "scale": [1.6, 3.2, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concreteDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-back-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [14.2, 1.6, -2.7],
+         "scale": [1.6, 3.2, 0.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concreteDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-back-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [15.1, 1.6, -3.7],
+         "scale": [0.2, 3.2, 2.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concreteDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l1-back-ceil",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [14.2, 3.3, -3.7],
+         "scale": [2, 0.2, 2.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "ceilTile"
         }
        },
        "mesh": {
@@ -3265,6 +3426,38 @@
       }
      },
      {
+      "id": "l1-back-floor",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [14.2, 0.006, -3.7],
+         "scale": [1.6, 0.012, 1.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "vinyl"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
       "id": "l1-linen-1",
       "components": {
        "transform": {
@@ -3462,8 +3655,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [13.19, 2.37, -3.42],
-         "scale": [0.02, 0.14, 0.36]
+         "position": [13.19, 2.67, -3.7],
+         "scale": [0.02, 0.14, 0.4]
         }
        },
        "geometry": {
@@ -5427,7 +5620,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-1.2, 0, 0.6],
+         "position": [-0.4, 0, -0.6],
          "rotation": [0, 1.571, 0]
         }
        },
@@ -5447,7 +5640,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-1.2, 0, 0.6],
+         "position": [-0.4, 0, -0.6],
          "rotation": [0, 1.571, 0]
         }
        },
@@ -5467,7 +5660,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [1.2, 0, -0.4],
+         "position": [0.5, 0, 0.6],
          "rotation": [0, -1.571, 0]
         }
        },
@@ -5487,7 +5680,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [0.4, 0, -1.6]
+         "position": [0.9, 0, -0.6]
         }
        },
        "data": {
@@ -5589,6 +5782,50 @@
       }
      },
      {
+      "id": "l1b-rusher-1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [14.3, 0, -4.1],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher",
+          "group": "L1b"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "l1b-rusher-2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [14.5, 0, -3.3],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "enemy",
+          "kind": "rusher",
+          "group": "L1b"
+         }
+        }
+       }
+      }
+     },
+     {
       "id": "roof-heavy",
       "components": {
        "transform": {
@@ -5617,7 +5854,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-9.4, 0, -4.8],
+         "position": [-9.6, 0, -2.8],
          "rotation": [0, 1.571, 0]
         }
        },
@@ -6689,6 +6926,25 @@
       }
      },
      {
+      "id": "wp-l1-back",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [14.2, 0, -3.7]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint"
+         }
+        }
+       }
+      }
+     },
+     {
       "id": "wp-l2-a",
       "components": {
        "transform": {
@@ -7340,6 +7596,29 @@
       }
      },
      {
+      "id": "trigger-l1b",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, -40, 0],
+         "scale": [0.2, 0.2, 0.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "trigger",
+          "action": "spawn",
+          "group": "L1b",
+          "afterKills": 3
+         }
+        }
+       }
+      }
+     },
+     {
       "id": "trigger-l2b",
       "components": {
        "transform": {
@@ -7356,7 +7635,7 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "L2b",
-          "afterKills": 8
+          "afterKills": 10
          }
         }
        }

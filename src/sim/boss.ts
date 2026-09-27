@@ -20,7 +20,8 @@ import type { Game } from "./game.ts";
 import type { Fnv1a } from "./math.ts";
 import { MADAME } from "./tuning.ts";
 
-export type Grenade = { id: number; x: number; y: number; z: number; x0: number; y0: number; z0: number; vx: number; vy: number; vz: number; tx: number; ty: number; tz: number; age: number; landed: boolean };
+/** `flight`: the lob's time in the air; `fuse`: world s from the throw to the blast. */
+export type Grenade = { id: number; x: number; y: number; z: number; x0: number; y0: number; z0: number; vx: number; vy: number; vz: number; tx: number; ty: number; tz: number; age: number; landed: boolean; flight: number; fuse: number };
 export type AddDoor = { door: string; group: string; x: number; z: number; ox: number; oz: number; lamp: number; lit: boolean; open: boolean; queue: number[]; next: number };
 export type BossSettings = { chandelier?: [number, number, number]; rug?: [number, number, number]; bag?: [number, number]; terrace?: [number, number]; doors?: Array<{ door: string; group: string }> };
 /** What his shot met first: the grenade in her hand, a grenade (by id), the chandelier's chain. */
@@ -79,10 +80,17 @@ export class Boss {
     return g.enemies[this.idx];
   }
 
-  /** Damage factor on her: nothing while she throws the coat off, the coat's share on the body. */
+  /** Damage factor on her: nothing while she throws the coat off, the coat's share on the body, her
+   *  head's share of a headshot. */
   damageMul(part: number): number {
     if (this.coatT > 0 || this.introT > 0) return 0;
-    return this.coat && part !== 0 ? MADAME.coat : 1;
+    if (part === 0) return MADAME.head;
+    return this.coat ? MADAME.coat : 1;
+  }
+
+  /** A hit that would finish her before her last stand leaves her on 1 (she always gets it). */
+  clampDamage(e: Enemy, amount: number): number {
+    return this.lastStand === 0 && e.hp - amount <= 0 ? Math.max(0, e.hp - 1) : amount;
   }
 
   /** The grenade in her hand (overhead, a little to her right). */
@@ -119,6 +127,8 @@ export class Boss {
     if (t.kind === "hand") {
       if (!this.wind) return;
       this.wind = null;
+      // (the next wind-up comes on the usual clock, as after a throw)
+      this.grenadeNext = (this.phase >= 3 ? G.every3 : G.every2) + g.rng.next();
       const h = this.handPoint(e);
       this.blast(g, h.x, h.y, h.z, true);
       // it went off on her: damage (the kill cam replays his shot when it finishes her) and a stagger
@@ -164,15 +174,23 @@ export class Boss {
     }
   }
 
-  /** Lob a grenade from her hand toward (tx, tz). */
+  /** Lob a grenade from her hand toward (tx, tz): longer in the air the farther it goes; under a low
+   *  ceiling (a door's vestibule) it lands short, where the lob still clears it. */
   throwAt(g: Game, e: Enemy, tx: number, tz: number): void {
     const h = this.handPoint(e);
+    const dx = tx - h.x, dz = tz - h.z, dl = Math.hypot(dx, dz) || 1;
+    for (let k = 0; k < 40 && dl - k * 0.5 > 2; k++) {
+      const floor = g.world.groundBelow(tx, tz, 0.1, e.y + 1.2);
+      if (g.world.ceilingAbove(tx, tz, 0.1, (Number.isFinite(floor) ? floor : 0) + 0.5) - (Number.isFinite(floor) ? floor : 0) >= G.headroom) break;
+      tx -= (dx / dl) * 0.5;
+      tz -= (dz / dl) * 0.5;
+    }
     const ty0 = g.world.groundBelow(tx, tz, 0.1, e.y + 1.2);
     const ty = Number.isFinite(ty0) ? ty0 : 0;
-    const T = G.flight;
+    const T = Math.min(G.flightMax, G.flight + G.flightPerM * Math.hypot(tx - h.x, tz - h.z));
     const gr: Grenade = {
       id: this.nextId++, x: h.x, y: h.y, z: h.z, x0: h.x, y0: h.y, z0: h.z,
-      vx: (tx - h.x) / T, vy: (ty - h.y) / T + 0.5 * G.gravity * T, vz: (tz - h.z) / T, tx, ty, tz, age: 0, landed: false,
+      vx: (tx - h.x) / T, vy: (ty - h.y) / T + 0.5 * G.gravity * T, vz: (tz - h.z) / T, tx, ty, tz, age: 0, landed: false, flight: T, fuse: T + G.fuse,
     };
     this.grenades.push(gr);
     g.emit({ type: "grenade", what: "throw", id: gr.id, x: h.x, y: h.y, z: h.z });
@@ -266,7 +284,7 @@ export class Boss {
       const gr = this.grenades[i];
       gr.age += dt;
       if (!gr.landed) {
-        if (gr.age >= G.flight) {
+        if (gr.age >= gr.flight) {
           gr.landed = true;
           gr.x = gr.tx; gr.y = gr.ty; gr.z = gr.tz;
           g.emit({ type: "grenade", what: "land", id: gr.id, x: gr.x, y: gr.y, z: gr.z });
@@ -277,7 +295,7 @@ export class Boss {
           gr.z = gr.z0 + gr.vz * a;
         }
       }
-      if (gr.age >= G.fuse) {
+      if (gr.age >= gr.fuse) {
         this.grenades.splice(i--, 1);
         this.blast(g, gr.x, gr.y, gr.z, false);
       }
@@ -338,7 +356,7 @@ export class Boss {
   hashInto(h: Fnv1a): void {
     h.i32(this.phase).i32(this.coat ? 1 : 0).f64(this.coatT).f64(this.introT).i32(this.lastStand).i32(this.chain).str(this.chandelier).f64(this.fallT);
     h.f64(this.sweepNext).f64(this.grenadeNext).f64(this.sweep ? this.sweep.t + this.sweep.tell : -1).f64(this.wind ? this.wind.t : -1);
-    for (const gr of this.grenades) h.f64(gr.x).f64(gr.y).f64(gr.z).f64(gr.age);
+    for (const gr of this.grenades) h.f64(gr.x).f64(gr.y).f64(gr.z).f64(gr.age).f64(gr.fuse);
     for (const d of this.doors) h.f64(d.lamp).i32(d.open ? 1 : 0).i32(d.queue.length).f64(d.next);
   }
 }

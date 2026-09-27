@@ -3,16 +3,18 @@
 //   node tools/room5.ts && npm run check-level room5
 //
 // Layout (metres; he comes in from the west, facing +X; the hall's ceiling is 6 m):
-//   the private elevator's vestibule  x -20..-16, z -2..2 (spawn; copium x 2)
+//   the private elevator's doors      in the west wall at z 0: he steps out into the hall (spawn; copium
+//                                     x 2 either side); no vestibule to hold out in, the doors lock
 //   the hall                          x -16..16, z -11..11: black marble, ebony walls
 //   the lounge                        the round white rug at the centre (r 2.4: the chandelier's drop
 //                                     zone), two white sofas (low) either side of it
 //   the chandelier                    over the rug; its chain (0, 5.3, 0) takes two hits (sim/boss.ts)
-//   the grand piano (high-ish)        (-8.5, -6.4); the onyx bar (low) along z 8.4..9.2, x 5..11
+//   the grand piano (high-ish)        (-8.5, -6.4); the onyx bar (low) along z 7.6..8.4, x 5..11
 //   four pillars (high)               (+-9, +-4)
 //   her dais (0.3 m, one step)        x 11..16, z -4..4: her desk (low), the big screen on the wall behind
 //   the glass wall                    the east wall either side of the dais, the rainy skyline beyond
-//   door A (north) / door B (south)   (0, -11) / (0, 11): the adds wait behind them (6 / 5)
+//   door A (north) / door B (south)   (0, -11) / (0, 11): the adds wait behind them (8 / 7)
+//   her guards                        4 in the hall from the start (the piano, the bar, the lounge)
 // Room settings: boss (the chandelier's chain, the rug, the bag on her desk, the terrace door, the two
 // add doors: sim/boss.ts), later: the add groups (the boss brings them in). No exit: the clear is her.
 import { FACE_E, FACE_N, FACE_S, FACE_W, box, boxMM, glow, marker, prim, tex, writeLevel, type Node } from "./levelKit.ts";
@@ -39,16 +41,11 @@ for (const [side, z0, z1] of [["n", -11.2, -11], ["s", 11, 11.2]] as const) {
   solid.push(boxMM(`vest-${side}-e`, [2.4, 0, Math.min(z0, zb)], [2.6, H, Math.max(z1, zb)], "damask"));
   solid.push(boxMM(`vest-${side}-ceil`, [-2.6, 3.2, Math.min(z0, zb)], [2.6, 3.4, Math.max(z1, zb)], "coffered"));
 }
-// west wall with the vestibule's opening (z -1.6..1.6), the vestibule and the private elevator's doors
-solid.push(boxMM("wall-w1", [-16.2, 0, -11], [-16, H, -1.6], "ebony"));
-solid.push(boxMM("wall-w2", [-16.2, 0, 1.6], [-16, H, 11], "ebony"));
-solid.push(boxMM("wall-w-head", [-16.2, 3.0, -1.6], [-16, H, 1.6], "ebony"));
-solid.push(boxMM("vest-w-n", [-20.2, 0, -2.2], [-16.2, 3.2, -2.0], "damask"));
-solid.push(boxMM("vest-w-s", [-20.2, 0, 2.0], [-16.2, 3.2, 2.2], "damask"));
-solid.push(boxMM("vest-w-back", [-20.4, 0, -2.2], [-20.2, 3.2, 2.2], "brassDark"));
-solid.push(boxMM("vest-w-ceil", [-20.4, 3.2, -2.2], [-16.2, 3.4, 2.2], "coffered"));
-decor.push(boxMM("vest-lift-doors", [-20.2, 0, -0.9], [-20.17, 2.3, 0.9], "brass"));
-decor.push(boxMM("vest-lamp", [-18.4, 3.16, -0.3], [-17.8, 3.2, 0.3], "lampWarm"));
+// west wall with the private elevator's doors (shut behind him: her "the doors are locked")
+solid.push(boxMM("wall-w", [-16.2, 0, -11], [-16, H, 11], "ebony"));
+decor.push(boxMM("lift-doors", [-16.0, 0, -0.9], [-15.97, 2.3, 0.9], "brass"));
+decor.push(boxMM("lift-frame", [-16.0, 2.3, -1.05], [-15.95, 2.45, 1.05], "brassDark"));
+decor.push(boxMM("lift-lamp", [-15.99, 2.6, -0.2], [-15.96, 2.72, 0.2], "lampWarm"));
 // east: glass either side of the dais, a solid wall behind it (the screen), the skyline far beyond
 solid.push(boxMM("wall-e-dais", [16, 0, -4.4], [16.3, H, 4.4], "ebony"));
 solid.push(boxMM("glass-e-n", [16.05, 0, -11], [16.15, H, -4.4], "glass", { hidden: true, data: { surface: "glass", camera: true } }));
@@ -73,10 +70,11 @@ decor.push(boxMM("chandelier-rose", [-0.25, H - 0.05, -0.25], [0.25, H, 0.25], "
 solid.push(boxMM("piano", [-9.8, 0, -7.4], [-7.4, 1.2, -5.6], "piano", { data: { surface: "wood" } }));
 decor.push(box("piano-lid", [-8.5, 1.55, -6.7], [2.2, 0.04, 1.4], "piano", { rot: [0.5, 0, 0] }));
 decor.push(boxMM("piano-bench", [-8.9, 0, -5.3], [-8.1, 0.5, -4.9], "piano"));
-solid.push(boxMM("bar", [5, 0, 8.4], [11, 1.1, 9.2], "onyx", { data: { surface: "concrete" } }));
-decor.push(boxMM("bar-top", [4.95, 1.1, 8.35], [11.05, 1.16, 9.25], "marbleBlack"));
+// (a wide gap behind it: the camera needs room there, the shotgun and a copium lie on that side)
+solid.push(boxMM("bar", [5, 0, 7.6], [11, 1.1, 8.4], "onyx", { data: { surface: "concrete" } }));
+decor.push(boxMM("bar-top", [4.95, 1.1, 7.55], [11.05, 1.16, 8.45], "marbleBlack"));
 decor.push(boxMM("bar-shelf", [5.2, 1.4, 10.9], [10.8, 2.8, 11.0], "barShelf"));
-for (let i = 0; i < 5; i++) decor.push(prim(`stool-${i}`, "cylinder", [5.8 + i * 1.2, 0.38, 7.8], [0.2, 0.18, 0.76, 12], "brassDark"));
+for (let i = 0; i < 5; i++) decor.push(prim(`stool-${i}`, "cylinder", [5.8 + i * 1.2, 0.38, 7.0], [0.2, 0.18, 0.76, 12], "brassDark"));
 for (const [x, z] of [[-9, -4], [9, -4], [-9, 4], [9, 4]]) solid.push(boxMM(`pillar-${x}-${z}`, [x - 0.5, 0, z - 0.5], [x + 0.5, H, z + 0.5], "pillar"));
 solid.push(boxMM("chair-w", [-5.2, 0, -0.6], [-4.3, 0.9, 0.6], "sofa", { data: { surface: "wood" } }));
 solid.push(boxMM("chair-e", [4.3, 0, -0.6], [5.2, 0.9, 0.6], "sofa", { data: { surface: "wood" } }));
@@ -102,18 +100,23 @@ decor.push(boxMM("cove-n", [-16, H - 0.1, -10.98], [16, H - 0.04, -10.9], "cove"
 
 // ---------------------------------------------------------------- markers
 const doorAdds = (side: "a" | "b", z: number, kinds: string[]): Node[] => kinds.map((k, i) => {
-  const x = -1.4 + (i % 3) * 1.4, zz = z + (side === "a" ? -1 : 1) * Math.floor(i / 3) * 1.1;
+  const x = -1.8 + (i % 4) * 1.2, zz = z + (side === "a" ? -1 : 1) * Math.floor(i / 4) * 1.1;
   return marker(`add-${side}-${i + 1}`, "enemy", [x, 0, zz], { kind: k, group: side === "a" ? "doorA" : "doorB", ...(k === "heavy" ? { model: "rival723" } : {}), deaf: true }, side === "a" ? FACE_S : FACE_N);
 });
 const markers: Node[] = [
-  marker("spawn", "spawn", [-18.6, 0, 0], {}, FACE_E),
-  marker("checkpoint-0", "checkpoint", [-18.6, 0, 0], {}, FACE_E),
+  marker("spawn", "spawn", [-14.8, 0, 0], {}, FACE_E),
+  marker("checkpoint-0", "checkpoint", [-14.8, 0, 0], {}, FACE_E),
   // Madame Pockit behind her desk (she keeps the bag there)
   marker("madame", "enemy", [15.0, 0.3, 0.9], { kind: "madame", drop: false }, FACE_W),
-  ...doorAdds("a", -12.2, ["goon", "goon", "rusher", "goon", "rusher", "goon"]),
-  ...doorAdds("b", 12.2, ["rusher", "rusher", "heavy", "rusher", "goon"]),
-  // the fight starts when he steps into the hall
-  marker("trigger-hall", "trigger", [-14.5, 1, 0], { action: "alert" }, 0, [2.4, 3, 3.4]),
+  ...doorAdds("a", -12.2, ["goon", "goon", "rusher", "goon", "rusher", "goon", "rusher", "goon"]),
+  ...doorAdds("b", 12.2, ["rusher", "rusher", "heavy", "rusher", "goon", "goon", "rusher"]),
+  // her guards: in the hall from the start (the fight opens on them while she says her piece)
+  marker("guard-1", "enemy", [-6.2, 0, -6.6], { kind: "goon", group: "guards" }, FACE_W),
+  marker("guard-2", "enemy", [4.4, 0, 7.0], { kind: "goon", group: "guards" }, FACE_W),
+  marker("guard-3", "enemy", [-3.6, 0, 5.6], { kind: "rusher", group: "guards" }, FACE_W),
+  marker("guard-4", "enemy", [6.4, 0, -6.4], { kind: "goon", group: "guards" }, FACE_W),
+  // the fight starts when he steps away from the lift (or fires first)
+  marker("trigger-hall", "trigger", [-12.2, 1, 0], { action: "alert" }, 0, [1.6, 3, 21]),
   // cover points (facing = the direction they protect toward)
   marker("cv-sofa-n", "cover", [0, 0, -4.3], { height: "low" }, FACE_S),
   marker("cv-sofa-n-w", "cover", [-2.8, 0, -3.35], { height: "low" }, FACE_E),
@@ -121,8 +124,8 @@ const markers: Node[] = [
   marker("cv-sofa-s-e", "cover", [2.8, 0, 3.35], { height: "low" }, FACE_W),
   marker("cv-piano", "cover", [-8.6, 0, -7.95], { height: "low" }, FACE_S),
   marker("cv-piano-w", "cover", [-10.3, 0, -6.5], { height: "low" }, FACE_E),
-  marker("cv-bar-w", "cover", [4.5, 0, 8.8], { height: "low" }, FACE_E),
-  marker("cv-bar", "cover", [8, 0, 9.75], { height: "low" }, FACE_N),
+  marker("cv-bar-w", "cover", [4.5, 0, 8.0], { height: "low" }, FACE_E),
+  marker("cv-bar", "cover", [8, 0, 8.95], { height: "low" }, FACE_N),
   marker("cv-desk", "cover", [14.7, 0.3, -0.9], { height: "low" }, FACE_W),
   marker("cv-p1", "cover", [-9, 0, -4.85], { height: "high", side: "right" }, FACE_S),
   marker("cv-p2", "cover", [9.85, 0, -4], { height: "high", side: "left" }, FACE_W),
@@ -133,9 +136,15 @@ const markers: Node[] = [
   marker("cv-chair-e", "cover", [5.65, 0, 0], { height: "low" }, FACE_W),
   marker("cv-chair-w", "cover", [-5.65, 0, 0], { height: "low" }, FACE_E),
   marker("cv-console-n", "cover", [-4.5, 0, -9.85], { height: "low" }, FACE_S),
+  // (her side of the west half: she works the room toward him from these)
+  marker("cv-piano-e", "cover", [-6.9, 0, -6.5], { height: "low" }, FACE_W),
+  marker("cv-p1-e", "cover", [-7.95, 0, -4], { height: "high", side: "left" }, FACE_W),
+  marker("cv-p3-e", "cover", [-7.95, 0, 4], { height: "high", side: "right" }, FACE_W),
+  marker("cv-chair-w-e", "cover", [-3.85, 0, 0], { height: "low" }, FACE_W),
+  marker("cv-sofa-n-e", "cover", [2.8, 0, -3.35], { height: "low" }, FACE_W),
   // waypoints (a grid over the hall; the doors link across explicitly: they are shut when the graph is built)
   ...([
-    ["v1", -18.6, 0], ["v2", -15.2, 0],
+    ["v2", -15.0, 0],
     ["a1", -12.5, -6.5], ["a2", -12.5, 0], ["a3", -12.5, 6.5], ["a4", -12.5, -10],
     ["b1", -6.5, -8.8], ["b2", -6.5, -1.8], ["b3", -6.5, 2.2], ["b4", -6.5, 7.6],
     ["c1", 0, -8], ["c2", -3.4, -5.2], ["c3", 3.4, -5.2], ["c4", 0, 0], ["c5", -3.4, 5.2], ["c6", 3.4, 5.2], ["c7", 0, 8],
@@ -146,21 +155,21 @@ const markers: Node[] = [
   marker("wp-door-a-out", "waypoint", [0, 0, -12.4], {}),
   marker("wp-door-b-in", "waypoint", [0, 0, 10.2], { links: ["wp-door-b-out"], door: "door-b" }),
   marker("wp-door-b-out", "waypoint", [0, 0, 12.4], {}),
-  // pickups: copium (the vestibule x 2, behind the piano, behind the bar), the shotgun behind the bar,
+  // pickups: copium (by the lift x 2, behind the piano, behind the bar), the shotgun behind the bar,
   // the SMGs by the piano
-  marker("copium-v1", "pickup", [-17.6, 0, -1.4], { item: "copium", amount: 1 }),
-  marker("copium-v2", "pickup", [-17.6, 0, 1.4], { item: "copium", amount: 1 }),
+  marker("copium-v1", "pickup", [-15.3, 0, -1.8], { item: "copium", amount: 1 }),
+  marker("copium-v2", "pickup", [-15.3, 0, 1.8], { item: "copium", amount: 1 }),
   marker("copium-piano", "pickup", [-8.4, 0, -8.6], { item: "copium", amount: 1 }),
-  marker("copium-bar", "pickup", [9.6, 0, 10.2], { item: "copium", amount: 1 }),
-  marker("shotgun-bar", "pickup", [6.4, 0, 10.2], { item: "shotgun" }),
+  marker("copium-bar", "pickup", [9.6, 0, 9.2], { item: "copium", amount: 1 }),
+  marker("shotgun-bar", "pickup", [6.4, 0, 9.2], { item: "shotgun" }),
   marker("smgs-piano", "pickup", [-10.6, 0, -5.4], { item: "smgs" }),
   // lights: the chandelier's warm glow, lamps, the bar's amber, the screen, a cool spill from the glass
   ...([
     // (the chandelier's own light is BossView's: it falls with it)
     ["lamp-nw", -12, 2.2, -9, "#ffc98a", 8, 7], ["lamp-sw", -12, 2.2, 9, "#ffc98a", 8, 7],
     ["lamp-n", 4, 2.2, -10, "#ffc98a", 8, 7], ["lamp-ne", 12, 2.2, -9, "#ffc98a", 8, 7], ["lamp-se", 12, 2.2, 9, "#ffc98a", 8, 7],
-    ["bar", 8, 1.4, 9.8, "#ffae4a", 10, 7], ["screen", 14.4, 3.2, 0, "#c9a8ff", 12, 9], ["glass-n", 14, 3, -8, "#8fa6d8", 10, 12], ["glass-s", 14, 3, 8, "#8fa6d8", 10, 12],
-    ["vest", -18, 2.8, 0, "#ffd29a", 6, 6], ["door-a", 0, 3.4, -9.8, "#ffc98a", 4, 5], ["door-b", 0, 3.4, 9.8, "#ffc98a", 4, 5], ["piano", -8, 3.2, -6, "#ffe0b8", 8, 8],
+    ["bar", 8, 1.4, 9.0, "#ffae4a", 10, 7], ["screen", 14.4, 3.2, 0, "#c9a8ff", 12, 9], ["glass-n", 14, 3, -8, "#8fa6d8", 10, 12], ["glass-s", 14, 3, 8, "#8fa6d8", 10, 12],
+    ["lift", -15.2, 2.8, 0, "#ffd29a", 6, 6], ["piano", -8, 3.2, -6, "#ffe0b8", 8, 8],
   ] as Array<[string, number, number, number, string, number, number]>).map(([id, x, y, z, color, intensity, distance]) => marker(`light-${id}`, "light", [x, y, z], { color, intensity, distance })),
   // camera shots (?cam=<id> in dev builds)
   marker("cam-hall", "camera", [-14.5, 1.8, 0.6], { at: [12, 1.3, 0] }),

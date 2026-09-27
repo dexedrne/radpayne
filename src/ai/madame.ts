@@ -1,8 +1,10 @@
 // Madame Pockit's brain (round-3 plan section 3.3), on world time like the gang. Her room (the phases,
 // the grenades in flight, the add doors, the chandelier) is sim/boss.ts.
 //   idle -> alert (she says her piece first: MADAME.introHold) -> phases 1-2 "the hostess": the goon's
-//   cover-and-peek with bursts of 10 from her two SMGs; phase 3 "no more manners": the coat comes off,
-//   then she runs and strafes like a rusher, a little faster. On top of that, whenever she sees him:
+//   cover-and-peek with bursts of 10 from her two SMGs, working the room toward him (her cover picks aim
+//   for MADAME.range from him: she comes off her dais to him, he cannot wait her out at the door);
+//   phase 3 "no more manners": the coat comes off, then the same from closer (MADAME.range3), moving
+//   faster between covers. Cornered at the terrace door she charges. On top of that, whenever she sees him:
 //   - the sweep: she plants her feet, two pink laser lines cross the floor along an arc (the tell:
 //     0.6 s, 0.45 s in phase 3), then a burst sweeps the same arc at chest height (dive under it, or
 //     break the line);
@@ -13,7 +15,7 @@
 import type { Enemy } from "../sim/actors.ts";
 import type { Game } from "../sim/game.ts";
 import { ENEMY, MADAME } from "../sim/tuning.ts";
-import { faceToward, followPath, perceive, stepGoon, within } from "./goon.ts";
+import { faceToward, followPath, goToCover, perceive, stepGoon, within } from "./goon.ts";
 import { startRush, stepRusher } from "./rusher.ts";
 
 const S = MADAME.sweep;
@@ -32,7 +34,8 @@ export function stepMadame(g: Game, e: Enemy, dt: number): void {
     e.vx = e.vz = 0;
     e.crouch = false;
     perceive(g, e);
-    if (e.stagger <= 0 && b.phase >= 3 && (b.lastStand === 0 || b.lastStand === 3)) { e.engageAt = MADAME.engage; startRush(g, e); }
+    if (e.stagger <= 0 && b.lastStand === 3) { e.engageAt = MADAME.engage; startRush(g, e); }
+    else if (e.stagger <= 0 && b.phase >= 3 && b.lastStand === 0) goToCover(g, e); // a closer cover, now
     return;
   }
   if (e.state === "idle") { stepGoon(g, e, dt); return; }
@@ -51,7 +54,8 @@ export function stepMadame(g: Game, e: Enemy, dt: number): void {
   if (b.sweep) { stepSweep(g, e, dt); return; }
   if (b.wind) { stepWind(g, e, dt); return; }
   const dx = p.x - e.x, dz = p.z - e.z, dist = Math.hypot(dx, dz) || 1;
-  const free = p.mode !== "dead" && e.sees && e.flinch <= 0;
+  // (her signature moves never wait on a flinch: only a stagger stops them)
+  const free = p.mode !== "dead" && e.sees;
   if (free && b.phase >= 2 && b.grenadeNext <= 0 && dist >= GR.range[0] && dist <= GR.range[1]) {
     b.wind = { t: GR.wind, n: b.phase >= 3 ? 2 : 1 };
     e.vx = e.vz = 0;
@@ -73,11 +77,11 @@ export function stepMadame(g: Game, e: Enemy, dt: number): void {
   }
   // the gang's brains underneath: a burst's end gets her own pause (bursts of 10, 1.1-1.7 s apart)
   const shots = e.shots;
-  if (b.phase >= 3) {
-    stepRusher(g, e, dt);
-    e.vx *= MADAME.run3;
-    e.vz *= MADAME.run3;
-  } else stepGoon(g, e, dt);
+  if (b.lastStand === 3) stepRusher(g, e, dt);
+  else {
+    stepGoon(g, e, dt);
+    if (b.phase >= 3) { e.vx *= MADAME.run3; e.vz *= MADAME.run3; }
+  }
   if (e.shots > shots && e.burstLeft === ENEMY.madame.burst) {
     e.fireT = within(MADAME.burstPause[0], MADAME.burstPause[1], g.rng.next());
     if (g.rng.next() < 0.3) g.emit({ type: "boss", what: "reload" });

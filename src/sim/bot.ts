@@ -18,6 +18,12 @@ export class Bot {
   private readonly piv = { x: 0, y: 0, z: 0 };
   private path: Array<{ x: number; z: number }> = [];
   private pathFor = -2;
+  /** Room 5: her wind-ups seen (the bot goes for every other one, as a player who is watching her
+   *  might: the rest get thrown, and it runs out of their rings). */
+  private winds = 0;
+  private windOn = false;
+  /** Pickups with no way to them right now (behind the car's shut doors): world time to try again. */
+  private noWay = new Map<number, number>();
   private repath = 0;
   private dodgeCd = 0;
   private strafe = 1;
@@ -86,7 +92,11 @@ export class Bot {
 
     this.lost = best >= 0 ? 0 : this.lost + 1 / 120;
     // room 5: a shot worth more than any girl (the grenade in her hand, the chandelier's chain over her)
-    const special = g.boss ? bossAim(g) : null;
+    let special = g.boss ? bossAim(g) : null;
+    const windOn = !!g.boss?.wind;
+    if (windOn && !this.windOn) this.winds++;
+    this.windOn = windOn;
+    if (windOn && this.winds % 2 === 0) special = null;
     if (special && g.world.clear(piv.x, piv.y, piv.z, special.x, special.y, special.z, true)) {
       const dx = special.x - piv.x, dy = special.y - piv.y, dz = special.z - piv.z;
       const yaw = Math.atan2(-dx, -dz), pitch = Math.asin(dy / (Math.hypot(dx, dy, dz) || 1));
@@ -139,7 +149,7 @@ export class Bot {
         for (let i = 0; i < g.pickups.length; i++) {
           const k = g.pickups[i];
           const d = PICKUPS[k.item];
-          if (k.taken || !d || (!d.weapon && !p.owned.includes(d.ammo))) continue;
+          if (k.taken || !d || (!d.weapon && !p.owned.includes(d.ammo)) || (this.noWay.get(i) ?? -1) > g.time) continue;
           const dd = (k.x - p.x) ** 2 + (k.z - p.z) ** 2;
           if (dd < kd) { kd = dd; tx = k.x; tz = k.z; key = 700 + i; }
         }
@@ -160,6 +170,8 @@ export class Bot {
             const n = g.graph.nearest(tx, 0, tz, false);
             const w = n >= 0 ? g.graph.nodes[n] : null;
             path = w ? g.graph.path(p.x, p.y, p.z, w.x, w.y, w.z) : null;
+            // a pickup with no way to it (a landing whose doors have shut): leave it for now
+            if (!path && key >= 700 && key < 700 + g.pickups.length) { this.noWay.set(key - 700, g.time + 5); this.pathFor = -2; this.repath = 0; }
           }
           this.path = path ?? [{ x: tx, z: tz }];
           this.pathFor = key;

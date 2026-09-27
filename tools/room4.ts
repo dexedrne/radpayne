@@ -19,7 +19,8 @@
 //       goons + a heavy at the doors, then 2 rushers + 2 goons up the stairs, then a heavy + 2
 //       rushers); the stairs (the open south-east corner) are the way out. Columns and scaffolding
 //       (high), cement bags (low).
-// Hostiles 23 (goons 12, rushers 8, heavies 3), 3 checkpoints (one per stop, saved as the car arrives).
+//       Two rushers come out of the service passage (the laundry's back door) once 3 are down.
+// Hostiles 25 (goons 12, rushers 10, heavies 3), 3 checkpoints (one per stop, saved as the car arrives).
 // Material tokens (the elevator look, src/app/look/tower.tsx): "glow <g>" (+ "flicker"). No lettering.
 import { FACE_E, FACE_N, FACE_S, FACE_W, box, boxMM, glow, marker, prim, tex, writeLevel, type Node, type V3 } from "./levelKit.ts";
 
@@ -76,7 +77,14 @@ decor.push(boxMM("l1-floor", [3.2, 0, -4.6], [13.2, 0.012, 2.8], "vinyl"));
 solid.push(boxMM("l1-ceil", [3.0, L1_H, -4.8], [13.4, L1_H + 0.2, 3.0], "ceilTile"));
 solid.push(boxMM("l1-wall-n", [3.0, 0, -4.8], [13.4, L1_H, -4.6], "block"));
 solid.push(boxMM("l1-wall-s", [3.0, 0, 2.8], [13.4, L1_H, 3.0], "block"));
-solid.push(boxMM("l1-wall-e", [13.2, 0, -4.6], [13.4, L1_H, 2.8], "block"));
+// the east wall with the service passage's doorway (z -4.6..-2.8) and the passage behind it
+solid.push(boxMM("l1-wall-e", [13.2, 0, -2.8], [13.4, L1_H, 2.8], "block"));
+solid.push(boxMM("l1-wall-e-head", [13.2, 2.4, -4.6], [13.4, L1_H, -2.8], "block"));
+decor.push(boxMM("l1-back-floor", [13.4, 0, -4.6], [15.0, 0.012, -2.8], "vinyl"));
+solid.push(boxMM("l1-back-n", [13.4, 0, -4.8], [15.0, L1_H, -4.6], "concreteDark"));
+solid.push(boxMM("l1-back-s", [13.4, 0, -2.8], [15.0, L1_H, -2.6], "concreteDark"));
+solid.push(boxMM("l1-back-e", [15.0, 0, -4.8], [15.2, L1_H, -2.6], "concreteDark"));
+solid.push(boxMM("l1-back-ceil", [13.2, L1_H, -4.8], [15.2, L1_H + 0.2, -2.6], "ceilTile"));
 solid.push(boxMM("l1-wall-w", [3.0, 0, -4.6], [3.2, L1_H, -3.2], "block"));
 solid.push(boxMM("l1-cart-1", [6.0, 0.1, -3.4], [7.2, 1.0, -2.6], "cart", { data: { surface: "metal" } }));
 solid.push(boxMM("l1-cart-2", [8.0, 0.1, 1.2], [9.2, 1.0, 2.0], "cart", { data: { surface: "metal" } }));
@@ -88,7 +96,7 @@ for (let i = 0; i < 3; i++) solid.push(boxMM(`l1-washer-${i}`, [4.2 + i * 0.95, 
 solid.push(boxMM("l1-table", [11.6, 0, 0.6], [12.8, 0.8, 1.8], "table", { data: { surface: "wood" } }));
 decor.push(boxMM("l1-table-linen", [11.7, 0.8, 0.8], [12.3, 0.95, 1.5], "linen"));
 decor.push(boxMM("l1-lamp-1", [5.6, L1_H - 0.06, -1.4], [6.8, L1_H - 0.01, -1.0], "sodium"), boxMM("l1-lamp-2", [10.0, L1_H - 0.06, 0.4], [11.2, L1_H - 0.01, 0.8], "sodium"));
-decor.push(boxMM("l1-exit", [13.18, 2.3, -3.6], [13.2, 2.44, -3.24], "exitRed"));
+decor.push(boxMM("l1-exit", [13.18, 2.6, -3.9], [13.2, 2.74, -3.5], "exitRed"));
 
 // ---------------------------------------------------------------- S2: the gallery floor (west)
 const L2_H = 3.6;
@@ -158,19 +166,24 @@ for (const [x, z] of [[-4, 6], [3, 6.5], [-3, 11.5], [4, 12.5], [0, 15.5]]) {
 
 // ---------------------------------------------------------------- markers
 const markers: Node[] = [
-  marker("spawn", "spawn", [-1.2, 0, 0.6], {}, FACE_E),
-  marker("cp-s1", "checkpoint", [-1.2, 0, 0.6], {}, FACE_E),
-  marker("cp-s2", "checkpoint", [1.2, 0, -0.4], {}, FACE_W),
-  marker("cp-s3", "checkpoint", [0.4, 0, -1.6], {}, FACE_S),
+  // (he stands where the over-the-shoulder view is square on the doors that open next, the lens a good
+  // way off the back wall)
+  marker("spawn", "spawn", [-0.4, 0, -0.6], {}, FACE_E),
+  marker("cp-s1", "checkpoint", [-0.4, 0, -0.6], {}, FACE_E),
+  marker("cp-s2", "checkpoint", [0.5, 0, 0.6], {}, FACE_W),
+  marker("cp-s3", "checkpoint", [0.9, 0, -0.6], {}, FACE_S),
   // S1: chatting, backs half turned to the doors (idle: the door beat is his)
   marker("l1-goon-1", "enemy", [10.2, 0, 0.1], { kind: "goon", group: "L1" }, FACE_N + 0.5),
   marker("l1-goon-2", "enemy", [11.0, 0, -0.9], { kind: "goon", group: "L1" }, FACE_E + 0.9),
   marker("l1-goon-3", "enemy", [9.3, 0, -3.8], { kind: "goon", group: "L1" }, FACE_E),
   marker("l1-goon-4", "enemy", [12.3, 0, 2.2], { kind: "goon", group: "L1" }, FACE_W + 0.6),
+  // S1b: the service passage, once 3 of them are down
+  marker("l1b-rusher-1", "enemy", [14.3, 0, -4.1], { kind: "rusher", group: "L1b" }, FACE_W),
+  marker("l1b-rusher-2", "enemy", [14.5, 0, -3.3], { kind: "rusher", group: "L1b" }, FACE_W),
   // R2: the heavy on the roof (placed by the hatch when he drops)
   marker("roof-heavy", "enemy", [-0.5, 0, 0], { kind: "heavy", model: "rival652", group: "roof" }, FACE_E),
   // S2: they know he is coming; two more up the stairwell once three are down
-  marker("l2-goon-1", "enemy", [-9.4, 0, -4.8], { kind: "goon", group: "L2" }, FACE_E),
+  marker("l2-goon-1", "enemy", [-9.6, 0, -2.8], { kind: "goon", group: "L2" }, FACE_E),
   marker("l2-goon-2", "enemy", [-12.8, 0, 2.0], { kind: "goon", group: "L2" }, FACE_E),
   marker("l2-goon-3", "enemy", [-15.9, 0, 0.2], { kind: "goon", group: "L2" }, FACE_E),
   marker("l2-rusher-1", "enemy", [-7.8, 0, 1.9], { kind: "rusher", group: "L2" }, FACE_E),
@@ -215,7 +228,7 @@ const markers: Node[] = [
   // when the graph is built)
   ...([
     ["c0", 0, 0], ["c-n", 0.2, -2.1], ["c-e", 2.1, 0], ["c-w", -2.1, 0], ["c-s", 0, 2.1],
-    ["l1-a", 5.8, -1.6], ["l1-b", 6.4, 1.9], ["l1-c", 9.2, -3.6], ["l1-d", 9.8, 0.5], ["l1-e", 12.2, -3.4], ["l1-f", 12.5, 2.3], ["l1-g", 12.2, -0.4],
+    ["l1-a", 5.8, -1.6], ["l1-b", 6.4, 1.9], ["l1-c", 9.2, -3.6], ["l1-d", 9.8, 0.5], ["l1-e", 12.2, -3.4], ["l1-f", 12.5, 2.3], ["l1-g", 12.2, -0.4], ["l1-back", 14.2, -3.7],
     ["l2-a", -6.0, -4.9], ["l2-b", -6.2, 1.9], ["l2-c", -9.6, 1.9], ["l2-d", -10.2, -3.0], ["l2-e", -13.0, -2.2], ["l2-f", -16.2, -4.6], ["l2-g", -16.2, 1.9], ["l2-h", -13.4, -5.3],
     ["l3-a", -2.6, 5.0], ["l3-b", 3.0, 7.0], ["l3-c", -6.8, 5.4], ["l3-d", -7.4, 8.4], ["l3-e", 0.2, 9.0], ["l3-f", -2.6, 11.2], ["l3-g", 7.4, 9.2], ["l3-h", 4.2, 15.6], ["l3-i", -6.2, 15.8], ["l3-j", 0.6, 13.2], ["l3-k", 7.6, 13.6],
   ] as Array<[string, number, number]>).map(([id, x, z]) => marker(`wp-${id}`, "waypoint", [x, 0, z])),
@@ -237,7 +250,8 @@ const markers: Node[] = [
   marker("shells-l3", "pickup", [-7.6, 0, 8.6], { item: "shotgun_ammo" }),
   marker("smg-ammo-l3", "pickup", [3.6, 0, 12.0], { item: "smgs_ammo" }),
   // the stairwell reinforcements (S2) and S3's waves 2 and 3
-  marker("trigger-l2b", "trigger", [0, -40, 0], { action: "spawn", group: "L2b", afterKills: 8 }, 0, [0.2, 0.2, 0.2]),
+  marker("trigger-l1b", "trigger", [0, -40, 0], { action: "spawn", group: "L1b", afterKills: 3 }, 0, [0.2, 0.2, 0.2]),
+  marker("trigger-l2b", "trigger", [0, -40, 0], { action: "spawn", group: "L2b", afterKills: 10 }, 0, [0.2, 0.2, 0.2]),
   marker("trigger-l3b", "trigger", [0, -40, 0], { action: "spawn", group: "L3b", whenClear: "L3" }, 0, [0.2, 0.2, 0.2]),
   marker("trigger-l3c", "trigger", [0, -40, 0], { action: "spawn", group: "L3c", whenClear: "L3b" }, 0, [0.2, 0.2, 0.2]),
   // the way out: the S3 stairwell
@@ -266,8 +280,9 @@ const materials: Record<string, Record<string, unknown>> = {
   concreteBare: tex(`${E}concrete_bare.webp`, 4, { roughness: 0.85 }),
   concreteDark: tex(`${E}shaft_concrete.webp`, 4, { roughness: 0.92 }),
   carFloor: tex(`${E}car_floor_diamond.webp`, 1, { roughness: 0.45, metalness: 0.5 }),
-  carWall: tex(`${E}car_wall_steel.webp`, 2, { roughness: 0.4, metalness: 0.55 }),
-  carCeil: tex(`${E}car_wall_steel.webp`, 2, { roughness: 0.5, metalness: 0.4 }),
+  // (matte enough that the bulb and the camera's key light never blow out a wall next to the lens)
+  carWall: tex(`${E}car_wall_steel.webp`, 2, { roughness: 0.78, metalness: 0.22 }),
+  carCeil: tex(`${E}car_wall_steel.webp`, 2, { roughness: 0.85, metalness: 0.15 }),
   carPanel: glow("#ffffff", 0.5, "", `${E}car_panel.webp`),
   dial: glow("#ffffff", 0.4, "", `${E}floor_dial.webp`),
   bulb: glow("#ffd29a", 0.9, "flicker"),
@@ -316,7 +331,7 @@ writeLevel("room4", "Room 4: the elevator", {
     hatch: [-0.5, 0],
     steps: [
       { t: 12 },
-      { stop: "S1", side: "e", doors: ["door-e"], groups: ["L1"], slow: true, checkpoint: "cp-s1" },
+      { stop: "S1", side: "e", doors: ["door-e"], groups: ["L1", "L1b"], slow: true, checkpoint: "cp-s1" },
       { t: 24, roof: 5, group: "roof" },
       { stop: "S2", side: "w", doors: ["door-w"], groups: ["L2", "L2b"], alert: true, checkpoint: "cp-s2" },
       { t: 11, cables: 3.5 },

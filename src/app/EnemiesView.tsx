@@ -256,7 +256,7 @@ export function EnemiesView({ s }: { s: Session }) {
         animateStandIn(v.si, e.state === "dead" ? "dead" : sp > 0.2 ? "walk" : "idle", dt * (s.paused ? 0 : g.timeScale), sp);
       }
       // a body is not a threat: the pink-red rim fades once she is down (kept while the kill cam holds her)
-      const rimWant = e.state === "dead" && !e.deathHold ? 0 : 1;
+      const rimWant = (e.state === "dead" && !e.deathHold) || e.fled ? 0 : 1; // (room 5's adds running off: no threat)
       if (v.rim !== rimWant) { v.rim = rimWant > v.rim ? 1 : Math.max(0, v.rim - dt / 0.6); setHostileRim(v.root, v.rim); }
       else if (rimWant === 0 && (g.stepN + v.idx) % 30 === 0) setHostileRim(v.root, 0); // a late-mounted model
       const pl = v.player;

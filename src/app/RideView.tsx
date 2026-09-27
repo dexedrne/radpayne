@@ -24,6 +24,7 @@ import { RIDE } from "../sim/tuning.ts";
 import { FRAME } from "./frame.ts";
 import { assetUrl } from "./assets.ts";
 import { camJolt } from "./CameraView.tsx";
+import { GATE, gateFold } from "./rideGate.ts";
 import { towerFx } from "./look/tower.tsx";
 import { MASK_LAYER } from "./look/read.tsx";
 import { setLoop, sfx, sfxKey } from "../audio/sfx.ts";
@@ -277,13 +278,15 @@ export function RideView({ s }: { s: Session }) {
       // pried doors stutter open
       const k = stop?.pry && here && ride.phase === "opening" ? open * (0.85 + 0.15 * Math.sin(ride.t * 17)) : open;
       const ease = k * k * (3 - 2 * k);
-      // the gate folds away first (the first 60 % of the travel), the landing doors slide behind it
-      const gk = Math.min(1, ease / 0.6);
+      // the gate folds away first (stacked at the jambs before the doors leave the world: the camera may
+      // pass the opening then, never a lattice), the landing doors slide behind it
+      const gk = here && (ride.through || ride.phase === "open") ? 1 : gateFold(ease);
+      const folded = sd.w * (0.5 - GATE.stack / 4); // a stacked half's centre, off the opening's centre
       sd.gate.forEach((m, i) => {
         const sgn = i === 0 ? -1 : 1;
-        // each half folds to 18 % of its width against its jamb
-        m.scale.x = 1 - 0.82 * gk;
-        m.position.copy(sd.c).addScaledVector(sd.n, -0.24).addScaledVector(sd.a, sgn * (sd.w / 4 + (sd.w * 0.455 - sd.w / 4) * gk)).setY(sd.h / 2);
+        // each half folds to GATE.stack of its width against its jamb
+        m.scale.x = 1 - (1 - GATE.stack) * gk;
+        m.position.copy(sd.c).addScaledVector(sd.n, -GATE.inset).addScaledVector(sd.a, sgn * (sd.w / 4 + (folded - sd.w / 4) * gk)).setY(sd.h / 2);
       });
       sd.leaves.forEach((m, i) => {
         const sgn = i === 0 ? -1 : 1;

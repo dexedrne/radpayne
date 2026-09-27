@@ -109,7 +109,10 @@ export function BossView({ s }: { s: Session }) {
     });
     // blasts and pops
     const flashMat = m(new MeshBasicMaterial({ color: new Color(1.5, 0.8, 1.15), toneMapped: false, blending: AdditiveBlending, transparent: true, depthWrite: false }));
-    const puffs: Puff[] = Array.from({ length: 4 }, () => {
+    // (two lights for the four puffs, shared by pairs: every point light costs the whole room a little)
+    const puffLights = [new PointLight("#ffb0d8", 0, 9, 2), new PointLight("#ffb0d8", 0, 9, 2)];
+    group.add(...puffLights);
+    const puffs: Puff[] = Array.from({ length: 4 }, (_, pi) => {
       const flash = new Mesh(new SphereGeometry(1, 16, 10), flashMat.clone());
       // the smoke: three soft blobs, not one ball
       const smoke = new Mesh(new SphereGeometry(1, 12, 8), m(new MeshBasicMaterial({ color: new Color("#6e6269"), transparent: true, opacity: 0, depthWrite: false })));
@@ -119,10 +122,10 @@ export function BossView({ s }: { s: Session }) {
         b.scale.setScalar(k);
         smoke.add(b);
       }
-      const light = new PointLight("#ffb0d8", 0, 9, 2);
+      const light = puffLights[pi % 2];
       flash.visible = smoke.visible = false;
       mats.push(flash.material as Material);
-      group.add(flash, smoke, light);
+      group.add(flash, smoke);
       return { flash, smoke, light, t: -1, big: true };
     });
     // the chandelier: a brass ring, crystal drops, a warm core, its light
@@ -303,7 +306,6 @@ export function BossView({ s }: { s: Session }) {
       pf.big = big;
       pf.flash.position.set(x, y, z);
       pf.smoke.position.set(x, y, z);
-      pf.light.position.set(x, y + 0.5, z);
     }
     function shatter(): void {
       const [rx, rz] = [v!.chand.position.x, v!.chand.position.z];
@@ -404,9 +406,9 @@ export function BossView({ s }: { s: Session }) {
       if (!gr) continue;
       view.g.position.set(gr.x, gr.y + (gr.landed ? 0.1 : 0), gr.z);
       if (!gr.landed) { view.g.rotation.x += wdt * 9; view.g.rotation.y += wdt * 5; } else view.g.rotation.set(-Math.PI / 2 + 0.3, gr.id, 0);
-      const fuse = Math.max(0, 1 - gr.age / MADAME.grenade.fuse);
+      const fuse = Math.max(0, 1 - gr.age / gr.fuse);
       view.blink.visible = Math.sin(performance.now() / (40 + 80 * fuse)) > 0;
-      const R = MADAME.grenade.radius * Math.min(1, 0.35 + 0.65 * (gr.age / MADAME.grenade.flight));
+      const R = MADAME.grenade.radius * Math.min(1, 0.35 + 0.65 * (gr.age / gr.flight));
       ring.r.position.set(gr.tx, gr.ty + 0.03, gr.tz);
       ring.f.position.set(gr.tx, gr.ty + 0.025, gr.tz);
       ring.r.scale.setScalar(R);
@@ -414,15 +416,17 @@ export function BossView({ s }: { s: Session }) {
       (ring.f.material as MeshBasicMaterial).opacity = 0.1 + 0.12 * (1 - fuse);
     }
     // blasts: a short flash (never a white-out) and a puff of smoke
+    for (const pf of v.puffs) pf.light.intensity = 0;
     for (const pf of v.puffs) {
-      if (pf.t < 0) { pf.flash.visible = pf.smoke.visible = false; pf.light.intensity = 0; continue; }
+      if (pf.t < 0) { pf.flash.visible = pf.smoke.visible = false; continue; }
       pf.t += Math.max(wdt, dt * 0.25);
       const big = pf.big ? 1 : 0.35;
       const f = Math.min(1, pf.t / 0.3);
       pf.flash.visible = f < 1;
       pf.flash.scale.setScalar((0.3 + 1.5 * f) * big);
       (pf.flash.material as MeshBasicMaterial).opacity = (1 - f) * (1 - f) * 0.55;
-      pf.light.intensity = (1 - f) * 25 * big;
+      const li = (1 - f) * 25 * big;
+      if (li > pf.light.intensity) { pf.light.intensity = li; pf.light.position.set(pf.flash.position.x, pf.flash.position.y + 0.5, pf.flash.position.z); }
       const sm = Math.min(1, pf.t / 1.4);
       pf.smoke.visible = sm < 1;
       pf.smoke.scale.setScalar((0.35 + 1.1 * sm) * big);

@@ -34,7 +34,7 @@ const boss = (ev: GameEvent[]): string[] => ev.filter((e): e is BossEv => e.type
 test("elevator: the ride runs its stops in order (doors, the roof heavy, the cables) and the bot clears it (normal, seeds 1-3)", () => {
   for (const seed of [1, 2, 3]) {
     const g = new Game(room4(), { seed, difficulty: "normal" });
-    assert.equal(g.enemies.length, 23);
+    assert.equal(g.enemies.length, 25);
     assert.ok(g.enemies.every(e => e.state === "inactive"), "every group waits for its stop (or the roof)");
     assert.ok(g.world.off.size === 0, "all three doors shut");
     const ev = runBot(g, 480);
@@ -43,7 +43,7 @@ test("elevator: the ride runs its stops in order (doors, the roof heavy, the cab
       "start", "arrive:S1", "open:S1", "close:S1", "depart", "roof", "hatch", "land",
       "arrive:S2", "open:S2", "close:S2", "depart", "cables", "drop", "brake", "arrive:S3", "open:S3",
     ]);
-    assert.equal(g.stats.kills, 23, `seed ${seed}: every one of them`);
+    assert.equal(g.stats.kills, 25, `seed ${seed}: every one of them`);
     // the last stop stays open (the stairwell is the way out); the others closed again
     assert.deepEqual([...g.world.off].sort(), ["door-s"]);
     assert.equal(g.music, "elevatorDead", "the muzak died with the cables");
@@ -62,8 +62,8 @@ test("elevator: the first doors open on the door beat (0.3 for 1 s real, no mete
   idle(g, 0.6);
   assert.ok(g.timeScale > 0.9, `back to speed (${g.timeScale})`);
   assert.equal(g.meter, m, "no meter cost");
-  // the landing's gang is out: kill them where they stand, with him outside the car
-  for (const e of g.enemies.filter(k => k.group === "L1")) g.damageEnemy(e, 999, HB_TORSO, 1, 0, null);
+  // the landing's gang is out: kill them where they stand (and the two from the back), him outside the car
+  for (const e of g.enemies.filter(k => k.group === "L1" || k.group === "L1b")) g.damageEnemy(e, 999, HB_TORSO, 1, 0, null);
   g.player.x = 8; g.player.z = 2.2;
   const ev2 = idle(g, RIDE.backHint + 0.5);
   assert.equal(g.ride!.phase, "open", "the car waits");
@@ -77,7 +77,7 @@ test("elevator: the first doors open on the door beat (0.3 for 1 s real, no mete
 test("elevator: the roof heavy's tell is 2 s, then he drops through the hatch into the car and cannot fire until he has landed", () => {
   const g = new Game(room4(), { seed: 3 });
   idle(g, 12 + RIDE.arrive + 0.1);
-  for (const e of g.enemies.filter(k => k.group === "L1")) g.damageEnemy(e, 999, HB_TORSO, 1, 0, null);
+  for (const e of g.enemies.filter(k => k.group === "L1" || k.group === "L1b")) g.damageEnemy(e, 999, HB_TORSO, 1, 0, null);
   const inp = emptyInput();
   for (let i = 0; i < 10 / DT && g.ride!.i < 2; i++) { g.step(inp); g.drain(); }
   assert.equal(g.ride!.i, 2, "on the way up again");
@@ -110,7 +110,7 @@ test("elevator: each stop is a checkpoint; a retry arrives at that stop again wi
   assert.equal(h.ride!.i, 3);
   const saved = h.saved!;
   assert.equal(saved.ride, 3, "the ride's step rides in the checkpoint");
-  assert.ok(saved.dead.includes("roof-heavy") && saved.dead.filter(d => d.startsWith("l1-")).length === 4);
+  assert.ok(saved.dead.includes("roof-heavy") && saved.dead.filter(d => d.startsWith("l1-") || d.startsWith("l1b-")).length === 6);
   const r = new Game(room4(), { seed: 4, resume: saved });
   assert.equal(r.ride!.i, 3);
   assert.equal(r.ride!.phase, "arrive");
@@ -118,7 +118,7 @@ test("elevator: each stop is a checkpoint; a retry arrives at that stop again wi
   const ev2 = idle(r, RIDE.arrive + 0.05);
   assert.deepEqual(ride(ev2), ["open:S2"]);
   assert.ok(r.enemies.filter(e => e.group === "L2").every(e => e.state !== "inactive"), "and comes in with them");
-  assert.ok(r.enemies.filter(e => e.group === "L1").every(e => e.state === "dead"));
+  assert.ok(r.enemies.filter(e => e.group === "L1" || e.group === "L1b").every(e => e.state === "dead"));
 });
 
 test("boss: the phases at 66 / 33 / 10 %, the add doors' tell, the coat, the last stand's free slow motion, her fall", () => {
@@ -129,8 +129,9 @@ test("boss: the phases at 66 / 33 / 10 %, the add doors' tell, the coat, the las
   assert.equal(her.milady, MADAME.pockit);
   assert.equal(her.hp, MADAME.hp.normal);
   assert.equal(her.hit.pose.scale, MADAME.scale);
-  assert.equal(g.enemies.filter(e => e.group === "doorA").length, 6);
-  assert.equal(g.enemies.filter(e => e.group === "doorB").length, 5);
+  assert.equal(g.enemies.filter(e => e.group === "doorA").length, 8);
+  assert.equal(g.enemies.filter(e => e.group === "doorB").length, 7);
+  assert.equal(g.enemies.filter(e => e.group === "guards").length, 4, "her guards in the hall from the start");
   // step into the hall: she wakes and says her piece (no damage while she does)
   g.player.x = -14.5;
   const ev = idle(g, 0.5);
@@ -139,7 +140,7 @@ test("boss: the phases at 66 / 33 / 10 %, the add doors' tell, the coat, the las
   assert.equal(her.hp, MADAME.hp.normal, "the intro protects her");
   idle(g, MADAME.introHold);
   assert.equal(b.damageMul(HB_TORSO), MADAME.coat, "the coat takes a share");
-  assert.equal(b.damageMul(HB_HEAD), 1);
+  assert.equal(b.damageMul(HB_HEAD), MADAME.head, "she keeps her head down: x2, not x3");
   g.player.x = -18.6; // out of her sight: the phase rules, not the fight
   g.damageEnemy(her, her.maxHp * 0.35, HB_TORSO, 1, 0, null);
   const ev2 = idle(g, 0.1);
@@ -216,13 +217,15 @@ test("boss: the grenade in her hand goes off on her; one in the air pops; one th
   g.player.x = 1; g.player.z = 6.5;
   b.throwAt(g, her, 0, 6);
   const before = g.player.health;
-  const ev3 = idle(g, MADAME.grenade.fuse + 0.05);
+  const fuse = b.grenades[0].fuse;
+  assert.ok(Math.abs(fuse - (b.grenades[0].flight + MADAME.grenade.fuse)) < 1e-9, "it goes off a moment after it lands");
+  const ev3 = idle(g, fuse + 0.05);
   assert.ok(ev3.some(e => e.type === "grenade" && e.what === "blast"));
   assert.ok(g.player.health < before - 20, `hurt (${before} -> ${g.player.health})`);
   g.player.x = 1; g.player.z = 6.5 + MADAME.grenade.radius + 1.2;
   b.throwAt(g, her, 0, 6);
   const h2 = g.player.health;
-  idle(g, MADAME.grenade.fuse + 0.05);
+  idle(g, b.grenades[0].fuse + 0.05);
   assert.equal(g.player.health, h2, "outside the ring");
 });
 
@@ -281,12 +284,16 @@ test("kill cam: the planned swing never has a post, a column or a pillar at the 
     const cam = new World(lv.camBoxes.map((b, i) => ({ ...b, id: i })));
     const view = new World(lv.viewBoxes.map((b, i) => ({ ...b, id: i })));
     const steam = steamOf(lv);
-    for (const seed of [1, 2, 3]) {
+    // (the first three seeds whose demo run ends on a kill cam: the demo bot may lose to her)
+    let found = 0;
+    for (let seed = 1; seed <= 6 && found < 3; seed++) {
       const g = new Game(lv, { seed });
       const bot = new Bot(3.5, 0.3, true);
       for (let i = 0; i < 480 / DT && !g.killcam && g.phase === "play"; i++) { g.step(bot.next(g)); g.drain(); }
       const k = g.killcam;
+      if (!k && g.phase === "dead") continue;
       assert.ok(k, `${name} seed ${seed}: a kill cam`);
+      found++;
       const e = g.enemies[k.enemy];
       if (name === "room5") assert.equal(e.kind, "madame", "the last kill in the penthouse is hers");
       const pl = planKillcam(k, e, cam, lv, view);
@@ -298,5 +305,78 @@ test("kill cam: the planned swing never has a post, a column or a pillar at the 
         assert.equal(spoil(ex, e.y + KC.eyeY, ez, pl.kx, e.y + KC.atY, pl.kz, view, steam, []), 0, `${name} seed ${seed}: swing at ${t} rad`);
       }
     }
+    assert.equal(found, 3, `${name}: three kill cams in seeds 1-6`);
   }
+});
+
+// Round 3 playtest fixes: she comes to him and her signature moves reach him; standing still at the
+// lift loses; the fight lasts; the hand pop does not restart the wind-up at once; the last stand always
+// comes; a lob into a low ceiling lands short; the car's camera boxes
+test("boss: standing still at the lift loses (her grenades and sweeps reach him), and the full fight lasts", () => {
+  for (const seed of [1, 2, 3]) {
+    const g = new Game(room5(), { seed, difficulty: "normal" });
+    const bot = new Bot();
+    let thrown = 0, sweeps = 0;
+    for (let i = 0; i < 400 / DT && g.phase !== "done" && g.phase !== "dead"; i++) {
+      const f = bot.next(g);
+      f.moveX = 0; f.moveY = 0; f.dodge = false; f.jump = false;
+      g.step(f);
+      for (const e of g.drain()) {
+        if (e.type === "grenade" && e.what === "throw") thrown++;
+        if (e.type === "boss" && e.what === "sweep") sweeps++;
+      }
+    }
+    assert.equal(g.phase, "dead", `seed ${seed}: a turret at the lift beat her (her hp ${g.enemies[g.boss!.idx].hp})`);
+    assert.ok(thrown >= 2 && sweeps >= 1, `seed ${seed}: her moves reached him (${thrown} grenades, ${sweeps} sweeps)`);
+  }
+  for (const seed of [1, 2, 3]) {
+    const g = new Game(room5(), { seed, difficulty: "normal" });
+    const ev = runBot(g, 400);
+    assert.equal(g.phase, "done");
+    const at = (w: string) => { const i = ev.findIndex(e => e.type === "boss" && e.what === w); return i; };
+    const seq = boss(ev);
+    assert.ok(at("intro") >= 0 && at("down") > at("lastStand"));
+    assert.ok(g.realTime > 55, `seed ${seed}: a real fight (${g.realTime.toFixed(1)} s real)`);
+    assert.ok(g.stats.damageTaken > 10, `seed ${seed}: she hurt him (${g.stats.damageTaken})`);
+    assert.ok(seq.filter(w => w === "windup").length >= 3, `seed ${seed}: wind-ups ${seq.filter(w => w === "windup").length}`);
+  }
+});
+
+test("boss: a popped wind-up waits its turn; a finishing hit before her last stand leaves her on 1; a lob into a low ceiling lands short", () => {
+  const g = new Game(room5(), { seed: 11 });
+  const b = g.boss!;
+  const her = g.enemies[b.idx];
+  idle(g, 0.1);
+  b.phase = 2;
+  b.introT = 0;
+  b.wind = { t: 0.5, n: 1 };
+  b.grenadeNext = 0;
+  const h = b.handPoint(her);
+  const o = { x: h.x - 12, y: h.y - 0.6, z: h.z };
+  const l = Math.hypot(h.x - o.x, h.y - o.y, h.z - o.z);
+  g.shoot(0, -1, 0, o.x, o.y, o.z, (h.x - o.x) / l, (h.y - o.y) / l, (h.z - o.z) / l, 34);
+  g.drain();
+  assert.ok(b.grenadeNext >= MADAME.grenade.every2, `the next wind-up on the clock (${b.grenadeNext})`);
+  // a lob at the door vestibule (a 3.2 m ceiling) lands in the hall
+  b.throwAt(g, her, 0, -13);
+  assert.ok(b.grenades[b.grenades.length - 1].tz > -11, `landed short (${b.grenades[b.grenades.length - 1].tz})`);
+  // phase 3, far from the last stand: a huge hit leaves her on 1 and the last stand comes
+  b.phase = 3;
+  b.coat = false;
+  her.stagger = 0;
+  g.damageEnemy(her, 99999, HB_TORSO, 1, 0, null);
+  assert.equal(her.hp, 1);
+  const ev = idle(g, 0.05);
+  assert.ok(boss(ev).includes("lastStand"));
+});
+
+test("elevator camera: the gates fold before the doors leave the world; the folded stacks are camera boxes", async () => {
+  const { gateFold, gateStacks } = await import("../src/app/rideGate.ts");
+  const ease = (k: number) => k * k * (3 - 2 * k);
+  assert.equal(gateFold(ease(RIDE.gap)), 1, "folded when the doors go");
+  assert.ok(gateFold(ease(RIDE.gap * 0.5)) < 1);
+  const lv = room4();
+  const st = gateStacks(lv);
+  assert.equal(st.length, 6, "two stacks at each of the three openings");
+  for (const b of st) assert.ok(Math.abs(b.cx) <= 3.0 && Math.abs(b.cz) <= 3.0, `${b.node} inside the car (${b.cx}, ${b.cz})`);
 });

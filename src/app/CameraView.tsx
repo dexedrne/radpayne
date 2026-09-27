@@ -5,6 +5,10 @@
 // lands where the shot goes) instead of pushing the lens into the facade.
 // The final-kill cam follows the replayed bullet from behind, then swings around the target while it
 // drops, as planned by killcam.ts (clear lines, no wall, hot light, post or steam at the lens).
+// Room 4's car (6 x 6 m): a shorter, higher arm with a wider lens that never leaves the car while he is
+// in it (the lens keeps CAR_CAM.margin off the walls and gates, measured square to them), the left
+// shoulder when a wall takes the right one (never his head in the crosshair), and a crane up over his
+// head when the back wall shortens the arm. The folded gates at the jambs are camera boxes too.
 import { useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { usePrefab } from "react-three-game";
@@ -16,6 +20,7 @@ import { SHOULDER, aimDir } from "../sim/aim.ts";
 import { FRAME } from "./frame.ts";
 import type { V3 } from "../sim/types.ts";
 import { KC, planKillcam, type KcPlan } from "./killcam.ts";
+import { gateStacks } from "./rideGate.ts";
 
 export const CAMERA_NODE = "rp-camera";
 /** Dev builds: ?cam=<id of a "camera" marker> holds the camera on that shot (data.at = look-at point). */
@@ -27,16 +32,19 @@ export const camView = { arm: SHOULDER.arm as number, right: SHOULDER.right as n
  *  seconds left of `dur`, a shake of `amp` m and a drop of `drop` m that settles. Set by RideView. */
 export const camJolt = { t: 0, dur: 0.25, amp: 0, drop: 0 };
 const FOV_BT = 60;
+/** Room 4's car: arm, pivot lift, the crane up per metre the arm is short (capped), the lens's distance
+ *  from the walls, the wider lens (deg). */
+export const CAR_CAM = { arm: 2.2, lift: 0.25, crane: 0.55, craneMax: 0.8, margin: 0.42, ceiling: 0.3, fov: 5 } as const;
 export function CameraView({ s }: { s: Session }) {
   const prefab = usePrefab();
   const tmp = useMemo(() => ({
     m: new Matrix4(), eye: new Vector3(), at: new Vector3(), up: new Vector3(0, 1, 0), d: { x: 0, y: 0, z: -1 } as V3,
     arm: SHOULDER.arm as number, fov: FOV, kick: 0, orbit: 0, piv: new Vector3(), right: SHOULDER.right as number, aimT: 20,
-    plan: null as KcPlan | null,
+    plan: null as KcPlan | null, carK: 0, swap: false, crane: 0,
   }), []);
   // what the camera collides with: every visible box, decor included (a tall decor box must not sit
   // between the camera and the shoulder), not the invisible play-area walls
-  const camWorld = useMemo(() => new World(s.level.camBoxes.map((b, i) => ({ ...b, id: i }))), [s]);
+  const camWorld = useMemo(() => new World([...s.level.camBoxes, ...gateStacks(s.level)].map((b, i) => ({ ...b, id: i }))), [s]);
   const viewWorld = useMemo(() => new World(s.level.viewBoxes.map((b, i) => ({ ...b, id: i }))), [s]);
   // doors the sim took out (the breach) are gone for the lens too; a new run puts them back
   const doorSync = useMemo(() => ({ n: -1, run: -1 }), [s]);
@@ -95,19 +103,59 @@ export function CameraView({ s }: { s: Session }) {
       const r = s.renderP;
       const d = aimDir(p.yaw, p.pitch, tmp.d);
       const c = Math.cos(p.yaw), sn = Math.sin(p.yaw);
+      // room 4: in the car, the car's camera (eased in and out at the door)
+      const ride = g.ride;
+      const inCar = !!ride && p.mode !== "dead" && ride.inCar(r.x, r.z, 0);
+      tmp.carK += ((inCar ? 1 : 0) - tmp.carK) * Math.min(1, 4 * dt);
+      const K = tmp.carK;
+      if (K > 0.01) fovWant += CAR_CAM.fov * K;
       // the shoulder offset gives way to a wall at his right (never a lens inside the facade)
       const by = r.y + p.pivotUp;
       const side = camWorld.raycast(r.x, by, r.z, c, 0, -sn, SHOULDER.right + 0.3, false);
-      const rightWant = side ? Math.max(0, side.t - 0.3) : SHOULDER.right;
-      tmp.right = rightWant < tmp.right ? rightWant : tmp.right + (rightWant - tmp.right) * Math.min(1, 5 * dt);
-      tmp.piv.set(r.x + c * tmp.right, by, r.z - sn * tmp.right);
-      camView.right = tmp.right;
+      const rightFree = side ? Math.max(0, side.t - 0.3) : SHOULDER.right;
+      let rightWant = rightFree;
+      if (inCar) {
+        // a wall at his right: over his left shoulder instead, until the right is free again
+        const other = camWorld.raycast(r.x, by, r.z, -c, 0, sn, SHOULDER.right + 0.3, false);
+        const leftFree = other ? Math.max(0, other.t - 0.3) : SHOULDER.right;
+        if (tmp.swap) { if (rightFree >= SHOULDER.right - 0.05 || leftFree < 0.3) tmp.swap = false; }
+        else if (rightFree < 0.4 && leftFree > rightFree + 0.25) tmp.swap = true;
+        if (tmp.swap) rightWant = -leftFree;
+      } else tmp.swap = false;
+      // a wall pushing in snaps; everything else (back out, a swap across) eases
+      const sameSide = Math.sign(rightWant) === Math.sign(tmp.right) || Math.abs(tmp.right) < 1e-3;
+      if (sameSide && Math.abs(rightWant) < Math.abs(tmp.right)) tmp.right = rightWant;
+      else tmp.right += (rightWant - tmp.right) * Math.min(1, (sameSide ? 5 : 6) * dt);
+      tmp.piv.set(r.x + c * tmp.right, by + CAR_CAM.lift * K, r.z - sn * tmp.right);
+      camView.right = Math.abs(tmp.right);
+      const armMax = SHOULDER.arm + (CAR_CAM.arm - SHOULDER.arm) * K;
       // wall collision along the arm (the sim's own boxes), then ease back out
-      const hit = camWorld.raycast(tmp.piv.x, tmp.piv.y, tmp.piv.z, -d.x, -d.y, -d.z, SHOULDER.arm + 0.3, false);
-      const want = hit ? Math.max(SHOULDER.minArm, hit.t - 0.3) : SHOULDER.arm;
+      const hit = camWorld.raycast(tmp.piv.x, tmp.piv.y, tmp.piv.z, -d.x, -d.y, -d.z, armMax + 0.3, false);
+      let want = hit ? hit.t - 0.3 : armMax;
+      if (inCar && ride) {
+        // the lens keeps its distance square to the wall (a grazing ray would put it at the gate)
+        if (hit) want = Math.min(want, hit.t - 0.3 / Math.max(0.3, Math.abs(d.x * hit.nx + d.y * hit.ny + d.z * hit.nz)));
+        // and never leaves the car (its walls, its gates, open or shut)
+        const [x0, z0, x1, z1] = ride.car, m = CAR_CAM.margin;
+        tmp.piv.x = Math.min(x1 - m, Math.max(x0 + m, tmp.piv.x));
+        tmp.piv.z = Math.min(z1 - m, Math.max(z0 + m, tmp.piv.z));
+        if (d.x > 1e-6) want = Math.min(want, (tmp.piv.x - (x0 + m)) / d.x);
+        else if (d.x < -1e-6) want = Math.min(want, (tmp.piv.x - (x1 - m)) / d.x);
+        if (d.z > 1e-6) want = Math.min(want, (tmp.piv.z - (z0 + m)) / d.z);
+        else if (d.z < -1e-6) want = Math.min(want, (tmp.piv.z - (z1 - m)) / d.z);
+      }
+      want = Math.max(SHOULDER.minArm, want);
       tmp.arm = want < tmp.arm ? want : tmp.arm + (want - tmp.arm) * Math.min(1, 6 * dt);
-      camView.arm = tmp.arm;
       tmp.eye.set(tmp.piv.x - d.x * tmp.arm, tmp.piv.y - d.y * tmp.arm, tmp.piv.z - d.z * tmp.arm);
+      // in the car a short arm cranes up over his head (the view still turns onto the aim point), under
+      // the ceiling; he fades by the crane-adjusted distance
+      const craneWant = K * Math.min(CAR_CAM.craneMax, Math.max(0, armMax - tmp.arm) * CAR_CAM.crane);
+      tmp.crane += (craneWant - tmp.crane) * Math.min(1, 6 * dt);
+      if (tmp.crane > 1e-3) {
+        const up = camWorld.raycast(tmp.eye.x, tmp.eye.y, tmp.eye.z, 0, 1, 0, tmp.crane + CAR_CAM.ceiling, false);
+        tmp.eye.y += up ? Math.max(0, Math.min(tmp.crane, up.t - CAR_CAM.ceiling)) : tmp.crane;
+      }
+      camView.arm = Math.hypot(tmp.eye.x - tmp.piv.x, tmp.eye.y - tmp.piv.y + CAR_CAM.lift * K, tmp.eye.z - tmp.piv.z);
       // look at the point on the sim's aim ray at the aim point's distance: the same view as along the
       // ray when the shoulder is free; with the pivot slid in, the crosshair still sits on the aim point
       const simRight = shoulderRight(g.world, p); // the sim's pivot, pulled in by a wall like this one

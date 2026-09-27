@@ -30,7 +30,7 @@
     {
       "image": "/cutscenes/c4/panel_3.webp",
       "tone": "street",
-      "box": [0.018, 0.024, 0.206, 0.097],
+      "box": [0.013, 0.018, 0.216, 0.109],
       "lines": [
         {
           "audio": "cs4_03",

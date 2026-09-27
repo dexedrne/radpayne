@@ -6,7 +6,7 @@
 // the heavy (ai/rusher.ts, ai/heavy.ts); ai/enemies.ts picks the brain per kind.
 import type { Enemy } from "../sim/actors.ts";
 import type { Game } from "../sim/game.ts";
-import { AI, ENEMY, RUSHER } from "../sim/tuning.ts";
+import { AI, ENEMY, MADAME, RUSHER } from "../sim/tuning.ts";
 
 
 export function setState(e: Enemy, s: Enemy["state"]): void {
@@ -27,9 +27,15 @@ export function alertGoon(g: Game, e: Enemy, extraDelay = 0): void {
 
 export const within = (lo: number, hi: number, r: number) => lo + (hi - lo) * r;
 
-/** Pick the best free cover point that protects from the player and has a path; -1 if none. */
+/** Pick the best free cover point that protects from the player and has a path; -1 if none. The gang
+ *  take the nearest one about 13 m from him; Madame Pockit (round 3) works the room toward him, cover
+ *  by cover: her distance from him counts for more (MADAME.range, closer in phase 3) and she never
+ *  crosses more than MADAME.hop of open floor at a time. */
 export function pickCover(g: Game, e: Enemy): number {
   const p = g.player;
+  const her = e.kind === "madame";
+  const ideal = her ? ((g.boss?.phase ?? 1) >= 3 ? MADAME.range3 : MADAME.range) : 13;
+  const wr = her ? 0.6 : 0.35;
   let best = -1, bestScore = Infinity;
   const covers = g.graph.covers;
   for (let i = 0; i < covers.length; i++) {
@@ -41,8 +47,8 @@ export function pickCover(g: Game, e: Enemy): number {
     // protects: the cover faces the player
     if ((c.fx * px + c.fz * pz) / pd < 0.35) continue;
     const d = Math.sqrt((c.x - e.x) ** 2 + (c.z - e.z) ** 2);
-    if (d > 30) continue;
-    const score = d + 0.35 * Math.abs(pd - 13) + (i === e.lastCover ? 40 : 0);
+    if (d > (her ? MADAME.hop : 30)) continue;
+    const score = d + wr * Math.abs(pd - ideal) + (i === e.lastCover ? 40 : 0);
     if (score < bestScore) { bestScore = score; best = i; }
   }
   return best;

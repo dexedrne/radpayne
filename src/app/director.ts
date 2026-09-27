@@ -424,11 +424,12 @@ export class Director {
   }
 
   /** A line in the world from someone other than the narrator (the landing girls, the roof heavy, her):
-   *  now if the air is clear, else held up to `wait` s; subtitled with `text` when given. */
-  private voiceAt(key: string, x: number, z: number, text: string, wait: number, talker = -1): void {
+   *  now if the air is clear, else held up to `wait` s; subtitled with `text` when given. `still`: asked
+   *  again when it would play (a held line whose moment has passed is dropped). */
+  private voiceAt(key: string, x: number, z: number, text: string, wait: number, talker = -1, still?: () => boolean): void {
     const run = this.run;
     this.other(wait, () => {
-      if (run !== this.run) return 0;
+      if (run !== this.run || (still && !still())) return 0;
       const now = this.io.now() / 1000;
       const { dist, pan } = this.where(x, z);
       const len = this.io.worldVoice?.(key, dist, pan) ?? 0;
@@ -441,12 +442,23 @@ export class Director {
     });
   }
 
-  /** Madame Pockit's line (voices/madame), subtitled when it has words; never over the narrator. */
+  /** Madame Pockit's line (voices/madame), subtitled when it has words; never over the narrator. A line
+   *  held for the air is checked again when it would play: none once she is down (but her fall), none
+   *  that no longer fits (the coat line with the coat off, the last stand's once she has the bag). */
   private madame(line: string, wait = 2): void {
     const b = this.s.game.boss;
     const e = b ? this.s.game.enemies[b.idx] : undefined;
-    if (!b || !e || (e.state === "dead" && line !== "down_1")) return;
-    this.voiceAt(`madame/${line}`, e.x, e.z, MADAME[line] ?? "", wait, b.idx);
+    const fits = (): boolean => {
+      const g = this.s.game, bb = g.boss, her = bb ? g.enemies[bb.idx] : undefined;
+      if (!bb || !her) return false;
+      if (line === "down_1") return her.state === "dead";
+      if (her.state === "dead" || g.phase !== "play") return false;
+      if (line === "stagger_1") return bb.coat;
+      if (line === "last_stand") return bb.lastStand === 1 || bb.lastStand === 2;
+      return true;
+    };
+    if (!b || !e || !fits()) return;
+    this.voiceAt(`madame/${line}`, e.x, e.z, MADAME[line] ?? "", wait, b.idx, fits);
   }
 
   /** Room 4: the ride's lines (the stops, the roof heavy, the cables). */
@@ -490,11 +502,17 @@ export class Director {
         }
         break;
       case "rug": this.say("r5_chandelier", 0.1); break;
-      case "lastStand": this.madame("last_stand", 3); this.say("r5_laststand", 2.6); break;
-      case "stagger": this.madame("stagger_1", 0.6); break;
+      // the narrator's line first (the world has just slowed for it), hers once the air is clear
+      case "lastStand": {
+        this.say("r5_laststand", 0.2);
+        const run = this.run;
+        this.io.later(() => { if (run === this.run) this.madame("last_stand", 6); }, 500);
+        break;
+      }
+      case "stagger": this.madame(this.s.game.boss?.coat ? "stagger_1" : "hit_2", 0.6); break;
       case "laugh": if (Math.random() < 0.5) this.madame("laugh_1", 0.5); break;
       case "reload": if (now >= this.madameReload && Math.random() < 0.4) { this.madameReload = now + 8; this.madame("reload_1", 0.5); } break;
-      case "down": this.madame("down_1", 3); break;
+      case "down": this.madame("down_1", 6); break;
     }
   }
 

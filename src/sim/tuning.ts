@@ -170,7 +170,7 @@ export const RIDE = {
 /** Room 5, Madame Pockit (round-3 plan section 3). World seconds unless "real"; damage before the
  *  difficulty's damage factor. */
 export const MADAME = {
-  hp: { easy: 1200, normal: 1600, hard: 2000 } as Record<"easy" | "normal" | "hard", number>,
+  hp: { easy: 2000, normal: 2600, hard: 3200 } as Record<"easy" | "normal" | "hard", number>,
   /** Pockit #3099 at this scale (model + hit skeleton). */
   scale: 1.25,
   pockit: 3099,
@@ -180,25 +180,37 @@ export const MADAME = {
   lastStand: 0.1,
   /** Hits on the coat (anything but the head) until it comes off. */
   coat: 0.8,
+  /** A hit jolts her this long (world s; the gang's is AI.flinch): she never stops for long. */
+  flinch: 0.08,
+  /** Her head takes this share of a headshot's usual multiplier (she keeps it down: x2 instead of x3). */
+  head: 2 / 3,
   /** Phase 3 opens with the coat thrown off: she cannot be hurt for this long. */
   coatThrow: 1.2,
   /** Her first alert: she says her piece before she draws (and cannot be hurt while she does). */
   introHold: 2.4,
   /** Between her bursts of 10. */
   burstPause: [1.1, 1.7] as const,
-  /** Phase 3 (and cornered): she moves like a rusher, a little faster. */
-  run3: 1.1,
+  /** She works the room from cover to cover at about this far from him (phases 1-2 / 3: closer, and
+   *  she moves this much faster); cornered at the terrace door she charges to `engage`. */
+  range: 13,
+  range3: 12,
+  /** She never crosses more than this much open floor to her next cover. */
+  hop: 14,
+  run3: 1.25,
   engage: 7,
   /** The SMG sweep: two pink laser lines cross the floor (the tell), then a burst along the same arc. */
-  sweep: { every: [7, 10] as const, first: 4, tell: 0.6, tell3: 0.45, dur: 1.4, arc: (70 * Math.PI) / 180, interval: 0.07, damage: 4, spread: (1.2 * Math.PI) / 180, range: [4, 24] as const },
+  sweep: { every: [7, 10] as const, first: 4, tell: 0.6, tell3: 0.45, dur: 1.4, arc: (70 * Math.PI) / 180, interval: 0.07, damage: 4, spread: (1.2 * Math.PI) / 180, range: [4, 32] as const },
   /** Heart grenades (phase 2 on): wind-up with the grenade held high (shoot it there: it goes off on her),
    *  a lob, a pink ring where it lands; shot in the air it pops harmlessly. */
-  grenade: { every2: 5.5, every3: 4.0, first: 2.5, wind: 0.7, flight: 1.0, fuse: 1.6, gravity: 16, radius: 3.5, center: 40, edge: 10, hand: 60, stagger: 1.5, hitRadius: 0.4, spread3: 2.2, range: [5, 22] as const },
+  // (the flight takes longer the farther she lobs it: `flight` s plus `flightPerM` a metre up to
+  // `flightMax`; it goes off `fuse` s after it lands; under a ceiling lower than `headroom` (a door's
+  // vestibule) it lands short, where the lob clears it)
+  grenade: { every2: 5.5, every3: 4.0, first: 2.5, wind: 0.7, flight: 0.7, flightPerM: 0.03, flightMax: 1.5, fuse: 0.6, gravity: 16, radius: 3.5, center: 45, edge: 18, hand: 60, stagger: 1.5, hitRadius: 0.4, spread3: 2.2, range: [5, 32] as const, headroom: 4.5 },
   /** The chandelier over the round rug: two hits on its chain drop it; on her: damage + knockdown. Once. */
   chandelier: { hits: 2, damage: 180, knock: 2.0, fall: 0.45, chainRadius: 0.32 },
   /** The add doors: the red lamp over it lights this long before it opens; the first batch, then pairs
    *  every `every` s while fewer than `maxLive` of that door's adds stand. */
-  doors: { lamp: 2.0, first: 3, pair: 2, every: 6, maxLive: 3 },
+  doors: { lamp: 2.0, first: 3, pair: 2, every: 5, maxLive: 3 },
   /** The last stand: she runs for the bag (then the terrace door); the world slows by itself. */
   lastStandSlow: 0.25,
   lastStandReal: 2.0,

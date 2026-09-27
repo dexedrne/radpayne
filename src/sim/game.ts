@@ -838,8 +838,9 @@ export class Game {
   damageEnemy(e: Enemy, amount: number, part: number, dx: number, dz: number, shot: { ox: number; oy: number; oz: number; x: number; y: number; z: number } | null, blast = false): void {
     if (e.state === "dead" || amount <= 0) return;
     const target = e.idx;
+    if (e.kind === "madame" && this.boss) amount = this.boss.clampDamage(e, amount);
     e.hp -= amount;
-    e.flinch = AI.flinch;
+    e.flinch = e.kind === "madame" ? MADAME.flinch : AI.flinch;
     this.emit({ type: "hurt", target, amount, part, hp: Math.max(0, e.hp) });
     if (e.state === "idle") alertGoon(this, e, 0);
     if (e.kind === "heavy" && e.hp > 0) {
