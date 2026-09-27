@@ -166,9 +166,10 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
   title is up (the street fades in behind it), and PLAY works at once. The Radbro files, the gang's
   models and the sounds load behind the title and cutscene 1, and each room gets ready (its gang, its
   shaders, its sounds) under the cutscene before it: rooms 2 and 3 swap in behind the ending panels and
-  cutscene 2, room 5 behind cutscene 3. Room 4 follows room 3's elevator doors with no panels between:
-  its gang loads during the walk to the elevator, its shaders compile behind a short loading card. A
-  loading card only shows what is still not there when the panels end (or are skipped). The later rooms'
+  cutscene 2, room 5 behind cutscene 3. Room 4 has no cutscene before it: its gang loads during the walk
+  to the elevator, and once the doors are open that last frame becomes a panel (it pushes in, "The
+  Elevator" under it) that room 4 gets ready behind, turning when it is. A loading card only shows what
+  is still not there when the panels end (or are skipped). The later rooms'
   sounds and clips load while room 1 plays; rooms 4-5's own (the "end" group) from room 3 on. Files in `public/` (the fonts too) are
   fetched by content-hashed URLs and cached for good (`vercel.json`); the Pockit models are
   kept in the browser's cache, and each visit's gang mixes girls already there with a couple of new ones.

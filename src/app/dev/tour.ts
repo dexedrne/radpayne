@@ -102,8 +102,10 @@ export class TourDriver {
 
   next(g: Game): InputFrame {
     const p = g.player;
-    // the fight: the bot, kept on each new gun in turn
-    if (g.phase !== "clear" || this.i >= (SCRIPTS[this.room]?.length ?? 0)) {
+    // the fight: the bot, kept on each new gun in turn (a room with no secrets script, rooms 4-5, plays
+    // out to its exit the same way once it is clear)
+    const script = SCRIPTS[this.room] ?? [];
+    if (g.phase !== "clear" || Math.max(this.i, 0) >= script.length) {
       this.cycT -= 1 / 120;
       if (this.cycT <= 0) {
         this.cycT = 6;
@@ -116,7 +118,7 @@ export class TourDriver {
       const f = this.bot.next(g);
       // the scope with the sniper on a far target
       if (p.weapon.id === "sniper" && g.aimEnemy >= 0 && Math.hypot(g.aimPoint.x - p.x, g.aimPoint.z - p.z) > 10) { f.zoom = true; f.moveX = 0; }
-      if (this.i >= (SCRIPTS[this.room]?.length ?? 0)) tourState.done = true;
+      if (this.i >= script.length) tourState.done = true;
       return f;
     }
     // the secrets tour once the room is clear
@@ -124,9 +126,9 @@ export class TourDriver {
     f.fire = f.bt = f.dodge = f.jump = f.reload = f.copium = false;
     f.melee = f.throw = f.interact = f.zoom = false;
     f.slot = 0; f.moveX = 0; f.moveY = 0;
-    const steps = SCRIPTS[this.room] ?? [];
     if (this.i < 0) { this.i = 0; this.stepT = 0; }
-    const st = steps[this.i];
+    const st = script[this.i];
+    if (!st) { tourState.done = true; return f; }
     tourState.step = this.i;
     this.stepT += 1 / 120;
     let done = false;

@@ -5,7 +5,8 @@
 // Enter / gamepad A goes to the next panel, Esc / gamepad B or Start skips the rest. A panel without an
 // image paints a placeholder.
 // A panel's `dur` is how long it holds (seconds); a line without audio (or muted) is read for a time
-// that fits its length. Used for cutscene 1 (c1), the room 1 ending (e1) and cutscene 2 (c2).
+// that fits its length. Used for the cutscenes (c1-c4), the room 1 ending (e1) and room 3's exit panel
+// (its last frame, made in the page: PlayPage).
 // A panel's lines play in order, each GAP after the length of the clip before it (cutsceneTiming.ts).
 // A line with a `speaker` is someone else's (the girls at the door and on the floor, goon_a / goon_b;
 // the DJ through the door, pa): voices/<speaker>/<audio>, set upright and in quotes (the narrator's
@@ -27,7 +28,9 @@ const PAD: ReadonlyArray<readonly [number, MenuAction]> = [[0, "enter"], [1, "ba
 
 export type Line = TimedLine;
 export type Panel = { image?: string; tone?: string; box?: [number, number, number, number]; lines: Line[]; dur?: number; maxW?: number; size?: number; push?: number };
-export type CutsceneData = { id: string; title?: string; panels: Panel[]; music?: string };
+/** `wait`: the last panel's own page turn (not a click or a skip) waits for it too: the room getting ready
+ *  under a panel made in the page (PlayPage: room 3's open elevator, room 4 behind it). */
+export type CutsceneData = { id: string; title?: string; panels: Panel[]; music?: string; wait?: Promise<unknown> };
 
 // the story voice is one font everywhere: Courier Prime italic (the HUD captions use it too)
 const serif = "'Courier Prime', 'Courier New', monospace";
@@ -70,6 +73,10 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
     at.current += 1;
     setI(at.current);
   }, [data, finish]);
+  const turn = useCallback(() => {
+    if (data.wait && at.current + 1 >= data.panels.length) void data.wait.then(next, next);
+    else next();
+  }, [data, next]);
 
   // this cutscene's voice files (decoded after the PLAY gesture); start the panels once they are in
   useEffect(() => {
@@ -100,12 +107,12 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
       const d = lineLen(ln, played, ln.audio ? audioLen(ln.audio, ln.speaker) : 0);
       // dur = how long the panel holds (its clips + ~1 s); never shorter than its lines
       if (k + 1 < lines.length) after(d + GAP, () => read(k + 1));
-      else after(d + holdAfter(panel?.dur, now() + d), next);
+      else after(d + holdAfter(panel?.dur, now() + d), turn);
     };
     if (lines.length) after(FIRST, () => read(0));
-    else after(planPanel([], panel?.dur, () => 0).turn, next);
+    else after(planPanel([], panel?.dur, () => 0).turn, turn);
     return clear;
-  }, [i, data, next, ready]);
+  }, [i, data, next, turn, ready]);
 
   useEffect(() => {
     const kd = (e: KeyboardEvent) => {

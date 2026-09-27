@@ -19,7 +19,8 @@
 // Radbro files load behind the title, the gang's Pockit downloads start as the level is read, the sounds
 // load in order (cutscene 1's lines, room 1, the fight loop; rooms 2-3 once room 1 runs) and the rave's
 // clip pack after room 1 starts. A room gets ready (readyRoom: the Radbro, the gang that is there from
-// the start, their shaders, the sounds) under the cutscene before it when there is one; its start
+// the start, their shaders, the sounds) under the cutscene before it when there is one (room 4: under
+// room 3's last frame, the open elevator, made a panel: frame.ts grabFrame); its start
 // (holdRoom) waits behind the loading card, with the progress, only for what is not done by then.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Session } from "./session.ts";
@@ -44,7 +45,7 @@ import { groupReady, loadEndSamples, loadLaterSamples, loadSamples, setFootsteps
 import { Bot } from "../sim/bot.ts";
 import type { WeaponId } from "../combat/weapons.ts";
 import { frames, prefetchGoons, roomWarm, warmRoom } from "./warmup.ts";
-import { renderGate } from "./frame.ts";
+import { grabFrame, renderGate } from "./frame.ts";
 import { HOLDCHECK, HoldScript, holdDev } from "./dev/holdcheck.ts";
 import { TOUR, TourDriver } from "./dev/tour.ts";
 import { RADBROS } from "../ui/store.ts";
@@ -585,8 +586,26 @@ export default function PlayPage() {
         });
         return;
       }
-      // no cutscene: the last frame holds while the room's exit plays out (room 3's elevator doors)
-      if (hold) setTimeout(goOn, hold); else goOn();
+      // no cutscene: the last frame holds while the room's exit plays out (room 3's elevator doors), then
+      // that frame becomes a panel (it pushes in, the next room's name under it) and the next room gets
+      // ready behind it as it does behind a cutscene: its scene mounts, its shaders compile, its sounds
+      // come in. The panel turns when the room is ready (a click or a skip goes on at once: the loading
+      // card shows the rest)
+      if (!hold) { goOn(); return; }
+      setTimeout(() => {
+        if (!next || (SKIP && !BOT_DEMO && !ENDING)) { goOn(); return; }
+        void Promise.all([grabFrame(), prepareNext(session)]).then(([image, ns]) => {
+          if (!image || !ns || useUi.getState().screen !== "play") { if (image) URL.revokeObjectURL(image); goOn(); return; }
+          handOver(ns);
+          mount(ns);
+          const prep = readyRoom(ns);
+          setCut({
+            data: { id: `${session.roomId}-exit`, title: roomText(ns.roomId, ns.level.room).label, panels: [{ image, lines: [], dur: 2.5, push: 1.1 }], wait: Promise.race([prep.promise, wait(HOLD_CAP_MS)]) },
+            then: () => { URL.revokeObjectURL(image); goOn(); },
+          });
+          useUi.setState({ screen: "cutscene" });
+        });
+      }, hold);
     }
   }, [session, enterRoom, prepareNext]);
 
