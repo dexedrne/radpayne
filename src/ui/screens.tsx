@@ -5,7 +5,7 @@
 import "./hud/tokens.css";
 import { useEffect, useMemo, useState } from "react";
 import { loadPins } from "./pins.ts";
-import { RADBROS, setSetting, setVolume, store, useUi, type DmgColour, type HudSize, type RadbroId, type Results, type ThreatMode } from "./store.ts";
+import { RADBROS, setSetting, setVolume, store, useUi, type DmgColour, type HudSize, type RadbroId, type Results, type ThreatMode, type Chatter, type KillcamMode } from "./store.ts";
 import { DIFFICULTY, type Difficulty } from "../sim/tuning.ts";
 import { setGfx, setPreset, useGfx, type Bloom, type Preset, type Rain, type Reflections, type Res } from "../app/look/gfx.ts";
 import type { Session } from "../app/session.ts";
@@ -43,6 +43,8 @@ const THREATS: ReadonlyArray<readonly [ThreatMode, string]> = [["all", "ALL"], [
 const DMG: ReadonlyArray<readonly [DmgColour, string]> = [["red", "RED"], ["yellow", "YELLOW"], ["white", "WHITE"]];
 const DMG_SW: Record<DmgColour, string> = { red: "#ff3148", yellow: "#ffd23f", white: "#ffffff" };
 const ONOFF: ReadonlyArray<readonly ["on" | "off", string]> = [["on", "ON"], ["off", "OFF"]];
+const CHATTERS: ReadonlyArray<readonly [Chatter, string]> = [["normal", "NORMAL"], ["less", "LESS"], ["off", "OFF (COMBAT)"]];
+const KILLCAMS: ReadonlyArray<readonly [KillcamMode, string]> = [["always", "ALWAYS"], ["special", "SPECIAL SHOTS"], ["final", "FINAL KILL"], ["off", "OFF"]];
 /** What each preset looks like (the title and the settings say it the same way). */
 export const PRESET_NOTES: Record<Preset | "custom", string> = {
   low: "low: no bloom, no mirror, a drizzle, a smaller crowd. fastest.",
@@ -55,6 +57,8 @@ const NOTES = {
   mix: "Original bloom / sharp reflections: the first night's look. Light rain: a drizzle.",
   res: "75 % never drops under your screen's own pixels (the neon stays whole). 50 %: the slowest machines.",
   outlines: "Goon outlines, gold vs red fire: in every setting.",
+  chatter: "Less: the gang talks only at the big moments; the narrator skips his asides. Off: no barks in the fight; the narrator keeps the story beats, the hints stay on screen.",
+  killcam: "Special shots: sniper kills, long headshots, two with one round, a grenade's double, the room's last kill. Any key skips.",
 };
 
 export const CONTROLS: Array<[string[], string]> = [
@@ -239,6 +243,7 @@ function useSettingRows(tab: Tab): Row[] {
       seg("threats", undefined, "Threat markers", ui.threats, THREATS, v => setSetting("threats", v)),
       seg("dmgColour", undefined, "Damage colour", ui.dmgColour, DMG, v => setSetting("dmgColour", v), undefined, DMG_SW),
       seg("subs", undefined, "Subtitles", ui.subs ? "on" : "off", ONOFF, v => setSetting("subs", v === "on")),
+      seg("killcam", "CAMERA", "Kill cam", ui.killcam, KILLCAMS, v => setSetting("killcam", v), { note: NOTES.killcam }),
     ];
     if (tab === "controls") return [
       {
@@ -261,6 +266,7 @@ function useSettingRows(tab: Tab): Row[] {
         control: <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}><button type="button" tabIndex={-1} className={`rp-check${ui.muted ? " on" : ""}`} onClick={e => { e.stopPropagation(); setSetting("muted", !ui.muted); }}>{ui.muted ? "✓" : ""}</button><Keycap k="M" /></span>,
         step: () => setSetting("muted", !ui.muted), activate: () => setSetting("muted", !ui.muted),
       },
+      seg("chatter", "VOICES", "Voice chatter", ui.chatter, CHATTERS, v => setSetting("chatter", v), { note: NOTES.chatter }),
     ];
   }, [tab, ui, gfx]);
 }

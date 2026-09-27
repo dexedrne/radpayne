@@ -133,7 +133,7 @@ export class Boss {
       this.blast(g, h.x, h.y, h.z, true);
       // it went off on her: damage (the kill cam replays his shot when it finishes her) and a stagger
       const l = Math.hypot(e.x - ox, e.z - oz) || 1;
-      g.damageEnemy(e, G.hand, HB_TORSO, (e.x - ox) / l, (e.z - oz) / l, { ox, oy, oz, x: h.x, y: h.y, z: h.z });
+      g.damageEnemy(e, G.hand, HB_TORSO, (e.x - ox) / l, (e.z - oz) / l, { ox, oy, oz, x: h.x, y: h.y, z: h.z }, false, "heart");
       if (e.state !== "dead") { e.stagger = Math.max(e.stagger, G.stagger); this.sweep = null; g.emit({ type: "boss", what: "stagger" }); }
     } else if (t.kind === "grenade") {
       const i = this.grenades.findIndex(k => k.id === t.id);
@@ -313,7 +313,7 @@ export class Boss {
           e.stagger = Math.max(e.stagger, MADAME.chandelier.knock);
           this.sweep = null;
           this.wind = null;
-          g.damageEnemy(e, MADAME.chandelier.damage, HB_TORSO, (e.x - c.ox) / l, (e.z - c.oz) / l, { ...c, x: e.x, y: e.y + 1.2, z: e.z });
+          g.damageEnemy(e, MADAME.chandelier.damage, HB_TORSO, (e.x - c.ox) / l, (e.z - c.oz) / l, { ...c, x: e.x, y: e.y + 1.2, z: e.z }, false, "chandelier");
           if (e.hp > 0) g.emit({ type: "boss", what: "stagger" });
         }
       }

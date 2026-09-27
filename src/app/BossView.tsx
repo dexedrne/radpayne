@@ -324,7 +324,7 @@ export function BossView({ s }: { s: Session }) {
     const b = g.boss;
     if (!b) return;
     const dt = Math.min(raw, 0.1);
-    const wdt = s.paused ? 0 : dt * g.timeScale;
+    const wdt = dt * s.viewScale; // (the kill cam: its crawl)
     const st = v.st;
     const her = g.enemies[b.idx];
     const pr = s.renderE[b.idx] ?? her;

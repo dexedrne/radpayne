@@ -4,17 +4,17 @@
 // the moment he is through the door. Driven with a fake clock and fake voices.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Director, type DirectorIO } from "../src/app/director.ts";
+import { Director, TALK, lineKind, type DirectorIO } from "../src/app/director.ts";
 import { Session } from "../src/app/session.ts";
 import { useUi } from "../src/ui/store.ts";
-import { room2, room3, room5 } from "./helpers.ts";
+import { room2, room3, room4, room5 } from "./helpers.ts";
 import type { GameEvent } from "../src/sim/types.ts";
 
 type Call = { at: number; kind: string; line: string; len: number };
 
 /** A fake audio + clock: every voice returns a fixed length; `until(ms)` advances time in 50 ms frames. */
-function rig(roomId: "room2" | "room3" | "room5") {
-  const lvl = roomId === "room2" ? room2() : roomId === "room3" ? room3() : room5();
+function rig(roomId: "room2" | "room3" | "room4" | "room5") {
+  const lvl = roomId === "room2" ? room2() : roomId === "room3" ? room3() : roomId === "room4" ? room4() : room5();
   const s = new Session(lvl, {}, roomId, { seed: 1 });
   let t = 0;
   const timers: Array<{ at: number; fn: () => void }> = [];
@@ -111,12 +111,12 @@ test("director: the heavies never talk over the narrator: the taunt is held, his
 test("director: the rusher line is room 2's; room 3's first rusher does not replay it", () => {
   for (const room of ["room2", "room3"] as const) {
     const r = rig(room);
-    r.until(8000);
+    r.until(20_000); // (the narrator's opening line and the budget's quiet after it)
     const ru = r.s.game.enemies.find(e => e.kind === "rusher")!;
     ru.state = "alert";
-    r.until(8100);
+    r.until(20_100);
     ru.state = "rush";
-    r.until(16_000);
+    r.until(28_000);
     const said = r.calls.some(c => c.kind === "narrate" && c.line === "r2_rusher");
     assert.equal(said, room === "room2", `${room}: r2_rusher ${said ? "played" : "did not play"}`);
   }
@@ -132,10 +132,10 @@ test("director: the breach hint goes the moment he is through (on screen, or sti
   assert.equal(useUi.getState().subtitle.hint, "", "cleared at once");
   // a second attempt: through the door before the line starts -> the line comes without the hint
   const q = rig("room3");
-  q.until(1100); // r3_enter is on the air, so r3_breach has to wait
+  q.until(12_000); // r3_enter was said: r3_breach has to wait its turn (TALK.narr)
   q.ev({ type: "trigger", action: "breach", group: "office", id: "b" } as unknown as GameEvent);
   q.ev({ type: "breach", kick: false } as unknown as GameEvent);
-  q.until(12_000);
+  q.until(24_000);
   assert.ok(q.calls.some(c => c.kind === "narrate" && c.line === "r3_breach"));
   assert.equal(useUi.getState().subtitle.hint, "");
 });
@@ -182,4 +182,181 @@ test("director: Madame Pockit's lines never play after her fall, nor out of thei
   const cw = c.calls.filter(x => x.kind === "world").map(x => x.line);
   assert.ok(!cw.includes("madame/stagger_1") && cw.includes("madame/hit_2"), cw.join(", "));
   void her;
+});
+
+test("director: the talk budget: one voice on the air at a time, a gap between combat lines, key moments through", () => {
+  const rnd = Math.random;
+  Math.random = () => 0; // every chance says yes: only the budget holds them back
+  try {
+    const r = rig("room2");
+    r.until(7000); // past the opening line
+    const n0 = r.calls.length;
+    const g = r.s.game;
+    const goons = g.enemies.filter(e => e.kind === "goon").map(e => e.idx);
+    // a burst of hits on every goon for 20 s: without the budget each would grunt
+    for (let k = 0; k < 40; k++) {
+      r.ev({ type: "hurt", target: goons[k % goons.length], amount: 5, part: 1, hp: 50 });
+      r.until(r.now() + 500);
+    }
+    const lines = r.calls.slice(n0);
+    const barks = lines.filter(c => c.kind === "bark");
+    assert.ok(barks.length >= 1 && barks.length <= 3, `${barks.length} grunts in 20 s (gap ${TALK.normal.gap} s)`);
+    for (let i = 1; i < barks.length; i++) assert.ok(barks[i].at - (barks[i - 1].at + barks[i - 1].len * 1000) >= TALK.normal.gap * 1000 - 1, "the gap between combat lines");
+    // no two voices ever overlap
+    const all = r.calls;
+    for (let i = 1; i < all.length; i++) assert.ok(all[i].at >= all[i - 1].at + all[i - 1].len * 1000 - 1 || all[i].kind === "radbro" && all[i - 1].kind === "radbro", `${all[i - 1].kind} ${all[i - 1].line} and ${all[i].kind} ${all[i].line} overlap`);
+    // a new group's first alert is a key moment: it goes at once, gap or not
+    const backup = g.enemies.find(e => e.group === "backup");
+    assert.ok(backup);
+    r.ev({ type: "hurt", target: goons[0], amount: 5, part: 1, hp: 50 });
+    const before = r.calls.length;
+    r.until(r.now() + 1200);
+    r.ev({ type: "alert", enemy: backup!.idx });
+    r.until(r.now() + 2500);
+    assert.ok(r.calls.slice(before).some(c => c.kind === "bark" && c.line === "alert"), "the backup's first alert is called");
+  } finally {
+    Math.random = rnd;
+  }
+});
+
+test("director: Voice chatter off: no barks, no grunts; the narrator still talks", () => {
+  const rnd = Math.random;
+  Math.random = () => 0;
+  useUi.setState({ chatter: "off" });
+  try {
+    const r = rig("room2");
+    r.until(1700);
+    const g = r.s.game;
+    for (const e of g.enemies) r.ev({ type: "alert", enemy: e.idx });
+    for (let k = 0; k < 20; k++) { r.ev({ type: "hurt", target: k % g.enemies.length, amount: 5, part: 1, hp: 50 }); r.ev({ type: "hurt", target: -1, amount: 5, part: 1, hp: 60 }); r.until(r.now() + 500); }
+    assert.ok(r.calls.some(c => c.kind === "narrate" && c.line === "r2_enter"));
+    assert.ok(!r.calls.some(c => c.kind === "bark" || c.kind === "heavy" || c.kind === "radbro"), r.calls.map(c => c.line).join(","));
+  } finally {
+    Math.random = rnd;
+    useUi.setState({ chatter: "normal" });
+  }
+});
+
+test("director: the tutorial lines play the first time ever (localStorage); a retry skips room lines already heard", () => {
+  const mem = new Map<string, string>();
+  const had = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+  Object.defineProperty(globalThis, "localStorage", { configurable: true, value: { getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => void mem.set(k, v) } });
+  try {
+    const play = () => {
+      const r = rig("room3"); // room 3 teaches too (no tutorial: false)
+      r.s.level.room.tutorial = true;
+      r.until(6000);
+      r.ev({ type: "alert", enemy: r.s.game.enemies.findIndex(e => e.kind !== "heavy") });
+      r.until(20_000); // (its turn: TALK.narr after the opening line)
+      return r;
+    };
+    const first = play();
+    const tut = (r: ReturnType<typeof rig>) => r.calls.filter(c => c.kind === "narrate" && c.line.startsWith("tut_")).map(c => c.line);
+    assert.deepEqual(tut(first), ["tut_shoot"]);
+    assert.deepEqual(JSON.parse(mem.get("radpayne.tutHeard") ?? "[]"), ["tut_shoot"]);
+    assert.deepEqual(tut(play()), [], "not again on this browser");
+    // a retry in the same room: the opening line is not replayed
+    const r = first;
+    const enters = () => r.calls.filter(c => c.kind === "narrate" && c.line === "r3_enter").length;
+    assert.equal(enters(), 1);
+    r.s.restart();
+    r.until(r.now() + 6000);
+    assert.equal(enters(), 1, "a retry does not replay r3_enter");
+  } finally {
+    if (had) Object.defineProperty(globalThis, "localStorage", had); else delete (globalThis as { localStorage?: unknown }).localStorage;
+  }
+});
+
+test("director: the narrator is under the talk budget: story beats always, teaching lines spaced (or just their hint), commentary Normal's only", () => {
+  // Normal: a burst of teaching cues right after the opening line: spaced TALK.narr apart, the ones that
+  // miss their wait show their hint
+  const r = rig("room3");
+  const hints = new Set<string>();
+  const step = (ms: number) => { while (r.now() < ms) { r.until(r.now() + 50); for (const h of useUi.getState().subtitle.hint.split("  ·  ")) if (h) hints.add(h); } };
+  step(6000);
+  r.ev({ type: "trigger", action: "breach", group: "office", id: "b" } as unknown as GameEvent);
+  r.ev({ type: "pickup", item: "shotgun" } as unknown as GameEvent);
+  r.ev({ type: "pickup", item: "smgs" } as unknown as GameEvent);
+  step(60_000);
+  const nar = r.calls.filter(c => c.kind === "narrate");
+  assert.equal(nar[0]?.line, "r3_enter", "the room's first word");
+  const taught = nar.filter(c => lineKind(c.line) !== "story");
+  assert.ok(taught.length >= 1 && taught.length < 3, `${taught.map(c => c.line).join(", ")}: not all three`);
+  for (let i = 1; i < nar.length; i++) if (lineKind(nar[i].line) !== "story") assert.ok(nar[i].at - nar[i - 1].at >= TALK.normal.narr * 1000 - 1, `${nar[i].line} ${((nar[i].at - nar[i - 1].at) / 1000).toFixed(1)} s after ${nar[i - 1].line}`);
+  assert.ok(hints.has("SHIFT: dive through the door") && hints.has("1-5 / WHEEL: switch weapon") && hints.has("3: dual SMGs"), `every hint showed (${[...hints].join(" | ")})`);
+  // Off: no teaching line is said, its hint shows; the story beats stay
+  useUi.setState({ chatter: "off" });
+  try {
+    const o = rig("room3");
+    o.until(12_000);
+    o.ev({ type: "trigger", action: "breach", group: "office", id: "b" } as unknown as GameEvent);
+    o.until(12_400);
+    assert.equal(useUi.getState().subtitle.hint, "SHIFT: dive through the door");
+    o.until(30_000);
+    assert.deepEqual(o.calls.filter(c => c.kind === "narrate").map(c => c.line), ["r3_enter"]);
+  } finally {
+    useUi.setState({ chatter: "normal" });
+  }
+  // Less: no commentary (room 2's rusher line)
+  useUi.setState({ chatter: "less" });
+  try {
+    const l = rig("room2");
+    l.until(20_000);
+    const ru = l.s.game.enemies.find(e => e.kind === "rusher")!;
+    ru.state = "alert";
+    l.until(20_100);
+    ru.state = "rush";
+    l.until(40_000);
+    assert.ok(!l.calls.some(c => c.line === "r2_rusher"));
+  } finally {
+    useUi.setState({ chatter: "normal" });
+  }
+});
+
+test("director: a kill cam holds the round-3 voices too (her lines, the ride's), and no victim bark starts under it", () => {
+  const r = rig("room5");
+  const b = r.s.game.boss!;
+  b.started = true;
+  r.until(500);
+  r.s.hold = true;
+  r.ev({ type: "boss", what: "intro" } as unknown as GameEvent);
+  r.until(2500);
+  assert.ok(!r.calls.some(c => c.kind === "world"), "nothing of hers while the cam holds");
+  r.s.hold = false;
+  r.until(4000);
+  assert.ok(r.calls.some(c => c.kind === "world" && c.line === "madame/intro"), "her entrance line once it lets go");
+  // a long hold: no taunt under it
+  const n = r.calls.length;
+  r.s.hold = true;
+  r.until(90_000);
+  assert.equal(r.calls.length, n, r.calls.slice(n).map(c => c.line).join(", "));
+  r.s.hold = false;
+  // the ride: a girl's "going up?" at the doors waits the cam out
+  const q = rig("room4");
+  q.until(12_000);
+  q.s.hold = true;
+  q.ev({ type: "ride", what: "open", stop: "S1", side: "n" } as unknown as GameEvent);
+  q.until(12_600);
+  assert.ok(!q.calls.some(c => c.kind === "world"));
+  q.s.hold = false;
+  q.until(14_000);
+  assert.ok(q.calls.some(c => c.kind === "world" && c.line === "goon_a/doors_1"));
+  // a heavy's death grunt under a cam is dropped (the victim of the ride is quiet)
+  const h = rig("room3");
+  h.until(20_000);
+  const hv = h.s.game.enemies.findIndex(e => e.kind === "heavy");
+  h.s.hold = true;
+  h.ev({ type: "kill", target: hv, headshot: false, final: false } as unknown as GameEvent);
+  h.until(20_500);
+  h.s.hold = false;
+  h.until(24_000);
+  assert.ok(!h.calls.some(c => c.kind === "heavy" && c.line === "death_1"));
+  // ...and one the cam has in hand before it holds (his round still flying on into the next body)
+  const w = rig("room3");
+  w.until(20_000);
+  const wv = w.s.game.enemies.findIndex(e => e.kind === "heavy");
+  w.s.quiet = i => i === wv;
+  w.ev({ type: "kill", target: wv, headshot: false, final: false } as unknown as GameEvent);
+  w.until(24_000);
+  assert.ok(!w.calls.some(c => c.kind === "heavy"), w.calls.map(c => c.line).join(", "));
 });

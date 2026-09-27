@@ -439,7 +439,7 @@ export function PlayerView({ s }: { s: Session }) {
     }
     // the swap: the guns change hands at SWAP_AT, the clip set with them
     if (r.swapT >= 0) {
-      r.swapT += dt * Math.max(g.timeScale, TIME.playerInBulletTime) * (s.paused ? 0 : 1);
+      r.swapT += dt * s.playerScale;
       if (r.swapT >= SWAP_AT && r.shown !== r.swapTo) { r.shown = r.swapTo; r.clip = ""; }
       if (r.swapT >= 0.47) r.swapT = -1;
     } else if (r.shown !== p.weapon.id) { r.shown = p.weapon.id; r.clip = ""; }
@@ -522,7 +522,7 @@ export function PlayerView({ s }: { s: Session }) {
     if (!rig) return;
     const m = s.game.player.mode;
     const realTime = m === "dive" || m === "prone" || m === "getup" || m === "roll";
-    const ts = s.paused ? 0 : realTime ? 1 : Math.max(s.game.timeScale, TIME.playerInBulletTime);
+    const ts = s.paused ? 0 : s.hold ? s.crawl : realTime ? 1 : Math.max(s.game.timeScale, TIME.playerInBulletTime);
     // the reload layer's weight rides on the weapon's reload (eased in over ~0.15 s)
     const r = st.current;
     const dt = Math.min(rawDelta, 0.1);
@@ -548,7 +548,7 @@ export function PlayerView({ s }: { s: Session }) {
     if (!rig) return;
     const g = s.game, p = g.player, r = st.current, B = rig.bones;
     const dt = Math.min(rawDelta, 0.1);
-    const pdt = s.paused ? 0 : dt * Math.max(g.timeScale, TIME.playerInBulletTime);
+    const pdt = dt * s.playerScale;
     // the clip pose, before any layer below touches it (restored before the next mixer update)
     for (const b of rig.pose) { b.q.copy(b.bone.quaternion); b.p.copy(b.bone.position); }
     r.posed = true;
@@ -608,7 +608,7 @@ export function PlayerView({ s }: { s: Session }) {
     const cutK = mu < 0 ? 0 : smooth(Math.min(1, mu / sw.cut));
     const meleeW = mu < 0 ? 0 : Math.sin(Math.PI * Math.min(1, mu));
     const meleeTwist = (sw.twist[0] + (sw.twist[1] - sw.twist[0]) * cutK) * meleeW;
-    r.throwT += s.paused ? 0 : dt * Math.max(g.timeScale, TIME.playerInBulletTime);
+    r.throwT += dt * s.playerScale;
     const tu = r.throwT / THROW.time;
     const throwW = tu < 1 && alive ? Math.sin(Math.PI * tu) : 0;
     const fwdX = Math.sin(p.facing), fwdZ = Math.cos(p.facing), rtX = -Math.cos(p.facing), rtZ = Math.sin(p.facing);

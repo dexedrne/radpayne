@@ -23,6 +23,8 @@ import { ThreatLayer } from "./hud/ThreatLayer.tsx";
 import { DamageLayer } from "./hud/DamageLayer.tsx";
 import { ScreenFx } from "./hud/ScreenFx.tsx";
 import { KillcamOverlay } from "./hud/KillcamOverlay.tsx";
+import { XrayOverlay } from "./hud/XrayOverlay.tsx";
+import { CINE } from "../app/cine.ts";
 import { btGrade } from "./hud/logic.ts";
 import { hudSession } from "./hud/HudFrame.tsx";
 
@@ -54,7 +56,8 @@ export function Hud({ s: sProp, paused = false }: { s?: Session | null; paused?:
   const dead = deadAt > 0;
   const kc = h.killcam;
   const total = h.mags[0] + (h.hands === 2 ? h.mags[1] : 0);
-  const line = s ? roomText(s.roomId, s.level.room).killcamLine : "last one.";
+  // the last kill's line (a kill cam mid-fight carries only its tag)
+  const line = h.cineTag && h.cineTag !== "FINAL KILL" ? "" : s ? roomText(s.roomId, s.level.room).killcamLine : "last one.";
   // Stacking (spec 1.6), each layer its own stacking context so nothing climbs over the plates:
   // screen fx 5 (grain, speed lines, low-HP vignette + halftone, hurt rims) < threat markers 8 <
   // damage slashes 9 < the HUD 10 (corners, captions, crosshair; never filtered) < kill cam 13 / 14.
@@ -77,7 +80,8 @@ export function Hud({ s: sProp, paused = false }: { s?: Session | null; paused?:
         </div>
         {!kc && !dead && !h.zoom && <Crosshair now={now} />}
       </div>
-      <KillcamOverlay on={kc} progress={h.killcamProgress} timeScale={h.timeScale} line={line} />
+      <XrayOverlay />
+      <KillcamOverlay on={kc} progress={h.killcamProgress} timeScale={h.cine ? CINE.crawl : h.timeScale} line={line} tag={h.cineTag || "FINAL KILL"} />
     </>
   );
 }

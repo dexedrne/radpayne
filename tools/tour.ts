@@ -40,6 +40,7 @@ try {
   };
   await page.goto(url, { waitUntil: "load" });
   let started = false, lastLog = 0, firstRoom = "";
+  const kcShots = new Set<string>();
   const gunsBy = new Map<string, Set<string>>();
   const maxMs = Number(process.env.RADPAYNE_MAX_S ?? 420) * 1000;
   while (Date.now() - t0 < maxMs) {
@@ -63,6 +64,13 @@ try {
       gunsBy.get(k)!.add(key.replace("sfx/", ""));
     }
     if (!started && st.t > 1.5) { started = true; await shot("0-start"); }
+    // the kill cam (app/cine.ts): the ride halfway in and the X-ray a moment in, each cam once
+    const kc = (await page.evaluate(() => (window as unknown as { __rp?: { cine?: { phase: string; kind: string; tag: string; n: number; t: number; flight: number } } }).__rp?.cine ?? null)) as { phase: string; kind: string; tag: string; n: number; t: number; flight: number } | null;
+    if (kc && kc.n <= 6) {
+      const tag = kc.tag.replace(/[^A-Z0-9]+/gi, "-").toLowerCase();
+      if (kc.phase === "flight" && kc.t > kc.flight * 0.45 && !kcShots.has(`${kc.n}a`)) { kcShots.add(`${kc.n}a`); await shot(`kc${kc.n}-a-ride-${tag}`); }
+      if (kc.phase === "xray" && kc.t > kc.flight + 0.2 && !kcShots.has(`${kc.n}b`)) { kcShots.add(`${kc.n}b`); await shot(`kc${kc.n}-b-xray-${tag}`); }
+    }
     for (const n of st.due) await shot(n);
     if (Date.now() - lastLog > 10_000) { lastLog = Date.now(); console.log(`  ${((Date.now() - t0) / 1000).toFixed(0)} s: ${JSON.stringify({ ...st, due: undefined })}`); }
     if (st.results) { await sleep(500); await shot("9-results"); code = 0; break; }

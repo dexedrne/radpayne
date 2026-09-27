@@ -28,6 +28,7 @@ import { enemyMuzzles } from "./EnemiesView.tsx";
 import { FRAME } from "./frame.ts";
 import { useUi } from "../ui/store.ts";
 import { lookOwns } from "./look/fx.ts";
+import { cine } from "./cine.ts";
 
 const Z = new Vector3(0, 0, 1);
 const HIDE = new Matrix4().makeScale(0, 0, 0);
@@ -311,7 +312,7 @@ export function FxView({ s }: { s: Session }) {
   useFrame((state, rawDelta) => {
     const g = s.game;
     const dt = Math.min(rawDelta, 0.1);
-    const wdt = s.paused ? 0 : dt * g.timeScale;
+    const wdt = dt * s.viewScale;
     const camQ = state.camera.getWorldQuaternion(qCam);
     if (fx.run !== s.run) {
       fx.run = s.run;
@@ -322,6 +323,7 @@ export function FxView({ s }: { s: Session }) {
       const P = fx.tracers;
       P.items.forEach((t, i) => {
         if (!t.alive) return;
+        if (cine.cur) { t.alive = false; P.mesh.setMatrixAt(i, HIDE); return; } // the kill cam's round is the one on screen
         t.life += s.paused ? 0 : dt;
         if (t.life >= t.max) { t.alive = false; P.mesh.setMatrixAt(i, HIDE); return; }
         const len = t.a.distanceTo(t.b);
@@ -364,8 +366,17 @@ export function FxView({ s }: { s: Session }) {
         const pellet = b.weapon === "shotgun" || b.weapon === "sawedoff";
         put(b.x, b.y, b.z, b.dx, b.dy, b.dz, Math.min(pellet ? 1.6 : 5, travelled), b.shooter === -1 ? GUNFIRE.player : GUNFIRE.enemy, pellet ? 0.1 : 0.24, near * (pellet ? 0.45 : 1));
       }
+      // the kill cam's round, a metre in front of the riding lens
+      const c = cine.cur;
+      if (c && c.ride && c.phase === "flight") {
+        const sb = cine.bulletAt(c);
+        let dx = c.to.x - c.from.x, dy = c.to.y - c.from.y, dz = c.to.z - c.from.z;
+        const l = Math.hypot(dx, dy, dz) || 1;
+        dx /= l; dy /= l; dz /= l;
+        put(c.from.x + dx * sb, c.from.y + dy * sb, c.from.z + dz * sb, dx, dy, dz, Math.min(0.3, sb), GUNFIRE.player, 0.05, 1, true);
+      }
       const k = g.killcam;
-      if (k && k.t < k.flight) {
+      if (k && k.t < k.flight && !cine.cur && !cine.flownFinal) {
         const f = k.t / k.flight;
         let dx = k.to.x - k.from.x, dy = k.to.y - k.from.y, dz = k.to.z - k.from.z;
         const l = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
@@ -403,10 +414,14 @@ export function FxView({ s }: { s: Session }) {
     // away they grow a little so a hit across the street still reads
     qInv.copy(camQ).invert();
     const farK = (p: Vector3) => Math.max(1, p.distanceTo(camPos) / 7);
+    // the kill cam's round has not landed yet: her blood waits for it (hidden, not ageing)
+    const ride = cine.cur && cine.cur.phase === "flight" ? cine.cur : null;
+    const unhit = (p: Vector3) => !!ride && ride.kills.some(k => (p.x - k.to.x) ** 2 + (p.y - k.to.y) ** 2 + (p.z - k.to.z) ** 2 < 2.2);
     {
       const P = fx.blood, F = fx.dropFade.array as Float32Array;
       P.items.forEach((b, i) => {
         if (!b.alive) return;
+        if (unhit(b.p)) { P.mesh.setMatrixAt(i, HIDE); return; }
         b.life += wdt;
         if (b.life >= b.max) { b.alive = false; F[i] = 0; P.mesh.setMatrixAt(i, HIDE); return; }
         b.v.y -= 9 * wdt;
@@ -429,6 +444,7 @@ export function FxView({ s }: { s: Session }) {
       const P = fx.mist, F = fx.mistFade.array as Float32Array;
       P.items.forEach((m, i) => {
         if (!m.alive) return;
+        if (unhit(m.p)) { P.mesh.setMatrixAt(i, HIDE); return; }
         m.life += wdt;
         if (m.life >= m.max) { m.alive = false; F[i] = 0; P.mesh.setMatrixAt(i, HIDE); return; }
         m.v.multiplyScalar(Math.max(0, 1 - 3 * wdt));

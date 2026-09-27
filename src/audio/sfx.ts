@@ -288,7 +288,7 @@ const variant = (keys: readonly string[]) => keys[Math.floor(Math.random() * key
 
 type PlayOpts = { gain?: number; rate?: number; pan?: number; at?: number; dest?: AudioNode; lowpass?: number };
 
-/** The last voice lines played (key @ seconds since the page opened): the headless run reads it. */
+/** The voice lines played (key @ seconds since the page opened, the last 2000): the headless run counts them. */
 export const voiceLog: string[] = [];
 
 /** A playing (or scheduled) one-shot: its gain can fade it, `cut` = faded out / cancelled early. */
@@ -298,7 +298,7 @@ type Voice = { src: AudioBufferSourceNode; g: GainNode; at: number; cut: boolean
 function voice(e: Engine, key: string, o: PlayOpts = {}): Voice | null {
   const buf = buffers.get(key);
   if (!buf) return null;
-  if (key.startsWith("voices/")) { voiceLog.push(`${key.slice(7)} @${(performance.now() / 1000).toFixed(1)}`); if (voiceLog.length > 120) voiceLog.shift(); }
+  if (key.startsWith("voices/")) { voiceLog.push(`${key.slice(7)} @${(performance.now() / 1000).toFixed(1)}`); if (voiceLog.length > 2000) voiceLog.shift(); }
   const src = e.ac.createBufferSource();
   src.buffer = buf;
   src.playbackRate.value = o.rate ?? rate;
@@ -1110,3 +1110,74 @@ export function setLoop(key: string, level: number, tau = 0.4): void {
   namedLoops.add(k);
   fade(loop(e, k, bus(e), "world"), level, tau);
 }
+
+// ---- the kill cam ---------------------------------------------------------------------------------
+// Procedural and "in his head" (straight to the SFX volume, never pitched by the world's slow motion):
+// the ride's whoosh, the impact under the X-ray (a low thump and a dry crack), the snap back.
+
+/** Band-passed noise: its band from f0 to f1 over `dur`, rising in and falling out. */
+function airNoise(e: Engine, t: number, dur: number, f0: number, f1: number, gain: number, q = 1.4): void {
+  const src = e.ac.createBufferSource();
+  src.buffer = e.noise;
+  src.loop = true;
+  const bp = e.ac.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.Q.value = q;
+  bp.frequency.setValueAtTime(f0, t);
+  bp.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  const g = e.ac.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(gain, t + Math.min(0.1, dur * 0.3));
+  g.gain.setValueAtTime(gain, t + dur * 0.7);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(bp).connect(g).connect(e.sfxGain);
+  src.start(t, Math.random() * 1.5);
+  src.stop(t + dur + 0.05);
+}
+
+export const sfxCine = {
+  /** The round tearing through the slowed air, falling in pitch as it slows into her. */
+  whoosh(dur: number): void {
+    const e = sfxOn();
+    if (!e) return;
+    const t = e.ac.currentTime;
+    airNoise(e, t, dur, 3200, 380, 0.42);
+    airNoise(e, t, dur, 900, 160, 0.3, 0.8);
+  },
+  /** The impact: a low thump and a dry crack (the X-ray's bone), no wet sounds. */
+  impact(): void {
+    const e = sfxOn();
+    if (!e) return;
+    const t = e.ac.currentTime;
+    const o = e.ac.createOscillator();
+    o.type = "sine";
+    o.frequency.setValueAtTime(120, t);
+    o.frequency.exponentialRampToValueAtTime(36, t + 0.45);
+    const g = e.ac.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.8, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+    o.connect(g).connect(e.sfxGain);
+    o.start(t);
+    o.stop(t + 0.6);
+    for (const [at, gain] of [[0.02, 0.55], [0.045, 0.3]] as const) {
+      const src = e.ac.createBufferSource();
+      src.buffer = e.noise;
+      const hp = e.ac.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.value = 2100;
+      const cg = e.ac.createGain();
+      cg.gain.setValueAtTime(gain, t + at);
+      cg.gain.exponentialRampToValueAtTime(0.0001, t + at + 0.035);
+      src.connect(hp).connect(cg).connect(e.sfxGain);
+      src.start(t + at, Math.random() * 1.5);
+      src.stop(t + at + 0.05);
+    }
+  },
+  /** Back to the fight: a short rush the other way. */
+  release(): void {
+    const e = sfxOn();
+    if (!e) return;
+    airNoise(e, e.ac.currentTime, 0.22, 500, 2600, 0.22);
+  },
+};

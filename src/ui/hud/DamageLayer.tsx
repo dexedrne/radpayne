@@ -10,6 +10,7 @@ import { useUi } from "../store.ts";
 import { HURT_LIFE, damageAngle, hurtPhase, hurtStrength, slashPath } from "./logic.ts";
 import { hudFrame } from "./HudFrame.tsx";
 import { hudScaleNow } from "./scale.ts";
+import { cine } from "../../app/cine.ts";
 
 const RIM_RGB: Record<string, string> = { red: "255,49,72", yellow: "255,210,63", white: "255,255,255" };
 const DEATH_N = 12;
@@ -43,7 +44,7 @@ export const DamageLayer = memo(function DamageLayer({ s }: { s: Session }) {
       const rgb = RIM_RGB[ui.dmgColour] ?? RIM_RGB.red;
       let k = 0;
       // the kill cam shows only its own overlay
-      const hurts = (ui.screen === "play" && ss.game.phase !== "killcam") || ui.deadAt ? ui.hurts : [];
+      const hurts = (ui.screen === "play" && ss.game.phase !== "killcam" && !cine.holding) || ui.deadAt ? ui.hurts : [];
       for (let r = 0; r < 4; r++) {
         const rim = rims.current[r];
         const hurt = hurts[r];

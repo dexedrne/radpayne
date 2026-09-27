@@ -9,7 +9,10 @@
 //                        url's room carries over; e.g. "cam-floor|still;cam-dj|look=fight&still")
 // With &cutscene in the url the bot run itself starts with cutscene 1, and with ?bot=demo (or &ending)
 // the ending cutscene plays after the clear: every panel of both is shot ("c-<id>-<panel>") and the
-// voice lines that played are printed at the end. A room chain (room 1 -> 2 -> 3) runs until the results;
+// voice lines that played are printed at the end, with their rate per fight minute by speaker (and per
+// room). The first four kill cams, and every last-kill and two-with-one cam after them, are shot on
+// their ride and in their X-ray ("kc<n>-a-ride", "kc<n>-b-xray").
+// A room chain (room 1 -> 2 -> 3) runs until the results;
 // RADPAYNE_MAX_S sets the time limit (default 300 s). A breach through a door is shot twice ("3-breach").
 // Always launches Chromium with a THROWAWAY --user-data-dir (required; never a real profile).
 import fs from "node:fs";
@@ -81,6 +84,11 @@ try {
   let fightAt = 0;
   let lastLog = 0;
   let slowShots = 0;
+  /** Real seconds in the fight (phase play, no cutscene): the voice count's per-minute base. */
+  let playS = 0, lastT = Date.now();
+  /** Per room: its fight seconds and the voice count when it began (the per-room voice rate). */
+  const rooms: Array<{ room: string; playS: number; v0: number }> = [];
+  const voiceCount = async () => (await page.evaluate(() => (window as unknown as { __rp?: { voices?: string[] } }).__rp?.voices?.length ?? 0)) as number;
   const cutSeen: Record<string, number> = {};
   const maxMs = Number(process.env.RADPAYNE_MAX_S ?? 300) * 1000;
   while (Date.now() - t0 < maxMs) {
@@ -111,9 +119,19 @@ try {
       if (last.room !== curRoom) {
         if (curRoom) { log.push(`ROOM ${last.room}`); fightAt = 0; slowShots = 0; }
         curRoom = last.room;
+        rooms.push({ room: last.room, playS: 0, v0: await voiceCount() });
       }
     }
+    const nowMs = Date.now();
+    if (last && !last.cut && last.phase === "play" && last.t > 0) { playS += (nowMs - lastT) / 1000; if (rooms.length) rooms[rooms.length - 1].playS += (nowMs - lastT) / 1000; }
+    lastT = nowMs;
     if (last && Date.now() - lastLog > 10_000) { lastLog = Date.now(); console.log(`  ${((Date.now() - t0) / 1000).toFixed(0)} s: ${JSON.stringify(last)}`); }
+    // the kill cam (app/cine.ts): its ride halfway in, the X-ray a moment in
+    const kc = (await page.evaluate(() => (window as unknown as { __rp?: { cine?: { phase: string; kind: string; tag: string; n: number; t: number; flight: number } } }).__rp?.cine ?? null)) as { phase: string; kind: string; tag: string; n: number; t: number; flight: number } | null;
+    if (kc && kc.n > 0 && kc.phase && (kc.n <= 4 || kc.kind === "final" || kc.kind === "pierce")) {
+      if (kc.phase === "flight" && kc.t > kc.flight * 0.45 && !shots.has(`kc${kc.n}-a-ride`)) { shots.add(`kc${kc.n}-a-ride`); await page.screenshot({ path: path.join(outDir, `kc${kc.n}-a-ride.png`) }); log.push(`SHOT kc${kc.n}-a-ride (${kc.kind}: ${kc.tag}) at ${((Date.now() - t0) / 1000).toFixed(1)} s`); }
+      if (kc.phase === "xray" && kc.t > kc.flight + 0.2 && !shots.has(`kc${kc.n}-b-xray`)) { shots.add(`kc${kc.n}-b-xray`); await page.screenshot({ path: path.join(outDir, `kc${kc.n}-b-xray.png`) }); log.push(`SHOT kc${kc.n}-b-xray (${kc.kind}: ${kc.tag}) at ${((Date.now() - t0) / 1000).toFixed(1)} s`); }
+    }
     if (last?.cut) {
       // a cutscene panel: shoot it once its caption is in
       cutSeen[last.cut] ??= Date.now();
@@ -138,6 +156,24 @@ try {
   log.push(`STATE ${JSON.stringify(last)} after ${((Date.now() - t0) / 1000).toFixed(1)} s`);
   const voices = (await page.evaluate(() => (window as unknown as { __rp?: { voices?: string[] } }).__rp?.voices ?? [])) as string[];
   log.push(`VOICES ${voices.length}: ${voices.join(", ")}`);
+  // by speaker (the folder), the cutscene lines apart (cs1_ / cs2_ / e1_: the panels, whoever speaks
+  // them), per fight minute
+  const isCut = (v: string) => /^[a-z_]+\/(cs\d|e\d)_/.test(v.split(" ")[0]);
+  const by = new Map<string, number>();
+  for (const v of voices) {
+    const key = v.split(" ")[0];
+    const who = isCut(v) ? "cutscene" : key.split("/")[0].replace(/^goon_[ab]$/, "goons");
+    by.set(who, (by.get(who) ?? 0) + 1);
+  }
+  const mins = playS / 60;
+  const fight = [...by].filter(([k]) => k !== "cutscene").reduce((a, [, n]) => a + n, 0);
+  log.push(`VOICE RATE over ${playS.toFixed(0)} s of fight: ${(fight / Math.max(mins, 1e-6)).toFixed(1)} lines/min in the fight; ${[...by].map(([k, n]) => `${k} ${n} (${k === "cutscene" ? "-" : (n / Math.max(mins, 1e-6)).toFixed(1)}/min)`).join(", ")}`);
+  // per room: its lines (from its start to the next room's; the cutscene lines apart) per fight minute
+  rooms.forEach((r, i) => {
+    const vs = voices.slice(r.v0, i + 1 < rooms.length ? rooms[i + 1].v0 : voices.length).filter(v => !isCut(v));
+    const nar = vs.filter(v => v.startsWith("narrator/")).length;
+    log.push(`VOICE RATE ${r.room}: ${vs.length} lines over ${r.playS.toFixed(0)} s of fight = ${(vs.length / Math.max(r.playS / 60, 1e-6)).toFixed(1)}/min (narrator ${nar})`);
+  });
 
   // RADPAYNE_WIDE="cam-a;cam-b|look=fight": one page per camera marker, each with its own extra query
   const wide = process.env.RADPAYNE_WIDE;

@@ -336,7 +336,7 @@ function MirrorBall({ level, s }: { level: LevelData; s: Session }) {
   useEffect(() => s.on(e => { if (e.type === "break" && ball && Math.hypot(e.x - ball.position.x, e.z - ball.position.z) < 0.6) { fall.on = true; fall.v = 0; } }), [s, ball, fall]);
   useFrame((_, raw) => {
     if (!ball || !m) return;
-    const wdt = Math.min(raw, 0.1) * (s.paused ? 0 : s.game.timeScale);
+    const wdt = Math.min(raw, 0.1) * s.viewScale;
     if (fall.run !== s.run) { fall.run = s.run; fall.on = s.game.broken.length > 0 && s.level.breakables.some(b => s.game.broken.includes(b.node)); ball.visible = !fall.on; ball.position.y = m.y; }
     if (fall.on && ball.visible) {
       fall.v += 9.8 * wdt;
@@ -344,7 +344,7 @@ function MirrorBall({ level, s }: { level: LevelData; s: Session }) {
       ball.rotation.x += wdt * 3;
       if (ball.position.y < 0.45) ball.visible = false;
     }
-    ball.rotation.y += Math.min(raw, 0.1) * 0.5 * (s.paused ? 1 : s.game.timeScale);
+    ball.rotation.y += Math.min(raw, 0.1) * 0.5 * (s.paused ? 1 : s.hold ? s.crawl : s.game.timeScale);
   }, FRAME.fx);
   return ball ? <primitive object={ball} /> : null;
 }
@@ -422,7 +422,7 @@ export function ClubLook({ level, s }: { level: LevelData; s?: Session; lowQuali
   useFrame((_, raw) => {
     const dt = Math.min(raw, 0.1);
     const g = s?.game;
-    const ts = !s || s.paused ? 1 : g!.timeScale;
+    const ts = !s || s.paused ? 1 : s.hold ? s.crawl : g!.timeScale;
     const fx = clubFx;
     fx.time.value += dt * ts;
     fx.beat.value += dt * ts * (BPM / 60);

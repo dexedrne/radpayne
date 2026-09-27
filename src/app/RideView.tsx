@@ -254,7 +254,7 @@ export function RideView({ s }: { s: Session }) {
     const ride = g.ride;
     if (!ride) return;
     const dt = Math.min(raw, 0.1);
-    const wdt = s.paused ? 0 : dt * g.timeScale;
+    const wdt = dt * s.viewScale; // (the kill cam: its crawl)
     const st = v.state;
     if (st.run !== s.run) {
       // a new attempt (or a checkpoint's): the car as the ride stands

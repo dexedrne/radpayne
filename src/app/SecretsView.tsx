@@ -85,7 +85,7 @@ export function SecretsView({ s }: { s: Session }) {
   useFrame((_, raw) => {
     const g = s.game;
     if (st.run !== s.run) { st.run = s.run; setup(); for (const dr of st.doors) pose(dr, dr.t >= 1 ? (dr.d.open === "slide" ? 1 : OPEN.swing) : 0); return; }
-    const wdt = s.paused ? 0 : Math.min(raw, 0.1) * g.timeScale;
+    const wdt = Math.min(raw, 0.1) * s.viewScale;
     for (const dr of st.doors) {
       if (dr.opening) {
         dr.t = Math.min(1, dr.t + wdt / OPEN.time);

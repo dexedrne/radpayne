@@ -5,6 +5,14 @@
 // lands where the shot goes) instead of pushing the lens into the facade.
 // The final-kill cam follows the replayed bullet from behind, then swings around the target while it
 // drops, as planned by killcam.ts (clear lines, no wall, hot light, post or steam at the lens).
+// The kill cam (cine.ts) rides its bullet from the muzzle: the lens starts just past the muzzle, slows
+// into her with the view opening out to her side, and holds there, pushing in a little, through the
+// X-ray. Its offset off the round's line is planned once along the whole ride (killcam.ts planRide: no
+// wall, cabin or body at or across the lens anywhere on it); with no bullet to ride (a grenade, a melee,
+// the chandelier) or no clean offset, it holds the swing's opening angle and pushes in. A cam with two
+// or three bodies (a round through two) cuts at the impact to a frame that holds them all (planGroup),
+// so the X-ray shows every skeleton. After the last kill's ride the sim's own final-kill cam plays on
+// as the swing only.
 // A long gun out (arsenal spec 1.4) moves the lens out and down (LONG_CAM, eased over 0.3 s): a
 // shouldered gun points away from a camera behind him, so the view goes wider of his shoulder and below
 // his big head, where the gun's length shows. Shouldered (a shot in the last 1.2 s, bullet time) the lens
@@ -28,7 +36,10 @@ import { shoulderRight } from "../sim/player.ts";
 import { SHOULDER, aimDir } from "../sim/aim.ts";
 import { FRAME } from "./frame.ts";
 import type { V3 } from "../sim/types.ts";
-import { KC, planKillcam, type KcPlan } from "./killcam.ts";
+import { KC, planGroup, planKillcam, planRide, type GroupShot, type KcPlan, type RidePlan } from "./killcam.ts";
+import { CINE, cine, rideEase, rideLens, type Cine } from "./cine.ts";
+import { HEAVY_SCALE } from "../sim/tuning.ts";
+import type { KillCam } from "../sim/game.ts";
 import { isLongGun, isOneHand } from "../combat/weapons.ts";
 import { holdDev } from "./dev/holdcheck.ts";
 import { holdView, playerChest } from "./PlayerView.tsx";
@@ -73,6 +84,12 @@ export function CameraView({ s }: { s: Session }) {
     plan: null as KcPlan | null,
     /** Room 4's car: its weight (eased), over the left shoulder, the crane up. */
     carK: 0, swap: false, crane: 0,
+    /** The kill cam's plan and the cam it is for. */
+    cplan: null as KcPlan | null,
+    cfor: null as Cine | null,
+    ride: null as RidePlan | null,
+    group: null as GroupShot | null,
+    ce: { x: 0, y: 0, z: 0 } as V3, ca: { x: 0, y: 0, z: 0 } as V3,
   }), []);
   // what the camera collides with: every visible box, decor included (a tall decor box must not sit
   // between the camera and the shoulder), not the invisible play-area walls
@@ -130,12 +147,63 @@ export function CameraView({ s }: { s: Session }) {
       tmp.at.set(at[0], at[1], at[2]);
       fovWant = FOV;
       camView.arm = SHOULDER.arm;
+    } else if (cine.cur && cine.cur.phase !== "out") {
+      const c = cine.cur;
+      const last = c.kills[c.kills.length - 1];
+      const e = g.enemies[last.enemy];
+      const blast = c.kind === "grenade";
+      // a blast: from him to its centre, the swing around the centre
+      const from = blast ? { x: p.x, y: p.y + 1.4, z: p.z } : c.from, to = blast ? c.from : c.to;
+      if (tmp.cfor !== c) {
+        tmp.cfor = c;
+        const kc: KillCam = { t: 0, dur: 1, flight: 1, from, to, enemy: last.enemy, headshot: last.headshot, chase: c.ride };
+        const at = blast || !e ? { x: to.x, y: e?.y ?? to.y - 1, z: to.z, killDX: 0, killDZ: 0 } : e;
+        tmp.cplan = planKillcam(kc, at, camWorld, s.level, viewWorld);
+        // the bodies: its victims (all of them in the X-ray's frame), and everyone else the ride must
+        // keep its lens off (standing, or down where they fell)
+        const tall = (b: { kind: string }) => (b.kind === "heavy" ? 1.75 * HEAVY_SCALE : 1.9);
+        const bodies = c.kills.map(k => g.enemies[k.enemy]).filter(b => !!b).map(b => ({ x: b.x, y: b.y, z: b.z, h: tall(b) }));
+        const others = g.enemies.filter(b => b.idx !== last.enemy && b.state !== "inactive" && !b.fled && !c.kills.some(k => k.enemy === b.idx))
+          .map(b => (b.state === "dead" ? { x: b.x + b.killDX * 0.5, y: b.y, z: b.z + b.killDZ * 0.5, h: 0.7, r: 0.95 } : { x: b.x, y: b.y, z: b.z, h: tall(b) }));
+        tmp.ride = c.ride ? planRide(c, e ?? { x: to.x, y: to.y - 1.2, z: to.z }, [...bodies.slice(0, -1), ...others], camWorld, s.level, viewWorld) : null;
+        tmp.group = !blast && bodies.length >= 2 ? planGroup(bodies, c.from, camWorld, s.level, viewWorld) : null;
+      }
+      const pl = tmp.cplan!;
+      let dx = to.x - from.x, dz = to.z - from.z;
+      const hl = Math.hypot(dx, dz) || 1;
+      dx /= hl; dz /= hl;
+      const hx = dx, hz = dz, sx = hz, sz = -hx;
+      const xk = c.phase === "xray" ? Math.min(1, (c.t - c.flight) / CINE.xray) : 0;
+      const gs = tmp.group;
+      if (gs && (c.phase === "xray" || !(c.ride && tmp.ride?.ok))) {
+        // every body in one frame: the group shot, pushing in a little through the freeze
+        const k2 = 0.12 * Math.min(1, c.t / (c.flight + CINE.xray));
+        tmp.eye.set(gs.ex + (gs.ax - gs.ex) * k2, gs.ey + (gs.ay - gs.ey) * k2, gs.ez + (gs.az - gs.ez) * k2);
+        tmp.at.set(gs.ax, gs.ay, gs.az);
+        fovWant = KC.fov - 3 * xk;
+      } else if (c.ride && tmp.ride?.ok) {
+        // ride: 0.9 m behind the round, never closer than 2.4 m to where it hits (cine.ts rideLens)
+        rideLens(c, c.t, tmp.ride.side, tmp.ride.lift, tmp.ce, tmp.ca);
+        tmp.eye.set(tmp.ce.x, tmp.ce.y, tmp.ce.z);
+        tmp.at.set(tmp.ca.x, tmp.ca.y, tmp.ca.z);
+        const endK = Math.max(0, Math.min(1, (rideEase(Math.min(1, c.t / c.flight)) - 0.55) / 0.45));
+        fovWant = KC.chaseFov - 4 * endK - 3 * xk;
+      } else {
+        // push: the swing's opening angle (a clear line to her / the blast), easing in and round
+        const R = (blast ? 4.4 : KC.radius) * (1 - 0.2 * Math.min(1, c.t / (c.flight + CINE.xray)));
+        const a = pl.a0 + pl.dir * 0.22 * c.t;
+        const ey = blast ? (e?.y ?? to.y) + 2.1 : (e?.y ?? 0) + KC.eyeY;
+        tmp.eye.set(pl.kx + (-hx * Math.cos(a) + sx * Math.sin(a)) * R, ey, pl.kz + (-hz * Math.cos(a) + sz * Math.sin(a)) * R);
+        tmp.at.set(pl.kx, (blast ? to.y : e?.y ?? 0) + KC.atY, pl.kz);
+        fovWant = KC.fov - 4 * xk;
+      }
+      camView.arm = SHOULDER.arm;
     } else if (k) {
       const e = g.enemies[k.enemy];
-      if (!tmp.plan || tmp.plan.kc !== k) tmp.plan = planKillcam(k, e ?? { x: k.to.x, y: 0, z: k.to.z, killDX: 0, killDZ: 1 }, camWorld, s.level, viewWorld);
+      if (!tmp.plan || tmp.plan.kc !== k) { tmp.plan = planKillcam(k, e ?? { x: k.to.x, y: 0, z: k.to.z, killDX: 0, killDZ: 1 }, camWorld, s.level, viewWorld); tmp.orbit = 0; }
       const pl = tmp.plan;
-      // bullet position along the replayed shot
-      const f = Math.min(1, k.t / k.flight);
+      // bullet position along the replayed shot (after the kill cam's ride: the swing only)
+      const f = cine.flownFinal ? 1 : Math.min(1, k.t / k.flight);
       const bx = k.from.x + (k.to.x - k.from.x) * f, by = k.from.y + (k.to.y - k.from.y) * f, bz = k.from.z + (k.to.z - k.from.z) * f;
       let dx = k.to.x - k.from.x, dy = k.to.y - k.from.y, dz = k.to.z - k.from.z;
       const l = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;

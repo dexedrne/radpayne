@@ -617,7 +617,7 @@ export default function PlayPage() {
   useEffect(() => useUi.subscribe(s => {
     const el = filterRef.current;
     if (!el) return;
-    const fx = canvasFx({ screen: s.screen, timeScale: s.hud.timeScale, health: s.hud.health, deadAt: s.deadAt, now: performance.now(), killcam: s.hud.killcam });
+    const fx = canvasFx({ screen: s.screen, timeScale: s.hud.timeScale, health: s.hud.health, deadAt: s.deadAt, now: performance.now(), killcam: s.hud.killcam, cine: s.hud.cine });
     if (el.style.transition !== fx.transition) el.style.transition = fx.transition;
     if (el.style.filter !== fx.filter) el.style.filter = fx.filter;
   }), []);

@@ -56,8 +56,11 @@ export type Hud = {
   refill: { amount: number; at: number } | null;
   /** Bullet time asked for with too little meter (performance.now()). */
   btRefusedAt: number;
-  /** 0..1 through the final-kill cam. */
+  /** 0..1 through the final-kill cam (or the kill cam holding the fight). */
   killcamProgress: number;
+  /** The kill cam (app/cine.ts): 0 off, 1 the ride, 2 the X-ray; its tag ("SNIPER · 41 M", "FINAL KILL"). */
+  cine: number;
+  cineTag: string;
   /** Any Milady awake (the caption budget allows one cream caption while they are). */
   awake: boolean;
   /** Session attempt counter (per-attempt HUD state resets when it changes). */
@@ -88,6 +91,11 @@ export type HudSize = "s" | "m" | "l";
 export type ThreatMode = "all" | "shooting" | "off";
 export type DmgColour = "red" | "yellow" | "white";
 export type Volumes = { master: number; music: number; fx: number };
+/** Voice chatter in the fight (director.ts TALK): normal, less, off (the narrator's story beats, the DJ's
+ *  cues and Madame Pockit's big lines only). */
+export type Chatter = "normal" | "less" | "off";
+/** Kill cam (cine.ts): every kill by a shot, the special shots (+ the room's last kill), the last kill only, never. */
+export type KillcamMode = "always" | "special" | "final" | "off";
 
 type Ui = {
   screen: Screen;
@@ -122,6 +130,8 @@ type Ui = {
   dmgColour: DmgColour;
   subs: boolean;
   vol: Volumes;
+  chatter: Chatter;
+  killcam: KillcamMode;
 };
 
 const stored = (k: string, d: string): string => {
@@ -151,7 +161,7 @@ export const HUD_INITIAL: Hud = {
   health: 100, copium: 0, healing: false, meter: 10, bt: false, timeScale: 1, mags: [12, 12], magSize: 12, reloading: 0, weapon: "Dual pistols",
   alive: 0, total: 0, phase: "play", onTarget: false, mode: "normal", fps: 60, hurtAgo: 99, killcam: false,
   roomLabel: "", objective: "", objectiveAt: 0, weaponId: "pistols", owned: ["pistols"], reserve: Infinity, hands: 2, ammo: { pistols: Infinity },
-  refill: null, btRefusedAt: 0, killcamProgress: 0, awake: false, run: 0,
+  refill: null, btRefusedAt: 0, killcamProgress: 0, cine: 0, cineTag: "", awake: false, run: 0,
   grenades: 0, lastInSlot: {}, zoom: false, secrets: 0, secretsTotal: 0, pins: [], use: "",
 };
 
@@ -182,10 +192,12 @@ export const useUi = create<Ui>(() => ({
   dmgColour: pick<DmgColour>("dmgColour", "red", ["red", "yellow", "white"]),
   subs: stored("subs", "1") !== "0",
   vol: { master: pct("vol.master", 80), music: pct("vol.music", 60), fx: pct("vol.fx", 90) },
+  chatter: pick<Chatter>("chatter", "normal", ["normal", "less", "off"]),
+  killcam: pick<KillcamMode>("killcam", "special", ["always", "special", "final", "off"]),
 }));
 
 /** Change a persisted setting (applies at once). */
-export function setSetting<K extends "hudSize" | "threats" | "dmgColour" | "subs" | "quality" | "sensitivity" | "invertY" | "muted" | "difficulty">(k: K, v: Ui[K]): void {
+export function setSetting<K extends "hudSize" | "threats" | "dmgColour" | "subs" | "quality" | "sensitivity" | "invertY" | "muted" | "difficulty" | "chatter" | "killcam">(k: K, v: Ui[K]): void {
   useUi.setState({ [k]: v } as Pick<Ui, K>);
   store(k, typeof v === "boolean" ? (v ? "1" : "0") : String(v));
 }

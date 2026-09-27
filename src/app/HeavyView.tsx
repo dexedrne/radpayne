@@ -28,6 +28,8 @@ import { FRAME } from "./frame.ts";
 import { HEAVY_SCALE } from "../sim/tuning.ts";
 import { wrapAngle } from "../sim/aim.ts";
 import { breathe } from "./warmup.ts";
+import { heldByCam } from "./cine.ts";
+import { RADBRO_JOINTS, boneReader, xrayRigs } from "./xray.ts";
 
 const UP = new Vector3(0, 1, 0);
 /** Additive lift on every heavy material (linear): mid grey, so the charcoal reads on a dark wall. */
@@ -164,6 +166,9 @@ export function HeavyView({ s }: { s: Session }) {
         const idle = pick(rig.player, ["Shotgun_Aim_Idle", "Aim_Idle", "Idle"]);
         if (idle) { rig.player.force(idle, 0); rig.player.update(0); }
         rigs.current[i] = rig;
+        // the kill cam's X-ray reads his skeleton off the rig (the bones looked up once)
+        const bones = new Map<string, Object3D | undefined>();
+        xrayRigs[e.idx] = boneReader(n => { if (!bones.has(n)) bones.set(n, findBone(rig.model, n)); return bones.get(n); }, RADBRO_JOINTS);
         group.add(rig.root, rig.laser);
         console.info(`[heavy] ${e.id}: ${e.model} ready (${rig.player.clips.size} clips)`);
       }
@@ -182,6 +187,7 @@ export function HeavyView({ s }: { s: Session }) {
       off();
       for (const r of rigs.current) {
         if (!r) continue;
+        xrayRigs[r.idx] = undefined;
         group.remove(r.root, r.laser);
         r.player.dispose();
         for (const m of r.materials) m.dispose();
@@ -206,13 +212,13 @@ export function HeavyView({ s }: { s: Session }) {
       r.root.visible = e.state !== "inactive";
       if (!r.root.visible) return;
       r.root.position.set(p.x, p.y, p.z);
-      const rimWant = e.state === "dead" && !e.deathHold ? 0 : 1;
+      const rimWant = e.state === "dead" && !heldByCam(e) ? 0 : 1;
       if (r.rim !== rimWant) { r.rim = rimWant > r.rim ? 1 : Math.max(0, r.rim - dt / 0.6); setHostileRim(r.root, r.rim); }
       const pl = r.player;
       // down, his gun is the pickup lying by him
       r.shotgun.visible = e.state !== "dead" || !e.drop;
       if (e.state === "dead") {
-        if (!r.deadShown && !e.deathHold) {
+        if (!r.deadShown && !heldByCam(e)) {
           r.deadShown = true;
           r.yaw = Math.atan2(-e.killDX, -e.killDZ);
           const l = Math.hypot(e.killDX, e.killDZ) || 1;
@@ -239,12 +245,12 @@ export function HeavyView({ s }: { s: Session }) {
 
   // -4: mixers on world time (the kill cam holds the victim)
   useFrame((_, raw) => {
-    const ts = s.paused ? 0 : s.game.timeScale;
+    const ts = s.viewScale;
     const dt = Math.min(raw, 0.1);
     rigs.current.forEach(r => {
       if (!r || !r.root.visible) return;
       const e = s.game.enemies[r.idx];
-      if (e.deathHold) return;
+      if (heldByCam(e)) return;
       const alive = e.state !== "dead";
       r.reloadW += ((alive && e.reloadT > 0 ? 1 : 0) - r.reloadW) * Math.min(1, 10 * dt);
       if (r.reloadW > 0.02 && r.reload && !r.reload.isRunning() && e.reloadT > 0) r.reload.reset().setEffectiveTimeScale(r.reload.getClip().duration / 1.6).play();

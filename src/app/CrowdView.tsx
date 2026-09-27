@@ -163,7 +163,7 @@ export function CrowdView({ s }: { s: Session }) {
   useFrame((_, raw) => {
     const crowd = s.game.crowd;
     const dt = Math.min(raw, 0.1);
-    const wdt = s.paused ? 0 : dt * s.game.timeScale;
+    const wdt = dt * s.viewScale;
     if (run.current !== s.run) { run.current = s.run; for (const g of girls) g.clip = ""; }
     let shown = 0;
     for (const g of girls) {
