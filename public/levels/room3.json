@@ -222,6 +222,7 @@
       "room": {
        "name": "The Back of the House",
        "next": "room4",
+       "cutsceneAfter": "cs3a",
        "music": "backrooms",
        "look": "backrooms",
        "footsteps": "hard",

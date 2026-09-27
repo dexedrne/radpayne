@@ -19,9 +19,9 @@
 // Radbro files load behind the title, the gang's Pockit downloads start as the level is read, the sounds
 // load in order (cutscene 1's lines, room 1, the fight loop; rooms 2-3 once room 1 runs) and the rave's
 // clip pack after room 1 starts. A room gets ready (readyRoom: the Radbro, the gang that is there from
-// the start, their shaders, the sounds) under the cutscene before it when there is one (room 4: under
-// room 3's last frame, the open elevator, made a panel: frame.ts grabFrame); its start
-// (holdRoom) waits behind the loading card, with the progress, only for what is not done by then.
+// the start, their shaders, the sounds) under the cutscene before it (room 4: under cs3a, the elevator
+// panels, after room 3's doors have opened); its start (holdRoom) waits behind the loading card, with the
+// progress, only for what is not done by then.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Session } from "./session.ts";
 import { Scene } from "./Scene.tsx";
@@ -43,11 +43,11 @@ import { attachDom } from "../input/input.ts";
 import { activePad, useDevice } from "../input/device.ts";
 import { playRumble, rumbleOf } from "../input/rumble.ts";
 import { setMuted, unlockAudio } from "../audio/engine.ts";
-import { groupReady, loadEndSamples, loadLaterSamples, loadSamples, setFootsteps, setHeartbeat, setMusic, setMusicGate, stopNarration, stopRoomAudio } from "../audio/sfx.ts";
+import { groupReady, loadEndSamples, loadGroup, loadLaterSamples, loadSamples, setFootsteps, setHeartbeat, setMusic, setMusicGate, stopNarration, stopRoomAudio } from "../audio/sfx.ts";
 import { Bot } from "../sim/bot.ts";
 import type { WeaponId } from "../combat/weapons.ts";
 import { frames, prefetchGoons, roomWarm, warmRoom } from "./warmup.ts";
-import { grabFrame, renderGate } from "./frame.ts";
+import { renderGate } from "./frame.ts";
 import { HOLDCHECK, HoldScript, holdDev } from "./dev/holdcheck.ts";
 import { TOUR, TourDriver } from "./dev/tour.ts";
 import { RADBROS } from "../ui/store.ts";
@@ -172,8 +172,9 @@ function chapterTotals(): { stats: Stats; rooms: number } {
   return { stats: t, rooms: chapterRun.size };
 }
 /** Round 3: the rooms past the back of the house get their sounds (their own load group) and the
- *  cutscene after them ahead of time. */
+ *  cutscene after them ahead of time (room 3: the elevator cutscene's lines first, then rooms 4-5). */
 function aheadOf(roomId: string): void {
+  if (roomId === "room3") { loadGroup("cs3a"); prefetchCutscene("cs3a", 1); }
   if (roomId === "room3" || roomId === "room4" || roomId === "room5") loadEndSamples();
   if (roomId === "room4") prefetchCutscene("c3", 1);
   if (roomId === "room5") prefetchCutscene("c4", 1);
@@ -359,6 +360,8 @@ export default function PlayPage() {
     return attachDom(session.input, () => canvasEl(), l => {
       useUi.setState({ locked: l });
       if (useUi.getState().screen !== "play" || AUTO) return;
+      // the room is over (its exit playing out, the cutscene or the results about to come): no pause menu
+      if (!l && (session.game.phase === "done" || session.game.phase === "dead")) return;
       if (l) { setPadFight(false); session.input.flush(); session.paused = false; }
       else pause();
     });
@@ -568,7 +571,13 @@ export default function PlayPage() {
       const end = roomResult(phase, session.game.stats);
       bridge().result(end.status, end.score);
       session.paused = true;
-      if (document.pointerLockElement) document.exitPointerLock();
+      // room 3 holds the last frame while the elevator opens (room.exitHold seconds): the pointer stays
+      // locked through it (a lost lock would put up the pause menu or the fight prompt over the doors)
+      // and is let go when the next screen is up
+      const hold = phase === "done" && typeof session.level.room.exitHold === "number" ? session.level.room.exitHold * 1000 : 0;
+      const unlock = () => { if (document.pointerLockElement) document.exitPointerLock(); };
+      if (!hold) unlock();
+      const later = (f: () => void) => { if (hold) setTimeout(f, hold); else f(); };
       setHeartbeat(false);
       setFootsteps(0);
       const g = session.game;
@@ -576,10 +585,8 @@ export default function PlayPage() {
       // the chapter's last room (room 5): its results are the chapter's (after cutscene 4's card)
       const chapterEnd = phase === "done" && session.level.room.chapterEnd === true;
       const results = { cleared: phase === "done", stats: { ...g.stats }, room: session.roomId, difficulty: g.difficulty, radbro: useUi.getState().radbro, pins: useUi.getState().hud.pins, ...(chapterEnd ? { chapter: chapterTotals() } : {}) };
-      // room 3 holds the last frame while the elevator opens (room.exitHold seconds)
-      const hold = phase === "done" && typeof session.level.room.exitHold === "number" ? session.level.room.exitHold * 1000 : 0;
-      const show = () => { if (hold) setTimeout(() => useUi.setState({ screen: "results", results }), hold); else useUi.setState({ screen: "results", results }); };
-      if (!results.cleared) { show(); return; }
+      const show = () => { useUi.setState({ screen: "results", results }); unlock(); };
+      if (!results.cleared) { later(show); return; }
       // the next room (when its level exists), else the results: "to be continued"
       const room = session.level.room;
       const next = typeof room.next === "string" ? room.next : "";
@@ -596,42 +603,27 @@ export default function PlayPage() {
           else { console.info(`[radpayne] ${next} is not built yet`); show(); }
         });
       };
-      // the cutscene after the room: its own (c2), or room 1's ending panels (e1), once per page load
+      // the cutscene after the room (room.cutsceneAfter: c2, cs3a after room 3's doors have opened, ...; room
+      // 1's is the ending panels, e1), once per page load
       const after = typeof room.cutsceneAfter === "string" ? room.cutsceneAfter : session.roomId === "room1" ? "e1" : "";
       if (after && !seenAfter.current.has(after) && (!SKIP || BOT_DEMO || ENDING)) {
         seenAfter.current.add(after);
-        void loadCutscene(after).then(c => {
+        later(() => void loadCutscene(after).then(c => {
           if (!c) { goOn(); return; }
           setCut({ data: c, then: goOn });
           useUi.setState({ screen: "cutscene" });
-          // the next room's music under the panels (c2: the back of the house)
+          unlock();
+          // the next room's music under the panels (c2: the back of the house), or this room's (cs3a)
           if (typeof c.music === "string") void loadSamples().then(() => setMusic("calm", c.music));
           // and the next room itself: its scene mounts behind the panels and gets ready there (the gang,
           // its shaders, its sounds, its first frames), so it starts when they end, not behind a card
           if (next) void prepareNext(session).then(ns => { if (ns && useUi.getState().screen === "cutscene") { handOver(ns); mount(ns); void readyRoom(ns); } });
-        });
+        }));
         return;
       }
-      // no cutscene: the last frame holds while the room's exit plays out (room 3's elevator doors), then
-      // that frame becomes a panel (it pushes in, the next room's name under it) and the next room gets
-      // ready behind it as it does behind a cutscene: its scene mounts, its shaders compile, its sounds
-      // come in. The panel turns when the room is ready (a click or a skip goes on at once: the loading
-      // card shows the rest)
-      if (!hold) { goOn(); return; }
-      setTimeout(() => {
-        if (!next || (SKIP && !BOT_DEMO && !ENDING)) { goOn(); return; }
-        void Promise.all([grabFrame(), prepareNext(session)]).then(([image, ns]) => {
-          if (!image || !ns || useUi.getState().screen !== "play") { if (image) URL.revokeObjectURL(image); goOn(); return; }
-          handOver(ns);
-          mount(ns);
-          const prep = readyRoom(ns);
-          setCut({
-            data: { id: `${session.roomId}-exit`, title: roomText(ns.roomId, ns.level.room).label, panels: [{ image, lines: [], dur: 2.5, push: 1.1 }], wait: Promise.race([prep.promise, wait(HOLD_CAP_MS)]) },
-            then: () => { URL.revokeObjectURL(image); goOn(); },
-          });
-          useUi.setState({ screen: "cutscene" });
-        });
-      }, hold);
+      // no cutscene (or seen already this page load): the next room behind the loading card for whatever
+      // is not ready yet
+      later(goOn);
     }
   }, [session, enterRoom, prepareNext]);
 

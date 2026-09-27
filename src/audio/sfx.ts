@@ -84,9 +84,13 @@ const ENEMY_DRY: Record<string, { gain: number; lowpass: number }> = { sniper: {
 const BT_BOOM = "sfx/pistol_bt_boom";
 export const GUN_FILES = [...new Set([...Object.values(GUNS).flatMap(g => [...g.shots, ...Object.values(g.tails)]), ...Object.values(ENEMY_GUNS).flat(), BT_BOOM])];
 
+/** The elevator cutscene's lines (room 3 -> cs3a -> room 4): their own group, "cs3a". */
+export const CS3A_FILES = ["cs3a_01", "cs3a_02", "cs3a_03", "cs3a_04"].map(k => `voices/narrator/${k}`);
+
 /** Files under public/audio (no extension). Keys are the paths. */
 export const FILES = [
   ...ROUND3_FILES, // round 3: rooms 4-5, cutscenes 3-4 (the "end" group)
+  ...CS3A_FILES, // the elevator cutscene after room 3 (the "cs3a" group)
   ...GUN_FILES, "sfx/dry_fire", "sfx/reload_mag_out", "sfx/reload_mag_in", "sfx/reload_slide",
   "sfx/shell_casing", "sfx/shell_casing_2", "sfx/shell_casing_3", "sfx/impact_concrete", "sfx/impact_concrete_2", "sfx/impact_metal", "sfx/impact_metal_2",
   "sfx/impact_glass", "sfx/impact_glass_2", "sfx/impact_body", "sfx/impact_body_2", "sfx/bullet_whiz", "sfx/bullet_whiz_2", "sfx/bt_enter", "sfx/bt_exit",
@@ -121,13 +125,15 @@ export const FILES = [
  * one of them): "cs1" (cutscene 1's four narrator lines) -> "room" (room 1's sounds and voices: its start
  * waits for these) -> "music" (the calm loop; it fades in when it lands) and "fight" (the fight loop),
  * both after the music gate (setMusicGate: the gang's downloads, which the room's start waits for) ->
- * "later" (rooms 2-3 and cutscene 2: loadLaterSamples(), once room 1 runs, at low priority). A file not
- * named in LATER is a room-1 file (a new sound is never silent in room 1 for being unlisted).
+ * "later" (rooms 2-3 and cutscene 2: loadLaterSamples(), once room 1 runs, at low priority) -> "cs3a" (the
+ * elevator cutscene's lines, loadGroup("cs3a") as room 3 starts, ahead of) "end" (rooms 4-5, cutscenes 3-4:
+ * loadEndSamples(), low priority). A file not named in LATER is a room-1 file (a new sound is never silent in
+ * room 1 for being unlisted).
  * The arsenal: room 1 has the sniper (the perch goon's), frags, melee, George and a shotgun at the
  * barrier, so those are room-1 files (the shotgun's club / back-room tails stay later); the hand cannon,
  * the sawed-off, the secret doors and the plywood are rooms 2-3.
  */
-export type SampleGroup = "cs1" | "room" | "music" | "fight" | "later" | "end";
+export type SampleGroup = "cs1" | "room" | "music" | "fight" | "later" | "cs3a" | "end";
 const LATER = [
   /^music\/(rave_club|fight_rave|backrooms_calm)$/,
   /^voices\/(crowd|pa|heavy)\//,
@@ -139,6 +145,7 @@ const LATER = [
 ];
 export function sampleGroup(k: string): SampleGroup {
   if (isRound3(k)) return "end";
+  if (/^voices\/narrator\/cs3a_/.test(k)) return "cs3a";
   if (/^voices\/narrator\/cs1_/.test(k)) return "cs1";
   if (k === "music/fight_tense") return "fight";
   if (k === "music/street_calm") return "music";
@@ -202,6 +209,12 @@ export function loadLaterSamples(): void {
   laterStarted = true;
   void loadSamples();
   whenCreated(e => { for (const k of group("later")) void loadKey(e, k, "low"); });
+}
+
+/** One group's files now (the elevator cutscene's lines as room 3 starts: "cs3a"). */
+export function loadGroup(g: SampleGroup, priority: RequestPriority = "auto"): void {
+  void loadSamples();
+  whenCreated(e => { for (const k of group(g)) void loadKey(e, k, priority); });
 }
 
 /** Rooms 4-5 and cutscenes 3-4 (low priority, once the chapter gets there: room 3 on). */

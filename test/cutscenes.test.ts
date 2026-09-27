@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
-import { FILES } from "../src/audio/sfx.ts";
+import { FILES, sampleGroup } from "../src/audio/sfx.ts";
 import { FIRST, GAP, HOLD, lineLen, onScreen, ORIGIN, planPanel, PUSH, pushed, readTime, type Shown, type TimedLine } from "../src/ui/cutsceneTiming.ts";
 
 type Panel = { lines: TimedLine[]; dur?: number; box?: [number, number, number, number]; push?: number };
@@ -33,7 +33,23 @@ function mp3Seconds(path: URL): number {
   return (frames * 1152) / sr;
 }
 
-const CUTS = ["c1", "e1", "c2", "c3", "c4"];
+const CUTS = ["c1", "e1", "c2", "cs3a", "c3", "c4"];
+
+test("room 3 goes up to room 4 through the elevator cutscene: four panels on disk, one narrator line each, its own sound group", () => {
+  const room3 = JSON.parse(readFileSync(new URL("levels/room3.json", root), "utf8")) as { root: { components: { data: { properties: { data: { room: { next: string; cutsceneAfter?: string; exitHold?: number } } } } } } };
+  const room = room3.root.components.data.properties.data.room;
+  assert.equal(room.next, "room4");
+  assert.equal(room.cutsceneAfter, "cs3a");
+  assert.ok((room.exitHold ?? 0) > 0, "the doors open before the panels");
+  const cs = load("cs3a") as { panels: Array<Panel & { image?: string }> };
+  assert.equal(cs.panels.length, 4);
+  for (const p of cs.panels) {
+    assert.ok(p.image && existsSync(new URL(p.image.slice(1), root)), `${p.image} missing`);
+    assert.ok(p.box && p.box.every(v => v > 0 && v < 1), "a caption box over the painted one");
+    assert.deepEqual(p.lines.map(l => l.speaker ?? "narrator"), ["narrator"]);
+    assert.equal(sampleGroup(clip(p.lines[0])), "cs3a");
+  }
+});
 
 test("every cutscene clip is on disk and in the preload list", () => {
   const pre = new Set<string>(FILES);

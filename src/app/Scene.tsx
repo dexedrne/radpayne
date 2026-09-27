@@ -27,8 +27,6 @@ import { HudFrame } from "../ui/hud/HudFrame.tsx";
 import { backendIs, dprFor, useGfx } from "./look/gfx.ts";
 import { shareShaders } from "./look/shaderShare.ts";
 import type { WebGPURenderer } from "three/webgpu";
-import { useFrame, useThree } from "@react-three/fiber";
-import { frameGrab, renderGate } from "./frame.ts";
 
 const FORCE_WEBGL = new URLSearchParams(location.search).has("webgl2");
 /** ?noshare: every object its own shaders again (look/shaderShare.ts off: the A/B check). */
@@ -41,17 +39,6 @@ export const scenePending = { n: 0 };
 function LoadBridge() {
   const pending = useScenePendingLoads();
   useEffect(() => { scenePending.n = pending; }, [pending]);
-  return null;
-}
-
-/** Hands a frame still to whoever asked (frame.ts grabFrame): after the look's render (priority 1), in
- *  the same task, on a frame that was drawn. */
-function FrameGrab() {
-  const gl = useThree(st => st.gl);
-  useFrame(() => {
-    const want = frameGrab.want;
-    if (want && !renderGate.skip) want(gl.domElement);
-  }, 2);
   return null;
 }
 
@@ -95,7 +82,6 @@ export function Scene({ s, onPhase, bootRef }: { s: Session; onPhase: (p: string
       }}
     >
       <RoomLook level={s.level} s={s} />
-      <FrameGrab />
       <PrefabRoot data={prefab}>
         <AssetsBridge />
         <LoadBridge />

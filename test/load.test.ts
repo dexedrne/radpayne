@@ -144,6 +144,9 @@ test("sound groups: cutscene 1's lines first, the fight loop after the room's so
   for (const k of ["sfx/handcannon_shot", "sfx/handcannon_mag_in", "sfx/sawedoff_shot", "sfx/sawedoff_close", "sfx/secret_door", "sfx/plywood_break"]) assert.equal(sampleGroup(k), "later", k);
   // every arsenal file is in the preload lists
   for (const k of ["sniper_shot_2", "handcannon_shot_3", "sawedoff_shot_2", "grenade_bounce_2", "katana_hit", "meow_sulky_3", "secret_door", "plywood_break", "scope_out"]) assert.ok((FILES as readonly string[]).includes(`sfx/${k}`), k);
+  // the elevator cutscene after room 3: its own group (loaded as room 3 starts), never room 1's
+  for (const k of ["cs3a_01", "cs3a_02", "cs3a_03", "cs3a_04"]) assert.equal(sampleGroup(`voices/narrator/${k}`), "cs3a", k);
+  assert.equal(sampleGroup("voices/narrator/cs3_01"), "end");
   // a file nobody listed is a room-1 file (never silent in room 1)
   assert.equal(sampleGroup("sfx/brand_new_sound"), "room");
 });

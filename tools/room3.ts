@@ -466,7 +466,7 @@ const prefab = {
         properties: {
           data: {
             room: {
-              name: "The Back of the House", next: "room4", music: "backrooms", look: "backrooms", footsteps: "hard",
+              name: "The Back of the House", next: "room4", cutsceneAfter: "cs3a", music: "backrooms", look: "backrooms", footsteps: "hard",
               enterLine: "r3_enter", enterDelay: 1.0, clearLine: "r3_clear", tutorial: false, drops: { rusher: "smgs_ammo" },
               prompt: "the service elevator. the key.", exitHold: 2.6,
             },

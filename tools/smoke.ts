@@ -4,6 +4,9 @@
 // shot) and a wide shot of the street.
 //   RADPAYNE_CHROME_PROFILE=<throwaway dir> node tools/smoke.ts [url] [outDir]
 //   RADPAYNE_GPU=1       use the machine's GPU through ANGLE/GL (add &webgl2 to the url); default SwiftShader
+//   RADPAYNE_GPU=webgpu  the machine's GPU with WebGPU (Vulkan; the default renderer, no &webgl2). The adapter
+//                        is there on an http page (about:blank gets none)
+//   RADPAYNE_UNTIL=<room>:<s>  stop once that room has played <s> seconds (e.g. room4:8: a chain's handover)
 //   RADPAYNE_CUTSCENE=1  first play the title -> cutscene path and shoot a panel
 //   RADPAYNE_WIDE=<cam>[|query][;...]  finally hold the camera on level camera markers and shoot them (the
 //                        url's room carries over; e.g. "cam-floor|still;cam-dj|look=fight&still")
@@ -29,7 +32,10 @@ const outDir = path.resolve(process.argv[3] ?? ".local/shots/smoke");
 fs.mkdirSync(outDir, { recursive: true });
 fs.mkdirSync(profile, { recursive: true });
 const gpu = process.env.RADPAYNE_GPU === "1";
-const gfx = gpu
+const webgpu = process.env.RADPAYNE_GPU === "webgpu";
+const gfx = webgpu
+  ? ["--enable-unsafe-webgpu", "--enable-features=Vulkan", "--use-vulkan=native", "--use-angle=vulkan", "--enable-gpu", "--ignore-gpu-blocklist"]
+  : gpu
   ? ["--use-angle=gl", "--use-gl=angle", "--enable-gpu", "--ignore-gpu-blocklist"]
   : ["--enable-unsafe-webgpu", "--enable-features=Vulkan", "--use-angle=swiftshader"];
 
@@ -42,7 +48,8 @@ const browser = await puppeteer.launch({
 });
 const log: string[] = [];
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
-type State = { phase: string; t: number; hp: number; kills: number; alive: number; ts: number; mode: string; fps: number; screen: string; proj: number; dodges: number; bt: number; cut: string; room: string; br: number; beats: string[] } | null;
+type State = { phase: string; t: number; hp: number; kills: number; alive: number; ts: number; mode: string; fps: number; screen: string; proj: number; dodges: number; bt: number; cut: string; room: string; br: number; beats: string[]; loading: boolean } | null;
+const [untilRoom, untilS] = (process.env.RADPAYNE_UNTIL ?? "").split(":");
 let code = 1;
 try {
   const page = await browser.newPage();
@@ -98,6 +105,7 @@ try {
       const rp = (window as unknown as { __rp?: { session: { game: G; roomId: string }; fps: number } }).__rp;
       const g = rp?.session.game;
       const scr = document.querySelector("[data-testid=results]") ? "results" : "";
+      const loading = !!document.querySelector(".rp-loading");
       const c = document.querySelector("[data-testid=cutscene]") as HTMLElement | null;
       const cut = c ? `${c.dataset.cut}-${Number(c.dataset.panel) + 1}` : "";
       // round 3: the ride's stops and legs, the boss's phases and tells (one shot each, the first time)
@@ -112,7 +120,7 @@ try {
         if (b.grenades.length) beats.push("boss-grenade");
         if (b.chandelier !== "up") beats.push(`boss-chandelier-${b.chandelier}`);
       }
-      return g ? { phase: g.phase, t: g.realTime, hp: g.player.health, kills: g.stats.kills, alive: g.alive, ts: g.timeScale, mode: g.player.mode, fps: rp!.fps, screen: scr, proj: g.projectiles.length, dodges: g.stats.dodges, bt: g.stats.btTime, cut, room: rp!.session.roomId, br: g.breached?.length ?? 0, beats } : null;
+      return g ? { phase: g.phase, t: g.realTime, hp: g.player.health, kills: g.stats.kills, alive: g.alive, ts: g.timeScale, mode: g.player.mode, fps: rp!.fps, screen: scr, proj: g.projectiles.length, dodges: g.stats.dodges, bt: g.stats.btTime, cut, room: rp!.session.roomId, br: g.breached?.length ?? 0, beats, loading } : null;
     })) as State;
     if (last) {
       if (!firstRoom) firstRoom = last.room;
@@ -132,6 +140,9 @@ try {
       if (kc.phase === "flight" && kc.t > kc.flight * 0.45 && !shots.has(`kc${kc.n}-a-ride`)) { shots.add(`kc${kc.n}-a-ride`); await page.screenshot({ path: path.join(outDir, `kc${kc.n}-a-ride.png`) }); log.push(`SHOT kc${kc.n}-a-ride (${kc.kind}: ${kc.tag}) at ${((Date.now() - t0) / 1000).toFixed(1)} s`); }
       if (kc.phase === "xray" && kc.t > kc.flight + 0.2 && !shots.has(`kc${kc.n}-b-xray`)) { shots.add(`kc${kc.n}-b-xray`); await page.screenshot({ path: path.join(outDir, `kc${kc.n}-b-xray.png`) }); log.push(`SHOT kc${kc.n}-b-xray (${kc.kind}: ${kc.tag}) at ${((Date.now() - t0) / 1000).toFixed(1)} s`); }
     }
+    // the loading card between rooms (a room's start waiting on what is not ready yet)
+    if (last?.loading && !last.cut && curRoom !== firstRoom && !shots.has(`${curRoom}-loading`)) { log.push(`LOADING CARD in ${curRoom} at ${((Date.now() - t0) / 1000).toFixed(1)} s`); await shot("loading"); }
+    if (untilRoom && last && last.room === untilRoom && !last.cut && last.phase === "play" && last.t >= Number(untilS)) { await shot("until"); log.push(`UNTIL ${untilRoom} played ${last.t.toFixed(1)} s`); code = 0; break; }
     if (last?.cut) {
       // a cutscene panel: shoot it once its caption is in
       cutSeen[last.cut] ??= Date.now();
@@ -156,9 +167,9 @@ try {
   log.push(`STATE ${JSON.stringify(last)} after ${((Date.now() - t0) / 1000).toFixed(1)} s`);
   const voices = (await page.evaluate(() => (window as unknown as { __rp?: { voices?: string[] } }).__rp?.voices ?? [])) as string[];
   log.push(`VOICES ${voices.length}: ${voices.join(", ")}`);
-  // by speaker (the folder), the cutscene lines apart (cs1_ / cs2_ / e1_: the panels, whoever speaks
+  // by speaker (the folder), the cutscene lines apart (cs1_ / cs2_ / cs3a_ / e1_: the panels, whoever speaks
   // them), per fight minute
-  const isCut = (v: string) => /^[a-z_]+\/(cs\d|e\d)_/.test(v.split(" ")[0]);
+  const isCut = (v: string) => /^[a-z_]+\/(cs\d[a-z]?|e\d)_/.test(v.split(" ")[0]);
   const by = new Map<string, number>();
   for (const v of voices) {
     const key = v.split(" ")[0];

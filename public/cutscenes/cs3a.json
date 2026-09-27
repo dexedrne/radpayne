@@ -1,0 +1,55 @@
+{
+  "id": "cs3a",
+  "title": "Chapter 1: Rugged",
+  "music": "backrooms",
+  "panels": [
+    {
+      "image": "/cutscenes/cs3a/panel_1.webp",
+      "tone": "guns",
+      "box": [0.021, 0.033, 0.182, 0.077],
+      "lines": [
+        {
+          "audio": "cs3a_01",
+          "text": "the key turned easy. nothing after it would."
+        }
+      ],
+      "dur": 4.4
+    },
+    {
+      "image": "/cutscenes/cs3a/panel_2.webp",
+      "tone": "guns",
+      "box": [0.019, 0.029, 0.199, 0.077],
+      "lines": [
+        {
+          "audio": "cs3a_02",
+          "text": "the gate folded shut on the back of the house. the bass went on without me."
+        }
+      ],
+      "dur": 7.0
+    },
+    {
+      "image": "/cutscenes/cs3a/panel_3.webp",
+      "tone": "guns",
+      "box": [0.018, 0.031, 0.178, 0.09],
+      "lines": [
+        {
+          "audio": "cs3a_03",
+          "text": "the needle crawled up the dial. somewhere above me, somebody was watching it too."
+        }
+      ],
+      "dur": 6.5
+    },
+    {
+      "image": "/cutscenes/cs3a/panel_4.webp",
+      "tone": "street",
+      "box": [0.023, 0.034, 0.182, 0.083],
+      "lines": [
+        {
+          "audio": "cs3a_04",
+          "text": "going up is easy. it's the stops that get you."
+        }
+      ],
+      "dur": 4.5
+    }
+  ]
+}
