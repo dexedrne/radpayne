@@ -243,7 +243,7 @@ const markers: Node[] = [
   marker("trigger-exit", "trigger", [7.0, 1, 16.0], { action: "exit" }, 0, [3.2, 3, 2.0]),
   // lights: the car's caged bulb and a cool fill; sodium over the laundry, cool gallery spots, work lamps
   ...([
-    ["car-bulb", 1.3, 2.9, 0, "#ffd29a", 7, 6], ["car-fill", -1.2, 2.8, -0.6, "#cfd8ea", 4, 6],
+    ["car-fill", -1.2, 2.8, -0.6, "#cfd8ea", 4, 6], // (the caged bulb's light is RideView's: it dies with the cables)
     ["l1-a", 6.2, 2.5, -1.2, "#ffb266", 12, 9], ["l1-b", 10.6, 2.5, 0.6, "#ffb266", 12, 9],
     ["l2-a", -6, 3.0, -1.5, "#e4ecff", 11, 9], ["l2-b", -10, 3.0, -1.5, "#e4ecff", 11, 9], ["l2-c", -14, 3.0, -1.5, "#e4ecff", 11, 9], ["l2-stair", -19.2, 2.8, -4.2, "#ff2a1a", 3, 4],
     ["l3-a", -4, 2.6, 6, "#ffd9a8", 12, 10], ["l3-b", 3, 2.6, 6.5, "#ffd9a8", 12, 10], ["l3-c", -3, 2.6, 11.5, "#ffd9a8", 12, 10], ["l3-d", 4, 2.6, 12.5, "#ffd9a8", 12, 10], ["l3-e", 0, 2.6, 15.5, "#ffd9a8", 10, 9],
@@ -268,7 +268,7 @@ const materials: Record<string, Record<string, unknown>> = {
   carCeil: tex(`${E}car_wall_steel.webp`, 2, { roughness: 0.5, metalness: 0.4 }),
   carPanel: glow("#ffffff", 0.5, "", `${E}car_panel.webp`),
   dial: glow("#ffffff", 0.4, "", `${E}floor_dial.webp`),
-  bulb: glow("#ffd29a", 0.9),
+  bulb: glow("#ffd29a", 0.9, "flicker"),
   hazard: tex(`${E}hazard_sill.webp`, [0.5, 0.06], { roughness: 0.7 }),
   hazardX: tex(`${E}hazard_sill.webp`, [0.5, 0.06], { roughness: 0.7 }),
   crate: tex(`${B}boxes_cardboard.webp`, 0.6, { roughness: 0.9 }),

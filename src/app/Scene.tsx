@@ -11,6 +11,8 @@ import { EnemiesView } from "./EnemiesView.tsx";
 import { HeavyView } from "./HeavyView.tsx";
 import { CrowdView } from "./CrowdView.tsx";
 import { PropsView } from "./PropsView.tsx";
+import { RideView } from "./RideView.tsx";
+import { BossView } from "./BossView.tsx";
 import { CameraView, CAMERA_NODE, FOV } from "./CameraView.tsx";
 import { FxView } from "./FxView.tsx";
 import { AssetsBridge } from "./characters.ts";
@@ -84,6 +86,8 @@ export function Scene({ s, onPhase, bootRef }: { s: Session; onPhase: (p: string
         <HeavyView s={s} />
         <CrowdView s={s} />
         <PropsView s={s} />
+        <RideView s={s} />
+        <BossView s={s} />
         <FxView s={s} />
         <CameraView s={s} />
         <DebugView s={s} />

@@ -39,7 +39,7 @@ const browser = await puppeteer.launch({
 });
 const log: string[] = [];
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
-type State = { phase: string; t: number; hp: number; kills: number; alive: number; ts: number; mode: string; fps: number; screen: string; proj: number; dodges: number; bt: number; cut: string; room: string; br: number } | null;
+type State = { phase: string; t: number; hp: number; kills: number; alive: number; ts: number; mode: string; fps: number; screen: string; proj: number; dodges: number; bt: number; cut: string; room: string; br: number; beats: string[] } | null;
 let code = 1;
 try {
   const page = await browser.newPage();
@@ -85,13 +85,26 @@ try {
   const maxMs = Number(process.env.RADPAYNE_MAX_S ?? 300) * 1000;
   while (Date.now() - t0 < maxMs) {
     last = (await page.evaluate(() => {
-      type G = { phase: string; realTime: number; player: { health: number; mode: string }; stats: { kills: number; dodges: number; btTime: number }; alive: number; timeScale: number; projectiles: unknown[]; breached?: string[] };
+      type G = { phase: string; realTime: number; player: { health: number; mode: string }; stats: { kills: number; dodges: number; btTime: number }; alive: number; timeScale: number; projectiles: unknown[]; breached?: string[];
+        ride?: { i: number; phase: string; t: number; open: number } | null; boss?: { phase: number; lastStand: number; sweep: unknown; wind: unknown; grenades: unknown[]; chandelier: string; started: boolean } | null };
       const rp = (window as unknown as { __rp?: { session: { game: G; roomId: string }; fps: number } }).__rp;
       const g = rp?.session.game;
       const scr = document.querySelector("[data-testid=results]") ? "results" : "";
       const c = document.querySelector("[data-testid=cutscene]") as HTMLElement | null;
       const cut = c ? `${c.dataset.cut}-${Number(c.dataset.panel) + 1}` : "";
-      return g ? { phase: g.phase, t: g.realTime, hp: g.player.health, kills: g.stats.kills, alive: g.alive, ts: g.timeScale, mode: g.player.mode, fps: rp!.fps, screen: scr, proj: g.projectiles.length, dodges: g.stats.dodges, bt: g.stats.btTime, cut, room: rp!.session.roomId, br: g.breached?.length ?? 0 } : null;
+      // round 3: the ride's stops and legs, the boss's phases and tells (one shot each, the first time)
+      const beats: string[] = [];
+      const r = g?.ride, b = g?.boss;
+      if (r && (r.phase !== "leg" || r.t > 4)) beats.push(`ride-${r.i}-${r.phase === "opening" && r.open > 0.6 ? "open" : r.phase}`);
+      if (b && b.started) {
+        beats.push(`boss-p${b.phase}`);
+        if (b.lastStand) beats.push("boss-last");
+        if (b.sweep) beats.push("boss-sweep");
+        if (b.wind) beats.push("boss-windup");
+        if (b.grenades.length) beats.push("boss-grenade");
+        if (b.chandelier !== "up") beats.push(`boss-chandelier-${b.chandelier}`);
+      }
+      return g ? { phase: g.phase, t: g.realTime, hp: g.player.health, kills: g.stats.kills, alive: g.alive, ts: g.timeScale, mode: g.player.mode, fps: rp!.fps, screen: scr, proj: g.projectiles.length, dodges: g.stats.dodges, bt: g.stats.btTime, cut, room: rp!.session.roomId, br: g.breached?.length ?? 0, beats } : null;
     })) as State;
     if (last) {
       if (!firstRoom) firstRoom = last.room;
@@ -115,6 +128,7 @@ try {
       if (last.ts < 0.99 && last.phase === "play" && last.proj >= 1 && slowShots < 3) { const n = `3-slowmo-${slowShots + 1}`; if (!shots.has(n)) { await shot(n); slowShots++; } }
       if (last.mode === "dive") await shot("3-dive");
       if (last.br > 0 && !shots.has(`${curRoom}-3-breach`) && !shots.has("3-breach")) { await shot("3-breach"); await sleep(350); await shot("3-breach-2"); }
+      for (const b of last.beats ?? []) if (last.phase === "play") await shot(`r3-${b}`);
       if (last.phase === "clear") { await sleep(800); await shot("4b-clear"); }
       if (last.screen === "results") { await sleep(400); await shot("5-results"); code = 0; break; }
       if (last.phase === "dead") { await sleep(1500); await shot("5-dead"); break; }

@@ -89,7 +89,7 @@ solid.push(boxMM("dais", [11, 0, -4], [16, 0.3, 4], "marbleBlack"));
 decor.push(boxMM("dais-edge", [10.98, 0.28, -4], [11.02, 0.3, 4], "brass"));
 solid.push(boxMM("desk", [13.0, 0.3, -1.6], [14.2, 1.1, 1.6], "desk", { data: { surface: "wood" } }));
 decor.push(boxMM("desk-top", [12.95, 1.1, -1.65], [14.25, 1.14, 1.65], "marbleBlack"), boxMM("desk-lamp", [13.3, 1.14, -1.3], [13.45, 1.55, -1.15], "lampWarm"));
-decor.push(boxMM("screen", [15.95, 1.6, -3.4], [15.99, 4.9, 3.4], "screen"));
+// (the screen itself, her call on it, is BossView's: it goes dark when she steps into the fight)
 decor.push(boxMM("screen-frame", [15.97, 1.5, -3.5], [16.0, 5.0, 3.5], "brassDark"));
 decor.push(boxMM("chair-boss", [14.6, 0.3, -0.5], [15.4, 1.0, 0.5], "velvet"), boxMM("chair-boss-back", [15.2, 1.0, -0.5], [15.45, 1.9, 0.5], "velvet"));
 
@@ -156,7 +156,8 @@ const markers: Node[] = [
   marker("smgs-piano", "pickup", [-10.6, 0, -5.4], { item: "smgs" }),
   // lights: the chandelier's warm glow, lamps, the bar's amber, the screen, a cool spill from the glass
   ...([
-    ["chandelier", 0, 4.2, 0, "#ffd6a0", 30, 14], ["lamp-nw", -12, 2.2, -9, "#ffc98a", 8, 7], ["lamp-sw", -12, 2.2, 9, "#ffc98a", 8, 7],
+    // (the chandelier's own light is BossView's: it falls with it)
+    ["lamp-nw", -12, 2.2, -9, "#ffc98a", 8, 7], ["lamp-sw", -12, 2.2, 9, "#ffc98a", 8, 7],
     ["lamp-n", 4, 2.2, -10, "#ffc98a", 8, 7], ["lamp-ne", 12, 2.2, -9, "#ffc98a", 8, 7], ["lamp-se", 12, 2.2, 9, "#ffc98a", 8, 7],
     ["bar", 8, 1.4, 9.8, "#ffae4a", 10, 7], ["screen", 14.4, 3.2, 0, "#c9a8ff", 12, 9], ["glass-n", 14, 3, -8, "#8fa6d8", 10, 12], ["glass-s", 14, 3, 8, "#8fa6d8", 10, 12],
     ["vest", -18, 2.8, 0, "#ffd29a", 6, 6], ["door-a", 0, 3.4, -9.8, "#ffc98a", 4, 5], ["door-b", 0, 3.4, 9.8, "#ffc98a", 4, 5], ["piano", -8, 3.2, -6, "#ffe0b8", 8, 8],
@@ -175,10 +176,9 @@ const materials: Record<string, Record<string, unknown>> = {
   ebony: tex(`${P}wall_ebony_slats.webp`, 2, { roughness: 0.55 }),
   ebonyDark: tex(`${P}wall_ebony_slats.webp`, 2, { roughness: 0.5, color: "#aaaaaa" }),
   damask: tex(`${P}wall_damask.webp`, 1, { roughness: 0.8 }),
-  coffered: { color: "#ffffff", texture: `${P}ceiling_coffered.webp`, repeat: true, repeatCount: [1 / 3, 1 / 3], roughness: 0.9, name: "glow 0.3 cove" },
+  coffered: tex(`${P}ceiling_coffered.webp`, 3, { roughness: 0.9 }),
   rug: { color: "#ffffff", texture: `${P}rug_fur_white.webp`, roughness: 1.0 },
   onyx: glow("#ffffff", 0.5, "", `${P}bar_onyx.webp`),
-  screen: glow("#ffffff", 0.6, "", `${P}screen_idle.webp`),
   skyline: glow("#ffffff", 0.35, "", `${P}window_skyline.webp`),
   doorDouble: { color: "#ffffff", texture: `${P}door_double.webp`, roughness: 0.4 },
   sofa: { color: "#e6e1d8", roughness: 0.85 },
@@ -199,7 +199,7 @@ const materials: Record<string, Record<string, unknown>> = {
 
 writeLevel("room5", "Room 5: the penthouse", {
   name: "The Penthouse", number: 5, cutsceneAfter: "c4", music: "penthouse", look: "penthouse", footsteps: "hard", tutorial: false,
-  clearLine: "", later: ["doorA", "doorB"],
+  clearLine: "", later: ["doorA", "doorB"], chapterEnd: true,
   boss: {
     chandelier: [0, 5.3, 0], rug: [0, 0, 2.4], bag: [14.6, -2.4], terrace: [15.3, 6.3],
     doors: [{ door: "door-a", group: "doorA" }, { door: "door-b", group: "doorB" }],

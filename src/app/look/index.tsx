@@ -8,6 +8,7 @@ import { MarkerLights } from "./lights.tsx";
 import { StreetLook } from "./street.tsx";
 import { ClubLook } from "./club.tsx";
 import { BackroomsLook } from "./backrooms.tsx";
+import { ElevatorLook, PenthouseLook } from "./tower.tsx";
 
 export const FOG = "#0b0f1c";
 
@@ -35,6 +36,9 @@ export const LOOKS: Record<string, (p: LookProps) => React.ReactNode> = {
   street: StreetLook,
   club: ClubLook,
   backrooms: BackroomsLook,
+  // round 3 (tower.tsx): room 4's car and landings, room 5's penthouse
+  elevator: ElevatorLook,
+  penthouse: PenthouseLook,
 };
 
 export function RoomLook(p: LookProps) {

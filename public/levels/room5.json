@@ -35,8 +35,7 @@
    "texture": "/textures/penthouse/ceiling_coffered.webp",
    "repeat": true,
    "repeatCount": [0.3333333333333333, 0.3333333333333333],
-   "roughness": 0.9,
-   "name": "glow 0.3 cove"
+   "roughness": 0.9
   },
   "rug": {
    "color": "#ffffff",
@@ -49,13 +48,6 @@
    "toneMapped": false,
    "name": "glow 0.5",
    "texture": "/textures/penthouse/bar_onyx.webp"
-  },
-  "screen": {
-   "materialType": "basic",
-   "color": "#ffffff",
-   "toneMapped": false,
-   "name": "glow 0.6",
-   "texture": "/textures/penthouse/screen_idle.webp"
   },
   "skyline": {
    "materialType": "basic",
@@ -150,6 +142,7 @@
         "doorA",
         "doorB"
        ],
+       "chapterEnd": true,
        "boss": {
         "chandelier": [0, 5.3, 0],
         "rug": [0, 0, 2.4],
@@ -2791,38 +2784,6 @@
       }
      },
      {
-      "id": "screen",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [15.97, 3.25, 0],
-         "scale": [0.04, 3.3, 6.8]
-        }
-       },
-       "geometry": {
-        "type": "Geometry",
-        "properties": {
-         "geometryType": "box",
-         "args": [1, 1, 1]
-        }
-       },
-       "material": {
-        "type": "Material",
-        "properties": {
-         "materialId": "screen"
-        }
-       },
-       "mesh": {
-        "type": "Mesh",
-        "properties": {
-         "castShadow": false,
-         "receiveShadow": false
-        }
-       }
-      }
-     },
-     {
       "id": "screen-frame",
       "components": {
        "transform": {
@@ -4759,28 +4720,6 @@
          "data": {
           "marker": "pickup",
           "item": "smgs"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "light-chandelier",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [0, 4.2, 0]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "light",
-          "color": "#ffd6a0",
-          "intensity": 30,
-          "distance": 14
          }
         }
        }

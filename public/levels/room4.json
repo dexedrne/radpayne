@@ -65,7 +65,7 @@
    "materialType": "basic",
    "color": "#ffd29a",
    "toneMapped": false,
-   "name": "glow 0.9"
+   "name": "glow 0.9 flicker"
   },
   "hazard": {
    "color": "#ffffff",
@@ -7379,28 +7379,6 @@
          "data": {
           "marker": "trigger",
           "action": "exit"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "light-car-bulb",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [1.3, 2.9, 0]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "light",
-          "color": "#ffd29a",
-          "intensity": 7,
-          "distance": 6
          }
         }
        }

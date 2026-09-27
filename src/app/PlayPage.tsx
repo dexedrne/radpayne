@@ -37,13 +37,16 @@ import { FightPrompt, Loading, Pause, ResultsScreen, Title, layer } from "../ui/
 import { Cutscene, loadCutscene, prefetchCutscene, type CutsceneData } from "../ui/Cutscene.tsx";
 import { attachDom } from "../input/input.ts";
 import { setMuted, unlockAudio } from "../audio/engine.ts";
-import { groupReady, loadLaterSamples, loadSamples, setFootsteps, setHeartbeat, setMusic, setMusicGate, stopNarration, stopRoomAudio } from "../audio/sfx.ts";
+import { groupReady, loadEndSamples, loadLaterSamples, loadSamples, setFootsteps, setHeartbeat, setMusic, setMusicGate, stopNarration, stopRoomAudio } from "../audio/sfx.ts";
 import { Bot } from "../sim/bot.ts";
 import type { WeaponId } from "../combat/weapons.ts";
 import { frames, prefetchGoons, roomWarm, warmRoom } from "./warmup.ts";
 import { renderGate } from "./frame.ts";
 import { roomText } from "../ui/rooms.ts";
 import { bridge, roomResult } from "../radbro/bridge.ts";
+import { BossBar } from "../ui/hud/BossBar.tsx";
+import { MADAME } from "../sim/tuning.ts";
+import type { Stats } from "../sim/game.ts";
 
 const DEV = import.meta.env.MODE !== "production";
 const params = new URLSearchParams(location.search);
@@ -140,8 +143,22 @@ function loadLater(): void {
   void loadOptional(MILADY_R2);
   prefetchCutscene("e1");
 }
-/** Model numbers used this visit (a later room's gang gets other girls). */
-const usedPockits = new Set<number>();
+/** Model numbers used this visit (a later room's gang gets other girls). Madame Pockit's is never a goon's. */
+const usedPockits = new Set<number>([MADAME.pockit]);
+/** Round 3: each room cleared this run, its stats (a retry overwrites; the chapter's results add them up). */
+const chapterRun = new Map<string, Stats>();
+function chapterTotals(): { stats: Stats; rooms: number } {
+  const t: Stats = { kills: 0, headshots: 0, shots: 0, hits: 0, damageTaken: 0, copiumUsed: 0, time: 0, btTime: 0, dodges: 0 };
+  for (const st of chapterRun.values()) for (const k of Object.keys(t) as Array<keyof Stats>) t[k] += st[k];
+  return { stats: t, rooms: chapterRun.size };
+}
+/** Round 3: the rooms past the back of the house get their sounds (their own load group) and the
+ *  cutscene after them ahead of time. */
+function aheadOf(roomId: string): void {
+  if (roomId === "room3" || roomId === "room4" || roomId === "room5") loadEndSamples();
+  if (roomId === "room4") prefetchCutscene("c3", 1);
+  if (roomId === "room5") prefetchCutscene("c4", 1);
+}
 const hashId = (id: string) => { let h = 2166136261; for (const c of id) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
 
 const canvasEl = () => document.querySelector("canvas");
@@ -339,6 +356,7 @@ export default function PlayPage() {
     await holdRoom(session);
     useUi.setState({ screen: "play" });
     loadLater();
+    aheadOf(session.roomId);
     bridge().result("run");
     setPadFight(false);
     session.input.flush();
@@ -382,7 +400,11 @@ export default function PlayPage() {
       // room 1's own sounds; a later room's (already loading since room 1 started; a dev ?room= start
       // asks for them here)
       if (s.roomId !== "room1") loadLaterSamples();
+      // rooms 4-5: their own group too (the ride, the boss, her voice)
+      const end = !!(s.game.ride || s.game.boss);
+      if (end) loadEndSamples();
       await groupReady(s.roomId === "room1" ? "room" : "later", 6000);
+      if (end) await groupReady("end", 8000);
       // a few frames out of sight (the card or the panels cover the canvas): the post chain, anything
       // that changed since
       compiling = true;
@@ -432,6 +454,7 @@ export default function PlayPage() {
     if (!session) return;
     unlockAudio();
     void loadSamples();
+    chapterRun.clear();
     // straight to cutscene 1 once its lines are in (the room's files load under the panels; the room's
     // start waits for the rest: holdRoom)
     useUi.setState({ screen: "loading", load: { progress: 0, label: "", error: null } });
@@ -465,6 +488,7 @@ export default function PlayPage() {
     mount(ns); // (already there when it got ready under the cutscene before it)
     await holdRoom(ns);
     useUi.setState({ screen: "play" });
+    aheadOf(ns.roomId);
     bridge().result("run");
     ns.input.flush();
     ns.stepper.reset();
@@ -495,7 +519,10 @@ export default function PlayPage() {
       setHeartbeat(false);
       setFootsteps(0);
       const g = session.game;
-      const results = { cleared: phase === "done", stats: { ...g.stats }, room: session.roomId, difficulty: g.difficulty, radbro: useUi.getState().radbro };
+      if (phase === "done") chapterRun.set(session.roomId, { ...g.stats });
+      // the chapter's last room (room 5): its results are the chapter's (after cutscene 4's card)
+      const chapterEnd = phase === "done" && session.level.room.chapterEnd === true;
+      const results = { cleared: phase === "done", stats: { ...g.stats }, room: session.roomId, difficulty: g.difficulty, radbro: useUi.getState().radbro, ...(chapterEnd ? { chapter: chapterTotals() } : {}) };
       // room 3 holds the last frame while the elevator opens (room.exitHold seconds)
       const hold = phase === "done" && typeof session.level.room.exitHold === "number" ? session.level.room.exitHold * 1000 : 0;
       const show = () => { if (hold) setTimeout(() => useUi.setState({ screen: "results", results }), hold); else useUi.setState({ screen: "results", results }); };
@@ -527,7 +554,8 @@ export default function PlayPage() {
         });
         return;
       }
-      goOn();
+      // no cutscene: the last frame holds while the room's exit plays out (room 3's elevator doors)
+      if (hold) setTimeout(goOn, hold); else goOn();
     }
   }, [session, enterRoom, prepareNext]);
 
@@ -575,6 +603,7 @@ export default function PlayPage() {
       {screen === "loading" && <Loading />}
       {screen === "cutscene" && cut && <Cutscene key={cut.data.id} data={cut.data} onDone={() => { const then = cut.then; setCut(null); then(); }} />}
       {screen === "play" && <Hud />}
+      {screen === "play" && <BossBar />}
       {screen === "play" && !locked && !padFight && !BOT && !STILL && <FightPrompt onLock={() => { session?.input.flush(); lock(); }} />}
       {screen === "paused" && <Pause onResume={() => { useUi.setState({ screen: "play" }); if (session) { session.input.flush(); session.paused = !BOT && !document.pointerLockElement && !padFightRef.current; } lock(); }} onRestart={retry} onQuit={toTitle} />}
       {screen === "results" && <ResultsScreen onRetry={retry} onTitle={toTitle} />}

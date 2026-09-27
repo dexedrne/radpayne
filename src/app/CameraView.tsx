@@ -23,6 +23,9 @@ const DEV_CAM = import.meta.env.MODE !== "production" ? new URLSearchParams(loca
 export const FOV = 68;
 /** The current camera arm (the player fades out when a wall pulls the camera into his head). */
 export const camView = { arm: SHOULDER.arm as number, right: SHOULDER.right as number };
+/** Round 3: a short jolt of the whole view (the thud on the car's roof, the brakes catching): `t` real
+ *  seconds left of `dur`, a shake of `amp` m and a drop of `drop` m that settles. Set by RideView. */
+export const camJolt = { t: 0, dur: 0.25, amp: 0, drop: 0 };
 const FOV_BT = 60;
 export function CameraView({ s }: { s: Session }) {
   const prefab = usePrefab();
@@ -118,6 +121,13 @@ export function CameraView({ s }: { s: Session }) {
       if (tmp.kick > 0) {
         const j = tmp.kick * 0.06;
         tmp.eye.x += (Math.random() - 0.5) * j; tmp.eye.y += (Math.random() - 0.5) * j;
+      }
+      if (camJolt.t > 0) {
+        camJolt.t = Math.max(0, camJolt.t - dt);
+        const k = camJolt.t / camJolt.dur;
+        const dy = -camJolt.drop * Math.sin(Math.PI * Math.min(1, (1 - k) * 1.6)) * k + (Math.random() - 0.5) * camJolt.amp * k;
+        const dx = (Math.random() - 0.5) * camJolt.amp * k;
+        tmp.eye.x += dx; tmp.eye.y += dy; tmp.at.x += dx; tmp.at.y += dy;
       }
     }
     tmp.m.lookAt(tmp.eye, tmp.at, tmp.up);

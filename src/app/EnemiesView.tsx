@@ -37,6 +37,8 @@ const params = new URLSearchParams(location.search);
 const NO_MILADY = params.get("milady") === "0";
 
 export const enemyMuzzles: Vector3[] = [];
+/** Each goon's model once mounted (by enemy index; round 3: BossView dresses Madame Pockit's). */
+export const goonModels: Array<LoadedGoon | null> = [];
 
 type GoonView = {
   idx: number;
@@ -124,6 +126,7 @@ export function EnemiesView({ s }: { s: Session }) {
       const mount = (v: GoonView, m: LoadedGoon) => {
         if (cancelled || v.model) return;
         v.model = m;
+        goonModels[v.idx] = m;
         v.player = new AnimPlayer(m.vrm.scene, [m.clips], { fade: 0.2 });
         if (m.hit) { v.hit = v.player.mixer.clipAction(m.hit); v.hit.setLoop(LoopOnce, 1); }
         // shown only once a clip has posed her (the bones pass checks): never a frame of bind pose
@@ -177,6 +180,7 @@ export function EnemiesView({ s }: { s: Session }) {
     return () => {
       cancelled = true;
       off();
+      goonModels.length = 0;
       for (const v of views) {
         group.remove(v.root);
         v.gun.removeFromParent();
@@ -238,6 +242,7 @@ export function EnemiesView({ s }: { s: Session }) {
         }
       } else v.yaw += wrapAngle(e.facing - v.yaw) * Math.min(1, 14 * dt);
       v.root.position.set(p.x, p.y, p.z);
+      v.root.scale.setScalar(e.hit.pose.scale ?? 1); // Madame Pockit is a size up (her hit skeleton too)
       tmp.q.setFromAxisAngle(UP, v.player && e.state !== "dead" ? v.legYaw : v.yaw);
       v.root.quaternion.copy(tmp.q);
       // stand-in poses (no clips): crouch squash, lying dead

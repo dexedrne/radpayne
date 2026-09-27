@@ -13,10 +13,10 @@
 // are dropped), subtitle and all. The room's rusher line is the room's own (room.rusherLine).
 import type { Session } from "./session.ts";
 import type { GameEvent } from "../sim/types.ts";
-import { bark, crowdVoice, heavyBark, narrate, pa, radbro, stopNarration, type BarkKind, type GoonVoice, type HeavyLine, type RadbroLine } from "../audio/sfx.ts";
+import { bark, crowdVoice, heavyBark, narrate, pa, radbro, stopNarration, worldVoice, type BarkKind, type GoonVoice, type HeavyLine, type RadbroLine } from "../audio/sfx.ts";
 import { useUi } from "../ui/store.ts";
 import { PLAYER } from "../sim/tuning.ts";
-import { ROUND3_CLEAR_LINES, ROUND3_HINTS, ROUND3_NARRATION } from "./round3Lines.ts";
+import { MADAME, ROUND3_BARKS, ROUND3_CLEAR_LINES, ROUND3_HINTS, ROUND3_NARRATION } from "./round3Lines.ts";
 
 /** this.io.now() until which goon i is talking (EnemiesView moves the mouth). */
 export const goonTalk: number[] = [];
@@ -87,9 +87,11 @@ export type DirectorIO = {
   bark(voice: GoonVoice, kind: BarkKind, dist: number, pan: number, pitch?: number): number;
   radbro(line: RadbroLine, delay?: number, gain?: number): number;
   crowdVoice(line: string, dist: number, pan: number, pitch?: number): boolean;
+  /** Round 3: a voice line in the world ("madame/intro", "goon_a/doors_1", ...); its length. */
+  worldVoice?(key: string, dist: number, pan: number, gain?: number): number;
 };
 export const SFX_IO: DirectorIO = {
-  now: () => performance.now(), later: (fn, ms) => { setTimeout(fn, ms); }, narrate: l => narrate(l), stopNarration, pa, heavyBark, bark, radbro, crowdVoice,
+  now: () => performance.now(), later: (fn, ms) => { setTimeout(fn, ms); }, narrate: l => narrate(l), stopNarration, pa, heavyBark, bark, radbro, crowdVoice, worldVoice,
 };
 
 export class Director {
@@ -126,6 +128,12 @@ export class Director {
   /** PA / heavy lines held while the narrator talks: played in order once the air is clear, dropped
    *  past `until`; `go` plays one and returns its length (0 = not played). */
   private held: Array<{ until: number; go: () => number }> = [];
+  /** Round 3: Madame Pockit's last grenade line, her next hit / taunt / reload line (real s). */
+  private madameLast = "";
+  private madameHit = 0;
+  private madameTaunt = 0;
+  private madameReload = 0;
+  private tauntAlt = 0;
 
   private readonly io: DirectorIO;
 
@@ -162,6 +170,10 @@ export class Director {
     this.otherUntil = 0;
     this.held = [];
     this.noHint.clear();
+    this.madameLast = "";
+    this.madameHit = 0;
+    this.madameTaunt = 0;
+    this.madameReload = 0;
     // the room's opening line (not again on a retry from a checkpoint inside the room)
     const enter = this.s.level.room.enterLine;
     if (typeof enter === "string" && !g.resumed) this.say(enter, typeof this.s.level.room.enterDelay === "number" ? this.s.level.room.enterDelay : 1.5);
@@ -269,7 +281,7 @@ export class Director {
     if (now < this.barkPlaying) return;
     if (!force && (now < this.barkUntil || now < (this.goonNext[i] ?? 0))) return;
     const e = this.s.game.enemies[i];
-    if (!e) return;
+    if (!e || e.kind === "madame") return; // (her own lines: madame())
     if (e.kind === "heavy") {
       // the heavy's own few words (never the girls' voices)
       const line: HeavyLine | null = kind === "alert" ? "alert_1" : kind === "hit" ? (Math.random() < 0.5 ? "hit_1" : "hit_2") : kind === "spotted" ? (Math.random() < 0.5 ? "spotted_1" : "spotted_2") : kind === "reload" ? "reload_1" : null;
@@ -333,7 +345,7 @@ export class Director {
         const en = g.enemies[e.enemy];
         this.bark(e.enemy, "alert");
         this.say("tut_shoot", 1.6);
-        if (en?.kind === "heavy") this.say("r3_heavy", 1.0);
+        if (en?.kind === "heavy" && this.s.level.room.look === "backrooms") this.say("r3_heavy", 1.0);
         if (this.dj >= 0) this.pa("pa_1", 0.4);
         break;
       }
@@ -353,6 +365,8 @@ export class Director {
         break;
       case "trigger":
         if (e.action === "spawn" && e.group === "backup" && this.dj >= 0) this.pa("pa_3", 0.3);
+        // room 4: the stairwell reinforcements on the second stop
+        if (e.action === "spawn" && e.group === "L2b") this.say("r4_reinforce", 0.3);
         // the locked office door: the line and its key hint
         if (e.action === "breach") this.say("r3_breach", 0.2);
         break;
@@ -371,7 +385,8 @@ export class Director {
       case "swap":
         break;
       case "hurt":
-        if (e.target >= 0 && e.hp > 0 && Math.random() < 0.55) this.bark(e.target, "hit", true);
+        if (e.target >= 0 && e.hp > 0 && g.enemies[e.target]?.kind === "madame") { if (e.amount > 0 && now >= this.madameHit && Math.random() < 0.35) { this.madameHit = now + 3; this.madame(Math.random() < 0.5 ? "hit_1" : "hit_2", 0.5); } }
+        else if (e.target >= 0 && e.hp > 0 && Math.random() < 0.55) this.bark(e.target, "hit", true);
         else if (e.target === -1) this.playerHurt(e.hp);
         break;
       case "bt":
@@ -399,10 +414,87 @@ export class Director {
         else if (e.item === "shotgun") this.say("r3_shotgun", 0.4);
         else if (e.item === "smgs") this.say("r3_smgs", 0.4);
         break;
+      case "ride": this.onRide(e); break;
+      case "boss": this.onBoss(e); break;
       case "kill":
         if (g.stats.kills === 2 && !this.said.has("tut_bullet_time")) this.say("tut_bullet_time", 0.2);
         if (g.enemies[e.target]?.kind === "heavy") this.heavy(e.target, "death_1", true);
         break;
+    }
+  }
+
+  /** A line in the world from someone other than the narrator (the landing girls, the roof heavy, her):
+   *  now if the air is clear, else held up to `wait` s; subtitled with `text` when given. */
+  private voiceAt(key: string, x: number, z: number, text: string, wait: number, talker = -1): void {
+    const run = this.run;
+    this.other(wait, () => {
+      if (run !== this.run) return 0;
+      const now = this.io.now() / 1000;
+      const { dist, pan } = this.where(x, z);
+      const len = this.io.worldVoice?.(key, dist, pan) ?? 0;
+      if (len <= 0) return 0;
+      this.barkUntil = now + len + 0.8;
+      this.barkPlaying = now + len;
+      if (talker >= 0) goonTalk[talker] = this.io.now() + len * 1000;
+      if (text) this.sub(text, Math.max(1.6, len + 0.6));
+      return len;
+    });
+  }
+
+  /** Madame Pockit's line (voices/madame), subtitled when it has words; never over the narrator. */
+  private madame(line: string, wait = 2): void {
+    const b = this.s.game.boss;
+    const e = b ? this.s.game.enemies[b.idx] : undefined;
+    if (!b || !e || (e.state === "dead" && line !== "down_1")) return;
+    this.voiceAt(`madame/${line}`, e.x, e.z, MADAME[line] ?? "", wait, b.idx);
+  }
+
+  /** Room 4: the ride's lines (the stops, the roof heavy, the cables). */
+  private onRide(e: Extract<GameEvent, { type: "ride" }>): void {
+    const g = this.s.game;
+    switch (e.what) {
+      case "open": {
+        // a girl at the landing: "going up?" (the first stop), "surprise." (the second)
+        const key = e.stop === "S1" ? "goon_a/doors_1" : e.stop === "S2" ? "goon_b/doors_1" : "";
+        const group = e.stop === "S1" ? "L1" : "L2";
+        const who = key ? g.enemies.find(k => k.group === group && k.kind === "goon" && k.state !== "dead") : undefined;
+        if (key && who) this.voiceAt(key, who.x, who.z, ROUND3_BARKS[key] ?? "", 1.5, who.idx);
+        if (e.stop === "S1") this.say("r4_stop1", 1.6);
+        break;
+      }
+      case "roof": this.say("r4_heavy", 0.5); break;
+      case "land": {
+        const h = g.enemies.find(k => k.group === "roof");
+        if (h) this.voiceAt("heavy/roof_1", h.x, h.z, ROUND3_BARKS["heavy/roof_1"] ?? "", 1.2);
+        break;
+      }
+      case "cables": this.io.worldVoice?.("radbro/brace", 0, 0, 0.8); this.say("r4_cables", 0.4); break;
+      case "brake": this.say("r4_stuck", 1.0); break;
+      case "back": if (!this.narrating()) useUi.setState({ subtitle: { text: "", hint: "back in the car", until: this.io.now() + 3500 } }); break;
+    }
+  }
+
+  /** Room 5: Madame Pockit's fight lines and the narrator's hints. */
+  private onBoss(e: Extract<GameEvent, { type: "boss" }>): void {
+    const now = this.io.now() / 1000;
+    switch (e.what) {
+      case "intro": this.madame("intro", 3); this.madameTaunt = now + 16; break;
+      case "phase2": this.madame("phase2", 2); break;
+      case "phase3": this.madame("phase3", 2); break;
+      case "windup":
+        if (!this.said.has("r5_grenade")) this.say("r5_grenade", 0.1);
+        else if (Math.random() < 0.6) {
+          const opts = ["grenade_1", "grenade_2", "grenade_3"].filter(k => k !== this.madameLast);
+          this.madameLast = opts[Math.floor(Math.random() * opts.length)];
+          this.madame(this.madameLast, 0.4);
+        }
+        break;
+      case "rug": this.say("r5_chandelier", 0.1); break;
+      case "lastStand": this.madame("last_stand", 1); this.say("r5_laststand", 1.4); break;
+      case "stagger": this.madame("stagger_1", 0.6); break;
+      case "laugh": if (Math.random() < 0.5) this.madame("laugh_1", 0.5); break;
+      case "reload": if (now >= this.madameReload && Math.random() < 0.4) { this.madameReload = now + 8; this.madame("reload_1", 0.5); } break;
+      case "down": this.madame("down_1", 1); break;
     }
   }
 
@@ -441,10 +533,20 @@ export class Director {
       const p = g.crowd.people.find(d => d.state === "cower" && this.where(d.x, d.z).dist < 10);
       if (p) { const w = this.where(p.x, p.z); this.io.crowdVoice("whimper_1", w.dist, w.pan); }
     }
+    // Madame Pockit's taunts (every ~15 s when nobody is talking)
+    const boss = g.boss;
+    if (boss && boss.started && g.phase === "play" && g.enemies[boss.idx]?.state !== "dead") {
+      if (this.madameTaunt === 0) this.madameTaunt = now + 12;
+      if (now >= this.madameTaunt && !this.airBusy(now) && now >= this.barkUntil) {
+        this.madameTaunt = now + 14 + Math.random() * 5;
+        this.tauntAlt ^= 1;
+        this.madame(this.tauntAlt ? "taunt_1" : "taunt_2", 1);
+      }
+    }
     // tutorial beats
     if (this.btEnded && this.said.has("tut_bullet_time")) this.say("tut_shootdodge", 1.2);
     const clearLine = this.clearLine;
-    if (g.phase === "clear") this.say(clearLine, 0.3);
+    if (g.phase === "clear" && clearLine) this.say(clearLine, 0.3);
     // PA / heavy lines held for the narrator: the next one once the air is clear (stale ones dropped)
     while (this.held.length && now > this.held[0].until) this.held.shift();
     if (this.held.length && !this.airBusy(now)) {

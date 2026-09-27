@@ -758,6 +758,9 @@ const MUSIC: Record<string, MusicSet> = {
   // same muzak low on the penthouse speakers until Madame Pockit's loop cuts in
   elevator: { calm: "music/elevator_muzak", fight: "music/fight_tense", calmGain: 0.8, fightGain: 0.95 },
   penthouse: { calm: "music/elevator_muzak", fight: "music/boss_madame", calmGain: 0.45, fightGain: 0.95, hardCut: true },
+  // room 4 after the cables snap: the muzak warps and dies; from the third stop only the fight loop
+  elevatorWarped: { calm: "music/elevator_muzak_warped", fight: "music/fight_tense", calmGain: 0.7, fightGain: 0.95 },
+  elevatorDead: { calm: "music/none", fight: "music/fight_tense", calmGain: 0, fightGain: 0.95 },
 };
 
 /** The cue asked for last (a track that was still loading then comes in when it lands). */
@@ -804,6 +807,7 @@ export function setMusic(c: MusicCue, room = cueRoom): void {
 /** Everything in the room goes quiet (title / results). Music keeps its cue unless `music`. */
 export function stopRoomAudio(music = false): void {
   for (const k of ["sfx/rain_loop", "sfx/club_bass_loop", "sfx/footsteps_wet_loop", "sfx/footsteps_hard_loop", "sfx/heartbeat_loop", "sfx/neon_buzz", "sfx/crowd_cheer_loop", "sfx/crowd_panic_loop", "sfx/office_room_tone_loop"]) fade(loops.get(k) ?? null, 0, 0.3);
+  for (const k of namedLoops) fade(loops.get(k) ?? null, 0, 0.3);
   crowdState = "";
   if (music) setMusic(null);
 }
@@ -915,4 +919,38 @@ export function crowdVoice(line: string, dist: number, pan: number, pitch = 1): 
   crowdVoices++;
   src.onended = () => { crowdVoices = Math.max(0, crowdVoices - 1); };
   return true;
+}
+
+// ---- round 3: the elevator and the penthouse -------------------------------------------------------
+
+/** Any loaded one-shot in the room (the ride, the boss's room): positional, slowed with the world.
+ *  `key` without the "sfx/" prefix. Returns its length in real seconds (0 = silent / not loaded). */
+export function sfxKey(key: string, dist = 0, pan = 0, gain = 0.7, delay = 0): number {
+  const e = sfxOn();
+  if (!e) return 0;
+  const src = play(e, `sfx/${key}`, { gain: gain * att(dist), pan, at: e.ac.currentTime + delay });
+  return src ? (src.buffer?.duration ?? 0) / rate : 0;
+}
+
+/** A voice line in the world (Madame Pockit, a girl at a landing, the roof heavy): positional, pitched
+ *  with the world a little (never under `minRate`), on the voice volume. Returns its length (real s). */
+export function worldVoice(key: string, dist: number, pan: number, gain = 1, minRate = 0.9): number {
+  const e = voiceOn();
+  if (!e) return 0;
+  const r = Math.max(minRate, rate);
+  const src = play(e, `voices/${key}`, { gain: gain * att(dist * 0.6), pan: pan * 0.8, dest: vbus(e), rate: r });
+  return src ? (src.buffer?.duration ?? 0) / r : 0;
+}
+
+/** Loops started by setLoop (stopRoomAudio fades them with the rest). */
+const namedLoops = new Set<string>();
+/** A room loop at a level 0..1 (the car's hum, the shaft's wind, the penthouse's room tone); `key`
+ *  without the "sfx/" prefix. */
+export function setLoop(key: string, level: number, tau = 0.4): void {
+  const e = live();
+  if (!e) return;
+  const k = `sfx/${key}`;
+  if (level <= 0 && !loops.has(k)) return;
+  namedLoops.add(k);
+  fade(loop(e, k, bus(e), "world"), level, tau);
 }
