@@ -124,7 +124,7 @@ function stepSweep(g: Game, e: Enemy, dt: number): void {
     const l2 = Math.hypot(dx, dy, dz) || 1;
     e.lastShotT = g.time;
     e.shots++;
-    g.shoot(1, e.idx, s.hand, mx, my, mz, dx / l2, dy / l2, dz / l2, S.damage * g.diff.damage, "smg", 0);
+    g.shoot(1, e.idx, s.hand, mx, my, mz, dx / l2, dy / l2, dz / l2, S.damage * g.diff.boss, "smg", 0);
   }
   if (p.health < hp) s.hit = true;
   if (s.t >= S.dur) {

@@ -192,7 +192,7 @@ test("whenClear triggers fire once the group is down; the checkpoint resumes the
   assert.equal(r.saved, s, "the checkpoint holds for the next retry");
 });
 
-test("checkpoint: a resume keeps a breached door open and restores at least 60 HP", () => {
+test("checkpoint: a resume keeps a breached door open and restores at least the difficulty's checkpoint health", () => {
   const g = new Game(doorLevel(), { seed: 3 });
   const inp = emptyInput();
   inp.yaw = g.player.yaw;
@@ -204,7 +204,7 @@ test("checkpoint: a resume keeps a breached door open and restores at least 60 H
   const lv = doorLevel();
   const r = new Game(lv, { seed: 3, resume: { x: 0, y: 0, z: -10, facing: PI, dead: ["goon"], breached: ["door-x"], taken: [], fired: ["breach"], drops: [], owned: ["pistols"], weapon: "pistols", ammo: [["pistols", 5, 7, Infinity]], health: 12, copium: 0, meter: 1, stats: { ...g.stats } } });
   assert.ok(r.world.off.has("door-x") && r.breached.includes("door-x"));
-  assert.equal(r.player.health, 60);
+  assert.equal(r.player.health, DIFFICULTY.normal.checkpoint);
   assert.ok(r.meter >= METER.start * 0.5);
   assert.equal(r.enemies[0].deaf, false, "the office is no longer behind a door");
   assert.equal(r.enemies[1].state, "dead");

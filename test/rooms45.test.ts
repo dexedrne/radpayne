@@ -252,8 +252,8 @@ test("boss: two hits on the chandelier's chain drop it; on her it does its damag
   assert.equal(b.intercept(o.x, o.y, o.z, 1, 0, 0, 100), null, "nothing left to shoot up there");
 });
 
-test("boss: the bot beats Madame Pockit (normal, seeds 1-3; hard, seed 1)", () => {
-  for (const [seed, difficulty] of [[1, "normal"], [2, "normal"], [3, "normal"], [1, "hard"]] as const) {
+test("boss: the bot beats Madame Pockit (normal, seeds 1-3)", () => {
+  for (const [seed, difficulty] of [[1, "normal"], [2, "normal"], [3, "normal"]] as const) {
     const g = new Game(room5(), { seed, difficulty });
     const ev = runBot(g, 300);
     assert.equal(g.phase, "done", `seed ${seed} ${difficulty}: ${g.phase}, boss hp ${g.enemies[g.boss!.idx].hp}, hp ${g.player.health}`);

@@ -64,6 +64,7 @@ const NOTES = {
   chatter: "Less: the gang talks only at the big moments; the narrator skips his asides. Off: no barks in the fight; the narrator keeps the story beats, the hints stay on screen.",
   killcam: "Special shots: sniper kills, long headshots, two with one round, a grenade's double, the room's last kill. Any key skips.",
   assist: "Gamepad only: the stick slows near a target you can see, and holding L2 / LT (or firing) pulls the aim lightly onto her. Never through walls; the mouse never gets it.",
+  difficulty: "From the next restart or room. Normal: they aim better at range, hit harder, pin you down and come round the side, frags flush you out; fewer cans. Hard: you need cover. Hardcore: no cans to start, bullet time drains fast.",
   deadZone: "How far the sticks move before they count (radial). Raise it if the aim drifts.",
 };
 
@@ -254,6 +255,7 @@ function useSettingRows(tab: Tab): Row[] {
       step: dir => setVolume(k, ui.vol[k] + dir * 5),
     });
     if (tab === "display") return [
+      seg("difficulty", "GAME", "Difficulty", ui.difficulty, DIFFS, v => setSetting("difficulty", v), { note: NOTES.difficulty }),
       seg("preset", "GRAPHICS", "Preset", gfx.preset as Preset, PRESETS, setPreset, { note: PRESET_NOTES[gfx.preset] }),
       seg("bloom", undefined, "Bloom", gfx.bloom, BLOOMS, v => setGfx("bloom", v)),
       seg("reflections", undefined, "Reflections", gfx.reflections, REFLS, v => setGfx("reflections", v)),

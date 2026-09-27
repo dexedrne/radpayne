@@ -239,7 +239,7 @@ export class Game {
         const kind = kindName as EnemyKind;
         const pick = kind === "heavy" ? 0 : kind === "madame" ? MADAME.pockit : typeof m.data.milady === "number" ? (m.data.milady as number) : opts.pockit?.[m.id] ?? 1 + Math.floor(hash01(this.seed, n, 0x6d, 0) * POCKIT_COUNT);
         const gy = this.world.groundBelow(m.x, m.z, 0.3, m.y + 1);
-        const hp = kind === "madame" ? MADAME.hp[this.difficulty] : ENEMY[kind].hp;
+        const hp = kind === "madame" ? MADAME.hp[this.difficulty] : Math.round(ENEMY[kind].hp * this.diff.hp);
         const e = makeEnemy(n, m.id, m.x, Number.isFinite(gy) ? gy : m.y, m.z, m.yaw, hp, pick, typeof m.data.group === "string" ? m.data.group : "", kind);
         if (e.group && !spawned.has(e.group)) e.state = "idle";
         e.perch = m.data.perch === true;
@@ -258,6 +258,8 @@ export class Game {
         n++;
       } else if (m.kind === "pickup") {
         const item = (m.data.item as string) ?? "copium";
+        // the harder settings leave some of the room's cans out (the same ones every time: by id)
+        if (item === "copium" && this.diff.keep < 1 && hashStr(m.id) >= this.diff.keep) continue;
         const base = typeof m.data.amount === "number" ? (m.data.amount as number) : item === "copium" ? 1 : PICKUPS[item]?.amount ?? 1;
         // copium scales with the difficulty; weapons and ammo do not
         const pk: Pickup = { id: m.id, item, amount: item === "copium" ? Math.max(1, Math.floor(base * this.diff.copium)) : base, x: m.x, y: m.y, z: m.z, taken: false };
@@ -270,6 +272,7 @@ export class Game {
     for (const k of this.pickups) k.secret = this.secrets.some(sm => insideTrigger(sm, k.x, k.y + 0.3, k.z));
     for (const b of level.breakables) this.breakHp.set(b.node, b.hp);
     this.player.grenades = Math.min(GRENADE.carry, opts.grenades ?? 0);
+    this.player.copium = this.diff.startCopium;
     this.stats.secrets = 0;
     this.stats.secretsTotal = this.secrets.length;
     for (const e of this.enemies) this.syncEnemyPose(e);
@@ -378,7 +381,7 @@ export class Game {
     for (const w of r.owned) this.giveWeapon(w);
     for (const [w, m0, m1, res] of r.ammo) { const a = p.arsenal[w]; if (a) { a.mags[0] = m0; a.mags[1] = m1; a.reserve = res; } }
     if (p.arsenal[r.weapon]) p.weapon = p.arsenal[r.weapon]!;
-    p.health = Math.max(r.health, CHECKPOINT_MIN_HEALTH);
+    p.health = Math.max(r.health, Math.min(CHECKPOINT_MIN_HEALTH, this.diff.checkpoint));
     p.copium = r.copium;
     this.meter = Math.max(r.meter, METER.start * 0.5);
     this.stats = { ...r.stats, secrets: this.found.length, secretsTotal: this.secrets.length };
@@ -419,7 +422,7 @@ export class Game {
       else this.emit({ type: "btRefused" }); // the HUD flashes the hourglass
     }
     if (this.bulletTime) {
-      this.meter -= DT;
+      this.meter -= DT * this.diff.btDrain;
       this.stats.btTime += DT;
       if (this.meter <= 0) { this.meter = 0; this.setBulletTime(false); }
     }
@@ -474,7 +477,7 @@ export class Game {
 
     // copium over time (player clock)
     if (p.healLeft > 0 && p.mode !== "dead") {
-      const add = Math.min(p.healLeft, (PLAYER.copiumHeal / PLAYER.copiumTime) * pdt);
+      const add = Math.min(p.healLeft, (this.diff.heal / PLAYER.copiumTime) * pdt);
       p.healLeft -= add;
       p.health = Math.min(PLAYER.maxHealth, p.health + add);
     }
@@ -688,7 +691,7 @@ export class Game {
     const p = this.player;
     if (p.copium <= 0 || p.health >= PLAYER.maxHealth || p.healLeft > 0) return;
     p.copium--;
-    p.healLeft = PLAYER.copiumHeal;
+    p.healLeft = this.diff.heal;
     this.stats.copiumUsed++;
     this.emit({ type: "copium" });
   }
@@ -1298,7 +1301,8 @@ export class Game {
     const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
     const sniper = e.weapon === "sniper", cannon = e.weapon === "handcannon";
     // the sniper keeps her aim out to her range
-    const distF = sniper ? (dist <= ENEMY_ARMS.sniper.range ? 1 : AI.farFloor) : dist <= AI.near ? 1 : dist >= AI.far ? AI.farFloor : 1 - ((1 - AI.farFloor) * (dist - AI.near)) / (AI.far - AI.near);
+    const D = this.diff;
+    const distF = sniper ? (dist <= ENEMY_ARMS.sniper.range ? 1 : D.farFloor) : dist <= AI.near ? 1 : dist >= D.far ? D.farFloor : 1 - ((1 - D.farFloor) * (dist - AI.near)) / (D.far - AI.near);
     const fast = p.mode === "dive" || p.mode === "roll";
     const speedF = fast ? AI.dodgeMul : 1 - AI.speedK * Math.min(1, p.speed / PLAYER.runSpeed);
     const chance = (sniper ? ENEMY_ARMS.sniper.hit : AI.baseHit) * distF * speedF * this.diff.accuracy * (moving ? 0.55 : 1);
@@ -1595,7 +1599,7 @@ export class Game {
     if (shot) {
       this.stats.kills++;
       if (headshot) this.stats.headshots++;
-      this.meter = Math.min(METER.max, this.meter + (headshot ? METER.headshotRefill : METER.killRefill));
+      this.meter = Math.min(METER.max, this.meter + (headshot ? METER.headshotRefill : METER.killRefill) * this.diff.killRefill);
       this.lastPlayerKill = { from: { x: shot.ox, y: shot.oy, z: shot.oz }, to: { x: shot.x, y: shot.y, z: shot.z }, enemy: e.idx, headshot, chase };
     }
     this.emit({ type: "kill", target: e.idx, headshot, final, ...(blast ? { blast } : {}), ...(shot ? { weapon, shot: { ...shot } } : {}) });
@@ -1725,6 +1729,13 @@ export function boxDist(b: Box, x: number, z: number): number {
   const lx = dx * b.cos - dz * b.sin, lz = dx * b.sin + dz * b.cos;
   const ex = Math.max(0, Math.abs(lx) - b.hx), ez = Math.max(0, Math.abs(lz) - b.hz);
   return Math.hypot(ex, ez);
+}
+
+/** A string's hash in 0..1 (FNV-1a): stable per id, whatever the seed. */
+export function hashStr(id: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619);
+  return (h >>> 0) / 4294967296;
 }
 
 export function insideTrigger(t: Marker, x: number, y: number, z: number): boolean {

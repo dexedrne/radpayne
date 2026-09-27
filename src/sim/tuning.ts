@@ -170,7 +170,7 @@ export const RIDE = {
 /** Room 5, Madame Pockit (round-3 plan section 3). World seconds unless "real"; damage before the
  *  difficulty's damage factor. */
 export const MADAME = {
-  hp: { easy: 2000, normal: 2600, hard: 3200 } as Record<"easy" | "normal" | "hard", number>,
+  hp: { easy: 2000, normal: 2600, hard: 3000, hardcore: 3400 } as Record<Difficulty, number>,
   /** Pockit #3099 at this scale (model + hit skeleton). */
   scale: 1.25,
   pockit: 3099,
@@ -238,14 +238,36 @@ export const CROWD = {
   spacing: 0.85,
 } as const;
 
-export type Difficulty = "easy" | "normal" | "hard";
-// wake: goons woken together (a trigger, a shout, a shot heard) come to one after another, this many
-//   world seconds apart, so a gang never opens up as one volley.
-// shooters: at most this many goons shooting at once (a burst only starts when a slot is free).
-export const DIFFICULTY: Record<Difficulty, { damage: number; reaction: number; copium: number; accuracy: number; wake: number; shooters: number; label: string }> = {
-  easy: { damage: 0.5, reaction: 0.9, copium: 2, accuracy: 0.8, wake: 0.9, shooters: 1, label: "Chill" },
-  normal: { damage: 1, reaction: 0.6, copium: 1, accuracy: 1, wake: 0.6, shooters: 2, label: "Normal" },
-  hard: { damage: 1.5, reaction: 0.4, copium: 0.5, accuracy: 1.15, wake: 0.35, shooters: 3, label: "Payne" },
+/** Chill (the story), Normal (the default: tougher than the first release), Hard (you need cover), Hardcore. */
+export type Difficulty = "easy" | "normal" | "hard" | "hardcore";
+export type DifficultyTuning = {
+  label: string;
+  /** Their damage and hit chance (x), reaction to an alert (s). */
+  damage: number; reaction: number; accuracy: number;
+  // wake: goons woken together (a trigger, a shout, a shot heard) come to one after another, this many
+  //   world seconds apart, so a gang never opens up as one volley.
+  // shooters: at most this many goons shooting at once (a burst only starts when a slot is free).
+  wake: number; shooters: number;
+  /** Their accuracy out at range: the falloff reaches its floor at `far` m, and the floor. */
+  far: number; farFloor: number;
+  /** Their health (x; not Madame Pockit's, MADAME.hp) and her guns' damage (x, in place of `damage`). */
+  hp: number; boss: number;
+  /** Copium: a pickup's amount (x), the share of the room's cans that are there at all (by id), the cans
+   *  he starts a room with, the health one gives back, and the least a checkpoint restores. */
+  copium: number; keep: number; startCopium: number; heal: number; checkpoint: number;
+  /** Bullet time: the meter drains this much faster, and a kill refills this much more. */
+  btDrain: number; killRefill: number;
+  /** The gang against cover (ai/tactics.ts): the share of goons who lay down fire on his cover when they
+   *  cannot hit him (0: nobody), flankers at once, a frag at a cover he has held `camp` s (the gang's
+   *  frags `grenade` s apart; 0: no frags), and a rusher (else a goon) sent round after `rush` s in one
+   *  cover (0: never). */
+  suppress: number; flank: number; grenade: number; camp: number; rush: number;
+};
+export const DIFFICULTY: Record<Difficulty, DifficultyTuning> = {
+  easy: { label: "Chill", damage: 0.5, reaction: 0.9, accuracy: 0.8, wake: 0.9, shooters: 1, far: 32, farFloor: 0.12, hp: 1, boss: 0.5, copium: 2, keep: 1, startCopium: 2, heal: 35, checkpoint: 60, btDrain: 1, killRefill: 1, suppress: 0, flank: 0, grenade: 0, camp: 0, rush: 0 },
+  normal: { label: "Normal", damage: 1.3, reaction: 0.5, accuracy: 1.15, wake: 0.5, shooters: 2, far: 40, farFloor: 0.2, hp: 1, boss: 1.05, copium: 1, keep: 0.8, startCopium: 1, heal: 30, checkpoint: 50, btDrain: 1.25, killRefill: 1.2, suppress: 0.5, flank: 1, grenade: 14, camp: 6, rush: 9 },
+  hard: { label: "Hard", damage: 1.75, reaction: 0.38, accuracy: 1.3, wake: 0.35, shooters: 3, far: 45, farFloor: 0.28, hp: 1.1, boss: 1.3, copium: 1, keep: 0.55, startCopium: 1, heal: 25, checkpoint: 40, btDrain: 1.5, killRefill: 1.3, suppress: 0.8, flank: 2, grenade: 9, camp: 4.5, rush: 6 },
+  hardcore: { label: "Hardcore", damage: 2.3, reaction: 0.3, accuracy: 1.45, wake: 0.25, shooters: 4, far: 50, farFloor: 0.35, hp: 1.2, boss: 1.55, copium: 1, keep: 0.35, startCopium: 0, heal: 25, checkpoint: 30, btDrain: 1.8, killRefill: 1.4, suppress: 1, flank: 3, grenade: 7, camp: 3.5, rush: 4.5 },
 };
 
 export const AI = {
