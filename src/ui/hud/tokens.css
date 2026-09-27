@@ -113,6 +113,7 @@
 .rp-slot { font: 400 18px/1 var(--display); letter-spacing: 1.5px; padding: 5px 9px 3px; border: 2px solid var(--ink); background: var(--panel-bg); color: rgba(243, 234, 216, 0.85); white-space: nowrap; position: relative; }
 .rp-slot.cur { background: var(--paper); color: var(--ink); animation: rp-tabpop 150ms ease-out; }
 .rp-slot.none { background: transparent; border: 2px dashed rgba(243, 234, 216, 0.4); color: rgba(243, 234, 216, 0.45); }
+.rp-slot .rp-pip { font-style: normal; font-size: 13px; margin-left: 4px; vertical-align: 3px; color: var(--gold, #d9a441); }
 .rp-slot.dry::after { content: ""; position: absolute; left: 3px; right: 3px; bottom: -6px; height: 3px; background: var(--red); }
 .rp-ammo { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; min-width: 330px; }
 .rp-ammo.low { border-color: var(--red); }

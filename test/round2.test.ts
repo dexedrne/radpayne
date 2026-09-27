@@ -153,8 +153,8 @@ test("pickups: the weapon the first time, then ammo; slots and the wheel switch;
   let firstShot = -1;
   for (let i = 0; i < 120 && firstShot < 0; i++) { g.step(inp); if (g.drain().some(e => e.type === "shot")) firstShot = i; }
   assert.ok(firstShot * DT >= SWAP_TIME - 0.05, `fired ${firstShot * DT} s after the switch`);
-  assert.equal(SLOT_ORDER.join(), "pistols,ak,shotgun,smgs");
-  assert.deepEqual(SLOT_ORDER.map(slotOf), [1, 1, 2, 3], "the base gun (pistols or #250's AK) is key 1");
+  assert.equal(SLOT_ORDER.join(), "pistols,ak,shotgun,sawedoff,smgs,handcannon,rifle,sniper");
+  assert.deepEqual(SLOT_ORDER.map(slotOf), [1, 1, 2, 2, 3, 4, 5, 5], "the base gun (pistols or #250's AK) is key 1, keys 2 and 3 keep their meaning");
 });
 
 // a rusher 30 m out down a long room, the player at the origin

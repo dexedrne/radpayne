@@ -8,7 +8,7 @@
 // Runs on world time like the goon.
 import type { Enemy } from "../sim/actors.ts";
 import type { Game } from "../sim/game.ts";
-import { ENEMY, HEAVY } from "../sim/tuning.ts";
+import { ENEMY, ENEMY_ARMS, HEAVY } from "../sim/tuning.ts";
 import { alertGoon, faceToward, followPath, perceive, setState, slotFree } from "./goon.ts";
 
 const H = ENEMY.heavy;
@@ -56,6 +56,7 @@ export function stepHeavy(g: Game, e: Enemy, dt: number): void {
 
   const dx = p.x - e.x, dz = p.z - e.z;
   const dist = Math.sqrt(dx * dx + dz * dz) || 1;
+  const cannon = e.weapon === "handcannon";
 
   // the tell: gun up, laser on, feet planted; the shot at the end of it
   if (e.tell > 0) {
@@ -67,15 +68,16 @@ export function stepHeavy(g: Game, e: Enemy, dt: number): void {
         e.lastShotT = g.time;
         g.enemyFire(e, false);
         e.shells--;
-        if (e.shells <= 0) { e.shells = HEAVY.shells; e.reloadT = HEAVY.reload; }
+        // the hand cannon: seven slugs, 1.2 s apart; the pump gun: six shells
+        if (e.shells <= 0) { e.shells = cannon ? ENEMY_ARMS.handcannon.shells : HEAVY.shells; e.reloadT = cannon ? ENEMY_ARMS.handcannon.reload : HEAVY.reload; }
       }
-      e.fireT = H.fireInterval * (1 + 0.3 * g.rng.next());
+      e.fireT = (cannon ? ENEMY_ARMS.handcannon.interval : H.fireInterval) * (1 + 0.3 * g.rng.next());
     }
     return;
   }
 
   // start a shot: in range, seen, gun ready, a shooter slot free
-  if (playerAlive && e.sees && dist <= HEAVY.range && e.fireT <= 0 && e.reloadT <= 0 && e.flinch <= 0 && g.canShoot(e) && slotFree(g, e)) {
+  if (playerAlive && e.sees && dist <= (cannon ? HEAVY.range * 1.5 : HEAVY.range) && e.fireT <= 0 && e.reloadT <= 0 && e.flinch <= 0 && g.canShoot(e) && slotFree(g, e)) {
     e.tell = HEAVY.tell;
     e.lastShotT = g.time; // holds his slot through the tell
     faceToward(e, p.x, p.z, 7, dt);

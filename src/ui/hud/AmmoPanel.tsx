@@ -43,13 +43,42 @@ function Slim({ live, low }: { live: boolean; low: boolean }) {
   );
 }
 
+/** The hand cannon's round: the pistol bullet, fatter and 1.3x. */
+function Fat({ live, low }: { live: boolean; low: boolean }) {
+  return live ? (
+    <svg width="13" height="30" viewBox="0 0 13 30">
+      <path d="M1.2 11 C1.2 4 6.5 1 6.5 1 C6.5 1 11.8 4 11.8 11 Z" fill={low ? "#ff5a4a" : "#c9784a"} stroke={INK} strokeWidth="1.4" />
+      <rect x="1.2" y="11" width="10.6" height="17.5" fill={low ? "#ff9a6a" : "#d9a441"} stroke={INK} strokeWidth="1.4" />
+      <rect x="2.8" y="12.2" width="1.8" height="14.5" fill="#fff" opacity="0.45" />
+    </svg>
+  ) : (
+    <svg width="13" height="30" viewBox="0 0 13 30"><rect x="1.5" y="11.3" width="10" height="17" fill="none" stroke="rgba(243,234,216,0.32)" strokeWidth="1.3" /></svg>
+  );
+}
+
+/** The sniper's cartridge: tall and bottlenecked. */
+function Tall({ live, low }: { live: boolean; low: boolean }) {
+  return live ? (
+    <svg width="9" height="34" viewBox="0 0 9 34">
+      <path d="M3 8 C3 3 4.5 0.8 4.5 0.8 C4.5 0.8 6 3 6 8 Z" fill={low ? "#ff5a4a" : "#c9784a"} stroke={INK} strokeWidth="1.2" />
+      <path d="M3 8 H6 V11 L8 14 V32.5 H1 V14 L3 11 Z" fill={low ? "#ff9a6a" : "#d9a441"} stroke={INK} strokeWidth="1.2" />
+      <rect x="2.1" y="15" width="1.3" height="16" fill="#fff" opacity="0.45" />
+    </svg>
+  ) : (
+    <svg width="9" height="34" viewBox="0 0 9 34"><path d="M3 8.3 H6 V11 L7.7 14 V32.3 H1.3 V14 L3 11 Z" fill="none" stroke="rgba(243,234,216,0.32)" strokeWidth="1.2" /></svg>
+  );
+}
+
+const iconOf = (kind: WeaponId) =>
+  kind === "shotgun" || kind === "sawedoff" ? Shell : kind === "smgs" || kind === "ak" || kind === "rifle" ? Slim : kind === "handcannon" ? Fat : kind === "sniper" ? Tall : Bullet;
+
 function Row({ hand, n, size, kind }: { hand: string; n: number; size: number; kind: WeaponId }) {
   const lo = rowLow(n);
-  const Icon = kind === "shotgun" ? Shell : kind === "smgs" || kind === "ak" ? Slim : Bullet;
+  const Icon = iconOf(kind);
   return (
     <div className="row">
       <span className={`hand${lo ? " lo" : ""}`}>{hand}</span>
-      <div className={`rp-bul${kind === "smgs" || kind === "ak" ? " slim" : ""}`}>
+      <div className={`rp-bul${kind === "smgs" || kind === "ak" || kind === "rifle" ? " slim" : ""}`}>
         {Array.from({ length: size }, (_, i) => <Icon key={i} live={i < n} low={lo} />)}
       </div>
     </div>

@@ -196,6 +196,7 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
         ammo: ammoByWeapon(p),
         killcamProgress: g.killcam ? Math.min(1, g.killcam.t / g.killcam.dur) : 0,
         awake: g.enemies.some(e => e.state !== "idle" && e.state !== "inactive" && e.state !== "dead"), run: s.run,
+        grenades: p.grenades, lastInSlot: { ...p.lastInSlot }, zoom: p.zoom, secrets: g.found.length, secretsTotal: g.secrets.length,
       },
     }));
   }, FRAME.sim);

@@ -4,8 +4,8 @@
 import type { Player } from "./actors.ts";
 import type { InputFrame } from "./types.ts";
 import type { World } from "./world.ts";
-import { DODGE, DODGE_GRAVITY, PLAYER } from "./tuning.ts";
-import { isLongGun } from "../combat/weapons.ts";
+import { DODGE, DODGE_GRAVITY, PLAYER, ZOOM } from "./tuning.ts";
+import { isLongGun, isOneHand } from "../combat/weapons.ts";
 import { PITCH_MAX, PITCH_MIN, SHOULDER, facingOfAim } from "./aim.ts";
 
 export const PM_JUMP = 1;
@@ -66,7 +66,7 @@ export function stepPlayer(world: World, p: Player, inp: InputFrame, dt: number,
       }
       // backpedal slower (move against the aim)
       const fwdDot = moving ? (mx * -sy + mz * -cy) / Math.max(ml, 1e-6) : 0;
-      const speed = PLAYER.runSpeed * (fwdDot < -0.3 ? PLAYER.backSpeed : 1);
+      const speed = PLAYER.runSpeed * (fwdDot < -0.3 ? PLAYER.backSpeed : 1) * (p.zoom ? ZOOM.move : 1);
       const tvx = mx * speed, tvz = mz * speed;
       const a = (p.grounded ? PLAYER.accel : PLAYER.airAccel) * pdt;
       let dvx = tvx - p.vx, dvz = tvz - p.vz;
@@ -227,10 +227,11 @@ export function muzzleOf(p: Player, hand: number, out: { x: number; y: number; z
   const c = Math.cos(p.yaw), s = Math.sin(p.yaw);
   // the long guns (shotgun, AK) are carried on the right: one muzzle, farther out
   const long = isLongGun(p.weapon.id);
-  const side = long ? 0.14 : hand === 0 ? 0.22 : -0.22;
+  // the one-handed guns (hand cannon, sawed-off) use the right pistol's numbers; the sniper reaches further
+  const side = long ? 0.14 : hand === 0 || isOneHand(p.weapon.id) ? 0.22 : -0.22;
   const lying = p.mode === "dive" || p.mode === "prone";
   const up = lying ? (p.mode === "dive" ? 0.7 : 0.5) : p.mode === "roll" || p.mode === "getup" ? 0.9 : long ? 1.3 : 1.22;
-  const fwd = (lying ? 0.35 : 0.55) + (long ? 0.2 : 0);
+  const fwd = (lying ? 0.35 : 0.55) + (p.weapon.id === "sniper" ? 0.3 : long ? 0.2 : 0);
   out.x = p.x + c * side - s * fwd;
   out.y = p.y + up;
   out.z = p.z - s * side - c * fwd;

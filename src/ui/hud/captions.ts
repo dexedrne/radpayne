@@ -7,7 +7,9 @@ import { useUi, type Hud } from "../store.ts";
 import { slotOf, type WeaponId } from "../../combat/weapons.ts";
 import { NUDGE_HOLD, OBJECTIVE_HOLD, captionBudget } from "./logic.ts";
 
-const NAMES: Record<WeaponId, string> = { pistols: "the pistols", ak: "the ak", shotgun: "the shotgun", smgs: "the smgs" };
+const NAMES: Record<WeaponId, string> = {
+  pistols: "the pistols", ak: "the ak", shotgun: "the shotgun", smgs: "the smgs", sawedoff: "the sawed-off", handcannon: "the hand cannon", rifle: "the rifle", sniper: "the sniper rifle",
+};
 
 type Nudge = { text: string; at: number };
 /** Why a nudge is up: heal / dry / empty last only while their condition holds; a pickup runs its 4 s. */

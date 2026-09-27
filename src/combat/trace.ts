@@ -36,9 +36,11 @@ export type TraceHit = {
   actor: number;
   part: number;
   surface: string;
+  /** The box's prefab node id for a world hit ("" otherwise): breakables take the damage. */
+  node: string;
 };
 
-export const makeTraceHit = (): TraceHit => ({ kind: HIT_NONE, t: 0, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, actor: -1, part: -1, surface: "" });
+export const makeTraceHit = (): TraceHit => ({ kind: HIT_NONE, t: 0, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, actor: -1, part: -1, surface: "", node: "" });
 
 const wHit: RayHit = { t: 0, box: null, nx: 0, ny: 0, nz: 0 };
 const aHit = { t: 0, part: -1 };
@@ -53,6 +55,7 @@ export function trace(world: World, actors: readonly HitActor[], team: number, o
   out.actor = -1;
   out.part = -1;
   out.surface = "";
+  out.node = "";
   out.nx = out.ny = out.nz = 0;
   const w = world.raycast(ox, oy, oz, dx, dy, dz, maxT, true, wHit);
   if (w) {
@@ -60,6 +63,7 @@ export function trace(world: World, actors: readonly HitActor[], team: number, o
     out.t = w.t;
     out.nx = w.nx; out.ny = w.ny; out.nz = w.nz;
     out.surface = w.box?.surface ?? "ground";
+    out.node = w.box?.node ?? "";
   }
   for (let i = 0; i < actors.length; i++) {
     const a = actors[i];
@@ -78,6 +82,7 @@ export function trace(world: World, actors: readonly HitActor[], team: number, o
       out.actor = i;
       out.part = aHit.part;
       out.surface = "flesh";
+      out.node = "";
       out.nx = -dx; out.ny = -dy; out.nz = -dz;
     }
   }

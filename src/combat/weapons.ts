@@ -1,10 +1,11 @@
-// Weapons (spec section 4). Dual weapons alternate hands, each hand has its own magazine; an empty
-// pair reloads by itself. Timers run on the owner's clock (the player's is 0.5x in bullet time).
-// The player keeps one state per owned weapon (ammo survives a switch); a switch costs SWAP_TIME
-// before the new gun fires and cancels a reload in progress. Pickups: a weapon the first time (a full
-// magazine + its reserve), then ammo (see PICKUPS).
+// Weapons (spec section 4, arsenal spec section 3). Dual weapons alternate hands, each hand has its own
+// magazine; an empty pair reloads by itself. Timers run on the owner's clock (the player's is 0.5x in
+// bullet time). The player keeps one state per owned weapon (ammo survives a switch); a switch costs
+// SWAP_TIME before the new gun fires and cancels a reload in progress. Pickups: a weapon the first time
+// (a full magazine + its reserve), then ammo (see PICKUPS). Keys are categories (slotOf): 1 the base gun,
+// 2 the shotguns, 3 the SMGs, 4 the hand cannon, 5 the rifles; a second press cycles within one.
 
-export type WeaponId = "pistols" | "ak" | "shotgun" | "smgs";
+export type WeaponId = "pistols" | "ak" | "shotgun" | "sawedoff" | "smgs" | "handcannon" | "rifle" | "sniper";
 /** The gun a Radbro always carries (slot 1, infinite reserve): the dual pistols, or #250's AK. */
 export type BaseWeapon = "pistols" | "ak";
 
@@ -27,38 +28,74 @@ export type WeaponDef = {
   auto: boolean;
   /** Most rounds the reserve holds. */
   reserveMax: number;
+  /** Bodies a round goes on through after the first (at PIERCE_K of the damage each time). */
+  pierce: number;
+  /** The cone while scoped (the sniper; else the same as `spread`). */
+  zoomSpread: number;
 };
+
+/** A round that goes on through a body keeps this share of its damage. */
+export const PIERCE_K = 0.7;
 
 const DEG = Math.PI / 180;
 
+type Row = Omit<WeaponDef, "pierce" | "zoomSpread"> & Partial<Pick<WeaponDef, "pierce" | "zoomSpread">>;
+const def = (r: Row): WeaponDef => ({ pierce: 0, zoomSpread: r.spread, ...r });
+
 export const WEAPONS: Record<WeaponId, WeaponDef> = {
-  pistols: { id: "pistols", name: "Dual pistols", mag: 12, hands: 2, damage: 34, pellets: 1, interval: 0.12, spread: 0.35 * DEG, reload: 1.3, reserve: Infinity, auto: true, reserveMax: Infinity },
+  pistols: def({ id: "pistols", name: "Dual pistols", mag: 12, hands: 2, damage: 34, pellets: 1, interval: 0.12, spread: 0.35 * DEG, reload: 1.3, reserve: Infinity, auto: true, reserveMax: Infinity }),
   // semi-auto: the pump is the animation (Shotgun_Fire racks it inside the 0.8 s). The plan's 6 deg
   // and 3 deg are the full cones: one blast kills a goon at 6 m, a handful of pellets land at 12 m
-  shotgun: { id: "shotgun", name: "Shotgun", mag: 6, hands: 1, damage: 14, pellets: 8, interval: 0.8, spread: 3 * DEG, reload: 2, reserve: 24, auto: false, reserveMax: 48 },
+  shotgun: def({ id: "shotgun", name: "Shotgun", mag: 6, hands: 1, damage: 14, pellets: 8, interval: 0.8, spread: 3 * DEG, reload: 2, reserve: 24, auto: false, reserveMax: 48 }),
   // #250's rifle, instead of the pistols: shouldered two-handed, a touch more damage per second than the
   // pistols at range but a wider cone on full auto and a slower mag change; never runs dry (a base gun)
-  ak: { id: "ak", name: "AK", mag: 30, hands: 1, damage: 30, pellets: 1, interval: 0.1, spread: 0.9 * DEG, reload: 2.2, reserve: Infinity, auto: true, reserveMax: Infinity },
-  smgs: { id: "smgs", name: "Dual SMGs", mag: 30, hands: 2, damage: 14, pellets: 1, interval: 0.06, spread: 1.5 * DEG, reload: 1.8, reserve: 180, auto: true, reserveMax: 360 },
+  ak: def({ id: "ak", name: "AK", mag: 30, hands: 1, damage: 30, pellets: 1, interval: 0.1, spread: 0.9 * DEG, reload: 2.2, reserve: Infinity, auto: true, reserveMax: Infinity }),
+  smgs: def({ id: "smgs", name: "Dual SMGs", mag: 30, hands: 2, damage: 14, pellets: 1, interval: 0.06, spread: 1.5 * DEG, reload: 1.8, reserve: 180, auto: true, reserveMax: 360 }),
+  // two barrels in a blink, a wide cone: devastating inside 5 m, one-handed with the arm out
+  sawedoff: def({ id: "sawedoff", name: "Sawed-off", mag: 2, hands: 1, damage: 13, pellets: 10, interval: 0.22, spread: 8 * DEG, reload: 1.5, reserve: 10, auto: false, reserveMax: 24 }),
+  // one torso round drops a goon, a heavy takes two; the round goes on through the first body
+  handcannon: def({ id: "handcannon", name: "Hand cannon", mag: 7, hands: 1, damage: 95, pellets: 1, interval: 0.42, spread: 0.2 * DEG, reload: 1.6, reserve: 14, auto: false, reserveMax: 35, pierce: 1 }),
+  // the AK for everyone else: the same model and feel, a reserve that runs dry
+  rifle: def({ id: "rifle", name: "Rifle", mag: 30, hands: 1, damage: 30, pellets: 1, interval: 0.1, spread: 0.9 * DEG, reload: 2.2, reserve: 60, auto: true, reserveMax: 180 }),
+  // the bolt gun: loose from the hip, dead on through the scope, through two bodies
+  sniper: def({ id: "sniper", name: "Sniper", mag: 5, hands: 1, damage: 160, pellets: 1, interval: 1.1, spread: 2.5 * DEG, zoomSpread: 0, reload: 2.4, reserve: 10, auto: false, reserveMax: 25, pierce: 2 }),
 };
 
 /** Seconds (the player's clock) a weapon switch takes before the new gun can fire (Weapon_Swap: the guns change hands at 0.23 s). */
 export const SWAP_TIME = 0.35;
 
-/** What a pickup item gives: the weapon it hands out (the first time) and the ammo it adds after that. */
-export const PICKUPS: Record<string, { weapon?: WeaponId; ammo: WeaponId; amount: number }> = {
+/** What a pickup item gives: the weapon it hands out (the first time, with `first` rounds in reserve,
+ *  else the weapon's own reserve) and the ammo it adds after that. `bank`: 9 mm that feeds the SMGs,
+ *  banked until he has them (the gang's pistols). `grenades`: frags into the pouch. */
+export type PickupDef = { weapon?: WeaponId; ammo: WeaponId; amount: number; first?: number; bank?: boolean; grenades?: boolean };
+export const PICKUPS: Record<string, PickupDef> = {
   shotgun: { weapon: "shotgun", ammo: "shotgun", amount: 6 },
   smgs: { weapon: "smgs", ammo: "smgs", amount: 60 },
   shotgun_ammo: { ammo: "shotgun", amount: 6 },
   smgs_ammo: { ammo: "smgs", amount: 30 },
+  // the gang's guns at their bodies
+  pistol: { ammo: "smgs", amount: 15, bank: true },
+  smg: { weapon: "smgs", ammo: "smgs", amount: 30, first: 30 },
+  handcannon: { weapon: "handcannon", ammo: "handcannon", amount: 7, first: 7 },
+  handcannon_ammo: { ammo: "handcannon", amount: 7 },
+  sawedoff: { weapon: "sawedoff", ammo: "sawedoff", amount: 4 },
+  sawedoff_ammo: { ammo: "sawedoff", amount: 6 },
+  rifle: { weapon: "rifle", ammo: "rifle", amount: 30 },
+  rifle_ammo: { ammo: "rifle", amount: 30 },
+  sniper: { weapon: "sniper", ammo: "sniper", amount: 5, first: 5 },
+  sniper_ammo: { ammo: "sniper", amount: 5 },
+  grenade: { ammo: "pistols", amount: 1, grenades: true },
 };
 
 /** Sort order of owned guns (the base gun first). Only one base gun is ever owned, so it is slot 1. */
-export const SLOT_ORDER: WeaponId[] = ["pistols", "ak", "shotgun", "smgs"];
-/** Number key / tab of a weapon: 1 = the base gun, 2 = shotgun, 3 = SMGs. */
-export const slotOf = (id: WeaponId): number => (id === "pistols" || id === "ak" ? 1 : id === "shotgun" ? 2 : 3);
+export const SLOT_ORDER: WeaponId[] = ["pistols", "ak", "shotgun", "sawedoff", "smgs", "handcannon", "rifle", "sniper"];
+/** Number key / tab of a weapon: 1 = the base gun, 2 = the shotguns, 3 = SMGs, 4 = the hand cannon, 5 = the rifles. */
+export const slotOf = (id: WeaponId): number =>
+  id === "pistols" || id === "ak" ? 1 : id === "shotgun" || id === "sawedoff" ? 2 : id === "smgs" ? 3 : id === "handcannon" ? 4 : 5;
 /** Carried with both hands on one gun (the long-gun clip set, one muzzle). */
-export const isLongGun = (id: string): boolean => id === "shotgun" || id === "ak";
+export const isLongGun = (id: string): boolean => id === "shotgun" || id === "ak" || id === "rifle" || id === "sniper";
+/** One gun in the right hand, the arm out (the hand cannon, the sawed-off). */
+export const isOneHand = (id: string): boolean => id === "handcannon" || id === "sawedoff";
 
 export type WeaponState = {
   id: WeaponId;
@@ -76,9 +113,10 @@ export type WeaponState = {
   shots: number;
 };
 
-export function makeWeapon(id: WeaponId): WeaponState {
+/** A fresh gun (full magazines + its reserve); a base gun (slot 1) never runs dry. */
+export function makeWeapon(id: WeaponId, base = false): WeaponState {
   const d = WEAPONS[id];
-  return { id, mags: [d.mag, d.hands === 2 ? d.mag : 0], hand: 0, cooldown: 0, reloadT: 0, reserve: d.reserve, wasDown: false, shots: 0 };
+  return { id, mags: [d.mag, d.hands === 2 ? d.mag : 0], hand: 0, cooldown: 0, reloadT: 0, reserve: base ? Infinity : d.reserve, wasDown: false, shots: 0 };
 }
 
 /** Rounds left in the magazines and the reserve (Infinity for the pistols). */
