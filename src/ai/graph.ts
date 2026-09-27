@@ -8,7 +8,9 @@ export const AUTO_LINK = 14;
 /** Height the walk-clear checks sample at (knee height: low cover blocks walking). */
 const WALK_Y = 0.45;
 
-export type Waypoint = { id: string; x: number; y: number; z: number; links: number[] };
+/** solo (chapter 2: Data {solo: true}): linked by its explicit links only (never auto-linked to), and
+ *  never a path's start or goal from more than 1.2 m below or above it (stairs up to a platform). */
+export type Waypoint = { id: string; x: number; y: number; z: number; links: number[]; solo?: boolean };
 
 export type Cover = {
   id: string;
@@ -39,7 +41,7 @@ export class Graph {
     const byId = new Map<string, number>();
     for (const m of wps) {
       byId.set(m.id, this.nodes.length);
-      this.nodes.push({ id: m.id, x: m.x, y: m.y, z: m.z, links: [] });
+      this.nodes.push({ id: m.id, x: m.x, y: m.y, z: m.z, links: [], ...(m.data.solo === true ? { solo: true } : {}) });
     }
     const link = (a: number, b: number) => {
       if (a === b) return;
@@ -58,7 +60,7 @@ export class Graph {
     wps.forEach((m, i) => {
       if (Array.isArray(m.data.links)) return;
       for (let j = 0; j < this.nodes.length; j++) {
-        if (j === i) continue;
+        if (j === i || this.nodes[j].solo) continue;
         const a = this.nodes[i], b = this.nodes[j];
         const d = Math.sqrt((a.x - b.x) ** 2 + (a.z - b.z) ** 2);
         if (d <= AUTO_LINK && this.walkClear(a.x, a.y, a.z, b.x, b.y, b.z)) link(i, j);
@@ -82,6 +84,7 @@ export class Graph {
       const n = this.nodes[i];
       const d = (n.x - x) ** 2 + (n.z - z) ** 2;
       if (d >= bd) continue;
+      if (n.solo && Math.abs(n.y - y) > 1.2) continue;
       if (needClear && !this.walkClear(x, y, z, n.x, n.y, n.z)) continue;
       best = i;
       bd = d;
