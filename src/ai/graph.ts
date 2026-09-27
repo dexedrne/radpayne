@@ -130,9 +130,16 @@ export class Graph {
     }
     if (s !== g && came[g] < 0) return null;
     const out: Array<{ x: number; z: number }> = [{ x: tx, z: tz }];
-    for (let i = g; i >= 0; i = came[i]) out.unshift({ x: this.nodes[i].x, z: this.nodes[i].z });
+    const ys: number[] = [ty];
+    for (let i = g; i >= 0; i = came[i]) { out.unshift({ x: this.nodes[i].x, z: this.nodes[i].z }); ys.unshift(this.nodes[i].y); }
+    // chapter 2 (maxRise): partway along the first link already (halfway up a stair): skip its first node
+    if (this.maxRise < Infinity && out.length > 2) {
+      const a = out[0], b = out[1], abx = b.x - a.x, abz = b.z - a.z, l2 = abx * abx + abz * abz;
+      const t = l2 > 1e-6 ? ((x - a.x) * abx + (z - a.z) * abz) / l2 : 0;
+      if (t > 0 && t < 1 && Math.hypot(a.x + abx * t - x, a.z + abz * t - z) < 1.2) { out.shift(); ys.shift(); }
+    }
     // shortcut: drop leading waypoints the start can already walk past
-    while (out.length > 1 && this.walkClear(x, y, z, out[1].x, y, out[1].z)) out.shift();
+    while (out.length > 1 && (this.maxRise === Infinity || Math.abs(ys[1] - y) <= this.maxRise) && this.walkClear(x, y, z, out[1].x, y, out[1].z)) { out.shift(); ys.shift(); }
     return out;
   }
 }

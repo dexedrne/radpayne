@@ -145,15 +145,17 @@ k.deco("lb-boat", [12.9, 0.3, 7], [15.1, 1.1, 8.7], "boat");
 k.volume("secret-lifeboat", "secret", [12.6, 0, 6.2], [15.4, 2.3, 9], { name: "the lifeboat" });
 
 // ---------------------------------------------------------------- the cargo hold
-for (const [id, x, z, w, d, h] of [["c1", 19, -3.8, 2, 2, 1.2], ["c2", 19, 3.8, 2, 2, 2.4], ["c3", 23.5, -1, 2.2, 1.6, 1.2], ["c4", 27, -4.2, 2.4, 2, 2.4], ["c5", 27.4, 1.8, 1.6, 1.6, 1.2], ["c6", 31.6, -1.4, 2, 2.4, 2.4], ["c7", 31, 4.2, 2, 1.6, 1.2], ["c8", 22.4, 4.6, 1.6, 1.4, 1.2]] as const) {
+for (const [id, x, z, w, d, h] of [["c1", 19, -3.8, 2, 2, 1.2], ["c2", 19, 3.8, 2, 2, 2.4], ["c3", 23.5, -1, 2.2, 1.6, 1.2], ["c4", 27, -4.2, 2.4, 2, 2.4], ["c5", 27.4, 1.8, 1.6, 1.6, 1.2], ["c6", 28.4, -0.8, 1.6, 1.4, 2.4], ["c7", 31, 4.2, 2, 1.6, 1.2], ["c8", 22.4, 4.6, 1.6, 1.4, 1.2]] as const) {
   k.cover(`crate-${id}`, [x - w / 2, 0, z - d / 2], [x + w / 2, h, z + d / 2], h > 2 ? "crateBig" : "crate", { data: { surface: "wood" } });
 }
 k.cover("car", [23, 0, -6.4], [27.6, 1.6, -4.6], "tarp", { data: { surface: "metal" } }, { faces: ["s", "w", "e"] });
 // the catwalk (north, y 3) and its stair (east end, down to the south)
 k.box("cw-deck", [17, 2.8, -7], [33.6, 3, -5.2], "grate", { data: { surface: "metal" } });
-k.box("cw-rail", [17, 3, -5.3], [32, 4, -5.2], "rail", { data: { shootThrough: true, surface: "metal" } });
+k.box("cw-rail", [17, 3, -5.3], [30, 4, -5.2], "rail", { data: { shootThrough: true, surface: "metal" } });
 for (const x of [18, 22, 26, 30]) k.box(`cw-leg-${x}`, [x - 0.15, 0, -5.45], [x + 0.15, 2.8, -5.2], "steel", { data: { surface: "metal" } });
-k.stairs("cw-st", 32.9, -5.2, "s", 10, 0.3, 0.75, 1.4, 3, "grate");
+k.stairs("cw-st", 30.9, -5.2, "s", 10, 0.3, 0.75, 1.4, 3, "grate");
+k.box("cw-st-rail-w", [30.05, 0, -5.2], [30.2, 4, 2.3], "rail", { data: { shootThrough: true, surface: "metal" } });
+k.box("cw-st-rail-e", [31.6, 0, -5.2], [31.75, 4, 2.3], "rail", { data: { shootThrough: true, surface: "metal" } });
 // the aft stair room (the way out)
 k.box("aft-floor", [34.2, -0.5, -3], [38, 0, 3], "deck");
 k.box("aft-n", [34.2, 0, -3.2], [38, CH, -3], "panelWhite");
@@ -176,9 +178,9 @@ k.wp("lb-in", [14, 0, 7.6], ["lb-out"], { door: "lb-panel" });
 k.wp("lb-out", [14, 0, 4.8], ["lb-in"]);
 k.wp("aft-in", [35.6, 0, 0], ["aft-out"]);
 k.wp("aft-out", [33, 0, 0], ["aft-in"]);
-k.wp("cw-bot", [32.9, 0, 3.2], ["cw-mid"]);
-k.wp("cw-mid", [32.9, 1.5, -0.8], ["cw-bot", "cw-top"]);
-k.wp("cw-top", [32.4, 3, -6.1], ["cw-mid", "cw-w"]);
+k.wp("cw-bot", [30.9, 0, 3.2], ["cw-mid"]);
+k.wp("cw-mid", [30.9, 1.5, -0.8], ["cw-bot", "cw-top"]);
+k.wp("cw-top", [30.9, 3, -6.1], ["cw-mid", "cw-w"]);
 k.wp("cw-w", [20, 3, -6.1], ["cw-top"]);
 
 // ---------------------------------------------------------------- the gang (40)

@@ -54,6 +54,10 @@ k.box("rail-e1", [8, 0, -6], [8.15, 1.0, -1.6], "rail", { data: { shootThrough: 
 k.box("rail-e2", [8, 0, 1.6], [8.15, 1.0, 6], "rail", { data: { shootThrough: true, surface: "metal" } });
 k.stairs("st-e", 7.05, -6, "s", 13, 0.31, 0.75, 1.7, 0, "stone", PIT);
 k.stairs("st-w", -7.05, 6, "n", 13, 0.31, 0.75, 1.7, 0, "stone", PIT);
+// (rails on their open sides: into the pit only from the bottom step; lower under the walkway)
+for (const [id, x0, x1, z0, z1, top] of [["st-e-r1", 6.05, 6.2, -6, -1.6, 1], ["st-e-r2", 6.05, 6.2, -1.6, 1.6, -0.3], ["st-e-r3", 6.05, 6.2, 1.6, 3.8, 1], ["st-w-r1", -6.2, -6.05, 1.6, 6, 1], ["st-w-r2", -6.2, -6.05, -1.6, 1.6, -0.3], ["st-w-r3", -6.2, -6.05, -3.8, -1.6, 1]] as const) {
+  k.box(id, [x0, PIT, z0], [x1, top, z1], "rail", { data: { shootThrough: true, surface: "metal" } });
+}
 // the pond, the stones, the waterfall
 k.deco("pond", [-5.5, PIT + 0.01, -4], [5.5, PIT + 0.05, 4.5], "pond");
 for (const [x, z] of [[-3, -2], [-0.6, -0.4], [1.8, 1.4], [3.6, 3.2], [-4.2, 2.6]]) k.cover(`stone-${x}-${z}`, [x - 0.6, PIT, z - 0.5], [x + 0.6, PIT + 0.9, z + 0.5], "stoneBig");
@@ -87,6 +91,8 @@ k.stairs("gal-st-e", 20.8, -13.2, "s", 11, 0.29, 0.75, 1.6, GY, "wood");
 // (the stairs' own rails)
 k.box("gal-st-w-rail", [-21.75, 0, -13.2], [-21.6, 1.0 + GY, -5], "rail", { data: { shootThrough: true } });
 k.box("gal-st-e-rail", [21.6, 0, -13.2], [21.75, 1.0 + GY, -5], "rail", { data: { shootThrough: true } });
+k.box("gal-st-w-rail2", [-20, 0, -13.2], [-19.85, 1.0 + GY, -5], "rail", { data: { shootThrough: true } });
+k.box("gal-st-e-rail2", [19.85, 0, -13.2], [20, 1.0 + GY, -5], "rail", { data: { shootThrough: true } });
 // the service landing behind the north glass at gallery height (wave B)
 k.box("sl-floor", [-2.5, GY - 0.2, -22], [2.5, GY, -18.2], "wood");
 k.box("sl-w", [-2.7, GY, -22], [-2.5, GY + 3, -18.2], "stone");

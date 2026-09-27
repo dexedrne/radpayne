@@ -78,12 +78,16 @@ k.box("wt-rail-e", [-10.1, 4.0, 10.6], [-10, 5.0, 17], "steelDark", { data: { sh
 k.box("wt-rail-s", [-18, 4.0, 16.9], [-10, 5.0, 17], "steelDark", { data: { shootThrough: true, surface: "metal" } });
 k.box("wt-rail-w", [-18, 4.0, 9], [-17.9, 5.0, 17], "steelDark", { data: { shootThrough: true, surface: "metal" } });
 k.stairs("wt-stair", -10, 9.8, "e", 12, 0.31, 0.45, 1.6, 4.0, "grate");
+k.box("wt-stair-rail-n", [-10, 0, 8.85], [-4.6, 5.0, 9.0], "steelDark", { data: { shootThrough: true, surface: "metal" } });
+k.box("wt-stair-rail-s", [-10, 0, 10.6], [-4.6, 5.0, 10.75], "steelDark", { data: { shootThrough: true, surface: "metal" } });
 
 // ---------------------------------------------------------------- the billboard catwalk (E)
 k.box("bb-deck", [25.5, 2.8, -10], [28, 3.0, 6], "grate", { data: { surface: "metal" } });
 for (const z of [-10, -4, 2, 5.5]) k.box(`bb-leg-${z}`, [27.4, 0, z], [27.9, 2.8, z + 0.5], "steelDark", { data: { surface: "metal" } });
 k.box("bb-rail", [25.5, 3.0, -10], [25.6, 4.0, 6], "steelDark", { data: { shootThrough: true, surface: "metal" } });
 k.stairs("bb-stair", 26.5, 6, "s", 10, 0.3, 0.45, 2, 3.0, "grate");
+k.box("bb-stair-rail-w", [25.35, 0, 6], [25.5, 4.0, 10.5], "steelDark", { data: { shootThrough: true, surface: "metal" } });
+k.box("bb-stair-rail-e", [27.5, 0, 6], [27.65, 4.0, 10.5], "steelDark", { data: { shootThrough: true, surface: "metal" } });
 k.decor.push(box2("bb-panel", [28.4, 3.0, -10.5], [28.6, 9.5, 6.5], "billboard"), box2("bb-frame-top", [28.3, 9.5, -10.6], [28.7, 9.7, 6.6], "steelDark"));
 for (const z of [-8, -2, 4]) k.decor.push(box2(`bb-lamp-${z}`, [27.9, 3.6, z - 0.3], [28.2, 3.8, z + 0.3], "lampWarm"));
 
