@@ -10,7 +10,7 @@
 import { PITCH_MAX, PITCH_MIN } from "../sim/aim.ts";
 import { emptyInput, type InputFrame } from "../sim/types.ts";
 import { assistStep, type AssistLevel, type AssistTarget } from "./assist.ts";
-import { activePad, noteKbm, notePad, padBusy } from "./device.ts";
+import { activePad, noteKbm, notePad } from "./device.ts";
 import { BTN, lookCurve, radial, triggerDown, triggerValue } from "./pad.ts";
 
 /** Radians per mouse pixel at sensitivity 1. */
@@ -45,7 +45,7 @@ export class InputLatch {
   /** What drove the aim last: the mouse / keys or the pad (the assist is the pad's only). */
   via: "kbm" | "pad" = "kbm";
   private edges = { bt: false, dodge: false, jump: false, reload: false, copium: false, skip: false, slot: 0, melee: false, throw: false, interact: false };
-  private pad = { lx: 0, ly: 0, fire: false, l2: 0, active: false, start: false, a: false, circle: false, prev: [] as boolean[] };
+  private pad = { lx: 0, ly: 0, fire: false, l2: 0, active: false, start: false, a: false, circle: false, prev: [] as boolean[], sticks: [0, 0, 0, 0] };
   readonly frame: InputFrame = emptyInput();
   /** Any key / button this frame (skips cutscenes and the kill cam). */
   anyPress = false;
@@ -114,7 +114,7 @@ export class InputLatch {
   poll(dt: number): void {
     const gp = activePad();
     const pd = this.pad;
-    if (!gp) { pd.active = false; pd.lx = pd.ly = 0; pd.fire = false; pd.l2 = 0; pd.start = false; pd.a = false; pd.circle = false; pd.prev = []; this.assistOn = null; return; }
+    if (!gp) { pd.active = false; pd.lx = pd.ly = 0; pd.fire = false; pd.l2 = 0; pd.start = false; pd.a = false; pd.circle = false; pd.prev = []; pd.sticks = [0, 0, 0, 0]; this.assistOn = null; return; }
     const [lx, ly] = radial(gp.axes[0] ?? 0, gp.axes[1] ?? 0, this.deadZone);
     const [rx, ry] = radial(gp.axes[2] ?? 0, gp.axes[3] ?? 0, this.deadZone);
     pd.lx = lx;
@@ -127,8 +127,12 @@ export class InputLatch {
     pd.fire = triggerDown(r2, pd.fire);
     const l2Was = pd.l2 >= 0.3;
     pd.l2 = l2;
-    const used = rx !== 0 || ry !== 0 || lx !== 0 || ly !== 0 || now.some((d, i) => d && !pd.prev[i]) || (pd.fire && !fireWas) || (l2 >= 0.3 && !l2Was);
-    if (used) { pd.active = true; this.via = "pad"; if (padBusy(gp, 0.3) || rx || ry || lx || ly) notePad(gp); }
+    // a stick counts as used on an edge only: pushed out of the dead zone, or moved well away from where it
+    // was last noted (a stick that drifts, or rests just past the dead zone, does not keep the pad's glyphs
+    // on screen after a key brought the keys back)
+    const sticks = stickUse(pd.sticks, lx, ly, rx, ry);
+    const used = sticks || now.some((d, i) => d && !pd.prev[i]) || (pd.fire && !fireWas) || (l2 >= 0.3 && !l2Was);
+    if (used) { pd.active = true; this.via = "pad"; notePad(gp); }
     // right stick: radial dead zone, the response curve, sensitivity, L2's steadiness, the assist's friction
     const aiming = this.via === "pad" ? Math.max(l2 >= 0.3 ? l2 : 0, pd.fire ? 0.6 : 0) : 0;
     const t = this.via === "pad" && this.assistLevel !== "off" && this.assistQuery ? this.assistQuery(this.yaw, this.pitch) : null;
@@ -208,6 +212,22 @@ export class InputLatch {
     e.slot = 0;
     this.anyPress = false;
   }
+}
+
+/** Stick use by edges: `ref` holds (lx, ly, rx, ry) as last noted. A stick is used when it leaves its
+ *  dead zone (it was at 0) or moves STICK_MOVE away from the noted position; the noted position follows
+ *  it then, and resets to 0 once it is back inside the dead zone. Returns whether either stick was used. */
+export const STICK_MOVE = 0.35;
+export function stickUse(ref: number[], lx: number, ly: number, rx: number, ry: number): boolean {
+  let used = false;
+  const one = (i: number, x: number, y: number) => {
+    if (x === 0 && y === 0) { ref[i] = ref[i + 1] = 0; return; }
+    const was = ref[i] !== 0 || ref[i + 1] !== 0;
+    if (!was || Math.hypot(x - ref[i], y - ref[i + 1]) >= STICK_MOVE) { ref[i] = x; ref[i + 1] = y; used = true; }
+  };
+  one(0, lx, ly);
+  one(2, rx, ry);
+  return used;
 }
 
 /** Wire DOM events into a latch. Returns a detach function. */

@@ -367,3 +367,34 @@ test("gamepad: Circle held is #4764's guard (the level in the frame), its press 
   });
   assert.ok(PAD_CONTROLS.some(([gs, what]) => gs.includes("circle") && /guard/.test(what)), "the controls list says so");
 });
+
+test("gamepad: a stick that rests past the dead zone (drift) does not keep the pad's glyphs after a key; a real push brings them back", () => {
+  withPad((_b, pad) => {
+    const l = new InputLatch();
+    pad.axes = [0.3, 0.1, 0, 0.25];
+    l.poll(1 / 60);
+    assert.equal(useDevice.getState().device, "pad", "the stick leaving its dead zone is a use");
+    l.press("KeyW");
+    l.release("KeyW");
+    assert.equal(useDevice.getState().device, "kbm");
+    for (let i = 0; i < 30; i++) l.poll(1 / 60);
+    assert.equal(useDevice.getState().device, "kbm", "the same resting stick, frame after frame: the keys stay");
+    assert.equal(l.via, "kbm");
+    // a small wobble around the resting spot: still the keys
+    pad.axes = [0.34, 0.12, 0.02, 0.27];
+    l.poll(1 / 60);
+    assert.equal(useDevice.getState().device, "kbm");
+    // a real push
+    pad.axes = [1, 0, 0, 0.25];
+    l.poll(1 / 60);
+    assert.equal(useDevice.getState().device, "pad");
+    // back to centre and out again: a use
+    l.press("KeyA");
+    pad.axes = [0, 0, 0, 0];
+    l.poll(1 / 60);
+    assert.equal(useDevice.getState().device, "kbm");
+    pad.axes = [0, 0, 0.4, 0];
+    l.poll(1 / 60);
+    assert.equal(useDevice.getState().device, "pad");
+  });
+});

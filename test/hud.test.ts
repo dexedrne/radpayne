@@ -321,3 +321,11 @@ test("player-facing lines stay plain: no meme slang in the death line, the room 
   const readme = fs.readFileSync(new URL("../README.md", import.meta.url), "utf8");
   assert.ok(!/wagmi/i.test(readme), "README tagline");
 });
+
+test("weapon tabs on a pad: the d-pad arm that reaches each tab instead of the key numbers", async () => {
+  const { padTabGlyphs } = await import("../src/ui/hud/logic.ts");
+  assert.deepEqual(padTabGlyphs("pistols", ["pistols"]), {}, "one gun: nothing to reach");
+  assert.deepEqual(padTabGlyphs("pistols", ["pistols", "shotgun"]), { 2: "dpadH" }, "two guns: both arms reach the other");
+  assert.deepEqual(padTabGlyphs("shotgun", ["pistols", "shotgun", "smgs"]), { 3: "dright", 1: "dleft" });
+  assert.deepEqual(padTabGlyphs("smgs", ["pistols", "shotgun", "smgs"]), { 1: "dright", 2: "dleft" }, "it wraps round");
+});
