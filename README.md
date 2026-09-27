@@ -200,8 +200,15 @@ input log. Bullet time is a time scale on it.
   - `public/audio/`: `sfx/`, `music/` (calm street + fight loops), `voices/narrator/` (the Radbro's
     low, tired noir voice-over), `voices/radbro/` (his grunts, breath and last words in the fight) and
     the two high Milady voices in `voices/goon_a|goon_b/`. `src/audio/sfx.ts` plays them;
-    `src/app/director.ts` runs the barks (chances and cooldowns at the top) and the narrator's
-    tutorial lines.
+    `src/app/director.ts` runs the barks and the narrator's tutorial lines under a talk budget (`TALK`
+    at the top): one voice on the air at a time, at least 7 s between two combat lines, the gang
+    talking mostly at the key moments (a group's first alert, a heavy's entrance and taunt, the first
+    rusher's charge), the Radbro's grunts rarer and his bullet-time breath once per room. The tutorial
+    lines play the first time ever on a browser (`radpayne.tutHeard` in localStorage), and a retry does
+    not replay a room line already heard. **Voice chatter** (pause menu, Sound): Normal, Less, or Off
+    (combat: the narrator and the DJ's two cues only). `node tools/chatter.ts [normal|less|off]` counts
+    the lines per fight minute by speaker (the bot on rooms 1-3, a fake clock, seeded dice); the smoke
+    run prints the same count from the real voices (`VOICE RATE`).
   - The guns (`GUNS` at the top of `src/audio/sfx.ts`): each of his guns has its own dry shots
     (`pistol_shot*`, `ak_shot*`, `shotgun_shot*`, `smg_shot*`) and a tail per room (`*_tail_street`,
     `*_tail_club` / `*_tail_backrooms`, or `*_tail_room` for both indoor rooms). The pistols' and the

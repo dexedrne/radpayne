@@ -86,6 +86,10 @@ export type HudSize = "s" | "m" | "l";
 export type ThreatMode = "all" | "shooting" | "off";
 export type DmgColour = "red" | "yellow" | "white";
 export type Volumes = { master: number; music: number; fx: number };
+/** Voice chatter in the fight (director.ts TALK): normal, less, off (the narrator and the DJ's cues only). */
+export type Chatter = "normal" | "less" | "off";
+/** Kill cam (cine.ts): every kill by a shot, the special shots (+ the room's last kill), the last kill only, never. */
+export type KillcamMode = "always" | "special" | "final" | "off";
 
 type Ui = {
   screen: Screen;
@@ -120,6 +124,8 @@ type Ui = {
   dmgColour: DmgColour;
   subs: boolean;
   vol: Volumes;
+  chatter: Chatter;
+  killcam: KillcamMode;
 };
 
 const stored = (k: string, d: string): string => {
@@ -180,10 +186,12 @@ export const useUi = create<Ui>(() => ({
   dmgColour: pick<DmgColour>("dmgColour", "red", ["red", "yellow", "white"]),
   subs: stored("subs", "1") !== "0",
   vol: { master: pct("vol.master", 80), music: pct("vol.music", 60), fx: pct("vol.fx", 90) },
+  chatter: pick<Chatter>("chatter", "normal", ["normal", "less", "off"]),
+  killcam: pick<KillcamMode>("killcam", "special", ["always", "special", "final", "off"]),
 }));
 
 /** Change a persisted setting (applies at once). */
-export function setSetting<K extends "hudSize" | "threats" | "dmgColour" | "subs" | "quality" | "sensitivity" | "invertY" | "muted" | "difficulty">(k: K, v: Ui[K]): void {
+export function setSetting<K extends "hudSize" | "threats" | "dmgColour" | "subs" | "quality" | "sensitivity" | "invertY" | "muted" | "difficulty" | "chatter" | "killcam">(k: K, v: Ui[K]): void {
   useUi.setState({ [k]: v } as Pick<Ui, K>);
   store(k, typeof v === "boolean" ? (v ? "1" : "0") : String(v));
 }

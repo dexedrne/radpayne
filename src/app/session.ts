@@ -2,6 +2,7 @@
 // event bus the views and audio subscribe to. PlayPage owns one; restarts swap the Game in place (the
 // canvas and every view stay mounted and read session.game each frame).
 import { Game, type GameOptions } from "../sim/game.ts";
+import { TIME } from "../sim/tuning.ts";
 import { FixedStepper } from "../sim/stepper.ts";
 import { InputLatch } from "../input/input.ts";
 import type { GameEvent, InputFrame } from "../sim/types.ts";
@@ -42,6 +43,23 @@ export class Session {
   renderE: Snap[] = [];
   /** Steps run in the last frame (0 while paused). */
   stepsLast = 0;
+  /** A kill cam holds the fight (cine.ts): no steps run (the sim never sees it) and the views crawl
+   *  at the cam's own speed (viewScale). Any key ends it. */
+  hold = false;
+  /** Called after each step's events went out (the kill cam decides there whether to hold). */
+  afterStep: (() => void) | null = null;
+  /** The next step skips the sim's final-kill cam (Kill cam: Off). It goes through the input frame, so
+   *  a recorded log replays it. */
+  skipNext = false;
+  /** The views' world speed this frame: 0 paused, the kill cam's crawl while it holds, else the sim's. */
+  crawl = 0.06;
+  get viewScale(): number {
+    return this.paused ? 0 : this.hold ? this.crawl : this.game.timeScale;
+  }
+  /** The player's own clock for the views (bullet time slows him only to half). */
+  get playerScale(): number {
+    return this.paused ? 0 : this.hold ? this.crawl : Math.max(this.game.timeScale, TIME.playerInBulletTime);
+  }
   /** Gamepad Start pressed (the page pauses, or starts the fight from its prompt). */
   onPadStart: (() => void) | null = null;
   /** Gamepad A pressed (the page starts the fight from its prompt). Called after the poll and
@@ -71,6 +89,8 @@ export class Session {
     this.input.pitch = 0;
     this.input.flush();
     this.stepper.reset();
+    this.hold = false;
+    this.skipNext = false;
     this.run = ++runIds;
     this.snapAll();
   }
@@ -95,7 +115,7 @@ export class Session {
     if (this.input.padA) this.onPadA?.();
     const g = this.game;
     this.stepsLast = 0;
-    if (!this.paused) {
+    if (!this.paused && !this.hold) {
       const n = this.stepper.frame(delta);
       for (let i = 0; i < n; i++) {
         const p = g.player;
@@ -103,12 +123,15 @@ export class Session {
         for (let k = 0; k < g.enemies.length; k++) { const e = g.enemies[k], s = this.ePrev[k]; s.x = e.x; s.y = e.y; s.z = e.z; }
         const f = this.bot ? this.bot.next(g) : this.input.consume();
         if (this.bot) { this.input.yaw = f.yaw; this.input.pitch = f.pitch; }
+        if (this.skipNext && g.phase === "killcam") { f.skip = true; this.skipNext = false; }
         if (this.record) this.record.push({ ...f });
         g.step(f);
         this.pCur.x = p.x; this.pCur.y = p.y; this.pCur.z = p.z;
         for (let k = 0; k < g.enemies.length; k++) { const e = g.enemies[k], s = this.eCur[k]; s.x = e.x; s.y = e.y; s.z = e.z; }
         for (const ev of g.drain()) for (const l of this.listeners) l(ev, this);
         this.stepsLast++;
+        this.afterStep?.();
+        if (this.hold) break; // a kill cam took over: the rest of this frame's time is the cam's
       }
     }
     const a = this.stepper.alpha;

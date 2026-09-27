@@ -81,6 +81,8 @@ try {
   let fightAt = 0;
   let lastLog = 0;
   let slowShots = 0;
+  /** Real seconds in the fight (phase play, no cutscene): the voice count's per-minute base. */
+  let playS = 0, lastT = Date.now();
   const cutSeen: Record<string, number> = {};
   const maxMs = Number(process.env.RADPAYNE_MAX_S ?? 300) * 1000;
   while (Date.now() - t0 < maxMs) {
@@ -100,6 +102,9 @@ try {
         curRoom = last.room;
       }
     }
+    const nowMs = Date.now();
+    if (last && !last.cut && last.phase === "play" && last.t > 0) playS += (nowMs - lastT) / 1000;
+    lastT = nowMs;
     if (last && Date.now() - lastLog > 10_000) { lastLog = Date.now(); console.log(`  ${((Date.now() - t0) / 1000).toFixed(0)} s: ${JSON.stringify(last)}`); }
     if (last?.cut) {
       // a cutscene panel: shoot it once its caption is in
@@ -124,6 +129,16 @@ try {
   log.push(`STATE ${JSON.stringify(last)} after ${((Date.now() - t0) / 1000).toFixed(1)} s`);
   const voices = (await page.evaluate(() => (window as unknown as { __rp?: { voices?: string[] } }).__rp?.voices ?? [])) as string[];
   log.push(`VOICES ${voices.length}: ${voices.join(", ")}`);
+  // by speaker (the folder), the cutscene lines apart (cs1_ / cs2_ / e1_: the panels), per fight minute
+  const by = new Map<string, number>();
+  for (const v of voices) {
+    const key = v.split(" ")[0];
+    const who = /^narrator\/(cs\d|e\d)_/.test(key) ? "cutscene" : key.split("/")[0].replace(/^goon_[ab]$/, "goons");
+    by.set(who, (by.get(who) ?? 0) + 1);
+  }
+  const mins = playS / 60;
+  const fight = [...by].filter(([k]) => k !== "cutscene").reduce((a, [, n]) => a + n, 0);
+  log.push(`VOICE RATE over ${playS.toFixed(0)} s of fight: ${(fight / Math.max(mins, 1e-6)).toFixed(1)} lines/min in the fight; ${[...by].map(([k, n]) => `${k} ${n} (${k === "cutscene" ? "-" : (n / Math.max(mins, 1e-6)).toFixed(1)}/min)`).join(", ")}`);
 
   // RADPAYNE_WIDE="cam-a;cam-b|look=fight": one page per camera marker, each with its own extra query
   const wide = process.env.RADPAYNE_WIDE;

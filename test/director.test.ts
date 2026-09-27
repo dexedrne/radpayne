@@ -4,7 +4,7 @@
 // the moment he is through the door. Driven with a fake clock and fake voices.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Director, type DirectorIO } from "../src/app/director.ts";
+import { Director, TALK, type DirectorIO } from "../src/app/director.ts";
 import { Session } from "../src/app/session.ts";
 import { useUi } from "../src/ui/store.ts";
 import { room2, room3 } from "./helpers.ts";
@@ -137,4 +137,87 @@ test("director: the breach hint goes the moment he is through (on screen, or sti
   q.until(12_000);
   assert.ok(q.calls.some(c => c.kind === "narrate" && c.line === "r3_breach"));
   assert.equal(useUi.getState().subtitle.hint, "");
+});
+
+test("director: the talk budget: one voice on the air at a time, a gap between combat lines, key moments through", () => {
+  const rnd = Math.random;
+  Math.random = () => 0; // every chance says yes: only the budget holds them back
+  try {
+    const r = rig("room2");
+    r.until(7000); // past the opening line
+    const n0 = r.calls.length;
+    const g = r.s.game;
+    const goons = g.enemies.filter(e => e.kind === "goon").map(e => e.idx);
+    // a burst of hits on every goon for 20 s: without the budget each would grunt
+    for (let k = 0; k < 40; k++) {
+      r.ev({ type: "hurt", target: goons[k % goons.length], amount: 5, part: 1, hp: 50 });
+      r.until(r.now() + 500);
+    }
+    const lines = r.calls.slice(n0);
+    const barks = lines.filter(c => c.kind === "bark");
+    assert.ok(barks.length >= 1 && barks.length <= 3, `${barks.length} grunts in 20 s (gap ${TALK.normal.gap} s)`);
+    for (let i = 1; i < barks.length; i++) assert.ok(barks[i].at - (barks[i - 1].at + barks[i - 1].len * 1000) >= TALK.normal.gap * 1000 - 1, "the gap between combat lines");
+    // no two voices ever overlap
+    const all = r.calls;
+    for (let i = 1; i < all.length; i++) assert.ok(all[i].at >= all[i - 1].at + all[i - 1].len * 1000 - 1 || all[i].kind === "radbro" && all[i - 1].kind === "radbro", `${all[i - 1].kind} ${all[i - 1].line} and ${all[i].kind} ${all[i].line} overlap`);
+    // a new group's first alert is a key moment: it goes at once, gap or not
+    const backup = g.enemies.find(e => e.group === "backup");
+    assert.ok(backup);
+    r.ev({ type: "hurt", target: goons[0], amount: 5, part: 1, hp: 50 });
+    const before = r.calls.length;
+    r.until(r.now() + 1200);
+    r.ev({ type: "alert", enemy: backup!.idx });
+    r.until(r.now() + 2500);
+    assert.ok(r.calls.slice(before).some(c => c.kind === "bark" && c.line === "alert"), "the backup's first alert is called");
+  } finally {
+    Math.random = rnd;
+  }
+});
+
+test("director: Voice chatter off: no barks, no grunts; the narrator still talks", () => {
+  const rnd = Math.random;
+  Math.random = () => 0;
+  useUi.setState({ chatter: "off" });
+  try {
+    const r = rig("room2");
+    r.until(1700);
+    const g = r.s.game;
+    for (const e of g.enemies) r.ev({ type: "alert", enemy: e.idx });
+    for (let k = 0; k < 20; k++) { r.ev({ type: "hurt", target: k % g.enemies.length, amount: 5, part: 1, hp: 50 }); r.ev({ type: "hurt", target: -1, amount: 5, part: 1, hp: 60 }); r.until(r.now() + 500); }
+    assert.ok(r.calls.some(c => c.kind === "narrate" && c.line === "r2_enter"));
+    assert.ok(!r.calls.some(c => c.kind === "bark" || c.kind === "heavy" || c.kind === "radbro"), r.calls.map(c => c.line).join(","));
+  } finally {
+    Math.random = rnd;
+    useUi.setState({ chatter: "normal" });
+  }
+});
+
+test("director: the tutorial lines play the first time ever (localStorage); a retry skips room lines already heard", () => {
+  const mem = new Map<string, string>();
+  const had = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+  Object.defineProperty(globalThis, "localStorage", { configurable: true, value: { getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => void mem.set(k, v) } });
+  try {
+    const play = () => {
+      const r = rig("room3"); // room 3 teaches too (no tutorial: false)
+      r.s.level.room.tutorial = true;
+      r.until(6000);
+      r.ev({ type: "alert", enemy: 0 });
+      r.until(14_000);
+      return r;
+    };
+    const first = play();
+    const tut = (r: ReturnType<typeof rig>) => r.calls.filter(c => c.kind === "narrate" && c.line.startsWith("tut_")).map(c => c.line);
+    assert.deepEqual(tut(first), ["tut_shoot"]);
+    assert.deepEqual(JSON.parse(mem.get("radpayne.tutHeard") ?? "[]"), ["tut_shoot"]);
+    assert.deepEqual(tut(play()), [], "not again on this browser");
+    // a retry in the same room: the opening line is not replayed
+    const r = first;
+    const enters = () => r.calls.filter(c => c.kind === "narrate" && c.line === "r3_enter").length;
+    assert.equal(enters(), 1);
+    r.s.restart();
+    r.until(r.now() + 6000);
+    assert.equal(enters(), 1, "a retry does not replay r3_enter");
+  } finally {
+    if (had) Object.defineProperty(globalThis, "localStorage", had); else delete (globalThis as { localStorage?: unknown }).localStorage;
+  }
 });
