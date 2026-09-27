@@ -192,3 +192,76 @@ test("his cover is deterministic: an input log with cover, pops, blind fire, a d
   const b = new Game(coverArena([markerNode("spawn", "spawn", [0, 0, -3.4], {}, PI), markerNode("e", "enemy", [0, 0, -14], { kind: "goon" })]), { seed: 5 });
   for (let i = 0; i < 600; i++) { b.step({ ...log[i] }); b.drain(); assert.equal(b.hash(), hashes[i], `step ${i}`); }
 });
+
+test("his cover: no vault over a crate into a wall behind it (the way over must be clear)", () => {
+  // a wall 0.4 m behind the crate's far side: no room to land between them, and no vaulting the wall
+  const g = coverGame(0, -3.4, [boxNode("backwall", [0, 1.5, -5.9], [6, 3, 0.2])]);
+  run(g, 0.05);
+  run(g, 0.8, press("cover"));
+  assert.ok(g.player.cover >= 0);
+  const ev = run(g, 0.7, press("jump"));
+  assert.ok(!covers(ev).includes("vault"), "no vault");
+  assert.ok(g.player.z > -5, "still on his side");
+});
+
+// ---- the gang against his cover (ai/tactics.ts) ------------------------------------------------------
+
+/** Him behind the crate, three goons out front 14-17 m off with cover of their own and waypoints round
+ *  the sides; he holds the cover the whole time. */
+export function siege(difficulty: "easy" | "normal" | "hard" | "hardcore", seed = 4) {
+  const lv = coverArena([
+    markerNode("spawn", "spawn", [0, 0, -3.4], {}, PI),
+    markerNode("g1", "enemy", [-3, 0, -19], { kind: "goon", milady: 1 }, 0),
+    markerNode("g2", "enemy", [2, 0, -20], { kind: "goon", milady: 2 }, 0),
+    markerNode("g3", "enemy", [5, 0, -18], { kind: "goon", milady: 3 }, 0),
+    boxNode("far-a", [-3, 0.5, -16], [2.4, 1, 0.6]),
+    boxNode("far-b", [3, 0.5, -16.5], [2.4, 1, 0.6]),
+    boxNode("side-w", [-9, 0.5, -6], [0.6, 1, 2.4]),
+    boxNode("side-e", [10, 0.5, -3], [0.6, 1, 2.4]),
+    ...[[-8, -18], [0, -18], [8, -18], [-11, -10], [11, -10], [-11, -3], [12, 0], [-6, -12], [6, -12]].map(([x, z], i) => markerNode(`wp-${i}`, "waypoint", [x, 0, z])),
+  ]);
+  const g = new Game(lv, { seed, difficulty });
+  for (const e of g.enemies) { e.state = "idle"; }
+  return g;
+}
+
+test("the gang against his cover: on Hard they lay fire on it, send flankers round the side and lob a frag at it; on Chill they wait for a shot", () => {
+  const out: Record<string, { sup: number; flank: boolean; frags: number }> = {};
+  for (const d of ["easy", "hard"] as const) {
+    const g = siege(d);
+    // into cover, then wake them with a shot over the crate
+    run(g, 0.05);
+    run(g, 0.8, press("cover"));
+    assert.ok(g.player.cover >= 0);
+    let sup = 0, flank = false, frags = 0;
+    const ev = run(g, 20, (f, i) => {
+      f.fire = i === 5;
+      // whatever lands near him: he stays put (the test is about them)
+      if (g.player.health < 40) g.player.health = 100;
+    });
+    for (const e of ev) {
+      if (e.type === "shot" && e.shooter >= 0) sup++;
+      if (e.type === "throw" && e.by !== undefined) frags++;
+    }
+    for (const e of g.enemies) if (e.role === "flank" || (e.cover >= 0 && Math.abs(g.graph.covers[e.cover].x) > 6)) flank = true;
+    out[d] = { sup, flank, frags };
+  }
+  assert.ok(out.hard.sup > 0, `hard: suppressing fire (${JSON.stringify(out)})`);
+  assert.ok(out.hard.flank, "hard: a flanker");
+  assert.ok(out.hard.frags >= 1, "hard: a frag");
+  assert.equal(out.easy.frags, 0, "chill: no frags");
+  assert.equal(out.easy.sup, 0, "chill: nobody fires at a man they cannot hit");
+  assert.ok(!out.easy.flank, "chill: no flankers");
+});
+
+test("the gang's tactics replay bit-exactly", () => {
+  const hashes = (): string[] => {
+    const g = siege("hardcore", 9);
+    const hs: string[] = [];
+    run(g, 0.05);
+    run(g, 0.8, press("cover"));
+    run(g, 12, (f, i) => { f.fire = i % 90 === 5; f.aim = (i % 300) > 200; if (i % 60 === 0) hs.push(g.hash()); });
+    return hs;
+  };
+  assert.deepEqual(hashes(), hashes());
+});

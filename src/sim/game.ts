@@ -6,6 +6,7 @@
 import { Graph } from "../ai/graph.ts";
 import { alertGoon, onGoonDeath, setState } from "../ai/goon.ts";
 import { stepEnemy } from "../ai/enemies.ts";
+import { TACTICS, makeTactics, stepTactics, type Tactics } from "../ai/tactics.ts";
 import { HB_HEAD, HB_MULT, HB_TORSO, aimPoint, makeCapsules } from "../combat/hitboxes.ts";
 import { HIT_ACTOR, HIT_NONE, HIT_WORLD, makeTraceHit, trace, type HitActor, type TraceHit } from "../combat/trace.ts";
 import { PICKUPS, PIERCE_K, SLOT_ORDER, SWAP_TIME, WEAPONS, makeWeapon, slotOf, startReload, stepWeapon, triggerWeapon, type BaseWeapon, type WeaponId } from "../combat/weapons.ts";
@@ -15,7 +16,7 @@ import { aimDir } from "./aim.ts";
 import { Crowd } from "./crowd.ts";
 import { Fnv1a, Rand, hash01 } from "./math.ts";
 import { PM_COVER_IN, PM_COVER_OUT, PM_DIVE, PM_DUCK, PM_GETUP, PM_JUMP, PM_LAND, PM_POP, PM_PRONE, PM_VAULT, muzzleOf, pivotOf, stepPlayer } from "./player.ts";
-import { COVER_MOVE, attachCover, coverOf, findTarget, leaveCover, tucked, type CoverSeg, type CoverTarget } from "./cover.ts";
+import { COVER_MOVE, aiCovers, attachCover, coverOf, findTarget, leaveCover, tucked, type CoverSeg, type CoverTarget } from "./cover.ts";
 import { AI, BREACH, CHECKPOINT_MIN_HEALTH, DIFFICULTY, DODGE, DT, ENEMY, ENEMY_ARMS, GRENADE, GUARD, HEAVY, HEAVY_SCALE, KILLCAM, MADAME, MAX_RANGE, MELEE, METER, PLAYER, PROJECTILE_SPEED, RUSHER, TIME, USE, type Difficulty } from "./tuning.ts";
 import { PLAYER_ID, type GameEvent, type InputFrame, type V3 } from "./types.ts";
 import { World, circleRectOverlap, type Box } from "./world.ts";
@@ -52,7 +53,8 @@ export type Projectile = {
 };
 
 /** A live frag: world-time flight, bounces, the fuse. `landed` once it first touched something. */
-export type Grenade = { id: number; x: number; y: number; z: number; vx: number; vy: number; vz: number; fuse: number; landed: boolean; resting: boolean; bounces: number };
+/** by: -1 his, else the goon who threw it (ai/tactics.ts). */
+export type Grenade = { id: number; x: number; y: number; z: number; vx: number; vy: number; vz: number; fuse: number; landed: boolean; resting: boolean; bounces: number; by?: number };
 
 export type KillCam = {
   /** Real seconds since it started. */
@@ -209,6 +211,8 @@ export class Game {
    *  (the HUD marks it). */
   readonly cover: CoverSeg[];
   coverTarget: CoverTarget | null = null;
+  /** The gang against his cover (ai/tactics.ts). */
+  readonly tactics: Tactics = makeTactics();
 
   constructor(level: LevelData, opts: GameOptions = {}) {
     this.level = level;
@@ -222,6 +226,13 @@ export class Game {
     this.world = new World(level.boxes);
     this.cover = coverOf(this.world);
     this.graph = new Graph(level.markers, this.world);
+    // the gang takes the same cover he does: the derived points join the hand-placed ones (none within a
+    // metre of one), those with a way to them
+    for (const c of aiCovers(this.cover)) {
+      if (this.graph.covers.some(k => Math.hypot(k.x - c.x, k.z - c.z) < 1)) continue;
+      if (this.graph.nearest(c.x, c.y, c.z) < 0) continue;
+      this.graph.covers.push(c);
+    }
     const spawn = level.markers.find(m => m.kind === "spawn");
     const sx = spawn?.x ?? 0, sz = spawn?.z ?? 0;
     const sy = this.world.groundBelow(sx, sz, PLAYER.radius, (spawn?.y ?? 0) + 1);
@@ -508,7 +519,8 @@ export class Game {
     if (hand >= 0) this.firePlayer(hand);
     else if (canFire && inp.fire && !w.wasDown && w.reloadT > 0) this.emit({ type: "dryfire" });
 
-    // enemies
+    // enemies (the gang's tactics against his cover first)
+    if (this.aiOn && this.phase === "play") stepTactics(this, wdt);
     if (this.aiOn) for (const e of this.enemies) if (e.state !== "dead" && e.state !== "inactive") stepEnemy(this, e, wdt);
     for (const e of this.enemies) this.moveEnemy(e, wdt);
     // one alert wakes the whole room (the club: the DJ calls it)
@@ -988,11 +1000,18 @@ export class Game {
     const den = 2 * c * c * (R * t - dy);
     let v = den > 0.05 ? Math.sqrt((GRENADE.gravity * R * R) / den) : GRENADE.maxSpeed;
     v = Math.max(GRENADE.minSpeed, Math.min(GRENADE.maxSpeed, v));
-    const gr: Grenade = { id: this.nextGrenade++, x: ox, y: oy, z: oz, vx: hx * v * c, vy: v * Math.sin(th), vz: hz * v * c, fuse: GRENADE.fuse, landed: false, resting: false, bounces: 0 };
+    const gr: Grenade = { id: this.nextGrenade++, x: ox, y: oy, z: oz, vx: hx * v * c, vy: v * Math.sin(th), vz: hz * v * c, fuse: GRENADE.fuse, landed: false, resting: false, bounces: 0, by: -1 };
     this.grenadesLive.push(gr);
     this.emit({ type: "throw", id: gr.id, x: ox, y: oy, z: oz });
     // they hear the pin
     for (const e of this.enemies) if (e.state === "idle" && !e.deaf && (e.x - p.x) ** 2 + (e.z - p.z) ** 2 < 12 * 12) alertGoon(this, e, 0.3);
+  }
+
+  /** A goon's frag (ai/tactics.ts): from her hand at (ox, oy, oz) with that velocity. */
+  enemyGrenade(e: Enemy, ox: number, oy: number, oz: number, vx: number, vy: number, vz: number): void {
+    const gr: Grenade = { id: this.nextGrenade++, x: ox, y: oy, z: oz, vx, vy, vz, fuse: GRENADE.fuse, landed: false, resting: false, bounces: 0, by: e.idx };
+    this.grenadesLive.push(gr);
+    this.emit({ type: "throw", id: gr.id, x: ox, y: oy, z: oz, by: e.idx });
   }
 
   /** World-time flight with bounces off the boxes and the floor, the fuse, the girls running from it. */
@@ -1065,13 +1084,14 @@ export class Game {
       if (e.state === "idle") alertGoon(this, e, 0);
       if (e.kind === "heavy" && e.hp > 0 && dmg >= HEAVY.staggerAt && e.stagger <= 0) { e.stagger = HEAVY.stagger; e.tell = 0; this.emit({ type: "stagger", enemy: e.idx }); }
       const hl = Math.hypot(dx, dz) || 1;
-      if (e.hp <= 0) this.killEnemy(e, false, dx / hl, dz / hl, { ox: bx, oy: by, oz: bz, x: this.v.x, y: this.v.y, z: this.v.z }, true, false, "grenade");
+      // (a goon's own frag: no kill of his)
+      if (e.hp <= 0) this.killEnemy(e, false, dx / hl, dz / hl, (gr.by ?? -1) < 0 ? { ox: bx, oy: by, oz: bz, x: this.v.x, y: this.v.y, z: this.v.z } : null, true, false, "grenade");
     }
     const p = this.player;
     if (p.mode !== "dead") {
-      const tx = p.x, ty = p.y + (p.mode === "dive" || p.mode === "prone" ? 0.4 : 1.1), tz = p.z;
+      const tx = p.x, ty = p.y + (p.mode === "dive" || p.mode === "prone" ? 0.4 : p.hit.pose.stance === "cover" ? 0.6 : 1.1), tz = p.z;
       const d = Math.hypot(tx - bx, ty - by, tz - bz);
-      if (d < R && this.world.clear(bx, by, bz, tx, ty, tz, true)) this.hurtPlayer(dmgAt(d) * GRENADE.self, -1);
+      if (d < R && this.world.clear(bx, by, bz, tx, ty, tz, true)) this.hurtPlayer(dmgAt(d) * ((gr.by ?? -1) < 0 ? GRENADE.self : TACTICS.player * this.diff.damage), gr.by ?? -1);
     }
     for (const b of this.level.breakables) {
       const box = this.level.boxes.find(x => x.node === b.node);
@@ -1258,10 +1278,13 @@ export class Game {
     dx /= l; dy /= l; dz /= l;
     this.stats.shots += def.pellets; // accuracy counts every pellet (hits do)
     // hearing: idle goons in range wake up
+    // (and the awake ones know where he is from it: his shots give him away, blind fire too)
     for (const e of this.enemies) {
-      if (e.state !== "idle" || e.deaf) continue;
+      if (e.deaf || e.state === "dead" || e.state === "inactive") continue;
       const ex = e.x - p.x, ez = e.z - p.z;
-      if (ex * ex + ez * ez < AI.hearing * AI.hearing) alertGoon(this, e, 0.15);
+      if (ex * ex + ez * ez >= AI.hearing * AI.hearing) continue;
+      if (e.state === "idle") alertGoon(this, e, 0.15);
+      else { e.seenAt = this.time; e.lastSeenX = p.x; e.lastSeenZ = p.z; }
     }
     const cone = (p.zoom ? def.zoomSpread : def.spread) + (blind ? COVER_MOVE.blind : 0);
     for (let k = 0; k < def.pellets; k++) {
@@ -1288,15 +1311,19 @@ export class Game {
   }
 
   /** Enemy fires at the player (accuracy falls off with distance and the player's speed). */
-  enemyFire(e: Enemy, moving: boolean): void {
+  enemyFire(e: Enemy, moving: boolean, at: V3 | null = null): void {
     const p = this.player;
     const T = ENEMY[e.kind];
     const c = Math.cos(e.facing), s = Math.sin(e.facing);
     const up = e.crouch && e.state !== "peek" ? 0.95 : T.muzzleUp;
     const reach = e.kind === "heavy" ? 0.75 * HEAVY_SCALE : 0.45, side = e.kind === "heavy" ? 0.12 : 0.18;
-    const mx = e.x + s * reach - c * side, my = e.y + up, mz = e.z + c * reach + s * side;
+    // (leaning out of high cover: the gun goes out with her)
+    const ln = e.lean * 0.34;
+    const mx = e.x + s * reach - c * side + c * ln, my = e.y + up, mz = e.z + c * reach + s * side - s * ln;
     const tgt = this.v;
-    if (!aimPoint("radbro", p.hit.pose, p.hit.pose.stance === "dive" || p.hit.pose.stance === "prone" ? HB_TORSO : HB_TORSO, tgt, this.scratchCaps)) return;
+    // suppressing fire (ai/tactics.ts) goes at a point over his cover, else at his body
+    if (at) { tgt.x = at.x; tgt.y = at.y; tgt.z = at.z; }
+    else if (!aimPoint("radbro", p.hit.pose, HB_TORSO, tgt, this.scratchCaps)) return;
     let dx = tgt.x - mx, dy = tgt.y - my, dz = tgt.z - mz;
     const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
     const sniper = e.weapon === "sniper", cannon = e.weapon === "handcannon";
@@ -1304,7 +1331,7 @@ export class Game {
     const D = this.diff;
     const distF = sniper ? (dist <= ENEMY_ARMS.sniper.range ? 1 : D.farFloor) : dist <= AI.near ? 1 : dist >= D.far ? D.farFloor : 1 - ((1 - D.farFloor) * (dist - AI.near)) / (D.far - AI.near);
     const fast = p.mode === "dive" || p.mode === "roll";
-    const speedF = fast ? AI.dodgeMul : 1 - AI.speedK * Math.min(1, p.speed / PLAYER.runSpeed);
+    const speedF = fast ? AI.dodgeMul : 1 - D.speedK * Math.min(1, p.speed / PLAYER.runSpeed);
     const chance = (sniper ? ENEMY_ARMS.sniper.hit : AI.baseHit) * distF * speedF * this.diff.accuracy * (moving ? 0.55 : 1);
     const hitRoll = this.rng.next() < chance;
     // aim offset in the plane across the line of fire
@@ -1338,7 +1365,18 @@ export class Game {
   /** Can the enemy's gun see the player (no wall between muzzle height and the body)? */
   canShoot(e: Enemy): boolean {
     const p = this.player;
-    return this.world.clear(e.x, e.y + ENEMY[e.kind].muzzleUp, e.z, p.x, p.y + this.losUp() * 0.75, p.z, true);
+    const ln = e.lean * 0.34, lx = Math.cos(e.facing) * ln, lz = -Math.sin(e.facing) * ln;
+    return this.world.clear(e.x + lx, e.y + ENEMY[e.kind].muzzleUp, e.z + lz, p.x, p.y + this.losUp() * 0.75, p.z, true);
+  }
+
+  /** Suppressing fire's line: from her gun to the point over his cover, not blocked short of the cover
+   *  itself (a wall between them is no suppression). */
+  suppressLine(e: Enemy, at: V3): boolean {
+    const ln = e.lean * 0.34, ox = e.x + Math.cos(e.facing) * ln, oy = e.y + ENEMY[e.kind].muzzleUp, oz = e.z - Math.sin(e.facing) * ln;
+    const dx = at.x - ox, dy = at.y - oy, dz = at.z - oz, d = Math.hypot(dx, dy, dz);
+    if (d < 1e-3) return false;
+    const h = this.world.raycast(ox, oy, oz, dx / d, dy / d, dz / d, d, true);
+    return !h || h.t > d - 1.4;
   }
 
   /** Line of sight + view cone (unless already alerted) + range. */
@@ -1357,7 +1395,8 @@ export class Game {
       if ((fx * dx + fz * dz) / d < G.fov) return false;
     }
     const eyeY = e.y + (e.crouch ? 1.1 : e.kind === "heavy" ? 1.45 * HEAVY_SCALE : 1.65);
-    return this.world.clear(e.x, eyeY, e.z, p.x, p.y + Math.max(0.5, this.losUp() - 0.2), p.z, true);
+    const ln = e.lean * 0.34;
+    return this.world.clear(e.x + Math.cos(e.facing) * ln, eyeY, e.z - Math.sin(e.facing) * ln, p.x, p.y + Math.max(0.5, this.losUp() - 0.2), p.z, true);
   }
 
   /** Tell alertable friends nearby. */
@@ -1703,7 +1742,8 @@ export class Game {
     h.f64(p.x).f64(p.y).f64(p.z).f64(p.vx).f64(p.vy).f64(p.vz).f64(p.health).i32(p.copium).str(p.mode).f64(p.modeT);
     h.str(p.weapon.id).i32(p.weapon.mags[0]).i32(p.weapon.mags[1]).f64(p.weapon.cooldown).f64(p.weapon.reloadT).f64(p.weapon.reserve);
     h.f64(this.meter).f64(this.timeScale).f64(this.time).i32(this.rng.s).str(this.phase);
-    for (const e of this.enemies) h.f64(e.x).f64(e.z).f64(e.facing).f64(e.hp).str(e.state).f64(e.timer).i32(e.cover).f64(e.tell).f64(e.stagger);
+    for (const e of this.enemies) h.f64(e.x).f64(e.z).f64(e.facing).f64(e.hp).str(e.state).f64(e.timer).i32(e.cover).f64(e.tell).f64(e.stagger).str(e.role);
+    h.f64(this.tactics.x).f64(this.tactics.z).f64(this.tactics.t).f64(this.tactics.nadeAt).f64(this.tactics.fx).f64(this.tactics.fz);
     h.i32(this.projectiles.length).i32(this.breached.length).f64(this.breachSlow);
     for (const b of this.projectiles) h.f64(b.x).f64(b.y).f64(b.z);
     h.i32(p.guard ? 1 : 0).i32(p.guardLock ? 1 : 0).f64(p.guardT).f64(p.guardMeter).f64(p.guardBroken).f64(p.shoveT).f64(this.guardHoldUntil);

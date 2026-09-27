@@ -378,16 +378,19 @@ export function grenadeEscape(g: Game): { x: number; z: number } | null {
   const b = g.boss;
   if (!b) return null;
   const p = g.player;
-  let ex = 0, ez = 0;
+  let ex = 0, ez = 0, px = 0, pz = 0;
   for (const gr of b.grenades) {
     const dx = p.x - gr.tx, dz = p.z - gr.tz, d = Math.hypot(dx, dz);
     if (d > MADAME.grenade.radius + 0.6) continue;
+    // (between two rings the pushes can cancel: then out square to the line between them)
+    if (!px && !pz) { px = d > 1e-3 ? -dz / d : 0; pz = d > 1e-3 ? dx / d : 1; }
     const l = d || 1;
     ex += (d > 1e-3 ? dx / l : 1) * (MADAME.grenade.radius + 0.6 - d);
     ez += (d > 1e-3 ? dz / l : 0) * (MADAME.grenade.radius + 0.6 - d);
   }
   const l = Math.hypot(ex, ez);
-  return l > 1e-6 ? { x: ex / l, z: ez / l } : null;
+  if (l > 0.25) return { x: ex / l, z: ez / l };
+  return px || pz ? { x: px, z: pz } : null;
 }
 
 /** An add running for her door once Madame Pockit is down: gone (inactive) at the door. */

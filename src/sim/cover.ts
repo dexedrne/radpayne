@@ -20,7 +20,7 @@ export const COVER = {
   off: PLAYER.radius + 0.1,
   /** Obstacle heights (m over his floor): cover from `low`, high cover from `high`; he hides standing
    *  behind `tall` and up (else tucked down). */
-  low: 0.8,
+  low: 0.85,
   high: 1.35,
   tall: 1.75,
   /** Vaulting: only low cover up to this high, landing within this far past the face. */
@@ -333,7 +333,12 @@ export function findTarget(world: World, segs: CoverSeg[], p: Player): CoverTarg
     const side = (p.x - s.ax) * s.nx + (p.z - s.az) * s.nz;
     if (!inCover && near.d <= COVER_MOVE.takeNear && side > -0.2) {
       const score = near.d - 0.6 * faces;
-      if (score < bs) { const u = spotOn(s, near.u); segPoint(s, u, pt); bs = score; best = { seg: s.id, u, x: pt.x, z: pt.z, dash: Math.hypot(pt.x - p.x, pt.z - p.z) > 0.3 }; }
+      if (score < bs) {
+        const u = spotOn(s, near.u);
+        segPoint(s, u, pt);
+        // (never through a wall: a straight step to it)
+        if (world.clear(p.x, p.y + 0.45, p.z, pt.x, s.y + 0.45, pt.z, false)) { bs = score; best = { seg: s.id, u, x: pt.x, z: pt.z, dash: Math.hypot(pt.x - p.x, pt.z - p.z) > 0.3 }; }
+      }
       continue;
     }
     if (faces < -0.2) continue;
@@ -409,9 +414,11 @@ export function vaultLanding(world: World, s: CoverSeg, x: number, z: number): {
     const gy = world.groundBelow(lx, lz, 0.2, topY - 0.3);
     if (!Number.isFinite(gy) || Math.abs(gy - s.y) > 0.5) continue;
     if (!fits(world, lx, gy, lz, PLAYER.height)) continue;
-    // past the obstacle: looking back at knee height it is there
+    // past the obstacle: looking back at knee height it is there, and nothing else is: the way over it is
+    // clear just above its top (never over a wall behind it)
     const back = world.raycast(lx, gy + 0.45, lz, s.nx, 0, s.nz, k, false);
     if (!back) continue;
+    if (!world.clear(x, topY + 0.3, z, lx, topY + 0.3, lz, false)) return null;
     const mx = x - s.nx * (k / 2), mz = z - s.nz * (k / 2);
     if (world.ceilingAbove(mx, mz, 0.3, topY + 0.1) - topY < PLAYER.height * 0.8) return null;
     return { x: lx, y: gy, z: lz };

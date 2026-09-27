@@ -63,7 +63,7 @@ export function stepRusher(g: Game, e: Enemy, dt: number): void {
       break;
     case "rush": {
       if (!playerAlive) break;
-      if (dist <= e.engageAt && e.sees) {
+      if (dist <= (e.role === "rush" ? 3.5 : e.engageAt) && (e.sees || e.role === "rush")) {
         setState(e, "engage");
         e.timer = RUSHER.strafeEvery;
         e.strafe = g.rng.next() < 0.5 ? -1 : 1;
@@ -95,13 +95,14 @@ export function stepRusher(g: Game, e: Enemy, dt: number): void {
       // strafe across the line to him; drift in or out to hold her distance
       const k = flank ? GUARD.flank : 1;
       let vx = (-dz / dist) * e.strafe * R.walk * k, vz = (dx / dist) * e.strafe * R.walk * k;
-      const hold = dist - e.engageAt;
+      // (sent in close: he has sat in one cover too long)
+      const hold = dist - (e.role === "rush" ? 3.5 : e.engageAt);
       if (Math.abs(hold) > 1) { vx += (dx / dist) * Math.sign(hold) * R.walk * 0.5; vz += (dz / dist) * Math.sign(hold) * R.walk * 0.5; }
       e.vx = vx;
       e.vz = vz;
       if (e.sees && e.flinch <= 0 && playerAlive) tryFire(g, e, dt, true);
       // lost him (a corner, too far): charge again
-      if ((!e.sees && e.stateT > 0.8) || dist > e.engageAt + 5) startRush(g, e);
+      if ((!e.sees && e.stateT > 0.8 && e.role !== "rush") || dist > e.engageAt + 5) startRush(g, e);
       break;
     }
     case "move": {

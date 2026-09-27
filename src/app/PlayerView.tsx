@@ -506,7 +506,7 @@ export function PlayerView({ s }: { s: Session }) {
         else r.recoil[e.hand] = 1;
       }
       if (e.type === "hurt" && e.target === -1 && e.hp > 0 && rig.hit) rig.hit.reset().setEffectiveWeight(0.9).play();
-      if (e.type === "throw") r.throwT = 0;
+      if (e.type === "throw" && e.by === undefined) r.throwT = 0;
       if (e.type === "reload") {
         // the shotgun's authored feed (the sniper's rounds go in the same way); the AK's (and the rifle's)
         // mag change is a left-hand path on the hold (no layer)

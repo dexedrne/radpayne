@@ -8,6 +8,7 @@
 import type { Enemy } from "../sim/actors.ts";
 import type { Game } from "../sim/game.ts";
 import { AI, ENEMY, ENEMY_ARMS, MADAME, RUSHER } from "../sim/tuning.ts";
+import { TACTICS, suppresses } from "./tactics.ts";
 
 
 export function setState(e: Enemy, s: Enemy["state"]): void {
@@ -35,7 +36,8 @@ export const within = (lo: number, hi: number, r: number) => lo + (hi - lo) * r;
 export function pickCover(g: Game, e: Enemy): number {
   const p = g.player;
   const her = e.kind === "madame";
-  const ideal = her ? ((g.boss?.phase ?? 1) >= 3 ? MADAME.range3 : MADAME.range) : 13;
+  // (on the harder settings the gang works in: each cover it takes a little closer to him)
+  const ideal = her ? ((g.boss?.phase ?? 1) >= 3 ? MADAME.range3 : MADAME.range) : g.diff.suppress > 0 ? Math.max(7, 13 - 1.5 * e.advances) : 13;
   const wr = her ? 0.6 : 0.35;
   let best = -1, bestScore = Infinity;
   const covers = g.graph.covers;
@@ -69,13 +71,15 @@ export function goToCover(g: Game, e: Enemy): void {
     e.timer = within(1.2, 2.4, g.rng.next());
     return;
   }
-  const ci = pickCover(g, e);
+  let ci = e.role ? pickFlank(g, e, e.role === "rush") : -1;
+  if (ci < 0) { e.role = ""; ci = pickCover(g, e); }
   if (ci >= 0) {
     const c = g.graph.covers[ci];
     const path = g.graph.path(e.x, e.y, e.z, c.x, c.y, c.z);
     if (path) {
       c.claimed = e.idx;
       e.cover = ci;
+      e.advances++;
       e.path = path;
       e.pathI = 0;
       setState(e, "move");
@@ -84,6 +88,34 @@ export function goToCover(g: Game, e: Enemy): void {
   }
   setState(e, "engage");
   e.timer = within(1.2, 2.4, g.rng.next());
+}
+
+/** A point round the side of the spot he holds (ai/tactics.ts): off the way he faces the gang (his cover
+ *  does not protect him from there), with a
+ *  line to him, `flankRange` m from him (`rush`: `rushRange`), the least walk for her; -1 if none. */
+export function pickFlank(g: Game, e: Enemy, rush: boolean): number {
+  const p = g.player;
+  const fx = g.tactics.fx, fz = g.tactics.fz;
+  const [lo, hi] = rush ? TACTICS.rushRange : TACTICS.flankRange;
+  const ideal = (lo + hi) / 2;
+  let best = -1, bs = Infinity;
+  const covers = g.graph.covers;
+  for (let i = 0; i < covers.length; i++) {
+    const c = covers[i];
+    if (c.claimed >= 0 && c.claimed !== e.idx) continue;
+    const dx = c.x - p.x, dz = c.z - p.z, d = Math.hypot(dx, dz);
+    if (d < lo || d > hi || Math.abs(c.y - p.y) > 1.5) continue;
+    // round the side of the way he faces the gang (his cover's front): his cover does not protect him there
+    if ((dx * fx + dz * fz) / d > 0.3) continue;
+    const walk = Math.hypot(c.x - e.x, c.z - e.z);
+    if (walk > TACTICS.flankTravel) continue;
+    const score = walk + 0.5 * Math.abs(d - ideal);
+    if (score >= bs) continue;
+    if (!g.world.clear(c.x, c.y + 1.5, c.z, p.x, p.y + 1.0, p.z, true)) continue;
+    bs = score;
+    best = i;
+  }
+  return best;
 }
 
 /** Cover no longer protects (the player walked around it). */
@@ -125,7 +157,7 @@ export function perceive(g: Game, e: Enemy): void {
   if ((g.stepN + e.idx) % AI.losEvery !== 0) return;
   const p = g.player;
   e.sees = p.mode !== "dead" && g.canSee(e);
-  if (e.sees) { e.lastSeenX = p.x; e.lastSeenZ = p.z; }
+  if (e.sees) { e.lastSeenX = p.x; e.lastSeenZ = p.z; e.seenAt = g.time; }
 }
 
 /** One AI step for a goon on world time `dt`. */
@@ -166,7 +198,11 @@ export function stepGoon(g: Game, e: Enemy, dt: number): void {
         tryFire(g, e, dt, true);
       } else if (e.vx || e.vz) faceToward(e, e.x + e.vx, e.z + e.vz, 10, dt);
       if (arrived) {
-        if (e.cover >= 0) {
+        if (e.cover >= 0 && e.role && flanked(g, e)) {
+          // round his side, where her point gives her nothing to hide behind: stand and shoot
+          setState(e, "engage");
+          e.timer = within(1.6, 2.6, g.rng.next());
+        } else if (e.cover >= 0) {
           setState(e, "cover");
           e.timer = within(AI.coverWait[0], AI.coverWait[1], g.rng.next()) * 0.6;
           e.peeksMax = AI.peeksBeforeMove[0] + Math.floor(g.rng.next() * (AI.peeksBeforeMove[1] - AI.peeksBeforeMove[0] + 1));
@@ -215,7 +251,7 @@ export function stepGoon(g: Game, e: Enemy, dt: number): void {
       if (e.timer <= 0) {
         e.strafe = g.rng.next() < 0.5 ? -1 : 1;
         e.timer = within(1.2, 2.4, g.rng.next());
-        if (g.graph.covers.length && e.stateT > 3 && !e.perch) { goToCover(g, e); break; }
+        if (g.graph.covers.length && e.stateT > (e.role ? 6 : 3) && !e.perch) { goToCover(g, e); break; }
       }
       if (e.perch) { // hold the platform; duck behind the rail now and then
         wantCrouch = e.strafe < 0 && !e.sees;
@@ -274,16 +310,27 @@ export function tryFire(g: Game, e: Enemy, dt: number, moving: boolean): void {
   if (e.fireT > 0) return;
   // #4764 raised his katana's guard in front of her: a beat of doubt before the next round
   if (e.kind === "goon" && g.guardHolds(e)) return;
-  if (!g.canShoot(e)) { e.fireT = 0.15; return; }
+  let at: { x: number; y: number; z: number } | null = null;
+  if (!g.canShoot(e)) {
+    // he is behind cover: the suppressors keep his head down (rounds over his cover, at his chest height
+    // should he stand up); everyone else waits for a shot
+    const p = g.player;
+    if (!suppresses(g, e)) { e.fireT = 0.15; return; }
+    at = SUP;
+    SUP.x = p.x; SUP.y = p.y + TACTICS.suppressUp; SUP.z = p.z;
+    if (!g.suppressLine(e, SUP)) { e.fireT = 0.15; return; }
+    faceToward(e, p.x, p.z, 8, dt);
+  }
   if (!slotFree(g, e)) { e.fireT = 0.2 + 0.3 * g.rng.next(); return; }
   e.lastShotT = g.time;
-  g.enemyFire(e, moving);
+  g.enemyFire(e, moving, at);
   e.burstLeft--;
   if (e.burstLeft <= 0) {
     e.burstLeft = T.burst;
-    e.fireT = e.kind === "rusher" ? within(RUSHER.burstPause[0], RUSHER.burstPause[1], g.rng.next()) : T.fireInterval * (2.2 + 1.5 * g.rng.next());
+    e.fireT = (e.kind === "rusher" ? within(RUSHER.burstPause[0], RUSHER.burstPause[1], g.rng.next()) : T.fireInterval * (2.2 + 1.5 * g.rng.next())) * (at ? TACTICS.suppressPause : 1);
   } else e.fireT = T.fireInterval * (0.85 + 0.3 * g.rng.next());
 }
+const SUP = { x: 0, y: 0, z: 0 };
 
 /** Kill cleanup: release cover. */
 export function onGoonDeath(g: Game, e: Enemy): void {

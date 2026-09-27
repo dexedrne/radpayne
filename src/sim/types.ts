@@ -91,7 +91,7 @@ export type GameEvent =
   /** Bullet time asked for with too little meter (the HUD flashes the hourglass). */
   | { type: "btRefused" }
   // the arsenal: a grenade leaves his left hand (id), bounces, goes off (x, y, z; kills in it)
-  | { type: "throw"; id: number; x: number; y: number; z: number }
+  | { type: "throw"; id: number; x: number; y: number; z: number; /** a goon's frag (ai/tactics.ts): her index */ by?: number }
   | { type: "bounce"; id: number; x: number; y: number; z: number; speed: number }
   | { type: "explode"; id: number; x: number; y: number; z: number }
   /** A melee: `phase` start (the swing begins) / hit (it resolved: `hits` bodies); kind katana | strike. */

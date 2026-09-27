@@ -44,7 +44,9 @@ test("goon: idle -> alert (reaction delay) -> move -> cover -> peek and shoot", 
     const react = (moveAt - alertAt) * DT;
     const want = DIFFICULTY[d].reaction;
     assert.ok(react >= want * 0.84 && react <= want * 1.16 + 0.02, `${d} reaction ${react} vs ${want}`);
-    assert.equal(g.graph.covers[firstCover].id, "cover-front");
+    // behind the front barrier: its marker, or a point derived along it (sim/cover.ts)
+    const fc = g.graph.covers[firstCover];
+    assert.ok(Math.abs(fc.z - -10.8) < 0.2 && Math.abs(fc.x - 2) < 1.6, `${fc.id} at ${fc.x}, ${fc.z}`);
     assert.ok(e.shots > 0, "fired from cover");
   }
 });

@@ -51,6 +51,7 @@ for (const room of rooms) for (const diff of diffs) for (const seed of seeds) {
     row.copium += s.copiumUsed - (statsAt?.copiumUsed ?? 0);
     row.time += s.time - (statsAt?.time ?? 0);
     row.kills += s.kills - (statsAt?.kills ?? 0);
+    if (process.argv.includes("--verbose")) console.log(`  attempt ${attempt}: ${g.phase} after ${g.stats.time.toFixed(0)} s, ${g.alive} alive, hp ${g.player.health.toFixed(0)} at ${g.player.x.toFixed(1)}, ${g.player.z.toFixed(1)}${resume ? " (from a checkpoint)" : ""}`);
     if (g.phase === "done") { row.cleared = true; break; }
     row.deaths++;
     resume = g.saved ?? undefined;

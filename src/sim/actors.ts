@@ -213,6 +213,13 @@ export type Enemy = {
   /** Gone from the fight without dying (round 3: an add who ran once the boss was down, or never came
    *  in): not counted alive. */
   fled: boolean;
+  /** World time she last saw him (the gang's tactics: who knows where he is). */
+  seenAt: number;
+  /** Her part against his cover (ai/tactics.ts): "" none, "flank" (round the side of his cover), "rush"
+   *  (in close: he has sat in one cover too long). */
+  role: "" | "flank" | "rush";
+  /** Covers taken since the alert (each one a little closer: the gang advances). */
+  advances: number;
 };
 
 export function makeEnemy(idx: number, id: string, x: number, y: number, z: number, facing: number, hp: number, milady: number, group: string, kind: EnemyKind = "goon"): Enemy {
@@ -225,6 +232,6 @@ export function makeEnemy(idx: number, id: string, x: number, y: number, z: numb
     lean: 0, leanTarget: 0, crouch: false, deadT: 0, deathHold: false, killDX: 0, killDZ: 1, headshot: false, strafe: 1, hit, patrol: [], shots: 0,
     lastShotT: -1e9, perch: false, tell: 0, stagger: 0, shells: 6, reloadT: 0, coverUsed: false, engageAt: 7, repath: 0, drop: "", deaf: false, hold: false,
     knockT: 0, knockX: 0, knockZ: 0, fleeWait: 0, fleeT: 0, fleeX: 0, fleeZ: 0,
-    maxHp: hp, fled: false,
+    maxHp: hp, fled: false, seenAt: -1e9, role: "", advances: 0,
   };
 }

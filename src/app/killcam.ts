@@ -84,8 +84,9 @@ export function planKillcam(k: KillCam, e: { x: number; y: number; z: number; ki
   const fy = e.y + KC.atY;
   let a0 = 0, dir = 1, score = -Infinity;
   const eyeAt = (a: number) => [kx + (-hx * Math.cos(a) + sx * Math.sin(a)) * KC.radius, e.y + KC.eyeY, kz + (-hz * Math.cos(a) + sz * Math.sin(a)) * KC.radius] as const;
-  for (let i = 0; i < 16; i++) {
-    const a = ((i % 2 ? -1 : 1) * Math.ceil(i / 2) * Math.PI) / 8;
+  // (every 11.25 deg round her: a body tucked in behind cover in a tight corner may have one clean arc)
+  for (let i = 0; i < 32; i++) {
+    const a = ((i % 2 ? -1 : 1) * Math.ceil(i / 2) * Math.PI) / 16;
     for (const d of [1, -1]) {
       let sc = -Math.abs(a) * 0.8;
       for (const t of [0, 0.25, 0.5]) {
@@ -94,7 +95,8 @@ export function planKillcam(k: KillCam, e: { x: number; y: number; z: number; ki
         if (w.raycast(kx, fy, kz, vx / len, vy / len, vz / len, len + 0.45, false) === null) sc += 6; // no wall at / behind the lens
         if (clear(ex, ey, ez, e.x, e.y + 1.6, e.z)) sc += 3;
         if (clear(ex, ey, ez, e.x, e.y + 0.4, e.z)) sc += 2;
-        sc -= spoil(ex, ey, ez, kx, fy, kz, view, steam, near);
+        const sp = spoil(ex, ey, ez, kx, fy, kz, view, steam, near);
+        sc -= sp > 0 ? 40 + sp : 0; // (a post at the lens spoils the whole shot: any clean arc beats it)
         // hot lights within 9 m of the lens and inside ~30 deg of the view blow the frame out
         const fx = -vx / len, fyv = -vy / len, fz = -vz / len;
         for (const gp of level.glare) {
