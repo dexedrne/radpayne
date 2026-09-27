@@ -402,9 +402,11 @@ export class Director {
     switch (e.type) {
       case "alert": {
         const en = g.enemies[e.enemy];
-        // one call per group: the first girl of it to see him (a heavy's alert is his entrance)
+        // one call per group: the first girl of it to see him (a heavy's alert is his entrance); with
+        // Less chatter only the room's first call and the heavies'
         const grp = en?.kind === "heavy" ? `heavy-${e.enemy}` : en?.group ?? "";
-        if (!this.alerted.has(grp)) { this.alerted.add(grp); this.bark(e.enemy, "alert", true); }
+        const call = this.chatter === "normal" || this.alerted.size === 0 || en?.kind === "heavy";
+        if (!this.alerted.has(grp)) { if (call) this.bark(e.enemy, "alert", true); this.alerted.add(grp); }
         this.say("tut_shoot", 1.6);
         if (en?.kind === "heavy") this.say("r3_heavy", 1.0);
         if (this.dj >= 0) this.pa("pa_1", 0.4);
@@ -494,7 +496,7 @@ export class Director {
         else if ((e.state === "peek" || e.state === "engage") && prev === "alert") { if (Math.random() < b.spotted) this.bark(e.idx, "spotted"); }
         else if (e.state === "rush" && prev === "alert") {
           // the first rusher's charge is the moment; the rest charge in silence (now and then a call)
-          const first = !this.charged;
+          const first = !this.charged && this.chatter === "normal";
           this.charged = true;
           if (first || Math.random() < b.spotted) this.bark(e.idx, "charge", first);
           if (this.rusherLine) this.say(this.rusherLine, 0.6);
