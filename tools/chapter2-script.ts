@@ -167,7 +167,7 @@ function assetsDoc(): string {
   return o.join("\n") + "\n";
 }
 if (import.meta.main) {
-  const { COUNTESS } = await import("../src/sim/tuning.ts") as unknown as { COUNTESS?: { pockit: number } };
+  const { COUNTESS } = await import("../src/sim/tuning2.ts") as unknown as { COUNTESS?: { pockit: number } };
   fs.writeFileSync(path.join(root, "docs", "chapter2-assets.md"), assetsDoc().replace("COUNTESS_POCKIT", String(COUNTESS?.pockit ?? "?")));
   console.log("wrote docs/chapter2-assets.md");
 }

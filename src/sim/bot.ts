@@ -233,6 +233,10 @@ export class Bot {
       f.moveY = esc.x * -sy + esc.z * -cy;
       f.moveX = esc.x * cy - esc.z * sy;
     }
+    // chapter 2: the room's own timing (the vault's beams: a jump over the low one, a dive under the high)
+    const hint = g.stage?.botHint?.(g);
+    if (hint?.jump) f.jump = true;
+    if (hint?.dodge && p.dodgeCooldown <= 0) { f.dodge = true; if (!f.moveX && !f.moveY) f.moveX = this.strafe; }
     if (p.health < 50 && p.copium > 0 && p.healLeft <= 0) f.copium = true;
     if (p.mode === "prone") f.moveY = 1;
     return f;

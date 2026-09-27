@@ -81,7 +81,7 @@ export type EnemyTuning = {
   /** Muzzle height when standing (m above the feet). */
   muzzleUp: number;
 };
-export const ENEMY: Record<"goon" | "rusher" | "heavy" | "madame", EnemyTuning> = {
+export const ENEMY: Record<"goon" | "rusher" | "heavy" | "madame" | "countess", EnemyTuning> = {
   // idleSight: how far an idle goon (chatting in the rain, before the alert trigger) notices the player
   goon: { hp: 60, radius: 0.35, walk: 2.2, run: 4.2, fireInterval: 0.42, burst: 3, damage: 9, sight: 34, idleSight: 18, fov: 0.35, pellets: 1, spread: 0, muzzleUp: 1.35 },
   // SMG in the right hand: charges to 5-9 m, then strafes and fires bursts of 6
@@ -91,6 +91,8 @@ export const ENEMY: Record<"goon" | "rusher" | "heavy" | "madame", EnemyTuning> 
   // round 3: Madame Pockit, the penthouse boss (MADAME below): dual SMGs, bursts of 10; hp is per
   // difficulty (MADAME.hp); run is her brisk walk between cover in phases 1-2 (phase 3 runs like a rusher)
   madame: { hp: 1600, radius: 0.42, walk: 2.4, run: 3.4, fireInterval: 0.08, burst: 10, damage: 4, sight: 40, idleSight: 30, fov: 0.2, pellets: 1, spread: 0, muzzleUp: 1.35 * 1.25 },
+  // chapter 2: the Countess (her numbers: COUNTESS in tuning2.ts): a rifle, one round after its tell
+  countess: { hp: 2400, radius: 0.42, walk: 2.4, run: 4.2, fireInterval: 0.5, burst: 1, damage: 22, sight: 50, idleSight: 34, fov: 0.2, pellets: 1, spread: 0, muzzleUp: 1.35 * 1.3 },
 };
 
 /** Rusher behaviour (world seconds / metres). */

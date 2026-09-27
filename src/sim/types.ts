@@ -112,4 +112,8 @@ export type GameEvent =
   | { type: "boss"; what: "intro" | "phase2" | "phase3" | "sweepTell" | "sweep" | "windup" | "reload" | "rug" | "chain" | "chandelier" | "crash" | "lamp" | "door" | "lastStand" | "bag" | "down" | "stagger" | "laugh"; door?: string; hit?: boolean }
   /** Her heart grenades: throw (from her hand), land, blast (hand: shot in her hand, it went off on her),
    *  pop (shot in the air: harmless). */
-  | { type: "grenade"; what: "throw" | "land" | "blast" | "pop"; id: number; x: number; y: number; z: number; hand?: boolean };
+  | { type: "grenade"; what: "throw" | "land" | "blast" | "pop"; id: number; x: number; y: number; z: number; hand?: boolean }
+  /** Chapter 2's set pieces (sim/stage.ts): the roof's light and ropes, the garden's glass, the airship's
+   *  door, the counting floor's shutters and blackout, the vault's lifts, beams and the Countess. `id`: an
+   *  enemy index where one is meant; (x, z): where it happens. */
+  | { type: "stage"; what: string; id?: number; x?: number; y?: number; z?: number; group?: string };

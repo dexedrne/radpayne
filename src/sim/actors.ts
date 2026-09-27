@@ -2,6 +2,7 @@
 import { makeHitActor, type HitActor } from "../combat/trace.ts";
 import { makeWeapon, type BaseWeapon, type WeaponId, type WeaponState } from "../combat/weapons.ts";
 import { GUARD, HEAVY_SCALE, MADAME, PLAYER } from "./tuning.ts";
+import { COUNTESS } from "./tuning2.ts";
 
 export type PlayerMode = "normal" | "dive" | "prone" | "getup" | "roll" | "dead";
 
@@ -96,11 +97,12 @@ export type EnemyState = "inactive" | "idle" | "alert" | "move" | "cover" | "pee
 /** goon: pistol, cover and peek (room 1). rusher: SMG, charges and strafes, cover once when hurt.
  *  heavy: a rival Radbro with a pump shotgun, slow advance, a laser-sight tell, staggers, no cover. */
 /** madame: the penthouse boss (round 3, sim/boss.ts + ai/madame.ts): a Milady with dual SMGs. */
-export type EnemyKind = "goon" | "rusher" | "heavy" | "madame";
+/** countess: the vault's boss (chapter 2, sim/ch2/vault.ts + ai/countess.ts): a Milady with a rifle. */
+export type EnemyKind = "goon" | "rusher" | "heavy" | "madame" | "countess";
 /** The gang's guns; a marker's `weapon` overrides the kind's (a goon with the sniper rifle on a perch,
  *  a heavy with the hand cannon). */
 export type EnemyWeapon = "pistol" | "smg" | "shotgun" | "sniper" | "handcannon";
-export const KIND_WEAPON: Record<EnemyKind, EnemyWeapon> = { goon: "pistol", rusher: "smg", heavy: "shotgun", madame: "smg" };
+export const KIND_WEAPON: Record<EnemyKind, EnemyWeapon> = { goon: "pistol", rusher: "smg", heavy: "shotgun", madame: "smg", countess: "sniper" };
 
 export type Enemy = {
   idx: number;
@@ -199,6 +201,7 @@ export function makeEnemy(idx: number, id: string, x: number, y: number, z: numb
   const hit = makeHitActor(kind === "heavy" ? "radbro" : "milady", 1);
   if (kind === "heavy") hit.pose.scale = HEAVY_SCALE;
   if (kind === "madame") hit.pose.scale = MADAME.scale;
+  if (kind === "countess") hit.pose.scale = COUNTESS.scale;
   return {
     idx, id, kind, weapon: KIND_WEAPON[kind], milady, model: "", group, x, y, z, vx: 0, vz: 0, facing, hp, state: group ? "inactive" : "idle", stateT: 0, react: 0, timer: 0,
     cover: -1, lastCover: -1, path: [], pathI: 0, peeks: 0, peeksMax: 2, burstLeft: 0, fireT: 0, flinch: 0, sees: false, lastSeenX: x, lastSeenZ: z,

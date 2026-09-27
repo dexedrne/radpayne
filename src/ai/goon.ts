@@ -8,6 +8,7 @@
 import type { Enemy } from "../sim/actors.ts";
 import type { Game } from "../sim/game.ts";
 import { AI, ENEMY, ENEMY_ARMS, MADAME, RUSHER } from "../sim/tuning.ts";
+import { COUNTESS } from "../sim/tuning2.ts";
 
 
 export function setState(e: Enemy, s: Enemy["state"]): void {
@@ -34,8 +35,8 @@ export const within = (lo: number, hi: number, r: number) => lo + (hi - lo) * r;
  *  crosses more than MADAME.hop of open floor at a time. */
 export function pickCover(g: Game, e: Enemy): number {
   const p = g.player;
-  const her = e.kind === "madame";
-  const ideal = her ? ((g.boss?.phase ?? 1) >= 3 ? MADAME.range3 : MADAME.range) : 13;
+  const her = e.kind === "madame" || e.kind === "countess";
+  const ideal = e.kind === "countess" ? COUNTESS.range : her ? ((g.boss?.phase ?? 1) >= 3 ? MADAME.range3 : MADAME.range) : 13;
   const wr = her ? 0.6 : 0.35;
   let best = -1, bestScore = Infinity;
   const covers = g.graph.covers;
@@ -240,9 +241,9 @@ export function stepGoon(g: Game, e: Enemy, dt: number): void {
 
 /** A free shooter slot (difficulty: at most N of the gang shooting at once); mid-burst shooters keep theirs. */
 export function slotFree(g: Game, e: Enemy): boolean {
-  if (g.time - e.lastShotT <= AI.shooterHold || e.kind === "madame") return true; // the boss never waits her turn
+  if (g.time - e.lastShotT <= AI.shooterHold || e.kind === "madame" || e.kind === "countess") return true; // the boss never waits her turn
   let busy = 0;
-  for (const o of g.enemies) if (o !== e && o.kind !== "madame" && o.state !== "dead" && g.time - o.lastShotT <= AI.shooterHold) busy++;
+  for (const o of g.enemies) if (o !== e && o.kind !== "madame" && o.kind !== "countess" && o.state !== "dead" && g.time - o.lastShotT <= AI.shooterHold) busy++;
   return busy < g.diff.shooters;
 }
 
