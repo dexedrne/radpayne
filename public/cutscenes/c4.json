@@ -1,0 +1,43 @@
+{
+  "id": "c4",
+  "title": "Chapter 1: Rugged",
+  "music": "street",
+  "panels": [
+    {
+      "image": "/cutscenes/c4/panel_1.webp",
+      "tone": "guns",
+      "box": [0.02, 0.029, 0.168, 0.076],
+      "lines": [
+        {
+          "audio": "cs4_01",
+          "text": "she went down like a curtain at the end of a show. the bag was lighter than i remembered. it always is."
+        }
+      ],
+      "dur": 8.3
+    },
+    {
+      "image": "/cutscenes/c4/panel_2.webp",
+      "tone": "phone",
+      "box": [0.018, 0.027, 0.209, 0.08],
+      "lines": [
+        {
+          "audio": "cs4_02",
+          "text": "her phone kept ringing. whoever was calling was higher up than any penthouse."
+        }
+      ],
+      "dur": 5.4
+    },
+    {
+      "image": "/cutscenes/c4/panel_3.webp",
+      "tone": "street",
+      "box": [0.018, 0.024, 0.206, 0.097],
+      "lines": [
+        {
+          "audio": "cs4_03",
+          "text": "i checked the screen. it didn't say zero anymore. somewhere above all of it, somebody was already counting."
+        }
+      ],
+      "dur": 8.3
+    }
+  ]
+}

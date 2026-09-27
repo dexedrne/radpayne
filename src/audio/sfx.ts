@@ -16,6 +16,7 @@
 // than the world in bullet time and get a low boom under them.
 import { engine, live, sfxOn, voiceOn, whenCreated, type Engine } from "./engine.ts";
 import { assetUrl } from "../app/assets.ts";
+import { isRound3, ROUND3_FILES } from "./round3.ts";
 
 // ---- the guns' files ------------------------------------------------------------------------------
 
@@ -66,6 +67,7 @@ export const GUN_FILES = [...new Set([...Object.values(GUNS).flatMap(g => [...g.
 
 /** Files under public/audio (no extension). Keys are the paths. */
 export const FILES = [
+  ...ROUND3_FILES, // round 3: rooms 4-5, cutscenes 3-4 (the "end" group)
   ...GUN_FILES, "sfx/dry_fire", "sfx/reload_mag_out", "sfx/reload_mag_in", "sfx/reload_slide",
   "sfx/shell_casing", "sfx/shell_casing_2", "sfx/shell_casing_3", "sfx/impact_concrete", "sfx/impact_concrete_2", "sfx/impact_metal", "sfx/impact_metal_2",
   "sfx/impact_glass", "sfx/impact_glass_2", "sfx/impact_body", "sfx/impact_body_2", "sfx/bullet_whiz", "sfx/bullet_whiz_2", "sfx/bt_enter", "sfx/bt_exit",
@@ -98,7 +100,7 @@ export const FILES = [
  * "later" (rooms 2-3 and cutscene 2: loadLaterSamples(), once room 1 runs, at low priority). A file not
  * named in LATER is a room-1 file (a new sound is never silent in room 1 for being unlisted).
  */
-export type SampleGroup = "cs1" | "room" | "music" | "fight" | "later";
+export type SampleGroup = "cs1" | "room" | "music" | "fight" | "later" | "end";
 const LATER = [
   /^music\/(rave_club|fight_rave|backrooms_calm)$/,
   /^voices\/(crowd|pa|heavy)\//,
@@ -108,6 +110,7 @@ const LATER = [
   /^sfx\/(shotgun_|record_scratch|door_|keycard_|elevator_|crowd_|office_room_tone|fluorescent_|glass_wall|impact_(wood|bottle|drywall|speaker|screen|body_heavy)|heavy_step|footsteps_hard|dive_land_floor|shell_casing_floor)/,
 ];
 export function sampleGroup(k: string): SampleGroup {
+  if (isRound3(k)) return "end";
   if (/^voices\/narrator\/cs1_/.test(k)) return "cs1";
   if (k === "music/fight_tense") return "fight";
   if (k === "music/street_calm") return "music";
@@ -171,6 +174,15 @@ export function loadLaterSamples(): void {
   laterStarted = true;
   void loadSamples();
   whenCreated(e => { for (const k of group("later")) void loadKey(e, k, "low"); });
+}
+
+/** Rooms 4-5 and cutscenes 3-4 (low priority, once the chapter gets there: room 3 on). */
+let endStarted = false;
+export function loadEndSamples(): void {
+  if (endStarted) return;
+  endStarted = true;
+  void loadSamples();
+  whenCreated(e => { for (const k of group("end")) void loadKey(e, k, "low"); });
 }
 
 /** Wait (at most `ms`) for these files (keys as in FILES; others load on demand, low priority). */
@@ -742,6 +754,10 @@ const MUSIC: Record<string, MusicSet> = {
   // the club's own track is diegetic: the first shot cuts it dead (the record scratch) and the fight comes in
   rave: { calm: "music/rave_club", fight: "music/fight_rave", calmGain: 0.9, fightGain: 0.9, clear: { gain: 0.35, lowpass: 900 }, hardCut: true },
   backrooms: { calm: "music/backrooms_calm", fight: "music/fight_tense", calmGain: 0.85, fightGain: 0.95 },
+  // round 3: the ride's muzak (room 4 swaps in music/elevator_muzak_warped after the cables snap), then the
+  // same muzak low on the penthouse speakers until Madame Pockit's loop cuts in
+  elevator: { calm: "music/elevator_muzak", fight: "music/fight_tense", calmGain: 0.8, fightGain: 0.95 },
+  penthouse: { calm: "music/elevator_muzak", fight: "music/boss_madame", calmGain: 0.45, fightGain: 0.95, hardCut: true },
 };
 
 /** The cue asked for last (a track that was still loading then comes in when it lands). */

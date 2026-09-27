@@ -16,12 +16,14 @@ import type { GameEvent } from "../sim/types.ts";
 import { bark, crowdVoice, heavyBark, narrate, pa, radbro, stopNarration, type BarkKind, type GoonVoice, type HeavyLine, type RadbroLine } from "../audio/sfx.ts";
 import { useUi } from "../ui/store.ts";
 import { PLAYER } from "../sim/tuning.ts";
+import { ROUND3_CLEAR_LINES, ROUND3_HINTS, ROUND3_NARRATION } from "./round3Lines.ts";
 
 /** this.io.now() until which goon i is talking (EnemiesView moves the mouth). */
 export const goonTalk: number[] = [];
 
 /** The narrator's tutorial / room lines: subtitle == spoken line. */
 export const NARRATION: Record<string, string> = {
+  ...ROUND3_NARRATION,
   tut_shoot: "they saw me first. it didn't help them much.",
   tut_bullet_time: "everything slowed down. i'd had practice watching things fall.",
   tut_shootdodge: "the only way out was sideways. guns first.",
@@ -39,6 +41,7 @@ export const NARRATION: Record<string, string> = {
   r3_clear: "the elevator was at the end of the hall. the key was warm in my hand.",
 };
 const HINTS: Record<string, string> = {
+  ...ROUND3_HINTS,
   tut_shoot: "LMB: shoot · WASD: move",
   tut_bullet_time: "RMB / Q: bullet time",
   tut_shootdodge: "SHIFT: shootdodge",
@@ -52,7 +55,7 @@ const HINTS: Record<string, string> = {
 /** The DJ's PA lines (subtitled). */
 const PA: Record<string, string> = { pa_1: "girls? we have a guest.", pa_2: "party's over, cutie.", pa_3: "send the rest." };
 /** Clear lines are the room's last word: a queued one drops the tutorial lines still waiting. */
-const CLEAR_LINES = new Set(["room_clear", "r2_clear", "r3_clear"]);
+const CLEAR_LINES = new Set(["room_clear", "r2_clear", "r3_clear", ...ROUND3_CLEAR_LINES]);
 
 /** The Radbro's combat voice (chances, cooldowns in real seconds). */
 const RADBRO = {
