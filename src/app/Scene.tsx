@@ -17,6 +17,8 @@ import { CameraView, CAMERA_NODE, FOV } from "./CameraView.tsx";
 import { FxView } from "./FxView.tsx";
 import { PickupsView } from "./PickupsView.tsx";
 import { ArsenalFx } from "./ArsenalFx.tsx";
+import { HitFeelView } from "./HitFeelView.tsx";
+import { HitBurstFx } from "./HitBurstFx.tsx";
 import { EggsView } from "./EggsView.tsx";
 import { SecretsView } from "./SecretsView.tsx";
 import { AssetsBridge } from "./characters.ts";
@@ -86,6 +88,7 @@ export function Scene({ s, onPhase, bootRef }: { s: Session; onPhase: (p: string
         <AssetsBridge />
         <LoadBridge />
         <SimDriver s={s} onPhase={onPhase} />
+        <HitFeelView s={s} />
         <PlayerView s={s} />
         <EnemiesView s={s} />
         <HeavyView s={s} />
@@ -96,6 +99,7 @@ export function Scene({ s, onPhase, bootRef }: { s: Session; onPhase: (p: string
         <FxView s={s} />
         <PickupsView s={s} />
         <ArsenalFx s={s} />
+        <HitBurstFx s={s} />
         <EggsView s={s} />
         <SecretsView s={s} />
         <CameraView s={s} />

@@ -179,8 +179,6 @@
 .rp-xh.on .tick { transform: translateY(3px); }
 .rp-xh .core { transition: opacity 120ms; }
 .rp-xh.reload .core { opacity: 0.5; }
-.rp-xh .hitm { animation: rp-hit 160ms linear forwards; }
-.rp-xh .killm { transform-box: view-box; transform-origin: 80px 80px; animation: rp-kill 350ms ease-out forwards; }
 .rp-xh .ring { transform-box: view-box; transform-origin: 80px 80px; opacity: 0; transform: scale(1.15); transition: opacity 150ms, transform 150ms ease-out; }
 .rp-xh .ring.on { opacity: 1; transform: scale(1); }
 .rp-hs { position: absolute; left: 30px; top: -74px; font: 400 26px/1 var(--display); letter-spacing: 2px; color: var(--ink); background: var(--pink); padding: 5px 10px 2px; border: 2.5px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); white-space: nowrap; transform-origin: 0 100%; animation: rp-hs 600ms linear forwards; }
@@ -350,8 +348,6 @@
 @keyframes rp-drain { from { clip-path: inset(0 0 0 0); } to { clip-path: inset(100% 0 0 0); } }
 @keyframes rp-redflash { 0% { filter: drop-shadow(0 0 0 var(--red)) brightness(1.4) sepia(1) saturate(8) hue-rotate(-40deg); } 100% { filter: none; } }
 @keyframes rp-wave { from { transform: translateX(0); } to { transform: translateX(42px); } }
-@keyframes rp-hit { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes rp-kill { 0% { opacity: 1; transform: scale(0.85); } 25% { transform: scale(1); } 75% { opacity: 1; } 100% { opacity: 0; transform: scale(1); } }
 @keyframes rp-hs {
   0% { opacity: 1; transform: rotate(-5deg) scale(1.3); }
   15% { opacity: 1; transform: rotate(-5deg) scale(1); }
@@ -367,7 +363,6 @@
   .rp-glass.refused .glass-line { animation: rp-refused 320ms steps(1, end); }
   .rp-hs { animation-name: rp-fade; }
   .rp-refill { animation-name: rp-fade-chip; }
-  .rp-xh .killm { animation-name: rp-hit; }
   .rp-tally .flip, .rp-slot.cur, .rp-cans .pop, .rp-tally .n b.pop { animation: none; }
 }
 @keyframes rp-fade { 0%, 75% { opacity: 1; transform: rotate(-5deg); } 100% { opacity: 0; transform: rotate(-5deg); } }

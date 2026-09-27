@@ -1,0 +1,30 @@
+/* The hitmarker (HitMarker.tsx): over the crosshair and the scope, under the kill cam. Authored at 1080p
+   (rp-z scales it). --sc / --rot / --ms / --k come from the mark (hitfeel.ts markSpec). */
+.rp-hm { position: fixed; left: 50%; top: 50%; width: 0; height: 0; z-index: 12; pointer-events: none; }
+.rp-hm .pop { position: absolute; left: 0; top: 0; width: 0; height: 0; opacity: 0; animation: rp-hm-pop var(--ms) linear forwards; will-change: transform, opacity; }
+.rp-hm .pop > svg { position: absolute; left: -60px; top: -60px; overflow: visible; filter: drop-shadow(0 0 1.5px rgba(11, 10, 13, 0.9)); }
+.rp-hm .pop.head > svg { filter: drop-shadow(0 0 1.5px rgba(11, 10, 13, 0.9)) drop-shadow(0 0 5px rgba(255, 190, 40, 0.55)); }
+.rp-hm .pop.kill > svg { filter: drop-shadow(0 0 1.5px rgba(11, 10, 13, 0.95)) drop-shadow(0 0 6px rgba(255, 40, 64, 0.6)); }
+.rp-hm .accent { transform-box: view-box; transform-origin: 60px 60px; animation: rp-hm-acc calc(var(--ms) * 0.8) ease-out forwards; }
+.rp-hm .ring { position: absolute; left: -18px; top: -18px; width: 36px; height: 36px; box-sizing: border-box; border: 3px solid #fff; border-radius: 50%;
+  box-shadow: 0 0 0 1.5px rgba(11, 10, 13, 0.85), inset 0 0 0 1.5px rgba(11, 10, 13, 0.85); animation: rp-hm-ring 300ms ease-out forwards; }
+.rp-hm .flash { position: absolute; left: -26px; top: -26px; width: 52px; height: 52px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(255, 240, 220, 0.55) 35%, rgba(255, 60, 70, 0) 70%); animation: rp-hm-flash 110ms ease-out forwards; }
+.rp-hm .rp-hs-gold { background: #ffcf3a; }
+
+@keyframes rp-hm-pop {
+  0% { opacity: var(--k); transform: rotate(var(--rot)) scale(calc(var(--sc) * 1.75)); }
+  9% { opacity: var(--k); transform: rotate(var(--rot)) scale(calc(var(--sc) * 0.88)); }
+  18% { opacity: var(--k); transform: rotate(var(--rot)) scale(var(--sc)); }
+  55% { opacity: var(--k); transform: rotate(var(--rot)) scale(var(--sc)); }
+  100% { opacity: 0; transform: rotate(var(--rot)) scale(calc(var(--sc) * 1.06)); }
+}
+@keyframes rp-hm-acc { 0% { transform: scale(0.75); opacity: 1; } 60% { opacity: 1; } 100% { transform: scale(1.3); opacity: 0; } }
+@keyframes rp-hm-ring { 0% { transform: scale(0.55); opacity: 0.95; } 100% { transform: scale(1.75); opacity: 0; } }
+@keyframes rp-hm-flash { 0% { transform: scale(0.6); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .rp-hm .pop { animation-name: rp-hm-fade; }
+  .rp-hm .accent, .rp-hm .ring { animation: none; opacity: 0; }
+}
+@keyframes rp-hm-fade { 0%, 55% { opacity: var(--k); transform: rotate(var(--rot)) scale(var(--sc)); } 100% { opacity: 0; transform: rotate(var(--rot)) scale(var(--sc)); } }

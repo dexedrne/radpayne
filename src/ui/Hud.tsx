@@ -17,6 +17,7 @@ import { ScopeOverlay } from "./hud/ScopeOverlay.tsx";
 import { RoomTag, Tally } from "./hud/Tally.tsx";
 import { Objective } from "./hud/Objective.tsx";
 import { Crosshair } from "./hud/Crosshair.tsx";
+import { HitMarker } from "./hud/HitMarker.tsx";
 import { Subtitle } from "./hud/Subtitle.tsx";
 import { Nudge } from "./hud/Nudge.tsx";
 import { useCaptions } from "./hud/captions.ts";
@@ -81,6 +82,7 @@ export function Hud({ s: sProp, paused = false }: { s?: Session | null; paused?:
           <AmmoPanel mags={h.mags} magSize={h.magSize} hands={h.hands} reloading={h.reloading} weapon={h.weapon} weaponId={h.weaponId} reserve={h.reserve} />
         </div>
         {!kc && !dead && !h.zoom && <Crosshair now={now} />}
+        {!kc && !dead && <HitMarker />}
       </div>
       <XrayOverlay />
       <KillcamOverlay on={kc} progress={h.killcamProgress} timeScale={h.cine ? CINE.crawl : h.timeScale} line={line} tag={h.cineTag || "FINAL KILL"} />
