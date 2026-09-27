@@ -10,10 +10,10 @@
       "lines": [
         {
           "audio": "cs3_01",
-          "text": "the top floor. marble, glass, and the whole city under it, lit up like it was for sale."
+          "text": "the top floor. marble, glass, and the city lit below. everything up here was for sale, and all of it for show."
         }
       ],
-      "dur": 8.1
+      "dur": 11.6
     },
     {
       "image": "/cutscenes/c3/panel_2.webp",
@@ -22,15 +22,16 @@
       "lines": [
         {
           "audio": "cs3_02",
-          "text": "she was waiting for me. my bag was in her lap, like a cat."
+          "text": "she was waiting for me, my bag on her knee, like a cat she'd been petting. it looked at me."
         },
         {
           "audio": "cs3_m1",
           "speaker": "madame",
-          "text": "\"you came all this way for one little bag? that's so sweet.\""
+          "text": "\"all this way for one little bag? how sweet. you must be tired, darling. take a seat.\""
         }
       ],
-      "dur": 10.3
+      "dur": 14.3,
+      "push": 1.02
     },
     {
       "image": "/cutscenes/c3/panel_3.webp",
@@ -40,14 +41,16 @@
         {
           "audio": "cs3_m2",
           "speaker": "madame",
-          "text": "\"everybody gets rugged, sweetie. it's nothing personal.\""
+          "text": "\"everybody gets rugged, sweetie. that's just the game. it's nothing personal. you'd have done the same.\""
         },
         {
           "audio": "cs3_03",
-          "text": "the call wasn't coming from far away."
+          "text": "the call wasn't coming from far away. it came from the next room over, where she'd been all day."
         }
       ],
-      "dur": 6.7
+      "dur": 14.5,
+      "size": 0.82,
+      "push": 1.02
     },
     {
       "image": "/cutscenes/c3/panel_4.webp",
@@ -57,14 +60,16 @@
         {
           "audio": "cs3_m3",
           "speaker": "madame",
-          "text": "\"let's play, cutie.\""
+          "text": "\"let's play, cutie. don't be shy. first one to blink says goodbye.\""
         },
         {
           "audio": "cs3_04",
-          "text": "she smiled like she'd already won. they always do, right up until they don't."
+          "text": "she smiled like the game was already won. they always do, right up until it's done."
         }
       ],
-      "dur": 7.5
+      "dur": 11.9,
+      "maxW": 0.58,
+      "size": 0.82
     }
   ]
 }

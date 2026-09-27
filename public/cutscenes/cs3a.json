@@ -10,10 +10,10 @@
       "lines": [
         {
           "audio": "cs3a_01",
-          "text": "the key turned easy. nothing after it would."
+          "text": "the key turned easy, smooth as it should. nothing after it would."
         }
       ],
-      "dur": 4.4
+      "dur": 6.7
     },
     {
       "image": "/cutscenes/cs3a/panel_2.webp",
@@ -22,10 +22,10 @@
       "lines": [
         {
           "audio": "cs3a_02",
-          "text": "the gate folded shut on the back of the house. the bass went on without me."
+          "text": "the gate slid shut on the bass and the smoke. the music went on without me. nobody spoke."
         }
       ],
-      "dur": 7.0
+      "dur": 8.4
     },
     {
       "image": "/cutscenes/cs3a/panel_3.webp",
@@ -34,10 +34,10 @@
       "lines": [
         {
           "audio": "cs3a_03",
-          "text": "the needle crawled up the dial. somewhere above me, somebody was watching it too."
+          "text": "the needle crawled up, floor after floor. somebody up there was watching it too, waiting at the door."
         }
       ],
-      "dur": 6.5
+      "dur": 9.3
     },
     {
       "image": "/cutscenes/cs3a/panel_4.webp",
@@ -46,10 +46,10 @@
       "lines": [
         {
           "audio": "cs3a_04",
-          "text": "going up is easy. it's the stops that get you."
+          "text": "going up is easy. anyone can ride. it's the stops that get you, and what's waiting outside."
         }
       ],
-      "dur": 4.5
+      "dur": 8.1
     }
   ]
 }
