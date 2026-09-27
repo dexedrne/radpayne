@@ -319,9 +319,9 @@ export class Boss {
     for (const a of g.enemies) {
       if (a.kind === "madame" || a.state === "dead" || a.fled) continue;
       if (a.state === "inactive") { a.fled = true; continue; }
-      // run for the nearest door
+      // run for the nearest open door (her own, usually)
       let best = this.doors[0], bd = Infinity;
-      for (const d of this.doors) { const dd = Math.hypot(d.x - a.x, d.z - a.z); if (dd < bd) { bd = dd; best = d; } }
+      for (const d of this.doors) { const dd = Math.hypot(d.x - a.x, d.z - a.z) + (d.open ? 0 : 1000); if (dd < bd) { bd = dd; best = d; } }
       a.fled = true;
       setState(a, "flee");
       a.hit.hittable = false;

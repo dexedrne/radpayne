@@ -4535,7 +4535,8 @@
           "marker": "waypoint",
           "links": [
            "wp-door-a-out"
-          ]
+          ],
+          "door": "door-a"
          }
         }
        }
@@ -4576,7 +4577,8 @@
           "marker": "waypoint",
           "links": [
            "wp-door-b-out"
-          ]
+          ],
+          "door": "door-b"
          }
         }
        }

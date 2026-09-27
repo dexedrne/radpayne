@@ -142,9 +142,9 @@ const markers: Node[] = [
     ["d1", 6.5, -8.8], ["d2", 6.5, -1.8], ["d3", 6.5, 2.2], ["d4", 3.8, 10], ["d5", 11.6, 10],
     ["e1", 11.8, -7.6], ["e2", 12.2, -2.6], ["e3", 12.2, 2.6], ["e4", 11.8, 7.2], ["e5", 15.0, -2.6], ["e6", 15.0, 2.6], ["e7", 15.2, 6.3],
   ] as Array<[string, number, number]>).map(([id, x, z]) => marker(`wp-${id}`, "waypoint", [x, id.startsWith("e") && Math.abs(z) < 4 && x > 11 ? 0.3 : 0, z])),
-  marker("wp-door-a-in", "waypoint", [0, 0, -10.2], { links: ["wp-door-a-out"] }),
+  marker("wp-door-a-in", "waypoint", [0, 0, -10.2], { links: ["wp-door-a-out"], door: "door-a" }),
   marker("wp-door-a-out", "waypoint", [0, 0, -12.4], {}),
-  marker("wp-door-b-in", "waypoint", [0, 0, 10.2], { links: ["wp-door-b-out"] }),
+  marker("wp-door-b-in", "waypoint", [0, 0, 10.2], { links: ["wp-door-b-out"], door: "door-b" }),
   marker("wp-door-b-out", "waypoint", [0, 0, 12.4], {}),
   // pickups: copium (the vestibule x 2, behind the piano, behind the bar), the shotgun behind the bar,
   // the SMGs by the piano

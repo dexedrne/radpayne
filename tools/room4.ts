@@ -16,9 +16,9 @@
 //       a bench and the reception desk (low). The dual SMGs on the bench.
 //   R3  the cables: the snap, the fall, the brakes.
 //   S3  SOUTH, the dead floor     x -9..9, z 3.2..17.2: goons pry the doors open (2 s); three waves (3
-//       goons + a heavy at the doors, then 2 rushers + 2 goons from the stairwell, then a heavy + 2
-//       rushers); the stairwell (south-east corner) is the way out. Columns and scaffolding (high),
-//       cement bags (low).
+//       goons + a heavy at the doors, then 2 rushers + 2 goons up the stairs, then a heavy + 2
+//       rushers); the stairs (the open south-east corner) are the way out. Columns and scaffolding
+//       (high), cement bags (low).
 // Hostiles 23 (goons 12, rushers 8, heavies 3), 3 checkpoints (one per stop, saved as the car arrives).
 // Material tokens (the elevator look, src/app/look/tower.tsx): "glow <g>" (+ "flicker"). No lettering.
 import { FACE_E, FACE_N, FACE_S, FACE_W, box, boxMM, glow, marker, prim, tex, writeLevel, type Node, type V3 } from "./levelKit.ts";
@@ -130,7 +130,7 @@ solid.push(boxMM("l3-wall-n2", [3.2, 0, 3.0], [9.2, L3_H, 3.2], "concreteDark"))
 solid.push(boxMM("l3-wall-w", [-9.2, 0, 3.2], [-9.0, L3_H, 17.4], "concreteDark"));
 solid.push(boxMM("l3-wall-e", [9.0, 0, 3.2], [9.2, L3_H, 17.4], "concreteDark"));
 solid.push(boxMM("l3-wall-s", [-9.2, 0, 17.2], [9.2, L3_H, 17.4], "concreteDark"));
-for (const [x, z] of [[-5, 8], [5, 8], [-5, 13.4], [5, 13.4]]) solid.push(boxMM(`l3-col-${x}-${z}`, [x - 0.35, 0, z - 0.35], [x + 0.35, L3_H, z + 0.35], "concrete"));
+for (const [x, z] of [[-5, 8], [5, 8], [-5, 13.4], [2.6, 13.2]]) solid.push(boxMM(`l3-col-${x}-${z}`, [x - 0.35, 0, z - 0.35], [x + 0.35, L3_H, z + 0.35], "concrete"));
 // scaffolding: an invisible collider (high cover) the camera knows, poles and boards
 function scaffold(id: string, x0: number, z0: number, x1: number, z1: number): void {
   solid.push(boxMM(id, [x0, 0, z0], [x1, 2.2, z1], "scaffold", { hidden: true, data: { surface: "metal", camera: true } }));
@@ -144,11 +144,12 @@ for (const [id, x0, z0, x1, z1] of [["l3-bags-1", -2.4, 6.4, -0.8, 7.2], ["l3-ba
   solid.push(boxMM(id, [x0, 0, z0], [x1, 0.9, z1], "bags", { data: { surface: "drywall" } }));
 }
 decor.push(boxMM("l3-plywood", [-8.95, 0, 5.0], [-8.85, 2.4, 7.4], "plywood"), boxMM("l3-rebar", [-1.0, 0.02, 15.6], [2.4, 0.14, 16.0], "rebar"));
-// the stairwell (the way out, and where the second and third waves come up): x 5.2..9, z 14.6..17.2
-solid.push(boxMM("l3-stair-w", [5.0, 0, 14.4], [5.2, L3_H, 17.2], "concreteDark"));
-solid.push(boxMM("l3-stair-n", [7.4, 0, 14.4], [9.0, L3_H, 14.6], "concreteDark"));
-decor.push(boxMM("l3-stair-exit", [6.1, 2.5, 14.52], [6.5, 2.64, 14.56], "exitRed"));
-for (let i = 0; i < 6; i++) decor.push(boxMM(`l3-step-${i}`, [5.3 + i * 0.6, 0, 16.4], [5.9 + i * 0.6, 0.02, 17.1], "stairEdge"));
+// the stairs (the way out, and where the second and third waves come up): an open corner, x 5.2..9,
+// z 15..17.2 (open: a kill cam there never has a wall at its lens), a guard rail and the exit light
+decor.push(boxMM("l3-stair-exit", [7.0, 2.5, 17.16], [7.4, 2.64, 17.2], "exitRed"));
+for (let i = 0; i < 6; i++) decor.push(boxMM(`l3-step-${i}`, [5.3 + i * 0.6, 0, 16.2], [5.9 + i * 0.6, 0.02, 17.1], "stairEdge"));
+decor.push(boxMM("l3-stair-rail", [5.2, 1.0, 15.9], [9.0, 1.05, 15.95], "scaffold"));
+for (const x of [5.2, 7.1, 9.0]) decor.push(prim(`l3-stair-post-${x}`, "cylinder", [x, 0.5, 15.92], [0.025, 0.025, 1.0, 6], "scaffold"));
 // hanging work lamps
 for (const [x, z] of [[-4, 6], [3, 6.5], [-3, 11.5], [4, 12.5], [0, 15.5]]) {
   decor.push(prim(`l3-cord-${x}-${z}`, "cylinder", [x, L3_H - 0.4, z], [0.01, 0.01, 0.8, 4], "metalDark"));
@@ -208,7 +209,7 @@ const markers: Node[] = [
   marker("cv-l3-col-1", "cover", [-5, 0, 8.8], { height: "high", side: "right" }, FACE_N),
   marker("cv-l3-col-2", "cover", [5, 0, 8.8], { height: "high", side: "left" }, FACE_N),
   marker("cv-l3-col-3", "cover", [-5, 0, 14.2], { height: "high", side: "left" }, FACE_N),
-  marker("cv-l3-col-4", "cover", [5, 0, 14.2], { height: "high", side: "right" }, FACE_N),
+  marker("cv-l3-col-4", "cover", [2.6, 0, 14.0], { height: "high", side: "right" }, FACE_N),
   marker("cv-l3-scaffold", "cover", [-7.6, 0, 12.85], { height: "high", side: "left" }, FACE_N),
   // waypoints: the car, then each landing (the doorway nodes link across explicitly: the doors are shut
   // when the graph is built)
@@ -219,9 +220,10 @@ const markers: Node[] = [
     ["l3-a", -2.6, 5.0], ["l3-b", 3.0, 7.0], ["l3-c", -6.8, 5.4], ["l3-d", -7.4, 8.4], ["l3-e", 0.2, 9.0], ["l3-f", -2.6, 11.2], ["l3-g", 7.4, 9.2], ["l3-h", 4.2, 15.6], ["l3-i", -6.2, 15.8], ["l3-j", 0.6, 13.2], ["l3-k", 7.6, 13.6],
   ] as Array<[string, number, number]>).map(([id, x, z]) => marker(`wp-${id}`, "waypoint", [x, 0, z])),
   // (a node with explicit links still gets the auto-links of the nodes around it)
-  marker("wp-l1-in", "waypoint", [4.2, 0, 0], { links: ["wp-c-e"] }),
-  marker("wp-l2-in", "waypoint", [-4.2, 0, 0], { links: ["wp-c-w"] }),
-  marker("wp-l3-in", "waypoint", [0, 0, 4.2], { links: ["wp-c-s"] }),
+  // ({door}: the link through it is walkable only while those doors are open)
+  marker("wp-l1-in", "waypoint", [4.2, 0, 0], { links: ["wp-c-e"], door: "door-e" }),
+  marker("wp-l2-in", "waypoint", [-4.2, 0, 0], { links: ["wp-c-w"], door: "door-w" }),
+  marker("wp-l3-in", "waypoint", [0, 0, 4.2], { links: ["wp-c-s"], door: "door-s" }),
   marker("wp-l2-stair", "waypoint", [-19.2, 0, -4.2]),
   marker("wp-l3-stair", "waypoint", [6.6, 0, 15.8]),
   marker("wp-l3-mouth", "waypoint", [6.3, 0, 13.9]),
@@ -246,7 +248,7 @@ const markers: Node[] = [
     ["car-fill", -1.2, 2.8, -0.6, "#cfd8ea", 4, 6], // (the caged bulb's light is RideView's: it dies with the cables)
     ["l1-a", 6.2, 2.5, -1.2, "#ffb266", 12, 9], ["l1-b", 10.6, 2.5, 0.6, "#ffb266", 12, 9],
     ["l2-a", -6, 3.0, -1.5, "#e4ecff", 11, 9], ["l2-b", -10, 3.0, -1.5, "#e4ecff", 11, 9], ["l2-c", -14, 3.0, -1.5, "#e4ecff", 11, 9], ["l2-stair", -19.2, 2.8, -4.2, "#ff2a1a", 3, 4],
-    ["l3-a", -4, 2.6, 6, "#ffd9a8", 12, 10], ["l3-b", 3, 2.6, 6.5, "#ffd9a8", 12, 10], ["l3-c", -3, 2.6, 11.5, "#ffd9a8", 12, 10], ["l3-d", 4, 2.6, 12.5, "#ffd9a8", 12, 10], ["l3-e", 0, 2.6, 15.5, "#ffd9a8", 10, 9],
+    ["l3-a", -4, 2.6, 6, "#ffd9a8", 16, 11], ["l3-b", 3, 2.6, 6.5, "#ffd9a8", 16, 11], ["l3-c", -3, 2.6, 11.5, "#ffd9a8", 16, 11], ["l3-d", 4, 2.6, 12.5, "#ffd9a8", 16, 11], ["l3-e", 0, 2.6, 15.5, "#ffd9a8", 13, 10],
   ] as Array<[string, number, number, number, string, number, number]>).map(([id, x, y, z, color, intensity, distance]) => marker(`light-${id}`, "light", [x, y, z], { color, intensity, distance })),
   // camera shots (?cam=<id> in dev builds)
   marker("cam-car", "camera", [-2.4, 1.7, 2.2], { at: [3, 1.2, -0.5] }),

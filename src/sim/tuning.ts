@@ -90,7 +90,7 @@ export const ENEMY: Record<"goon" | "rusher" | "heavy" | "madame", EnemyTuning> 
   heavy: { hp: 140, radius: 0.45, walk: 1.5, run: 2.2, fireInterval: 1.1, burst: 1, damage: 3.5, sight: 26, idleSight: 14, fov: 0.35, pellets: 8, spread: (3 * Math.PI) / 180, muzzleUp: 1.4 * HEAVY_SCALE },
   // round 3: Madame Pockit, the penthouse boss (MADAME below): dual SMGs, bursts of 10; hp is per
   // difficulty (MADAME.hp); run is her brisk walk between cover in phases 1-2 (phase 3 runs like a rusher)
-  madame: { hp: 1100, radius: 0.42, walk: 2.4, run: 3.4, fireInterval: 0.08, burst: 10, damage: 4, sight: 40, idleSight: 30, fov: 0.2, pellets: 1, spread: 0, muzzleUp: 1.35 * 1.25 },
+  madame: { hp: 1600, radius: 0.42, walk: 2.4, run: 3.4, fireInterval: 0.08, burst: 10, damage: 4, sight: 40, idleSight: 30, fov: 0.2, pellets: 1, spread: 0, muzzleUp: 1.35 * 1.25 },
 };
 
 /** Rusher behaviour (world seconds / metres). */
@@ -170,7 +170,7 @@ export const RIDE = {
 /** Room 5, Madame Pockit (round-3 plan section 3). World seconds unless "real"; damage before the
  *  difficulty's damage factor. */
 export const MADAME = {
-  hp: { easy: 850, normal: 1100, hard: 1400 } as Record<"easy" | "normal" | "hard", number>,
+  hp: { easy: 1200, normal: 1600, hard: 2000 } as Record<"easy" | "normal" | "hard", number>,
   /** Pockit #3099 at this scale (model + hit skeleton). */
   scale: 1.25,
   pockit: 3099,

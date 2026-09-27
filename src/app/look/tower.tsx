@@ -52,11 +52,11 @@ export const TOWER: Record<"elevator" | "penthouse", LookNumbers> = {
     vignette: 0.16,
   },
   penthouse: {
-    exposure: 1.2,
+    exposure: 1.28,
     bloom: { subtle: { strength: 0.3, radius: 0.25, threshold: 0.86 }, original: { strength: 0.55, radius: 0.4, threshold: 0.74 } },
     fog: { color: "#0d0b10", density: 0.0025 },
     background: "#050407",
-    hemi: { sky: "#726c86", ground: "#261e1e", intensity: 0.85 },
+    hemi: { sky: "#726c86", ground: "#261e1e", intensity: 1.05 },
     key: 0.95,
     hostileLift: 0.32,
     vignette: 0.16,

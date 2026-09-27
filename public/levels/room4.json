@@ -2461,12 +2461,12 @@
       }
      },
      {
-      "id": "l3-col-5-13.4",
+      "id": "l3-col-2.6-13.2",
       "components": {
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [5, 1.8, 13.4],
+         "position": [2.6, 1.8, 13.2],
          "scale": [0.7, 3.6, 0.7]
         }
        },
@@ -2732,70 +2732,6 @@
          "data": {
           "surface": "drywall"
          }
-        }
-       }
-      }
-     },
-     {
-      "id": "l3-stair-w",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [5.1, 1.8, 15.8],
-         "scale": [0.2, 3.6, 2.8]
-        }
-       },
-       "geometry": {
-        "type": "Geometry",
-        "properties": {
-         "geometryType": "box",
-         "args": [1, 1, 1]
-        }
-       },
-       "material": {
-        "type": "Material",
-        "properties": {
-         "materialId": "concreteDark"
-        }
-       },
-       "mesh": {
-        "type": "Mesh",
-        "properties": {
-         "castShadow": false,
-         "receiveShadow": false
-        }
-       }
-      }
-     },
-     {
-      "id": "l3-stair-n",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [8.2, 1.8, 14.5],
-         "scale": [1.6, 3.6, 0.2]
-        }
-       },
-       "geometry": {
-        "type": "Geometry",
-        "properties": {
-         "geometryType": "box",
-         "args": [1, 1, 1]
-        }
-       },
-       "material": {
-        "type": "Material",
-        "properties": {
-         "materialId": "concreteDark"
-        }
-       },
-       "mesh": {
-        "type": "Mesh",
-        "properties": {
-         "castShadow": false,
-         "receiveShadow": false
         }
        }
       }
@@ -4827,7 +4763,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [6.3, 2.57, 14.54],
+         "position": [7.2, 2.57, 17.18],
          "scale": [0.4, 0.14, 0.04]
         }
        },
@@ -4859,8 +4795,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [5.6, 0.01, 16.75],
-         "scale": [0.6, 0.02, 0.7]
+         "position": [5.6, 0.01, 16.65],
+         "scale": [0.6, 0.02, 0.9]
         }
        },
        "geometry": {
@@ -4891,8 +4827,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [6.2, 0.01, 16.75],
-         "scale": [0.6, 0.02, 0.7]
+         "position": [6.2, 0.01, 16.65],
+         "scale": [0.6, 0.02, 0.9]
         }
        },
        "geometry": {
@@ -4923,8 +4859,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [6.8, 0.01, 16.75],
-         "scale": [0.6, 0.02, 0.7]
+         "position": [6.8, 0.01, 16.65],
+         "scale": [0.6, 0.02, 0.9]
         }
        },
        "geometry": {
@@ -4955,8 +4891,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [7.4, 0.01, 16.75],
-         "scale": [0.6, 0.02, 0.7]
+         "position": [7.4, 0.01, 16.65],
+         "scale": [0.6, 0.02, 0.9]
         }
        },
        "geometry": {
@@ -4987,8 +4923,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [8, 0.01, 16.75],
-         "scale": [0.6, 0.02, 0.7]
+         "position": [8, 0.01, 16.65],
+         "scale": [0.6, 0.02, 0.9]
         }
        },
        "geometry": {
@@ -5019,8 +4955,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [8.6, 0.01, 16.75],
-         "scale": [0.6, 0.02, 0.7]
+         "position": [8.6, 0.01, 16.65],
+         "scale": [0.6, 0.02, 0.9]
         }
        },
        "geometry": {
@@ -5034,6 +4970,131 @@
         "type": "Material",
         "properties": {
          "materialId": "stairEdge"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-stair-rail",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.1, 1.025, 15.925],
+         "scale": [3.8, 0.05, 0.05]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "scaffold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-stair-post-5.2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [5.2, 0.5, 15.92]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.025, 0.025, 1, 6]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "scaffold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-stair-post-7.1",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.1, 0.5, 15.92]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.025, 0.025, 1, 6]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "scaffold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "l3-stair-post-9",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9, 0.5, 15.92]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.025, 0.025, 1, 6]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "scaffold"
         }
        },
        "mesh": {
@@ -6361,7 +6422,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [5, 0, 14.2],
+         "position": [2.6, 0, 14],
          "rotation": [0, 3.142, 0]
         }
        },
@@ -7004,7 +7065,8 @@
           "marker": "waypoint",
           "links": [
            "wp-c-e"
-          ]
+          ],
+          "door": "door-e"
          }
         }
        }
@@ -7026,7 +7088,8 @@
           "marker": "waypoint",
           "links": [
            "wp-c-w"
-          ]
+          ],
+          "door": "door-w"
          }
         }
        }
@@ -7048,7 +7111,8 @@
           "marker": "waypoint",
           "links": [
            "wp-c-s"
-          ]
+          ],
+          "door": "door-s"
          }
         }
        }
@@ -7553,8 +7617,8 @@
          "data": {
           "marker": "light",
           "color": "#ffd9a8",
-          "intensity": 12,
-          "distance": 10
+          "intensity": 16,
+          "distance": 11
          }
         }
        }
@@ -7575,8 +7639,8 @@
          "data": {
           "marker": "light",
           "color": "#ffd9a8",
-          "intensity": 12,
-          "distance": 10
+          "intensity": 16,
+          "distance": 11
          }
         }
        }
@@ -7597,8 +7661,8 @@
          "data": {
           "marker": "light",
           "color": "#ffd9a8",
-          "intensity": 12,
-          "distance": 10
+          "intensity": 16,
+          "distance": 11
          }
         }
        }
@@ -7619,8 +7683,8 @@
          "data": {
           "marker": "light",
           "color": "#ffd9a8",
-          "intensity": 12,
-          "distance": 10
+          "intensity": 16,
+          "distance": 11
          }
         }
        }
@@ -7641,8 +7705,8 @@
          "data": {
           "marker": "light",
           "color": "#ffd9a8",
-          "intensity": 10,
-          "distance": 9
+          "intensity": 13,
+          "distance": 10
          }
         }
        }

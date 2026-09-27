@@ -15,7 +15,7 @@ import { useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import {
   AdditiveBlending, BoxGeometry, Color, DoubleSide, Group, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, PointLight, Quaternion, RepeatWrapping,
-  SRGBColorSpace, TextureLoader, Vector3, type Texture,
+  SRGBColorSpace, TextureLoader, Vector3, Vector4, type Texture,
 } from "three";
 import type { Session } from "./session.ts";
 import type { GameEvent } from "../sim/types.ts";
@@ -25,11 +25,15 @@ import { FRAME } from "./frame.ts";
 import { assetUrl } from "./assets.ts";
 import { camJolt } from "./CameraView.tsx";
 import { towerFx } from "./look/tower.tsx";
+import { MASK_LAYER } from "./look/read.tsx";
 import { setLoop, sfx, sfxKey } from "../audio/sfx.ts";
 
 const HIDE = new Matrix4().makeScale(0, 0, 0);
 /** The shaft's layout: I-beams every BEAM m, the other floors' doors every FLOOR m. */
 const BEAM = 4, FLOOR = 8.4;
+/** The landing doors and the shaft block the gang's outline like a wall (nobody is seen through them). */
+const OCCLUDER = new Vector4(0, 0, 0, 0);
+const occlude = (m: Mesh) => { m.layers.enable(MASK_LAYER); m.userData.rpMask = OCCLUDER; return m; };
 
 type Side = {
   side: string;
@@ -94,7 +98,7 @@ export function RideView({ s }: { s: Session }) {
           const uv = g.getAttribute("uv");
           const u0 = k < 0 ? 0.08 : 0.5, u1 = k < 0 ? 0.5 : 0.92;
           for (let i = 0; i < uv.count; i++) { uv.setX(i, u0 + uv.getX(i) * (u1 - u0)); uv.setY(i, 0.04 + uv.getY(i) * 0.9); }
-          const m = new Mesh(g, doorMat);
+          const m = occlude(new Mesh(g, doorMat));
           m.quaternion.copy(q).multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), Math.PI)); // faces into the car
           group.add(m);
           leaves.push(m);
@@ -104,7 +108,7 @@ export function RideView({ s }: { s: Session }) {
         const shaft = new Group();
         shaft.position.copy(c).addScaledVector(n, 0.2);
         shaft.quaternion.copy(q).multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), Math.PI));
-        const wall = new Mesh(new PlaneGeometry(w + 1.2, h + 1.6), shaftMat);
+        const wall = occlude(new Mesh(new PlaneGeometry(w + 1.2, h + 1.6), shaftMat));
         wall.position.y = h / 2;
         wall.position.z = -0.12;
         shaft.add(wall);
@@ -162,9 +166,9 @@ export function RideView({ s }: { s: Session }) {
     const bulbLight = new PointLight("#ffd29a", 7, 6, 2);
     bulbLight.position.set(1.3, 2.9, 0);
     group.add(bulbLight);
-    const emergency = new PointLight("#ff2a1a", 0, 9, 2);
-    emergency.position.set(-2.6, 3.0, -2.6);
-    const emergencyBox = new Mesh(new BoxGeometry(0.3, 0.14, 0.14), own(new MeshBasicMaterial({ color: new Color(0.25, 0.02, 0.02), toneMapped: false })));
+    const emergency = new PointLight("#ff2a1a", 0, 8, 2);
+    emergency.position.set(-2.3, 2.9, -2.4);
+    const emergencyBox = new Mesh(new BoxGeometry(0.3, 0.14, 0.14), own(new MeshBasicMaterial({ color: new Color(0.06, 0.01, 0.01), toneMapped: false })));
     emergencyBox.position.set(-2.75, 3.2, -2.9);
     group.add(emergency, emergencyBox);
     // the dial's needle (over the east doors, facing into the car)
@@ -344,8 +348,8 @@ export function RideView({ s }: { s: Session }) {
     const bulb = st.dead ? (st.flick > 0 ? (Math.random() < 0.5 ? 0.6 : 0.05) : 0.05) : st.flick > 0 ? (Math.random() < 0.4 ? 0.25 : 1) : 1;
     towerFx.flicker.value = bulb;
     v.bulbLight.intensity = 7 * bulb;
-    v.emergency.intensity += ((st.dead ? 7 : 0) - v.emergency.intensity) * Math.min(1, dt * 6);
-    (v.emergencyBox.material as MeshBasicMaterial).color.setRGB(st.dead ? 3 : 0.25, st.dead ? 0.2 : 0.02, st.dead ? 0.2 : 0.02);
+    v.emergency.intensity += ((st.dead ? 3.5 : 0) - v.emergency.intensity) * Math.min(1, dt * 6);
+    (v.emergencyBox.material as MeshBasicMaterial).color.setRGB(st.dead ? 1.6 : 0.06, st.dead ? 0.08 : 0.01, st.dead ? 0.06 : 0.01);
     // the dial's needle: the ride's progress (it creeps on a leg, dips back while the car falls)
     const legs = Math.max(1, ride.steps.length - 1);
     const cur = ride.stop ? ride.i : ride.i + Math.min(1, ride.t / Math.max(1, (ride.cur as { t?: number }).t ?? 1));

@@ -273,3 +273,30 @@ test("replay: rooms 4 and 5 replay bit-exactly (the ride, the boss, her grenades
   }
   void METER;
 });
+
+test("kill cam: the planned swing never has a post, a column or a pillar at the lens (rooms 4 and 5)", async () => {
+  const { World } = await import("../src/sim/world.ts");
+  const { KC, planKillcam, spoil, steamOf } = await import("../src/app/killcam.ts");
+  for (const [name, lv] of [["room4", room4()], ["room5", room5()]] as const) {
+    const cam = new World(lv.camBoxes.map((b, i) => ({ ...b, id: i })));
+    const view = new World(lv.viewBoxes.map((b, i) => ({ ...b, id: i })));
+    const steam = steamOf(lv);
+    for (const seed of [1, 2, 3]) {
+      const g = new Game(lv, { seed });
+      const bot = new Bot(3.5, 0.3, true);
+      for (let i = 0; i < 480 / DT && !g.killcam && g.phase === "play"; i++) { g.step(bot.next(g)); g.drain(); }
+      const k = g.killcam;
+      assert.ok(k, `${name} seed ${seed}: a kill cam`);
+      const e = g.enemies[k.enemy];
+      if (name === "room5") assert.equal(e.kind, "madame", "the last kill in the penthouse is hers");
+      const pl = planKillcam(k, e, cam, lv, view);
+      const hl = Math.hypot(k.to.x - k.from.x, k.to.z - k.from.z) || 1;
+      const hx = (k.to.x - k.from.x) / hl, hz = (k.to.z - k.from.z) / hl;
+      for (const t of [0, 0.25, 0.5]) {
+        const a = pl.a0 + pl.dir * t;
+        const ex = pl.kx + (-hx * Math.cos(a) + hz * Math.sin(a)) * KC.radius, ez = pl.kz + (-hz * Math.cos(a) - hx * Math.sin(a)) * KC.radius;
+        assert.equal(spoil(ex, e.y + KC.eyeY, ez, pl.kx, e.y + KC.atY, pl.kz, view, steam, []), 0, `${name} seed ${seed}: swing at ${t} rad`);
+      }
+    }
+  }
+});

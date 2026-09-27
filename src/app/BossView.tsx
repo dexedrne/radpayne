@@ -78,7 +78,9 @@ export function BossView({ s }: { s: Session }) {
     group.add(key);
     // the sweep's laser lines
     const laserMat = m(new MeshBasicMaterial({ color: PINK, toneMapped: false, blending: AdditiveBlending, transparent: true, depthWrite: false }));
-    const lasers = [0, 1].map(() => { const l = new Mesh(new BoxGeometry(0.014, 0.014, 1), laserMat); l.visible = false; group.add(l); return l; });
+    const lasers = [0, 1].map(() => { const l = new Mesh(new BoxGeometry(0.045, 0.045, 1), laserMat); l.visible = false; group.add(l); return l; });
+    // where each line meets the floor: a small glowing spot
+    const dots = [0, 1].map(() => { const d = new Mesh(new CircleGeometry(0.16, 16), laserMat); d.rotation.x = -Math.PI / 2; d.visible = false; group.add(d); return d; });
     // grenades (the pool) and the one in her hand, their rings
     const heart = heartGeometry();
     const heartMat = m(new MeshStandardMaterial({ color: new Color("#ff4fa3"), emissive: new Color("#ff2f8a"), emissiveIntensity: 0.7, roughness: 0.35 }));
@@ -106,10 +108,17 @@ export function BossView({ s }: { s: Session }) {
       return { r, f };
     });
     // blasts and pops
-    const flashMat = m(new MeshBasicMaterial({ color: new Color(3, 1.8, 2.4), toneMapped: false, blending: AdditiveBlending, transparent: true, depthWrite: false }));
+    const flashMat = m(new MeshBasicMaterial({ color: new Color(1.5, 0.8, 1.15), toneMapped: false, blending: AdditiveBlending, transparent: true, depthWrite: false }));
     const puffs: Puff[] = Array.from({ length: 4 }, () => {
       const flash = new Mesh(new SphereGeometry(1, 16, 10), flashMat.clone());
-      const smoke = new Mesh(new SphereGeometry(1, 14, 10), m(new MeshBasicMaterial({ color: new Color("#7a6d74"), transparent: true, opacity: 0, depthWrite: false })));
+      // the smoke: three soft blobs, not one ball
+      const smoke = new Mesh(new SphereGeometry(1, 12, 8), m(new MeshBasicMaterial({ color: new Color("#6e6269"), transparent: true, opacity: 0, depthWrite: false })));
+      for (const [x, y, z, k] of [[0.55, 0.15, 0.1, 0.7], [-0.45, 0.3, -0.2, 0.6], [0.1, 0.55, 0.35, 0.55]]) {
+        const b = new Mesh(smoke.geometry, smoke.material);
+        b.position.set(x, y, z);
+        b.scale.setScalar(k);
+        smoke.add(b);
+      }
       const light = new PointLight("#ffb0d8", 0, 9, 2);
       flash.visible = smoke.visible = false;
       mats.push(flash.material as Material);
@@ -199,7 +208,7 @@ export function BossView({ s }: { s: Session }) {
     group.add(screen);
     group.traverse(o => { o.userData.rpWarm = true; });
     return {
-      group, coatMat, furMat, skirtGeo, bodyGeo, collarGeo, dropped, key, lasers, grenades, inHand, rings, puffs, chand, chandHome, chandLight, shards, shardBits,
+      group, coatMat, furMat, skirtGeo, bodyGeo, collarGeo, dropped, key, lasers, dots, grenades, inHand, rings, puffs, chand, chandHome, chandLight, shards, shardBits,
       doors, screen, screenMat, mats,
       st: { run: -1, dress: null as Dress | null, coatOff: false, dropT: -1, dropFrom: new Vector3(), dropYaw: 0, fallV: 0, crashed: false, screen: 1, beep: 0, chainGlint: 0 },
     };
@@ -354,16 +363,21 @@ export function BossView({ s }: { s: Session }) {
     v.key.intensity += ((alive ? 9 : 2) - v.key.intensity) * Math.min(1, dt * 3);
     // the sweep: the laser lines along the arc (the tell bright, the burst dimmer)
     const sw = b.sweep;
+    // (the lines run past where he stands to the floor behind him: from over his shoulder they cross the
+    // screen as they sweep, never a dot pointing at the lens)
+    const reach = Math.max(14, Math.hypot(g.player.x - her.x, g.player.z - her.z) + 5);
     for (let i = 0; i < 2; i++) {
-      const l = v.lasers[i];
-      l.visible = !!sw && alive;
+      const l = v.lasers[i], dot = v.dots[i];
+      l.visible = dot.visible = !!sw && alive;
       if (!sw || !alive) continue;
       const u = sw.tell > 0 ? 1 - sw.tell / sw.tellDur : Math.min(1, sw.t / MADAME.sweep.dur);
       const a = sw.a0 + (sw.a1 - sw.a0) * u;
       const c = Math.cos(a), sn = Math.sin(a);
       const side = i === 0 ? -0.24 : 0.24;
       const from = new Vector3(pr.x + sn * 0.55 - c * side, pr.y + 1.62, pr.z + c * 0.55 + sn * side);
-      const to = new Vector3(pr.x + sn * 15 - c * side * 3, pr.y + 0.03, pr.z + c * 15 + sn * side * 3);
+      const fy = g.world.groundBelow(pr.x + sn * reach, pr.z + c * reach, 0.05, pr.y + 1);
+      const to = new Vector3(pr.x + sn * reach - c * side * 3, (Number.isFinite(fy) ? fy : 0) + 0.03, pr.z + c * reach + sn * side * 3);
+      dot.position.copy(to);
       const len = from.distanceTo(to);
       l.position.copy(from).add(to).multiplyScalar(0.5);
       l.lookAt(to);
@@ -406,14 +420,14 @@ export function BossView({ s }: { s: Session }) {
       const big = pf.big ? 1 : 0.35;
       const f = Math.min(1, pf.t / 0.3);
       pf.flash.visible = f < 1;
-      pf.flash.scale.setScalar((0.4 + 2.6 * f) * big);
-      (pf.flash.material as MeshBasicMaterial).opacity = (1 - f) * 0.8;
-      pf.light.intensity = (1 - f) * 40 * big;
+      pf.flash.scale.setScalar((0.3 + 1.5 * f) * big);
+      (pf.flash.material as MeshBasicMaterial).opacity = (1 - f) * (1 - f) * 0.55;
+      pf.light.intensity = (1 - f) * 25 * big;
       const sm = Math.min(1, pf.t / 1.4);
       pf.smoke.visible = sm < 1;
-      pf.smoke.scale.setScalar((0.5 + 2.2 * sm) * big);
-      pf.smoke.position.y += wdt * 0.4;
-      (pf.smoke.material as MeshBasicMaterial).opacity = 0.35 * (1 - sm) * (sm < 0.1 ? sm / 0.1 : 1);
+      pf.smoke.scale.setScalar((0.35 + 1.1 * sm) * big);
+      pf.smoke.position.y += wdt * 0.45;
+      (pf.smoke.material as MeshBasicMaterial).opacity = 0.22 * (1 - sm) * (sm < 0.12 ? sm / 0.12 : 1);
       if (sm >= 1) pf.t = -1;
     }
     // the chandelier: it falls when its chain goes (world time), lands on the rug, goes dim

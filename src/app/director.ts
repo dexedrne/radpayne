@@ -490,11 +490,11 @@ export class Director {
         }
         break;
       case "rug": this.say("r5_chandelier", 0.1); break;
-      case "lastStand": this.madame("last_stand", 1); this.say("r5_laststand", 1.4); break;
+      case "lastStand": this.madame("last_stand", 3); this.say("r5_laststand", 2.6); break;
       case "stagger": this.madame("stagger_1", 0.6); break;
       case "laugh": if (Math.random() < 0.5) this.madame("laugh_1", 0.5); break;
       case "reload": if (now >= this.madameReload && Math.random() < 0.4) { this.madameReload = now + 8; this.madame("reload_1", 0.5); } break;
-      case "down": this.madame("down_1", 1); break;
+      case "down": this.madame("down_1", 3); break;
     }
   }
 
