@@ -156,9 +156,12 @@ input log. Bullet time is a time scale on it.
     `src/app/director.ts` runs the barks (chances and cooldowns at the top) and the narrator's
     tutorial lines.
   - `public/cutscenes/c1.json` + `c1/panel_*.webp`: cutscene 1's comic panels, each with its caption
-    box position, narrator line and hold time. `e1.json` + `e1/panel_e*.webp`: the room 1 ending (the
-    first clear, after the walk to the door; captions only). `c2.json`: cutscene 2 after the rave; a
-    line with a `speaker` plays that voice instead of the narrator's.
+    box position, voice lines and hold time. `e1.json` + `e1/panel_e*.webp`: the room 1 ending (the
+    first clear, after the walk to the door, voiced). `c2.json`: cutscene 2 after the rave. A line
+    with a `speaker` plays that voice instead of the narrator's (the girls at the door and on the
+    floor, the DJ through the door); a panel's lines play in order, one after another. A panel's
+    `maxW` / `size` keep a long caption off the faces, and `push` (the push-in's end scale) keeps the
+    caption box inside the frame through a long hold.
   - Round 2: `radbro<id>.r2.glb` (the shotgun set, the heavy's stagger, the weapon swap),
     `milady.r2.glb` (the crowd's dances, flee and cower, the DJ), `rival652.glb` / `rival723.glb`
     (the heavies), `textures/club/`, `textures/backrooms/`, and the music, crowd, PA and heavy voices.

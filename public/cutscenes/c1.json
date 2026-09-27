@@ -28,10 +28,13 @@
       "image": "/cutscenes/c1/panel_3.webp",
       "tone": "club",
       "box": [0.019, 0.028, 0.167, 0.078],
-      "dur": 7.4,
+      "dur": 11.2,
       "lines": [
-        { "audio": "cs1_03", "text": "club milady. three girls on the door, smiling like they'd been expecting me. one had my bag." }
-      ]
+        { "audio": "cs1_03", "text": "club milady. three girls on the door, smiling like they'd been expecting me. one had my bag." },
+        { "audio": "cs1_bag", "speaker": "goon_b", "text": "\"was this yours?\"" },
+        { "audio": "cs1_list", "speaker": "goon_a", "text": "\"you're off the list.\"" }
+      ],
+      "push": 1.02
     },
     {
       "image": "/cutscenes/c1/panel_4.webp",

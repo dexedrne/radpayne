@@ -15,7 +15,7 @@ import { engine, live, sfxOn, voiceOn, whenCreated, type Engine } from "./engine
 import { assetUrl } from "../app/assets.ts";
 
 /** Files under public/audio (no extension). Keys are the paths. */
-const FILES = [
+export const FILES = [
   "sfx/pistol_shot", "sfx/pistol_shot_2", "sfx/pistol_shot_3", "sfx/dry_fire", "sfx/reload_mag_out", "sfx/reload_mag_in", "sfx/reload_slide",
   "sfx/shell_casing", "sfx/shell_casing_2", "sfx/shell_casing_3", "sfx/impact_concrete", "sfx/impact_concrete_2", "sfx/impact_metal", "sfx/impact_metal_2",
   "sfx/impact_glass", "sfx/impact_glass_2", "sfx/impact_body", "sfx/impact_body_2", "sfx/bullet_whiz", "sfx/bullet_whiz_2", "sfx/bt_enter", "sfx/bt_exit",
@@ -31,10 +31,13 @@ const FILES = [
     "heavy_step", "heavy_step_2", "dive_land_floor", "dive_land_floor_2", "record_scratch", "door_breach", "door_open", "keycard_beep", "elevator_ding", "elevator_doors",
     "crowd_scatter", "crowd_panic_loop", "crowd_cheer_loop", "office_room_tone_loop", "fluorescent_flicker"].map(k => `sfx/${k}`),
   "music/rave_club", "music/fight_rave", "music/backrooms_calm",
-  ...["r2_enter", "r2_scatter", "r2_rusher", "r2_clear", "r3_enter", "r3_heavy", "r3_breach", "r3_shotgun", "r3_smgs", "r3_clear", "cs2_01", "cs2_02", "cs2_03", "cs2_04"].map(k => `voices/narrator/${k}`),
+  ...["r2_enter", "r2_scatter", "r2_rusher", "r2_clear", "r3_enter", "r3_heavy", "r3_breach", "r3_shotgun", "r3_smgs", "r3_clear", "cs2_01", "cs2_02", "cs2_03", "cs2_04",
+    "e1_01", "e1_02", "e1_03"].map(k => `voices/narrator/${k}`),
   "voices/goon_a/charge_1", "voices/goon_b/charge_1", "voices/goon_b/cs2_bouncer", "voices/radbro/breach",
   ...["scream_1", "scream_2", "scream_3", "scream_4", "gasp_1", "whimper_1"].map(k => `voices/crowd/${k}`),
-  ...["pa_1", "pa_2", "pa_3"].map(k => `voices/pa/${k}`),
+  ...["pa_1", "pa_2", "pa_3", "e1_pa"].map(k => `voices/pa/${k}`),
+  // the door cutscenes' girls (c1 panel 3, the ending e1): one voice each, so no goon flatMap
+  "voices/goon_a/cs1_list", "voices/goon_b/cs1_bag", "voices/goon_b/e1_whisper", "voices/goon_b/e1_dance",
   ...["alert_1", "spotted_1", "spotted_2", "advance_1", "taunt_1", "reload_1", "hit_1", "hit_2", "stagger_1", "death_1"].map(k => `voices/heavy/${k}`),
 ] as const;
 
@@ -656,7 +659,7 @@ let narrating: AudioBufferSourceNode | null = null;
 /**
  * The narrator (outside time: never pitched). Dips the music under the line; returns the line's length
  * in seconds (0 when silent or not loaded). A new line cuts the previous one. `speaker` = another
- * voice folder for a cutscene line (the bouncer's, goon_b).
+ * voice folder for a cutscene line (the girls', goon_a / goon_b; the DJ's, pa: e1_pa has the door baked in).
  */
 export function narrate(line: string, speaker = "narrator"): number {
   const e = voiceOn();
