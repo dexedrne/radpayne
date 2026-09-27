@@ -1,0 +1,70 @@
+{
+  "id": "ch2b",
+  "title": "Chapter 2: Keeping Score",
+  "music": "garden",
+  "panels": [
+    {
+      "image": "",
+      "tone": "storm",
+      "box": [
+        0.02,
+        0.03,
+        0.2,
+        0.08
+      ],
+      "lines": [
+        {
+          "audio": "ch2b_01",
+          "text": "the helicopter turned tail and took its light home. it would tell her everything. let it. i'd come alone."
+        }
+      ],
+      "dur": 7.2
+    },
+    {
+      "image": "",
+      "tone": "sky",
+      "box": [
+        0.02,
+        0.03,
+        0.2,
+        0.08
+      ],
+      "lines": [
+        {
+          "audio": "ch2b_02",
+          "text": "a glass bridge hung across to the tower next door. sixty floors of nothing underneath. i'd walked worse before."
+        }
+      ],
+      "dur": 7.6
+    },
+    {
+      "image": "",
+      "tone": "garden",
+      "box": [
+        0.02,
+        0.03,
+        0.2,
+        0.08
+      ],
+      "lines": [
+        {
+          "audio": "ch2b_03",
+          "text": "on top she kept a garden, green behind the glass. palms in the clouds. money grows things. it doesn't make them last."
+        },
+        {
+          "audio": "ch2b_g1",
+          "speaker": "goon_b",
+          "text": "\"shoes off on the lawn, cutie. you're dripping on the floor.\""
+        },
+        {
+          "audio": "ch2b_g2",
+          "speaker": "goon_a",
+          "text": "\"let him drip. he won't be dripping anymore.\""
+        }
+      ],
+      "dur": 14.7,
+      "size": 0.86,
+      "maxW": 0.52
+    }
+  ]
+}

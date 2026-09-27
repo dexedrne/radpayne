@@ -41,6 +41,13 @@ const TONES: Record<string, string> = {
   phone: "radial-gradient(circle at 50% 45%, rgba(120,200,255,0.45), transparent 30%), linear-gradient(180deg, #06070b, #0f1320)",
   club: "radial-gradient(ellipse at 50% 30%, rgba(255,63,168,0.55), transparent 45%), radial-gradient(ellipse at 50% 38%, rgba(63,240,255,0.3), transparent 60%), linear-gradient(180deg, #120817 0%, #0b0b14 100%)",
   guns: "radial-gradient(ellipse at 40% 50%, rgba(255,200,120,0.35), transparent 50%), linear-gradient(135deg, #0a0a10, #1c1410)",
+  // chapter 2's placeholders (until its panels are painted: docs/chapter2-assets.md)
+  storm: "radial-gradient(ellipse at 78% 18%, rgba(235,240,255,0.5), transparent 28%), repeating-linear-gradient(100deg, rgba(160,180,220,0.07) 0 2px, transparent 2px 22px), linear-gradient(180deg, #0a0e1a 0%, #151b2c 55%, #05060a 100%)",
+  sky: "radial-gradient(ellipse at 30% 75%, rgba(120,150,210,0.35), transparent 55%), radial-gradient(ellipse at 70% 20%, rgba(255,190,140,0.18), transparent 45%), linear-gradient(180deg, #0c1428 0%, #1d2a48 60%, #2a3350 100%)",
+  garden: "radial-gradient(ellipse at 50% 60%, rgba(90,190,140,0.35), transparent 55%), radial-gradient(ellipse at 20% 20%, rgba(255,210,150,0.25), transparent 40%), linear-gradient(180deg, #0a1614 0%, #10221c 100%)",
+  airship: "radial-gradient(ellipse at 50% 85%, rgba(220,225,240,0.3), transparent 50%), radial-gradient(ellipse at 30% 30%, rgba(200,150,90,0.3), transparent 45%), linear-gradient(180deg, #12141e 0%, #2a2230 100%)",
+  vault: "radial-gradient(ellipse at 50% 40%, rgba(255,200,90,0.5), transparent 50%), linear-gradient(180deg, #120d06 0%, #2a1c0a 100%)",
+  dawn: "radial-gradient(ellipse at 50% 30%, rgba(255,215,140,0.65), transparent 40%), radial-gradient(ellipse at 50% 90%, rgba(255,120,80,0.3), transparent 50%), linear-gradient(180deg, #2a1a24 0%, #4a2a20 60%, #150c08 100%)",
 };
 
 function Art({ p, zoom, load = true }: { p: Panel; zoom: boolean; load?: boolean }) {

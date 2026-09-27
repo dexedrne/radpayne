@@ -1,0 +1,94 @@
+{
+  "id": "ch2a",
+  "title": "Chapter 2: Keeping Score",
+  "music": "street",
+  "panels": [
+    {
+      "image": "",
+      "tone": "phone",
+      "box": [
+        0.02,
+        0.03,
+        0.2,
+        0.08
+      ],
+      "lines": [
+        {
+          "audio": "ch2a_01",
+          "text": "her phone kept buzzing on the marble floor. i picked it up. i should have let it ring some more."
+        },
+        {
+          "audio": "ch2a_c1",
+          "speaker": "countess",
+          "text": "\"one bag back? how cute. i keep a few thousand more. come up to the roof, little one. let's settle the score.\""
+        }
+      ],
+      "dur": 13.1,
+      "size": 0.86,
+      "maxW": 0.52
+    },
+    {
+      "image": "",
+      "tone": "storm",
+      "box": [
+        0.02,
+        0.03,
+        0.2,
+        0.08
+      ],
+      "lines": [
+        {
+          "audio": "ch2a_02",
+          "text": "the stairs went on past where the building should end. the storm was waiting at the top, like an old friend."
+        }
+      ],
+      "dur": 7.4
+    },
+    {
+      "image": "",
+      "tone": "storm",
+      "box": [
+        0.02,
+        0.03,
+        0.2,
+        0.08
+      ],
+      "lines": [
+        {
+          "audio": "ch2a_03",
+          "text": "a helicopter hung in the rain with its light on the door. it didn't blink. it had seen men like me before."
+        },
+        {
+          "audio": "ch2a_g1",
+          "speaker": "goon_a",
+          "text": "\"he really came! the countess said he would.\""
+        },
+        {
+          "audio": "ch2a_g2",
+          "speaker": "goon_b",
+          "text": "\"i said he'd come. i never said he was good.\""
+        }
+      ],
+      "dur": 13.6,
+      "size": 0.86,
+      "maxW": 0.52
+    },
+    {
+      "image": "",
+      "tone": "guns",
+      "box": [
+        0.02,
+        0.03,
+        0.2,
+        0.08
+      ],
+      "lines": [
+        {
+          "audio": "ch2a_04",
+          "text": "nothing above me now but the weather and the fall. i'd come up here for one bag. now i wanted it all."
+        }
+      ],
+      "dur": 7
+    }
+  ]
+}
