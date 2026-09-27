@@ -47,13 +47,24 @@ npm run dev        # http://localhost:4880
 
 Pick a Radbro and a difficulty, then press **PLAY**. Click the game to lock the mouse.
 
+**Difficulty** (the title, or the pause menu's Settings from the next restart or room; remembered):
+**Chill** (the story: the first release's easy), **Normal** (the default, and tougher than the first
+release: they aim better at range, hit harder, lay fire on your cover, send one round the side, lob a
+frag at a spot you hold too long, fewer cans lie around and a can heals less, bullet time drains a
+quarter faster and a kill refills a little more), **Hard** (all of it harder: running in the open
+spoils their aim less, two flank at once; you need cover) and **Hardcore** (no second chances: one can
+to start, half the cans, bullet time drains almost twice as fast). Madame Pockit keeps her own, gentler
+factor on every setting.
+
 | Input | Action |
 |---|---|
 | WASD | move (you run and strafe relative to where you aim) |
 | Mouse / left button | aim / fire (hold for the dual pistols' 0.12 s rhythm) |
-| Right button or Q | bullet time (10 s meter; kills refill it) |
+| Right button or Q | bullet time (10 s meter; kills refill it). In cover the right button pops you out instead |
 | Shift | shootdodge: a 0.9 s slow-motion dive; shoot while in the air |
-| Space | jump (clears low cover) |
+| C | cover: take the marked cover (a gold ring; a short run to it); in cover, a dash to the next marked cover |
+| Right button (in cover) | hold: up over low cover / out round a high edge, and aim; let go: back down |
+| Space | jump (clears low cover); in cover: vault over it |
 | R | reload |
 | H | copium (+35 HP over 1 s, carry up to 8) |
 | 1-5 / wheel | weapon by kind: 1 the dual pistols (#250: his AK), 2 the shotgun / sawed-off, 3 the dual SMGs, 4 the hand cannon, 5 the rifle / sniper. Press a key again for its twin |
@@ -73,11 +84,13 @@ shooters' (PlayStation names, Xbox in brackets):
 | L2 (LT) | aim: a steadier stick and the aim assist's pull; with the sniper in hand, hold to scope |
 | R3 or L3 (click a stick) | bullet time |
 | R1 (RB) | shootdodge |
-| Cross (A) | jump |
+| L1 (LB) | cover (again, in cover: dash to the marked cover) |
+| L2 (LT), in cover | hold: pop out and aim; let go: back down |
+| Cross (A) | jump; in cover: vault over it |
 | Square (X) | reload, or use what is in reach (a secret door, the cat, the cabinet) |
 | Triangle (Y) | throw a grenade |
 | Circle (B) | melee (#4764: tap for the katana cut, hold to guard) |
-| L1 (LB) / d-pad left-right | weapon (next / previous, twins included) |
+| D-pad left-right | weapon (next / previous, twins included; the weapon tabs show which way reaches which) |
 | D-pad up / down | copium / use |
 | Options (Menu) | pause |
 
@@ -103,8 +116,25 @@ After you land from a dive you lie prone and can keep shooting. Press a move key
 you hold a move key as you land, you roll straight into a run. Kill the whole room, watch the last
 bullet land, then walk to the club door.
 
+**Cover** (Max Payne 3-style, it works in bullet time too). Near something waist high or a wall's edge,
+a gold ring marks the cover: C (L1) takes it, from a step away or with a short low run to one you
+are looking at. Behind low cover you tuck down under its top; behind high cover you stand at its edge.
+Slide along it with the move keys; hold the right button (L2) to come up over it or step out round
+the edge and aim, let go to duck back (the camera moves to your left shoulder at a left-hand edge).
+Fire without popping out and you blind fire: the gun over the top or round the edge, much less
+accurate. Space (Cross) vaults low cover; with another cover marked in view, C again dashes to it;
+move away from it, or dive (Shift / R1), to leave. Cover really stops rounds from the front; from the
+side it does nothing. The gang knows it: on Normal and up they keep firing at your cover while you hide
+(stand up into it and you are hit), someone works round to your side, and after a while in one spot a
+frag comes over (a red frag sign by the crosshair and a red ring on the floor) and a rusher comes in
+close. They take the same cover you do, and work closer cover by cover. A first-time tutorial shows the
+keys (or the pad's buttons) in your first fight.
+
 In the elevator, the car moves on only once a floor is clear and you are back inside; each stop is a
-checkpoint. Watch the roof hatch when something lands on it.
+checkpoint. Watch the roof hatch when something lands on it. At every stop the gang comes in waves from
+two or three places the car cannot see (a service passage, a fire escape, a side room, a stairwell, a
+service door, the hatch over your head), some straight into cover and some round to where the car's
+doorway cannot cover you: the car is not a place to stay.
 
 Madame Pockit's tells: two pink laser lines across the floor before she sweeps her SMGs (dive under it
 or get behind something tall); a heart grenade held over her head before she throws it (shoot it there
@@ -132,7 +162,8 @@ npm test           # node --test: time scale, weapons, hitboxes, projectiles vs 
 npm run typecheck
 npm run build      # production build in dist/
 npm run greybox    # regenerate public/levels/greybox.json
-npm run check-level [room]   # parse a level like the game does and list its markers and issues
+npm run check-level [room]   # parse a level like the game does and list its markers, its derived cover and issues
+node tools/balance.ts [--rooms room1,room4] [--diffs normal,hard] [--seeds 1,2,3] [--bot cover|plain]   # bot runs: deaths, health lost, copium, time, spawn kills
 node tools/room1.ts      # regenerate public/levels/room1.json (overwrites hand edits made in the editor; room2.ts .. room5.ts likewise)
 node tools/textures.ts   # re-bake the procedural tiling textures in public/textures (needs ImageMagick)
 ```
@@ -165,9 +196,14 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
     brings them in. Room 4 (`node tools/room4.ts`) has `ride` in its settings (`src/sim/ride.ts`): the
     car (`car`, `hatch`) and the steps, legs (`t` seconds; `roof` + `group`: the heavy through the
     hatch; `cables`: the snap, the fall, the brakes) and stops (`side`, the `doors` colliders it takes
-    out, the `groups` to clear, `slow` the door beat, `pry` seconds, `alert`, `checkpoint`, `last`).
+    out, the `groups` to clear, `slow` the door beat, `pry` seconds, `alert`, `checkpoint`, `last`, and
+    `waves`: `[{group, after?, down?, hatch?}]`, a group brought in `after` seconds of the doors opening
+    or once `down` of the stop's hostiles are down, whichever is first; `hatch`: she drops through the
+    car's roof hatch). The level check lists each stop's waves and flags any that start in the car's
+    sight.
     Room 5 (`node tools/room5.ts`) has `boss` (the chandelier's chain, the rug, the bag, the terrace
-    door, the add `doors` and their groups: `src/sim/boss.ts`) and `chapterEnd`; the enemy kind
+    door, the add `doors` and their groups, `after`: a door that lights that many seconds into phase 2:
+    `src/sim/boss.ts`) and `chapterEnd`; the enemy kind
     `madame` is the boss (`src/ai/madame.ts`; her numbers are `MADAME` in `src/sim/tuning.ts`).
     Their looks are `elevator` and `penthouse` (`src/app/look/tower.tsx`); the moving parts are
     `src/app/RideView.tsx` (the gates, the landing doors, the scrolling shaft, the hatch, the cables)
@@ -182,6 +218,15 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
     uses `glow` (+ `flicker`) under cool fluorescent light. The breach door, the glass wall and the
     elevator doors are drawn and moved by `src/app/PropsView.tsx`; the sim keeps their colliders
     (invisible boxes with Data `{camera: true}`, so the camera still stops at them).
+- **Cover is derived, not placed** (`src/sim/cover.ts`): every collider face with floor in front of it is
+  sampled; where a capsule fits, the obstacle's height makes it low cover (0.85-1.35 m: tuck, pop up,
+  vault) or high (hide, step out round an open edge). Samples in a row become segments he slides along;
+  an end is an open edge when the obstacle stops there and there is room to step out. The gang's cover
+  points come from the same segments (low: every ~2 m, high: at the open edges), next to any `cover`
+  markers. `npm run check-level` prints each room's cover and how much of its waypoint graph has cover
+  within 5 m (under 85 %: add props there; room 1 got three jersey barriers and a pallet stack that
+  way). The gang's tactics against cover are `src/ai/tactics.ts`; the difficulty table is
+  `DIFFICULTY` in `src/sim/tuning.ts`.
 - **Readability comes before the effects.** The fight is 23-46 m out, so room 1 keeps it legible
   (`READ` in `src/app/look/street.tsx`, `COMBAT` in `src/app/look/read.tsx`):
   - Goons: a bright edge with a dark keyline, and from range a solid, slowly breathing silhouette.
