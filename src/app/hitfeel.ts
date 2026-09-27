@@ -187,7 +187,7 @@ export function stackLevel(s: Stack, now: number): number {
 }
 
 export type MarkSpec = {
-  /** Scale on the 1080p art (1 = a body hit's X, ~40 px across). */
+  /** Scale on the 1080p art (1 = a body hit's X, ~48 px across). */
   scale: number;
   /** Blade weight multiplier. */
   weight: number;

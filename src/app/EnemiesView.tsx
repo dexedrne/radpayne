@@ -412,8 +412,10 @@ export function EnemiesView({ s }: { s: Session }) {
         }
         m.vrm.update(wdt);
       } else {
-        // stand-in: lean the whole body a little (and away from a hit)
-        v.standIn.rotation.z = alive ? -e.lean * 0.3 + react.twist.x * react.side * 0.3 : 0;
+        // stand-in: lean the whole body a little; a hit tips her upper body away from the round
+        v.standIn.rotation.z = alive ? -e.lean * 0.3 : 0;
+        v.si.body.quaternion.identity();
+        if (!held && v.standIn.visible) { v.root.updateMatrixWorld(true); applyReactBones(react, { chest: v.si.body }, 1.5); }
       }
       // the gun: in her hand (swung onto the player while aiming), or floating at the stand-in's hand;
       // once she is down it is the pickup lying by her (her hand is empty)

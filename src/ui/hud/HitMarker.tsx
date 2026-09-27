@@ -22,8 +22,8 @@ export function HitMarker() {
   if (!m || m.k <= 0) return null;
   const sp = m.spec;
   const kill = m.kind === "kill";
-  const ri = kill ? 8 : 7, ro = kill ? 25 : 19;
-  const w = (kill ? 3.2 : 2.5) * sp.weight;
+  const ri = kill ? 9 : 8, ro = kill ? 31 : 24;
+  const w = (kill ? 4 : 3.1) * sp.weight;
   const blade = shard(ri, ro, w);
   const core = shard(ri + 3, ro - 4, w * 0.42);
   const style = { "--sc": sp.scale, "--rot": `${sp.rot.toFixed(1)}deg`, "--ms": `${sp.ms}ms`, "--k": m.k } as React.CSSProperties;
@@ -43,7 +43,7 @@ export function HitMarker() {
             <g className="accent">
               {[0, 90, 180, 270].map(r => (
                 <g key={r} transform={`rotate(${r})`}>
-                  <path d={shard(kill ? 29 : 23, kill ? 36 : 29, 1.6)} fill={MARK_COLOURS.head} stroke={INK} strokeWidth="1.4" paintOrder="stroke" />
+                  <path d={shard(kill ? 35 : 28, kill ? 43 : 35, 2)} fill={MARK_COLOURS.head} stroke={INK} strokeWidth="1.4" paintOrder="stroke" />
                 </g>
               ))}
             </g>
