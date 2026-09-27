@@ -386,3 +386,5 @@
 /* the weapon tabs on a pad: the d-pad arm that reaches a tab, in place of the key number */
 .rp-slot .rp-slot-g { display: inline-flex; vertical-align: -5px; margin-right: 5px; }
 .rp-slot .rp-slot-g .rp-padg svg { width: 18px; height: 18px; }
+/* a goon's frag near him: round the crosshair on its side */
+.rp-frag { position: fixed; left: 50%; top: 50%; z-index: 9; pointer-events: none; }

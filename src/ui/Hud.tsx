@@ -22,6 +22,7 @@ import { Nudge } from "./hud/Nudge.tsx";
 import { useCaptions } from "./hud/captions.ts";
 import { ThreatLayer } from "./hud/ThreatLayer.tsx";
 import { DamageLayer } from "./hud/DamageLayer.tsx";
+import { FragWarning } from "./hud/FragWarning.tsx";
 import { ScreenFx } from "./hud/ScreenFx.tsx";
 import { KillcamOverlay } from "./hud/KillcamOverlay.tsx";
 import { XrayOverlay } from "./hud/XrayOverlay.tsx";
@@ -72,6 +73,7 @@ export function Hud({ s: sProp, paused = false }: { s?: Session | null; paused?:
       {h.zoom && !kc && !dead && <ScopeOverlay />}
       {s && <DamageLayer s={s} />}
       {s && <ThreatLayer s={s} />}
+      {s && <FragWarning s={s} />}
       <div className={`rp-hud${kc ? " kc" : ""}${dead ? " dead" : ""}${clean ? " rp-clean" : ""}`} data-testid="hud">
         <TopLeft>{cap.objective && <Objective {...cap.objective} now={now} />}</TopLeft>
         <BottomLeft h={h} now={now} />
