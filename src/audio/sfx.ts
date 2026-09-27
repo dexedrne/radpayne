@@ -4,19 +4,69 @@
 // Bullet time: every world sound plays at rate 0.55 + 0.45 x timeScale through a low-pass that closes
 // as time slows, running loops glide to the same rate, the music drops a little and muffles. The
 // heartbeat and the bullet-time whooshes stay at normal pitch (they are "inside his head").
-// Round 2: the shotgun (blast, pump, the hull), the SMGs (at most 6 shots ringing, a room tail on
-// release), weapon / ammo pickups and the swap, impacts by surface (wood, bottles, drywall, speaker,
-// screen), indoor casings and footsteps (setIndoor), music per room (setMusic(cue, room): the rave's
-// club track is diegetic and cuts on the first shot with a record scratch), the crowd on its own bus
-// (at most 2 screams at once) with its cheer / panic loops, the DJ's PA lines, the heavy's voice.
+// Round 2: the shotgun (blast, pump, the hull), the SMGs, weapon / ammo pickups and the swap, impacts
+// by surface (wood, bottles, drywall, speaker, screen), indoor casings and footsteps (setIndoor), music
+// per room (setMusic(cue, room): the rave's club track is diegetic and cuts on the first shot with a
+// record scratch), the crowd on its own bus (at most 2 screams at once) with its cheer / panic loops,
+// the DJ's PA lines, the heavy's voice.
 // Room 3: the office room tone with the club's kick through the wall, the breach (the door bursting in,
 // slowed with the world), the glass wall, a failing tube now and then, the keycard and the elevator.
+// The guns (see "guns" below): each gun has its own dry shots and its own tail per room (the street, the
+// club, the back rooms); the gang's guns are voiced from across the room. His own shots stay brighter
+// than the world in bullet time and get a low boom under them.
 import { engine, live, sfxOn, voiceOn, whenCreated, type Engine } from "./engine.ts";
 import { assetUrl } from "../app/assets.ts";
 
+// ---- the guns' files ------------------------------------------------------------------------------
+
+/** base, base_2 ... base_n */
+const set = (base: string, n: number): string[] => [base, ...Array.from({ length: n - 1 }, (_, i) => `${base}_${i + 2}`)];
+
+/** The room's acoustics (the player's gun tails): the street's brick fronts, the club, the back rooms. */
+export type Space = "street" | "club" | "backrooms";
+
+type Gun = {
+  /** Dry shots, a variant never twice running (never the last two when there are four or more). */
+  shots: string[];
+  gain: number;
+  /** The room's tail per space. `release` 0: it starts with every shot and the next shot fades it (the last
+   *  one rings out); > 0: it starts that long (s) after the last shot, so held automatic fire stays dry. */
+  tails: Record<Space, string>;
+  tailGain: number;
+  release: number;
+  /** Bullet time: gain of the low boom under each shot (0 = none). */
+  boom: number;
+  /** Brass after a shot: the chance and the gain. */
+  brass: [number, number];
+};
+
+/** The player's guns (the dual pistols, #250's AK, the shotgun, the dual SMGs). */
+const GUNS: Record<string, Gun> = {
+  pistols: {
+    shots: set("sfx/pistol_shot", 5), gain: 0.85, release: 0, tailGain: 0.85, boom: 0.85, brass: [1, 0.22],
+    tails: { street: "sfx/pistol_tail_street", club: "sfx/pistol_tail_club", backrooms: "sfx/pistol_tail_backrooms" },
+  },
+  ak: {
+    shots: set("sfx/ak_shot", 4), gain: 0.8, release: 0.11, tailGain: 0.85, boom: 0.6, brass: [0.45, 0.18],
+    tails: { street: "sfx/ak_tail_street", club: "sfx/ak_tail_room", backrooms: "sfx/ak_tail_room" },
+  },
+  shotgun: {
+    shots: set("sfx/shotgun_shot", 4), gain: 0.89, release: 0, tailGain: 0.89, boom: 0, brass: [0, 0],
+    tails: { street: "sfx/shotgun_tail_street", club: "sfx/shotgun_tail_club", backrooms: "sfx/shotgun_tail_backrooms" },
+  },
+  smgs: {
+    shots: set("sfx/smg_shot", 5), gain: 0.68, release: 0.11, tailGain: 0.85, boom: 0, brass: [0.35, 0.14],
+    tails: { street: "sfx/smg_tail_street", club: "sfx/smg_tail_room", backrooms: "sfx/smg_tail_room" },
+  },
+};
+/** The gang's guns, voiced from 10-15 m away (darker, a little room baked in). */
+const ENEMY_GUNS: Record<string, string[]> = { pistol: set("sfx/enemy_pistol", 3), smg: set("sfx/enemy_smg", 3), shotgun: set("sfx/enemy_shotgun", 3) };
+const BT_BOOM = "sfx/pistol_bt_boom";
+export const GUN_FILES = [...new Set([...Object.values(GUNS).flatMap(g => [...g.shots, ...Object.values(g.tails)]), ...Object.values(ENEMY_GUNS).flat(), BT_BOOM])];
+
 /** Files under public/audio (no extension). Keys are the paths. */
 export const FILES = [
-  "sfx/pistol_shot", "sfx/pistol_shot_2", "sfx/pistol_shot_3", "sfx/dry_fire", "sfx/reload_mag_out", "sfx/reload_mag_in", "sfx/reload_slide",
+  ...GUN_FILES, "sfx/dry_fire", "sfx/reload_mag_out", "sfx/reload_mag_in", "sfx/reload_slide",
   "sfx/shell_casing", "sfx/shell_casing_2", "sfx/shell_casing_3", "sfx/impact_concrete", "sfx/impact_concrete_2", "sfx/impact_metal", "sfx/impact_metal_2",
   "sfx/impact_glass", "sfx/impact_glass_2", "sfx/impact_body", "sfx/impact_body_2", "sfx/bullet_whiz", "sfx/bullet_whiz_2", "sfx/bt_enter", "sfx/bt_exit",
   "sfx/heartbeat_loop", "sfx/dive_whoosh", "sfx/dive_land", "sfx/dive_land_2", "sfx/footsteps_wet_loop", "sfx/copium_hiss", "sfx/rain_loop",
@@ -25,8 +75,7 @@ export const FILES = [
   ...["cs1_01", "cs1_02", "cs1_03", "cs1_04", "tut_shoot", "tut_bullet_time", "tut_shootdodge", "tut_copium", "room_clear"].map(k => `voices/narrator/${k}`),
   ...["hurt_1", "hurt_2", "dodge_land", "bt_breath", "heal", "low_hp", "death"].map(k => `voices/radbro/${k}`),
   // round 2
-  ...["shotgun_shot", "shotgun_shot_2", "shotgun_shot_3", "shotgun_pump", "shotgun_shell_in", "shotgun_shell_drop", "shotgun_shell_drop_2", "smg_shot", "smg_shot_2", "smg_shot_3",
-    "smg_tail", "smg_bolt", "weapon_pickup", "ammo_pickup", "weapon_swap", "shell_casing_floor", "shell_casing_floor_2", "shell_casing_floor_3", "impact_wood", "impact_wood_2",
+  ...["shotgun_pump", "shotgun_shell_in", "shotgun_shell_drop", "shotgun_shell_drop_2", "smg_bolt", "weapon_pickup", "ammo_pickup", "weapon_swap", "shell_casing_floor", "shell_casing_floor_2", "shell_casing_floor_3", "impact_wood", "impact_wood_2",
     "impact_bottle", "impact_bottle_2", "impact_drywall", "impact_drywall_2", "impact_speaker", "impact_screen", "impact_body_heavy", "glass_wall_shatter", "footsteps_hard_loop",
     "heavy_step", "heavy_step_2", "dive_land_floor", "dive_land_floor_2", "record_scratch", "door_breach", "door_open", "keycard_beep", "elevator_ding", "elevator_doors",
     "crowd_scatter", "crowd_panic_loop", "crowd_cheer_loop", "office_room_tone_loop", "fluorescent_flicker"].map(k => `sfx/${k}`),
@@ -153,8 +202,13 @@ export function sampleDuration(k: string): number {
 
 let rate = 1;
 let ts = 1;
+/** The player's own guns in bullet time: pitched down less than the world (0.75 + 0.25 x timeScale). */
+let prate = 1;
 let slow: { filter: BiquadFilterNode; out: GainNode } | null = null;
 let voiceBus: BiquadFilterNode | null = null;
+let gunBus: BiquadFilterNode | null = null;
+/** His guns dip under the narrator (as the music does): -4.4 dB, so a held burst never buries a line. */
+let gunDuck: GainNode | null = null;
 
 /** World sounds go through this low-pass (it closes in bullet time). */
 function bus(e: Engine): AudioNode {
@@ -167,6 +221,17 @@ function bus(e: Engine): AudioNode {
     slow = { filter, out };
   }
   return slow.filter;
+}
+/** His own guns: their own low-pass, which stays open to 3.5 kHz+ in bullet time (the world's closes to ~1.7 kHz). */
+function gbus(e: Engine): AudioNode {
+  if (!gunBus) {
+    gunBus = e.ac.createBiquadFilter();
+    gunBus.type = "lowpass";
+    gunBus.frequency.value = 18000;
+    gunDuck = e.ac.createGain();
+    gunBus.connect(gunDuck).connect(e.sfxGain);
+  }
+  return gunBus;
 }
 /** In-world voices (barks): pitched and muffled with the world, on the voice volume. */
 function vbus(e: Engine): AudioNode {
@@ -181,13 +246,16 @@ function vbus(e: Engine): AudioNode {
 
 const variant = (keys: readonly string[]) => keys[Math.floor(Math.random() * keys.length)];
 
-type PlayOpts = { gain?: number; rate?: number; pan?: number; at?: number; dest?: AudioNode };
+type PlayOpts = { gain?: number; rate?: number; pan?: number; at?: number; dest?: AudioNode; lowpass?: number };
 
 /** The last voice lines played (key @ seconds since the page opened): the headless run reads it. */
 export const voiceLog: string[] = [];
 
-/** One-shot buffer; returns the source (null when silent / not loaded). */
-function play(e: Engine, key: string, o: PlayOpts = {}): AudioBufferSourceNode | null {
+/** A playing (or scheduled) one-shot: its gain can fade it, `cut` = faded out / cancelled early. */
+type Voice = { src: AudioBufferSourceNode; g: GainNode; at: number; cut: boolean };
+
+/** One-shot buffer (null when silent / not loaded). */
+function voice(e: Engine, key: string, o: PlayOpts = {}): Voice | null {
   const buf = buffers.get(key);
   if (!buf) return null;
   if (key.startsWith("voices/")) { voiceLog.push(`${key.slice(7)} @${(performance.now() / 1000).toFixed(1)}`); if (voiceLog.length > 120) voiceLog.shift(); }
@@ -197,24 +265,59 @@ function play(e: Engine, key: string, o: PlayOpts = {}): AudioBufferSourceNode |
   const g = e.ac.createGain();
   g.gain.value = o.gain ?? 1;
   let node: AudioNode = src.connect(g);
+  if (o.lowpass) {
+    const f = e.ac.createBiquadFilter();
+    f.type = "lowpass";
+    f.frequency.value = o.lowpass;
+    node = node.connect(f);
+  }
   if (o.pan) {
     const p = e.ac.createStereoPanner();
     p.pan.value = Math.max(-1, Math.min(1, o.pan));
     node = node.connect(p);
   }
   node.connect(o.dest ?? bus(e));
-  src.start(o.at ?? e.ac.currentTime);
-  return src;
+  const at = o.at ?? e.ac.currentTime;
+  src.start(at);
+  return { src, g, at, cut: false };
+}
+
+/** One-shot buffer; returns the source (null when silent / not loaded). */
+function play(e: Engine, key: string, o: PlayOpts = {}): AudioBufferSourceNode | null {
+  return voice(e, key, o)?.src ?? null;
+}
+
+/** Fade a voice out (time constant `tau` s) and stop it; one that has not started yet never plays. */
+function cut(v: Voice, tau: number): void {
+  const e = engine();
+  if (!e || v.cut) return;
+  v.cut = true;
+  const t = e.ac.currentTime;
+  try {
+    if (v.at > t + 0.002) {
+      v.g.gain.setValueAtTime(0, t);
+      v.src.stop();
+      return;
+    }
+    v.g.gain.cancelScheduledValues(t);
+    v.g.gain.setValueAtTime(v.g.gain.value, t);
+    v.g.gain.setTargetAtTime(0, t, tau);
+    v.src.stop(t + tau * 7);
+  } catch {
+    /* already stopped */
+  }
 }
 
 /** Called every frame by the driver with the sim's time scale. */
 export function setTimeScaleAudio(timeScale: number): void {
   ts = timeScale;
   rate = 0.55 + 0.45 * timeScale;
+  prate = 0.75 + 0.25 * timeScale;
   const e = live();
   if (!e) return;
   const t = e.ac.currentTime;
   if (slow) slow.filter.frequency.setTargetAtTime(timeScale >= 0.99 ? 18000 : 900 + 9000 * timeScale * timeScale, t, 0.05);
+  if (gunBus) gunBus.frequency.setTargetAtTime(timeScale >= 0.99 ? 18000 : 3500 + 14500 * timeScale * timeScale, t, 0.05);
   if (voiceBus) voiceBus.frequency.setTargetAtTime(timeScale >= 0.99 ? 18000 : 1400 + 9000 * timeScale, t, 0.05);
   e.musicFilter.frequency.setTargetAtTime(timeScale >= 0.99 ? 16000 : 700 + 6000 * timeScale, t, 0.08);
   for (const l of loops.values()) if (l.follow) l.src.playbackRate.setTargetAtTime(l.follow === "music" ? 0.8 + 0.2 * timeScale : rate, t, 0.12);
@@ -242,9 +345,6 @@ function tone(e: Engine, t: number, dur: number, f0: number, f1: number, gain: n
 /** Distance attenuation 0..1. */
 const att = (d: number) => Math.max(0.06, Math.min(1, 7 / Math.max(7, d)));
 
-const SHOTS = ["sfx/pistol_shot", "sfx/pistol_shot_2", "sfx/pistol_shot_3"];
-const SHOTGUN = ["sfx/shotgun_shot", "sfx/shotgun_shot_2", "sfx/shotgun_shot_3"];
-const SMG = ["sfx/smg_shot", "sfx/smg_shot_2", "sfx/smg_shot_3"];
 const CASINGS = ["sfx/shell_casing", "sfx/shell_casing_2", "sfx/shell_casing_3"];
 const CASINGS_FLOOR = ["sfx/shell_casing_floor", "sfx/shell_casing_floor_2", "sfx/shell_casing_floor_3"];
 const IMPACTS: Record<string, string[]> = {
@@ -264,58 +364,136 @@ export function setIndoor(on: boolean): void {
   indoor = on;
 }
 
-/** SMG shots still ringing (at most 6) and the tail after a burst. */
-let smgVoices = 0;
-let smgLast = 0;
-let smgTailFor: ReturnType<typeof setTimeout> | null = null;
+// ---- guns -----------------------------------------------------------------------------------------
+
+let space: Space = "street";
+/** The room's acoustics from its look: the street (room 1), the club (room 2), the back rooms (room 3). */
+export function setSpace(look: string | undefined, indoorRoom: boolean): void {
+  space = look === "club" || look === "backrooms" ? look : indoorRoom ? "club" : "street";
+}
+
+/** The room tail `weapon` (his) rings with in the current space. */
+export function tailKey(weapon: string): string {
+  return (GUNS[weapon] ?? GUNS.pistols).tails[space];
+}
+
+/** Gunfire carries farther than a voice: -4 dB at 14 m, -8 dB at 28 m, never under -13 dB. */
+export const gunAtt = (d: number): number => Math.max(0.22, Math.min(1, Math.pow(7 / Math.max(7, d), 0.65)));
+/** Past 25 m the air takes the top off the gang's shots (the files are voiced for ~15 m). */
+export const gunLowpass = (d: number): number => (d > 25 ? Math.max(2500, 16000 * Math.pow(25 / d, 1.5)) : 0);
+
+/** Shots ringing at once per shooter side: past the cap a new shot steals the oldest (a 4 ms fade), it is never dropped. */
+class Pool {
+  private voices: Voice[] = [];
+  private readonly cap: number;
+  constructor(cap: number) {
+    this.cap = cap;
+  }
+  add(v: Voice): void {
+    while (this.voices.length >= this.cap) cut(this.voices.shift()!, 0.004);
+    this.voices.push(v);
+    v.src.addEventListener("ended", () => {
+      const i = this.voices.indexOf(v);
+      if (i >= 0) this.voices.splice(i, 1);
+    });
+  }
+}
+const playerShots = new Pool(8);
+const enemyShots = new Pool(10);
+
+const recent = new Map<readonly string[], string[]>();
+/** A variant that is not the last one played from `keys` (not the last two when there are four or more). */
+export function fresh(keys: readonly string[]): string {
+  const last = recent.get(keys) ?? [];
+  const open = keys.filter(k => !last.includes(k));
+  const k = open.length ? open[Math.floor(Math.random() * open.length)] : keys[0];
+  last.push(k);
+  while (last.length > (keys.length >= 4 ? 2 : keys.length >= 2 ? 1 : 0)) last.shift();
+  recent.set(keys, last);
+  return k;
+}
+/** 1 +- `f` (uniform). */
+const wobble = (f: number) => 1 + (Math.random() * 2 - 1) * f;
+/** +- `db` dB as a gain factor (uniform in dB). */
+const wobbleDb = (db: number) => Math.pow(10, ((Math.random() * 2 - 1) * db) / 20);
+
+/** The gun samples that played, newest last ("player pistols sfx/pistol_shot_3 @12.34"; a room tail is
+ *  listed when it rings out, with its space): the headless run reads it. */
+export const gunLog: string[] = [];
+function logGun(s: string): void {
+  gunLog.push(`${s} @${(performance.now() / 1000).toFixed(2)}`);
+  if (gunLog.length > 400) gunLog.shift();
+}
+
+/** His room tail (one at a time) and his bullet-time boom (one at a time). */
+let tail: Voice | null = null;
+let boom: Voice | null = null;
+
+/** The player's shot: the dry shot on his bus, the room's tail, the boom in bullet time, the brass. */
+function playerShot(e: Engine, weapon: string, hand: number, gap: number): void {
+  const gun = GUNS[weapon] ?? GUNS.pistols;
+  const t = e.ac.currentTime;
+  const dest = gbus(e);
+  // the dual guns: the right hand a touch right, the left a touch left
+  const pan = weapon === "pistols" || weapon === "smgs" ? (hand === 0 ? 0.15 : -0.15) : 0;
+  const key = fresh(gun.shots);
+  const v = voice(e, key, { gain: gun.gain * wobbleDb(1.5), rate: prate * wobble(0.03), pan, dest });
+  if (v) {
+    playerShots.add(v);
+    logGun(`player ${weapon} ${key}`);
+  }
+  // the room: the last tail fades out (or never starts); this one starts with the shot, or after the
+  // burst for the automatics (`gap` = real seconds to his next possible shot)
+  if (tail) cut(tail, 0.01);
+  const tk = tailKey(weapon);
+  const lead = gun.release > 0 ? Math.max(gun.release / prate, gap * 1.2 + 0.02) : 0;
+  const tv = voice(e, tk, { gain: gun.tailGain, rate: prate, at: t + lead, dest });
+  tail = tv;
+  if (tv) {
+    const where = space;
+    tv.src.addEventListener("ended", () => {
+      if (!tv.cut) logGun(`tail ${weapon} ${tk} [${where}]`);
+      if (tail === tv) tail = null;
+    });
+  }
+  // bullet time: a low boom under each of his shots (one at a time)
+  if (gun.boom > 0 && ts < 0.99) {
+    if (boom) cut(boom, 0.015);
+    boom = voice(e, BT_BOOM, { gain: gun.boom * Math.min(1, (1 - ts) / 0.7), rate: prate, dest });
+    if (boom) logGun(`boom ${weapon} ${BT_BOOM}`);
+  }
+  if (weapon === "shotgun") {
+    // the pump racks at the clip's pumpBack (0.30 s on his clock), the hull hits the floor after it
+    play(e, "sfx/shotgun_pump", { gain: 0.55, at: t + 0.3 / rate });
+    play(e, variant(["sfx/shotgun_shell_drop", "sfx/shotgun_shell_drop_2"]), { gain: 0.28, pan: 0.35, at: t + (0.62 + Math.random() * 0.15) / rate });
+    return;
+  }
+  // brass on the wet street (or the club's floor) a beat later
+  if (Math.random() < gun.brass[0]) play(e, variant(indoor ? CASINGS_FLOOR : CASINGS), { gain: gun.brass[1], at: t + (0.26 + Math.random() * 0.2) / rate, pan: 0.3 });
+}
+
+/** The gang's shot: its own darker samples, farther = quieter and duller; slowed with the world. */
+function enemyShot(e: Engine, weapon: string, dist: number, pan: number): void {
+  const keys = ENEMY_GUNS[weapon] ?? ENEMY_GUNS.pistol;
+  const key = fresh(keys);
+  const v = voice(e, key, { gain: 0.85 * gunAtt(dist) * wobbleDb(1), rate: rate * (0.96 + Math.random() * 0.08), pan: pan * 0.8, lowpass: gunLowpass(dist) || undefined });
+  if (v) {
+    enemyShots.add(v);
+    logGun(`enemy ${weapon} ${key}`);
+  }
+}
 
 export const sfx = {
-  /** A shot: `weapon` picks the sound (pistols / AK / shotgun / SMGs, the gang's pistol / smg / shotgun). */
-  shot(player: boolean, dist = 0, pan = 0, weapon = "pistols"): void {
+  /**
+   * A shot. `weapon`: the player's "pistols" | "ak" | "shotgun" | "smgs", the gang's "pistol" | "smg" |
+   * "shotgun". `hand`: which of the dual guns fired. `gap`: real seconds until the player's gun can fire
+   * again (his automatics hold their room tail until the trigger is let go).
+   */
+  shot(player: boolean, dist = 0, pan = 0, weapon = "pistols", hand = 0, gap = 0): void {
     const e = sfxOn();
     if (!e) return;
-    const g = player ? 0.85 : 0.55 * att(dist);
-    const p = player ? 0 : pan * 0.8;
-    const r = rate * (player ? 1 : 0.94 + Math.random() * 0.08);
-    const t = e.ac.currentTime;
-    if (weapon === "shotgun") {
-      play(e, variant(SHOTGUN), { gain: g * 1.05, pan: p, rate: r });
-      if (player) {
-        // the pump racks at the clip's pumpBack (0.30 s on his clock), the hull hits the floor after it
-        play(e, "sfx/shotgun_pump", { gain: 0.55, at: t + 0.3 / rate });
-        play(e, variant(["sfx/shotgun_shell_drop", "sfx/shotgun_shell_drop_2"]), { gain: 0.28, pan: 0.35, at: t + (0.62 + Math.random() * 0.15) / rate });
-      }
-      return;
-    }
-    if (weapon === "ak") {
-      // no rifle sample: the pistol crack pitched down for weight, an SMG layer under it for the body
-      if (smgVoices >= 6) return;
-      smgVoices++;
-      const src = play(e, variant(SHOTS), { gain: g * 0.95, pan: p, rate: r * 0.78 });
-      if (src) src.onended = () => { smgVoices = Math.max(0, smgVoices - 1); };
-      else smgVoices--;
-      play(e, variant(SMG), { gain: g * 0.45, pan: p, rate: r * 0.82 });
-      if (player && Math.random() < 0.45) play(e, variant(indoor ? CASINGS_FLOOR : CASINGS), { gain: 0.18, at: t + (0.26 + Math.random() * 0.2) / rate, pan: 0.3 });
-      return;
-    }
-    if (weapon === "smgs" || weapon === "smg") {
-      if (smgVoices >= 6) return;
-      smgVoices++;
-      const src = play(e, variant(SMG), { gain: g * 0.8, pan: p, rate: r });
-      if (src) src.onended = () => { smgVoices = Math.max(0, smgVoices - 1); };
-      else smgVoices--;
-      if (player) {
-        // the room's tail once the trigger is let go
-        smgLast = performance.now();
-        if (smgTailFor) clearTimeout(smgTailFor);
-        smgTailFor = setTimeout(() => { const ee = sfxOn(); if (ee && performance.now() - smgLast >= 110) play(ee, "sfx/smg_tail", { gain: 0.5 }); }, 130);
-        if (Math.random() < 0.35) play(e, variant(indoor ? CASINGS_FLOOR : CASINGS), { gain: 0.14, at: t + (0.25 + Math.random() * 0.2) / rate, pan: 0.3 });
-      }
-      return;
-    }
-    play(e, variant(SHOTS), { gain: g, pan: p, rate: r });
-    // brass on the wet street (or the club's floor) a beat later
-    if (player) play(e, variant(indoor ? CASINGS_FLOOR : CASINGS), { gain: 0.22, at: t + (0.28 + Math.random() * 0.2) / rate, pan: 0.3 });
+    if (player) playerShot(e, weapon, hand, gap);
+    else enemyShot(e, weapon, dist, pan);
   },
   impact(surface: string, dist = 0, pan = 0): void {
     const e = sfxOn();
@@ -672,6 +850,11 @@ export function narrate(line: string, speaker = "narrator"): number {
   e.talk.gain.cancelScheduledValues(t);
   e.talk.gain.setTargetAtTime(0.4, t, 0.15);
   e.talk.gain.setTargetAtTime(1, t + d, 0.4);
+  if (gunDuck) {
+    gunDuck.gain.cancelScheduledValues(t);
+    gunDuck.gain.setTargetAtTime(0.6, t, 0.1);
+    gunDuck.gain.setTargetAtTime(1, t + d, 0.3);
+  }
   src.onended = () => { if (narrating === src) narrating = null; };
   return d;
 }
@@ -681,6 +864,7 @@ export function stopNarration(): void {
   narrating = null;
   const e = engine();
   if (e) { e.talk.gain.cancelScheduledValues(e.ac.currentTime); e.talk.gain.setTargetAtTime(1, e.ac.currentTime, 0.2); }
+  if (e && gunDuck) { gunDuck.gain.cancelScheduledValues(e.ac.currentTime); gunDuck.gain.setTargetAtTime(1, e.ac.currentTime, 0.2); }
 }
 
 // ---- round 2 voices -------------------------------------------------------------------------------

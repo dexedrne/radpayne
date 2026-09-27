@@ -7,7 +7,7 @@ import type { Session } from "./session.ts";
 import { useUi } from "../ui/store.ts";
 import { FRAME } from "./frame.ts";
 import { WEAPONS } from "../combat/weapons.ts";
-import { setAmbience, setClubBass, setCrowd, setFootsteps, setHeartbeat, setIndoor, setMusic, setNeonBuzz, setRoomTone, setTimeScaleAudio, sfx, voiceLog } from "../audio/sfx.ts";
+import { gunLog, setAmbience, setClubBass, setCrowd, setFootsteps, setHeartbeat, setIndoor, setMusic, setNeonBuzz, setRoomTone, setSpace, setTimeScaleAudio, sfx, voiceLog } from "../audio/sfx.ts";
 import { audioState } from "../audio/engine.ts";
 import { Director } from "./director.ts";
 import { PLAYER, TIME } from "../sim/tuning.ts";
@@ -20,7 +20,7 @@ import { METER } from "../sim/tuning.ts";
 
 declare global {
   interface Window {
-    __rp?: { session: Session; fps: number; frames: number; audio: string; voices: string[] };
+    __rp?: { session: Session; fps: number; frames: number; audio: string; voices: string[]; guns: string[] };
   }
 }
 
@@ -57,7 +57,11 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
       case "shot": {
         const player = e.shooter === -1;
         const w = where(e.ox, e.oz);
-        if (e.pellet === 0) sfx.shot(player, player ? 0 : w.dist, w.pan, e.weapon);
+        if (e.pellet === 0) {
+          // his next shot comes `gap` real seconds on (his weapon clock runs at half speed in bullet time)
+          const gap = player ? (WEAPONS[e.weapon as WeaponId]?.interval ?? 0.1) / Math.max(g.timeScale, TIME.playerInBulletTime) : 0;
+          sfx.shot(player, player ? 0 : w.dist, w.pan, e.weapon, e.hand, gap);
+        }
         if (!player && p.mode !== "dead") {
           // a near miss past his head: closest approach of the shot line to the head
           const hx = p.x, hy = p.y + 1.55, hz = p.z;
@@ -129,6 +133,7 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
       const room = g.level.room;
       const indoor = room.footsteps === "hard";
       setIndoor(indoor);
+      setSpace(room.look, indoor);
       if (!indoor) {
         // the club's bass and the neon hum: louder toward the door (the exit marker)
         const door = g.level.markers.find(m => m.kind === "exit");
@@ -170,7 +175,7 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
       }
       if (!s.paused) director.frame();
     } else setFootsteps(0);
-    window.__rp = { session: s, fps: fps.current, frames: frames.current, audio: audioState(), voices: voiceLog };
+    window.__rp = { session: s, fps: fps.current, frames: frames.current, audio: audioState(), voices: voiceLog, guns: gunLog };
     if (g.phase !== lastPhase.current) {
       lastPhase.current = g.phase;
       onPhase(g.phase);
