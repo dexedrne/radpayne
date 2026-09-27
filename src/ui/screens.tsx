@@ -5,17 +5,20 @@
 import "./hud/tokens.css";
 import { useEffect, useMemo, useState } from "react";
 import { loadPins } from "./pins.ts";
-import { RADBROS, setSetting, setVolume, store, useUi, type DmgColour, type HudSize, type RadbroId, type Results, type ThreatMode, type Chatter, type KillcamMode } from "./store.ts";
+import { RADBROS, setSetting, setVolume, store, useUi, type AimAssist, type DmgColour, type HudSize, type RadbroId, type Results, type ThreatMode, type Chatter, type KillcamMode } from "./store.ts";
 import { DIFFICULTY, type Difficulty } from "../sim/tuning.ts";
 import { setGfx, setPreset, useGfx, type Bloom, type Preset, type Rain, type Reflections, type Res } from "../app/look/gfx.ts";
 import type { Session } from "../app/session.ts";
-import { Keycap } from "./hud/Keycap.tsx";
+import { BtnKey, Keycap, usePadPrompts } from "./hud/Keycap.tsx";
+import { PadGlyph, PadGlyphs } from "./hud/PadGlyph.tsx";
+import { PAD_CONTROLS, type Act } from "../input/pad.ts";
+import { useDevice } from "../input/device.ts";
 import { assetUrl } from "../app/assets.ts";
 import { Caption } from "./hud/Caption.tsx";
 import { Seg, stepOption } from "./hud/Seg.tsx";
 import { Slider } from "./hud/Slider.tsx";
 import { fmtTime, recordBest } from "./hud/logic.ts";
-import { useMenuInput, usePadConnected, type MenuAction } from "./menu.ts";
+import { useMenuInput, usePadInput, type MenuAction } from "./menu.ts";
 import { RUGGED_LINE, roomText } from "./rooms.ts";
 import { hudSession } from "./hud/HudFrame.tsx";
 import { TopLeft } from "./Hud.tsx";
@@ -45,6 +48,7 @@ const DMG_SW: Record<DmgColour, string> = { red: "#ff3148", yellow: "#ffd23f", w
 const ONOFF: ReadonlyArray<readonly ["on" | "off", string]> = [["on", "ON"], ["off", "OFF"]];
 const CHATTERS: ReadonlyArray<readonly [Chatter, string]> = [["normal", "NORMAL"], ["less", "LESS"], ["off", "OFF (COMBAT)"]];
 const KILLCAMS: ReadonlyArray<readonly [KillcamMode, string]> = [["always", "ALWAYS"], ["special", "SPECIAL SHOTS"], ["final", "FINAL KILL"], ["off", "OFF"]];
+const ASSISTS: ReadonlyArray<readonly [AimAssist, string]> = [["off", "OFF"], ["low", "LOW"], ["normal", "NORMAL"]];
 /** What each preset looks like (the title and the settings say it the same way). */
 export const PRESET_NOTES: Record<Preset | "custom", string> = {
   low: "low: no bloom, no mirror, a drizzle, a smaller crowd. fastest.",
@@ -59,6 +63,8 @@ const NOTES = {
   outlines: "Goon outlines, gold vs red fire: in every setting.",
   chatter: "Less: the gang talks only at the big moments; the narrator skips his asides. Off: no barks in the fight; the narrator keeps the story beats, the hints stay on screen.",
   killcam: "Special shots: sniper kills, long headshots, two with one round, a grenade's double, the room's last kill. Any key skips.",
+  assist: "Gamepad only: the stick slows near a target you can see, and holding L2 / LT (or firing) pulls the aim lightly onto her. Never through walls; the mouse never gets it.",
+  deadZone: "How far the sticks move before they count (radial). Raise it if the aim drifts.",
 };
 
 export const CONTROLS: Array<[string[], string]> = [
@@ -67,11 +73,22 @@ export const CONTROLS: Array<[string[], string]> = [
   [["E"], "use"], [["RMB"], "scope (sniper, hold)"], [["ESC"], "pause"], [["M"], "mute"],
 ];
 
+/** The controls list: the keys, or the pad's buttons when a pad was used last. The keycaps here are
+ *  the keyboard's own (a list of keys is never translated). */
 function KeyList({ className }: { className: string }) {
+  const pad = usePadPrompts();
+  const kind = useDevice(s => s.kind);
+  if (pad) return (
+    <div className={className} data-testid="pad-controls">
+      {PAD_CONTROLS.map(([gs, v]) => (
+        <div key={v}><span className="ks"><PadGlyphs gs={gs} kind={kind} /></span>{v}</div>
+      ))}
+    </div>
+  );
   return (
     <div className={className}>
       {CONTROLS.map(([ks, v]) => (
-        <div key={v}><span className="ks">{ks.map(k => <Keycap key={k} k={k} />)}</span>{v}</div>
+        <div key={v}><span className="ks">{ks.map(k => <span key={k} className="rp-key">{k}</span>)}</span>{v}</div>
       ))}
     </div>
   );
@@ -149,7 +166,7 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
             {PRESET_NOTES[preset]}{preset === "custom" ? "" : " the rest: pause menu."}
           </div>
           <button type="button" className={`rp-mbtn primary rp-play${row === "play" ? " sel" : ""}`} onClick={onPlay} disabled={!go} data-testid="play" {...focus("play")}>
-            {go ? "PLAY" : "LOADING…"}{go && <span className="k">ENTER</span>}
+            {go ? "PLAY" : "LOADING…"}{go && <BtnKey k="ENTER" />}
           </button>
         </div>
         <div className="rp-foot-hint rp-title-hint">
@@ -157,7 +174,7 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
         </div>
         <KeyList className="rp-controls" />
         <div className="rp-credits">
-          desktop, keyboard + mouse (a gamepad works too). built on{" "}
+          desktop: keyboard + mouse, or a gamepad (PlayStation or Xbox). built on{" "}
           <a href="https://prnth.com/react-three-game/" target="_blank" rel="noreferrer">react-three-game</a> and the Pockit Miladys by prnth,
           used with permission · Radbros by dexedrne, used with the Radbro Webring dev's permission
         </div>
@@ -183,11 +200,12 @@ export function Loading() {
 
 /**
  * The prompt over the room before the fight (and after the pointer lock is lost): a click, Enter or
- * Space takes the lock (`onLock`, from the user's gesture); gamepad A / Start are the page's (the
- * session's pad poll), so they are only named here when a pad is plugged in.
+ * Space takes the lock (`onLock`, from the user's gesture); the pad's Cross / Options are the page's (the
+ * session's pad poll). It names the buttons of the device used last.
  */
 export function FightPrompt({ onLock }: { onLock: () => void }) {
-  const pad = usePadConnected();
+  const pad = usePadPrompts();
+  const kind = useDevice(s => s.kind);
   useEffect(() => {
     const kd = (e: KeyboardEvent) => {
       if (e.repeat || !["Enter", "NumpadEnter", "Space"].includes(e.code)) return;
@@ -201,10 +219,13 @@ export function FightPrompt({ onLock }: { onLock: () => void }) {
   return (
     <div className="rp-layer" style={{ background: "rgba(5,6,12,0.35)", cursor: "pointer" }} onClick={onLock} data-testid="click-to-fight">
       <div className="rp-z" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-        <div className="rp-mbtn primary rp-click">CLICK TO FIGHT</div>
+        {pad
+          ? <div className="rp-mbtn primary rp-click" style={{ gap: 12 }}>PRESS <PadGlyph g="cross" kind={kind} /> TO FIGHT</div>
+          : <div className="rp-mbtn primary rp-click">CLICK TO FIGHT</div>}
         <div className="rp-hint">
-          <Keycap k="CLICK" /> / <Keycap k="ENTER" /> / <Keycap k="SPACE" />
-          {pad && <><span className="sep">·</span><Keycap k="A" /> / <Keycap k="START" /></>}
+          {pad
+            ? <><PadGlyph g="cross" kind={kind} /> / <PadGlyph g="options" kind={kind} /></>
+            : <><span className="rp-key">CLICK</span> / <span className="rp-key">ENTER</span> / <span className="rp-key">SPACE</span></>}
         </div>
       </div>
     </div>
@@ -245,17 +266,29 @@ function useSettingRows(tab: Tab): Row[] {
       seg("subs", undefined, "Subtitles", ui.subs ? "on" : "off", ONOFF, v => setSetting("subs", v === "on")),
       seg("killcam", "CAMERA", "Kill cam", ui.killcam, KILLCAMS, v => setSetting("killcam", v), { note: NOTES.killcam }),
     ];
+    const slider = (id: "padSens" | "deadZone", section: string | undefined, name: string, value: number, min: number, max: number, stepBy: number, format: (v: number) => string, extra?: Partial<Row>): Row => ({
+      id, section, name,
+      control: <Slider value={value} min={min} max={max} step={stepBy} onChange={v => setSetting(id, v)} format={format} />,
+      step: dir => setSetting(id, Number(Math.max(min, Math.min(max, value + dir * stepBy)).toFixed(2))),
+      ...extra,
+    });
+    const check = (id: "invertY" | "padInvertY", name: string, section?: string): Row => ({
+      id, section, name,
+      control: <button type="button" tabIndex={-1} className={`rp-check${ui[id] ? " on" : ""}`} onClick={e => { e.stopPropagation(); setSetting(id, !ui[id]); }}>{ui[id] ? "✓" : ""}</button>,
+      step: () => setSetting(id, !ui[id]), activate: () => setSetting(id, !ui[id]),
+    });
     if (tab === "controls") return [
+      slider("padSens", "GAMEPAD", "Stick sensitivity", ui.padSens, 0.3, 2.5, 0.05, v => v.toFixed(2)),
+      check("padInvertY", "Invert Y (stick)"),
+      slider("deadZone", undefined, "Dead zone", ui.deadZone, 0.05, 0.3, 0.01, v => `${Math.round(v * 100)}%`, { note: NOTES.deadZone }),
+      seg("vibration", undefined, "Vibration", ui.vibration ? "on" : "off", ONOFF, v => setSetting("vibration", v === "on")),
+      seg("aimAssist", undefined, "Aim assist", ui.aimAssist, ASSISTS, v => setSetting("aimAssist", v), { note: NOTES.assist }),
       {
         id: "sensitivity", section: "MOUSE", name: "Mouse sensitivity",
         control: <Slider value={ui.sensitivity} min={0.3} max={2.5} step={0.05} onChange={v => setSetting("sensitivity", v)} format={v => v.toFixed(2)} />,
         step: dir => setSetting("sensitivity", Number(Math.max(0.3, Math.min(2.5, ui.sensitivity + dir * 0.05)).toFixed(2))),
       },
-      {
-        id: "invertY", name: "Invert Y",
-        control: <button type="button" tabIndex={-1} className={`rp-check${ui.invertY ? " on" : ""}`} onClick={e => { e.stopPropagation(); setSetting("invertY", !ui.invertY); }}>{ui.invertY ? "✓" : ""}</button>,
-        step: () => setSetting("invertY", !ui.invertY), activate: () => setSetting("invertY", !ui.invertY),
-      },
+      check("invertY", "Invert Y (mouse)"),
     ];
     return [
       vol("master", "Master", "VOLUME"),
@@ -273,6 +306,7 @@ function useSettingRows(tab: Tab): Row[] {
 
 function Settings({ tab, setTab, focus, setFocus, active }: { tab: Tab; setTab: (t: Tab) => void; focus: number; setFocus: (i: number) => void; active: boolean }) {
   const rows = useSettingRows(tab);
+  const pad = usePadPrompts();
   return (
     <div className="rp-panel rp-settings" data-testid="settings">
       <div className="rp-tabs">
@@ -288,7 +322,7 @@ function Settings({ tab, setTab, focus, setFocus, active }: { tab: Tab; setTab: 
           {r.note && <div className="rp-set" style={{ minHeight: 0 }}><div /><div className="rp-note">{r.note}</div></div>}
         </div>
       ))}
-      {tab === "controls" && <><h3>KEYS</h3><KeyList className="rp-keys" /></>}
+      {tab === "controls" && <><h3>{pad ? "BUTTONS" : "KEYS"}</h3><KeyList className="rp-keys" /></>}
       <div className="rp-foot-hint">
         <span><Keycap k="ESC" /> back</span><span><Keycap k="↑↓" /> choose</span><span><Keycap k="←→" /> change</span><span><Keycap k="TAB" /> page</span>
       </div>
@@ -312,8 +346,8 @@ export function Pause({ s: sProp, onResume, onRestart, onQuit }: { s?: Session |
   useEffect(() => { const r = () => setWide(innerWidth >= 1280); addEventListener("resize", r); return () => removeEventListener("resize", r); }, []);
   const showPanel = open || wide;
   const openSettings = (t: Tab) => { setOpen(true); setTab(t); setCol("set"); setSi(0); };
-  const buttons: Array<{ id: string; label: string; k?: string; primary?: boolean; act: () => void }> = [
-    { id: "resume", label: "RESUME", k: "ESC", primary: true, act: onResume },
+  const buttons: Array<{ id: string; label: string; k?: string; a?: Act; primary?: boolean; act: () => void }> = [
+    { id: "resume", label: "RESUME", k: "ESC", a: "pause", primary: true, act: onResume },
     { id: "restart", label: "RESTART ROOM", act: onRestart },
     { id: "settings", label: "SETTINGS", k: "▶", act: () => openSettings(tab === "controls" ? "display" : tab) },
     { id: "controls", label: "CONTROLS", act: () => openSettings("controls") },
@@ -366,7 +400,7 @@ export function Pause({ s: sProp, onResume, onRestart, onQuit }: { s?: Session |
               onMouseEnter={() => { setCol("menu"); setMi(i); }}
               onClick={b.act}
             >
-              {b.label}{b.k && <span className="k">{b.k}</span>}
+              {b.label}{b.k && <BtnKey k={b.k} a={b.a} />}
             </button>
           ))}
           {confirm && <Caption className="rp-confirm" text="quit? this room starts over. [ENTER] yes [ESC] no" />}
@@ -392,8 +426,8 @@ function bestFor(r: Results): { prev: number | null; isBest: boolean } {
   return b;
 }
 
-/** Round 3: the end of the chapter: a black card, TO BE CONTINUED, before the results (a click, Enter or
- *  Space skips it). Game UI, never baked into the panels. */
+/** Round 3: the end of the chapter: a black card, TO BE CONTINUED, before the results (a click, Enter,
+ *  Space or a pad's Cross / Circle / Options skips it). Game UI, never baked into the panels. */
 function ChapterCard({ onDone }: { onDone: () => void }) {
   const [out, setOut] = useState(false);
   useEffect(() => {
@@ -402,6 +436,8 @@ function ChapterCard({ onDone }: { onDone: () => void }) {
     addEventListener("keydown", skip);
     return () => { clearTimeout(a); clearTimeout(b); removeEventListener("keydown", skip); };
   }, [onDone]);
+  // the pad: Cross, Circle or Options skip it
+  usePadInput(a => { if (a === "enter" || a === "back") onDone(); }, { stick: false });
   return (
     <div className="rp-layer" data-testid="tbc" onClick={onDone} style={{ background: "#040405", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 18, opacity: out ? 0 : 1, transition: "opacity 0.7s", animation: "rp-line 1.2s ease-out", pointerEvents: "auto" }}>
       <div style={{ font: '400 120px/0.9 var(--display)', letterSpacing: 10, color: "var(--paper)" }}>TO BE CONTINUED</div>
@@ -416,10 +452,13 @@ export function ResultsScreen({ onRetry, onTitle }: { onRetry: () => void; onTit
   const [photoOk, setPhotoOk] = useState(true);
   /** The chapter card is up (the end of chapter 1) until it is done. */
   const [card, setCard] = useState(() => !!useUi.getState().results?.chapter);
+  /** The focused button (0 retry, 1 title): the arrows / d-pad move it, Enter / Cross takes it. */
+  const [sel, setSel] = useState(0);
   useMenuInput(a => {
     if (card) return false;
-    if (a === "enter") onRetry();
+    if (a === "enter") (sel === 0 ? onRetry : onTitle)();
     else if (a === "back") onTitle();
+    else if (a === "left" || a === "right" || a === "up" || a === "down") setSel(i => 1 - i);
     else return false;
   }, !!r);
   if (!r) return null;
@@ -485,8 +524,8 @@ export function ResultsScreen({ onRetry, onTitle }: { onRetry: () => void; onTit
             <span className="total">PINS {RADBROS.filter(b => have.includes(b.id)).length}/{RADBROS.length}</span>
           </div>
           <div className="rp-rbtns">
-            <button type="button" className="rp-mbtn primary" onClick={onRetry} data-testid="retry">{r.cleared ? "PLAY AGAIN" : "RETRY"}<span className="k">ENTER</span></button>
-            <button type="button" className="rp-mbtn" onClick={onTitle} data-testid="to-title">TITLE<span className="k">ESC</span></button>
+            <button type="button" className={`rp-mbtn primary${sel === 0 ? " sel" : ""}`} onClick={onRetry} onMouseEnter={() => setSel(0)} data-testid="retry">{r.cleared ? "PLAY AGAIN" : "RETRY"}<BtnKey k="ENTER" /></button>
+            <button type="button" className={`rp-mbtn${sel === 1 ? " sel" : ""}`} onClick={onTitle} onMouseEnter={() => setSel(1)} data-testid="to-title">TITLE<BtnKey k="ESC" /></button>
             <div className="rp-meta">{text.chapter} · {where}</div>
           </div>
         </div>

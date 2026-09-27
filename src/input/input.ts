@@ -1,14 +1,23 @@
 // Keyboard / mouse (pointer lock) / gamepad -> one InputFrame per fixed step. The aim (yaw / pitch)
 // integrates mouse and right-stick motion in real time, every frame, whatever the time scale. Press
-// edges latch until a step consumes them, so a frame with zero steps never loses a press.
+// edges latch until a step consumes them, so a frame with zero steps never loses a press. The pad feeds
+// the same frame as the keys (a recorded log replays the same whatever played it); its layout is
+// pad.ts's: L2 aims (steadier, the aim assist's pull; the scope with the sniper), R2 fires (analog, with
+// hysteresis), R1 dives, R3 / L3 bullet time, Cross jumps, Square reloads (or uses what is in reach),
+// Triangle throws, Circle strikes, L1 / d-pad left-right change the gun, d-pad up copium, down use.
 import { PITCH_MAX, PITCH_MIN } from "../sim/aim.ts";
 import { emptyInput, type InputFrame } from "../sim/types.ts";
+import { assistStep, type AssistLevel, type AssistTarget } from "./assist.ts";
+import { activePad, noteKbm, notePad, padBusy } from "./device.ts";
+import { BTN, lookCurve, radial, triggerDown, triggerValue } from "./pad.ts";
 
 /** Radians per mouse pixel at sensitivity 1. */
 const MOUSE_K = 0.0022;
-/** Gamepad right stick: radians per second at full tilt. */
-const PAD_YAW = 3.2;
-const PAD_PITCH = 2.2;
+/** Gamepad right stick: radians per second at full tilt (sensitivity 1). */
+const PAD_YAW = 4;
+const PAD_PITCH = 2.75;
+/** L2 fully pulled: the stick turns this much slower (a steadier aim). */
+const AIM_STEADY = 0.4;
 
 export class InputLatch {
   readonly keys = new Set<string>();
@@ -17,20 +26,33 @@ export class InputLatch {
   sensitivity = 1;
   invertY = false;
   lmb = false;
-  /** Aim-assist slowdown multiplier the game sets while the crosshair is on a target (gamepad only). */
-  assist = 1;
-  /** The sniper is in hand (the game sets it): right mouse / LT hold the scope instead of bullet time. */
+  /** The pad's own settings: stick sensitivity, invert Y, the sticks' radial dead zone, the aim assist. */
+  padSens = 1;
+  padInvertY = false;
+  deadZone = 0.12;
+  assistLevel: AssistLevel = "normal";
+  /** The aim assist's eyes on the game (the session sets it; null: none, e.g. the bot plays). */
+  assistQuery: ((yaw: number, pitch: number) => AssistTarget | null) | null = null;
+  /** Square uses (not reloads) this frame: something usable is in reach (the session sets it). */
+  useHere = false;
+  /** The sniper is in hand (the game sets it): right mouse / L2 hold the scope instead of bullet time. */
   zoomMode = false;
   /** Look sensitivity x this (the camera sets the FOV ratio while scoped). */
   fovK = 1;
   rmb = false;
+  /** What drove the aim last: the mouse / keys or the pad (the assist is the pad's only). */
+  via: "kbm" | "pad" = "kbm";
   private edges = { bt: false, dodge: false, jump: false, reload: false, copium: false, skip: false, slot: 0, melee: false, throw: false, interact: false };
-  private pad = { lx: 0, ly: 0, fire: false, active: false, start: false, a: false, lt: false, prev: [] as boolean[] };
+  private pad = { lx: 0, ly: 0, fire: false, l2: 0, active: false, start: false, a: false, prev: [] as boolean[] };
   readonly frame: InputFrame = emptyInput();
   /** Any key / button this frame (skips cutscenes and the kill cam). */
   anyPress = false;
+  /** The last assist target (the tests and the probe read it). */
+  assistOn: AssistTarget | null = null;
 
   press(code: string): void {
+    this.via = "kbm";
+    noteKbm();
     if (this.keys.has(code)) return;
     this.keys.add(code);
     this.anyPress = true;
@@ -55,6 +77,8 @@ export class InputLatch {
     this.keys.delete(code);
   }
   mouseDown(button: number): void {
+    this.via = "kbm";
+    noteKbm();
     this.anyPress = true;
     this.edges.skip = true;
     if (button === 0) this.lmb = true;
@@ -65,12 +89,14 @@ export class InputLatch {
     if (button === 2) this.rmb = false;
   }
   look(dx: number, dy: number): void {
+    if (Math.abs(dx) + Math.abs(dy) > 2) this.via = "kbm";
     const k = MOUSE_K * this.sensitivity * this.fovK;
     this.yaw -= dx * k;
     this.pitch -= dy * k * (this.invertY ? -1 : 1);
     this.clampPitch();
   }
   wheel(dy: number): void {
+    this.via = "kbm";
     this.edges.slot = dy > 0 ? 9 : 8; // 8 = previous, 9 = next (the game maps them)
   }
   clear(): void {
@@ -82,44 +108,59 @@ export class InputLatch {
     this.pitch = this.pitch < PITCH_MIN ? PITCH_MIN : this.pitch > PITCH_MAX ? PITCH_MAX : this.pitch;
   }
 
-  /** Once per rendered frame: gamepad polling and right-stick look (real-time dt). */
+  /** Once per rendered frame: gamepad polling, right-stick look and the aim assist (real-time dt). */
   poll(dt: number): void {
-    const pads = typeof navigator !== "undefined" && navigator.getGamepads ? navigator.getGamepads() : [];
-    const gp = Array.from(pads ?? []).find(p => p && p.connected) ?? null;
+    const gp = activePad();
     const pd = this.pad;
-    if (!gp) { pd.active = false; pd.lx = pd.ly = 0; pd.fire = false; pd.start = false; pd.a = false; pd.lt = false; return; }
-    const dz = (v: number) => (Math.abs(v) < 0.18 ? 0 : (v - Math.sign(v) * 0.18) / 0.82);
-    pd.lx = dz(gp.axes[0] ?? 0);
-    pd.ly = dz(gp.axes[1] ?? 0);
-    const rx = dz(gp.axes[2] ?? 0), ry = dz(gp.axes[3] ?? 0);
+    if (!gp) { pd.active = false; pd.lx = pd.ly = 0; pd.fire = false; pd.l2 = 0; pd.start = false; pd.a = false; pd.prev = []; this.assistOn = null; return; }
+    const [lx, ly] = radial(gp.axes[0] ?? 0, gp.axes[1] ?? 0, this.deadZone);
+    const [rx, ry] = radial(gp.axes[2] ?? 0, gp.axes[3] ?? 0, this.deadZone);
+    pd.lx = lx;
+    pd.ly = ly;
     const now = gp.buttons.map(x => !!x?.pressed);
     const hit = (i: number) => !!now[i] && !pd.prev[i];
-    if (Math.abs(rx) + Math.abs(ry) + Math.abs(pd.lx) + Math.abs(pd.ly) > 0 || now.some(Boolean)) pd.active = true;
-    // twin stick: right stick aims (cubic curve for fine aim), with the aim-assist slowdown
-    const k = this.sensitivity * this.assist * this.fovK * dt;
-    this.yaw -= (rx * rx * rx + rx * 0.25) * PAD_YAW * k;
-    this.pitch -= (ry * ry * ry + ry * 0.25) * PAD_PITCH * k * (this.invertY ? -1 : 1);
+    // the triggers are analog: R2 fires past a threshold (with hysteresis), L2's pull steadies the aim
+    const r2 = triggerValue(gp.buttons[BTN.r2]), l2 = triggerValue(gp.buttons[BTN.l2]);
+    const fireWas = pd.fire;
+    pd.fire = triggerDown(r2, pd.fire);
+    const l2Was = pd.l2 >= 0.3;
+    pd.l2 = l2;
+    const used = rx !== 0 || ry !== 0 || lx !== 0 || ly !== 0 || now.some((d, i) => d && !pd.prev[i]) || (pd.fire && !fireWas) || (l2 >= 0.3 && !l2Was);
+    if (used) { pd.active = true; this.via = "pad"; if (padBusy(gp, 0.3) || rx || ry || lx || ly) notePad(gp); }
+    // right stick: radial dead zone, the response curve, sensitivity, L2's steadiness, the assist's friction
+    const aiming = this.via === "pad" ? Math.max(l2 >= 0.3 ? l2 : 0, pd.fire ? 0.6 : 0) : 0;
+    const t = this.via === "pad" && this.assistLevel !== "off" && this.assistQuery ? this.assistQuery(this.yaw, this.pitch) : null;
+    this.assistOn = t;
+    const a = assistStep(this.assistLevel, t, aiming, dt);
+    const m = Math.hypot(rx, ry);
+    const c = m > 0 ? lookCurve(m) / m : 0;
+    const k = this.padSens * this.fovK * (1 - AIM_STEADY * (l2 >= 0.3 ? l2 : 0)) * a.slow * dt;
+    this.yaw -= rx * c * PAD_YAW * k;
+    this.pitch -= ry * c * PAD_PITCH * k * (this.padInvertY ? -1 : 1);
+    this.yaw += a.dyaw;
+    this.pitch += a.dpitch;
     this.clampPitch();
-    // standard mapping: A 0, B 1, X 2, Y 3, LB 4, RB 5, LT 6, RT 7, start 9, L3 10, R3 11, d-pad 12-15
-    // (up, down, left, right). RT fires; RB throws a grenade; R3 is melee; d-pad down is use; LT is
-    // bullet time, or the scope held with the sniper in hand (then d-pad up is bullet time)
-    pd.fire = !!now[7];
-    pd.lt = !!now[6];
-    if (hit(6) && !this.zoomMode) this.edges.bt = true;
-    if (hit(12) && this.zoomMode) this.edges.bt = true;
-    if (hit(1) || hit(10)) this.edges.dodge = true;
-    if (hit(0)) this.edges.jump = true;
-    if (hit(2)) this.edges.reload = true;
-    if (hit(3)) this.edges.copium = true;
-    if (hit(4) || hit(15)) this.edges.slot = 9;
-    if (hit(14)) this.edges.slot = 8;
-    if (hit(5)) this.edges.throw = true;
-    if (hit(11)) this.edges.melee = true;
-    if (hit(13)) this.edges.interact = true;
-    pd.start = hit(9);
-    pd.a = hit(0);
-    if ([0, 1, 2, 3, 7, 9].some(hit)) { this.anyPress = true; this.edges.skip = true; }
+    // the buttons (pad.ts's layout)
+    if (hit(BTN.r3) || hit(BTN.l3)) this.edges.bt = true;
+    if (hit(BTN.r1)) this.edges.dodge = true;
+    if (hit(BTN.cross)) this.edges.jump = true;
+    if (hit(BTN.square)) { if (this.useHere) this.edges.interact = true; else this.edges.reload = true; }
+    if (hit(BTN.triangle)) this.edges.throw = true;
+    if (hit(BTN.circle)) this.edges.melee = true;
+    if (hit(BTN.l1) || hit(BTN.right)) this.edges.slot = 9;
+    if (hit(BTN.left)) this.edges.slot = 8;
+    if (hit(BTN.up)) this.edges.copium = true;
+    if (hit(BTN.down)) this.edges.interact = true;
+    pd.start = hit(BTN.options);
+    pd.a = hit(BTN.cross);
+    // any button skips (the kill cam, the final-kill cam)
+    if (now.some((d, i) => d && !pd.prev[i]) || (pd.fire && !fireWas)) { this.anyPress = true; this.edges.skip = true; }
     pd.prev = now;
+  }
+
+  /** The pad's L2 pull (0..1). */
+  get padAim(): number {
+    return this.pad.l2;
   }
 
   get padActive(): boolean {
@@ -147,7 +188,7 @@ export class InputLatch {
     f.yaw = this.yaw;
     f.pitch = this.pitch;
     f.fire = this.lmb || this.pad.fire;
-    f.zoom = this.zoomMode && (this.rmb || this.pad.lt);
+    f.zoom = this.zoomMode && (this.rmb || this.pad.l2 >= 0.3);
     const e = this.edges;
     f.bt = e.bt; f.dodge = e.dodge; f.jump = e.jump; f.reload = e.reload; f.copium = e.copium; f.skip = e.skip; f.slot = e.slot;
     f.melee = e.melee; f.throw = e.throw; f.interact = e.interact;

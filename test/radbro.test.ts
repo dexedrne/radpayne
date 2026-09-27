@@ -43,7 +43,7 @@ test("radbro: framed posts game-ready on start, with the full payload", () => {
   assert.equal(f.sent.length, 1);
   assert.equal(f.sent[0].origin, "*");
   const m = f.sent[0].m as Record<string, unknown>;
-  assert.deepEqual(Object.keys(m).sort(), ["controls", "game", "hint", "objective", "title", "type", "viewport"]);
+  assert.deepEqual(Object.keys(m).sort(), ["controls", "game", "hint", "objective", "padControls", "title", "type", "viewport"]);
   assert.equal(m.type, "radbro:game-ready");
   assert.equal(m.game, "radpayne");
   assert.equal(m.title, "RadPayne");
@@ -52,6 +52,11 @@ test("radbro: framed posts game-ready on start, with the full payload", () => {
   assert.ok(Array.isArray(m.controls) && m.controls.length >= 4 && m.controls.every(c => typeof c === "string"));
   // the portal's play guide takes the controls as one comma-separated string: no commas inside an entry
   assert.ok((m.controls as string[]).every(c => !c.includes(",")));
+  // and a pad version of the list: every action the keys have, named for PlayStation and Xbox
+  const pad = m.padControls as string[];
+  assert.ok(Array.isArray(pad) && pad.length >= m.controls.length - 2 && pad.every(c => typeof c === "string" && !c.includes(",")));
+  for (const what of ["move", "aim", "fire", "bullet time", "shootdodge", "reload", "copium", "weapon", "melee", "grenade", "use", "pause", "scope"]) assert.ok(pad.some(c => c.includes(what)), what);
+  assert.ok(pad.some(c => c.startsWith("R2 (RT)")), "PlayStation names, Xbox in brackets");
   assert.deepEqual(m.viewport, { width: 1280, height: 720 });
   b.dispose();
 });

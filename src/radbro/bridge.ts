@@ -1,11 +1,13 @@
 // The radbro.fun portal bridge. radbro.fun plays hosted games in an iframe; framed there
 // (window.parent !== window), the game tells the portal what it is and how each run went:
 // - radbro:game-ready on load (and again whenever the portal sends radbro:game-ready-request): the slug,
-//   title, objective, a tip, the controls and the native viewport;
+//   title, objective, a tip, the controls (keyboard + mouse), the gamepad's controls (padControls: the
+//   PlayStation names, the Xbox ones in brackets) and the native viewport;
 // - radbro:game-result: "run" when a room's fight starts, "clear" when a room is cleared (score: the
 //   room's time in seconds; the last room's clear is the chapter's results), "gameover" on a death.
 // Framed, the first click also focuses the frame (so the keys reach the game) and unlocks the audio.
 // Opened on its own (not framed), none of this does anything.
+import { padControlsText } from "../input/pad.ts";
 
 export type GameInfo = {
   game: string;
@@ -13,6 +15,8 @@ export type GameInfo = {
   objective: string;
   hint: string;
   controls: string[];
+  /** The same for a gamepad (the frame allows it: the Gamepad API works framed). */
+  padControls: string[];
   viewport: { width: number; height: number };
 };
 export type ResultStatus = "run" | "clear" | "gameover";
@@ -32,7 +36,7 @@ export const RADPAYNE: GameInfo = {
   game: "radpayne",
   title: "RadPayne",
   objective: "Shoot your way through the Milady gang's club and up to Madame Pockit's penthouse in bullet time: clear every room, then walk to the door.",
-  hint: "Hold right button or Q for bullet time; kills refill the meter. Shift dives in slow motion.",
+  hint: "Hold right button or Q for bullet time (R3 on a pad); kills refill the meter. Shift (R1) dives in slow motion.",
   // One control per entry, no commas inside one (the portal's play guide takes a comma-separated list).
   controls: [
     "WASD: move",
@@ -50,6 +54,7 @@ export const RADPAYNE: GameInfo = {
     "E: use / open",
     "Esc: pause",
   ],
+  padControls: padControlsText(),
   viewport: { width: 1280, height: 720 },
 };
 
@@ -63,7 +68,7 @@ export function isFramed(win: BridgeWindow | undefined = typeof window === "unde
 }
 
 export function readyMessage(info: GameInfo): ReadyMessage {
-  return { type: "radbro:game-ready", ...info, controls: [...info.controls], viewport: { ...info.viewport } };
+  return { type: "radbro:game-ready", ...info, controls: [...info.controls], padControls: [...info.padControls], viewport: { ...info.viewport } };
 }
 
 /** A result message; a score that is not a finite number is left out, others keep 2 decimals. */

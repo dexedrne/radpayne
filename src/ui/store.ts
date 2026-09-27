@@ -96,6 +96,8 @@ export type Volumes = { master: number; music: number; fx: number };
 export type Chatter = "normal" | "less" | "off";
 /** Kill cam (cine.ts): every kill by a shot, the special shots (+ the room's last kill), the last kill only, never. */
 export type KillcamMode = "always" | "special" | "final" | "off";
+/** The pad's aim assist (input/assist.ts): off, low, normal (the default). */
+export type AimAssist = "off" | "low" | "normal";
 
 type Ui = {
   screen: Screen;
@@ -132,6 +134,13 @@ type Ui = {
   vol: Volumes;
   chatter: Chatter;
   killcam: KillcamMode;
+  /** The gamepad (pause menu, Controls): stick look sensitivity, invert Y, the sticks' dead zone,
+   *  vibration, the aim assist. */
+  padSens: number;
+  padInvertY: boolean;
+  deadZone: number;
+  vibration: boolean;
+  aimAssist: AimAssist;
 };
 
 const stored = (k: string, d: string): string => {
@@ -151,6 +160,10 @@ export const store = (k: string, v: string): void => {
 const pick = <T extends string>(k: string, d: T, ok: readonly T[]): T => {
   const v = stored(k, d) as T;
   return ok.includes(v) ? v : d;
+};
+const num = (k: string, d: number, lo: number, hi: number): number => {
+  const v = Number(stored(k, String(d)));
+  return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d;
 };
 const pct = (k: string, d: number): number => {
   const v = Number(stored(k, String(d)));
@@ -194,10 +207,15 @@ export const useUi = create<Ui>(() => ({
   vol: { master: pct("vol.master", 80), music: pct("vol.music", 60), fx: pct("vol.fx", 90) },
   chatter: pick<Chatter>("chatter", "normal", ["normal", "less", "off"]),
   killcam: pick<KillcamMode>("killcam", "special", ["always", "special", "final", "off"]),
+  padSens: num("padSens", 1, 0.3, 2.5),
+  padInvertY: stored("padInvertY", "0") === "1",
+  deadZone: num("deadZone", 0.12, 0.05, 0.3),
+  vibration: stored("vibration", "1") !== "0",
+  aimAssist: pick<AimAssist>("aimAssist", "normal", ["off", "low", "normal"]),
 }));
 
 /** Change a persisted setting (applies at once). */
-export function setSetting<K extends "hudSize" | "threats" | "dmgColour" | "subs" | "quality" | "sensitivity" | "invertY" | "muted" | "difficulty" | "chatter" | "killcam">(k: K, v: Ui[K]): void {
+export function setSetting<K extends "hudSize" | "threats" | "dmgColour" | "subs" | "quality" | "sensitivity" | "invertY" | "muted" | "difficulty" | "chatter" | "killcam" | "padSens" | "padInvertY" | "deadZone" | "vibration" | "aimAssist">(k: K, v: Ui[K]): void {
   useUi.setState({ [k]: v } as Pick<Ui, K>);
   store(k, typeof v === "boolean" ? (v ? "1" : "0") : String(v));
 }
