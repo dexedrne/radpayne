@@ -90,6 +90,11 @@ for (const [x, z] of [[-9, -4], [9, -4], [-9, 4], [9, 4]]) solid.push(boxMM(`pil
 solid.push(boxMM("chair-w", [-5.2, 0, -0.6], [-4.3, 0.9, 0.6], "sofa", { data: { surface: "wood" } }));
 solid.push(boxMM("chair-e", [4.3, 0, -0.6], [5.2, 0.9, 0.6], "sofa", { data: { surface: "wood" } }));
 solid.push(boxMM("console-n", [-6, 0, -10.9], [-3, 0.9, -10.3], "ebonyDark", { data: { surface: "wood" } }));
+// by the lift: two long ebony planters to start the fight behind (he steps out into the open otherwise)
+for (const [id, z0, z1] of [["planter-lift-n", -3.6, -1.8], ["planter-lift-s", 1.8, 3.6]] as const) {
+  solid.push(boxMM(id, [-12.2, 0, z0], [-11.6, 1.0, z1], "ebonyDark", { data: { surface: "wood" } }));
+  decor.push(boxMM(`${id}-green`, [-12.15, 1.0, z0 + 0.05], [-11.65, 1.25, z1 - 0.05], "planterGreen"));
+}
 solid.push(boxMM("console-s", [-7, 0, 10.3], [-4, 0.9, 10.9], "ebonyDark", { data: { surface: "wood" } }));
 decor.push(prim("vase-n", "cylinder", [-4.5, 1.2, -10.6], [0.14, 0.2, 0.6, 14], "vase"), prim("vase-s", "cylinder", [-5.5, 1.2, 10.6], [0.14, 0.2, 0.6, 14], "vase"));
 
@@ -218,6 +223,7 @@ const materials: Record<string, Record<string, unknown>> = {
   vase: { color: "#d6cfc4", roughness: 0.2 },
   terrace: { color: "#2a2c30", roughness: 0.6 },
   glass: { color: "#9fb4c8", roughness: 0.1, metalness: 0.2 },
+  planterGreen: { color: "#2f4a34", roughness: 0.9 },
   // lit
   lampWarm: glow("#ffc98a", 1.1),
   cove: glow("#ffb870", 0.7),

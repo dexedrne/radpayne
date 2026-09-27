@@ -288,13 +288,24 @@ export class Bot {
     if (p.cover < 0) {
       this.popT = 0;
       this.idleT = 0;
+      // room 4: the car arriving at a stop: into cover by the doors about to open (they may know he comes)
+      const ride = g.ride, st = ride?.stop;
+      const arriving = !!st && !!ride && (ride.phase === "arrive" || ride.phase === "opening") && ride.inCar(p.x, p.z, 0);
       // in a fight: walk (shooting) to a cover close by that faces the one it is fighting, and take it
-      const want = shooting >= 1 || hurt || p.health < 80;
-      if (!want || this.coverCd > 0 || best < 0) { this.goal = null; return; }
-      const e = g.enemies[best];
-      if (e.kind === "heavy" && Math.hypot(e.x - p.x, e.z - p.z) < 9) return;
+      const want = shooting >= 1 || hurt || p.health < 80 || arriving;
+      if (!want || this.coverCd > 0 || (best < 0 && !arriving)) { this.goal = null; return; }
+      let fx: number, fz: number;
+      if (best >= 0) {
+        const e = g.enemies[best];
+        if (e.kind === "heavy" && Math.hypot(e.x - p.x, e.z - p.z) < 9) return;
+        fx = e.x; fz = e.z;
+      } else {
+        // (the landing beyond the doors: 6 m out from the car's middle on that side)
+        const [x0, z0, x1, z1] = ride!.car, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, sd = st!.side;
+        fx = cx + (sd === "e" ? 9 : sd === "w" ? -9 : 0); fz = cz + (sd === "s" ? 9 : sd === "n" ? -9 : 0);
+      }
       this.goalT += dt;
-      if (!this.goal || this.goalT > 3) { this.goal = this.pickGoal(g, e.x, e.z); this.goalT = 0; }
+      if (!this.goal || this.goalT > 3) { this.goal = this.pickGoal(g, fx, fz); this.goalT = 0; }
       const gl = this.goal;
       if (!gl) { this.coverCd = 1; return; }
       const dx = gl.x - p.x, dz = gl.z - p.z, d = Math.hypot(dx, dz);

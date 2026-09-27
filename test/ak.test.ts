@@ -68,16 +68,18 @@ test("smoke: the bot clears room 1 with the AK, and the fight replays bit-exactl
     const bot = new Bot();
     const log = [];
     const hashes: string[] = [];
+    let akShots = 0;
     for (let i = 0; i < 120 * 120 && g.phase !== "done" && g.phase !== "dead"; i++) {
       const f = { ...bot.next(g) };
       log.push(f);
       g.step(f);
       hashes.push(g.hash());
-      g.drain();
+      for (const e of g.drain()) if (e.type === "shot" && e.shooter < 0 && e.weapon === "ak") akShots++;
     }
     assert.equal(g.phase, "done", `${name} seed ${seed}: ${g.phase}, ${g.alive} alive, hp ${g.player.health}`);
     assert.equal(g.stats.kills, g.enemies.length);
-    assert.ok(g.stats.shots > 0 && g.player.weapon.id === "ak", `fought with the AK (${g.stats.shots} shots)`);
+    // (it may pick up and try another gun on the way: most of the fight is the AK's)
+    assert.ok(akShots > 10 && akShots >= g.stats.shots / 2, `fought with the AK (${akShots} of ${g.stats.shots} shots)`);
     const r = new Game(name === "greybox" ? greybox() : room1(), { seed, difficulty: "normal", base: "ak" });
     for (let i = 0; i < log.length; i++) {
       r.step({ ...log[i] });

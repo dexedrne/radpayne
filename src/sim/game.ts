@@ -1359,7 +1359,8 @@ export class Game {
       return;
     }
     const dmg = sniper ? ENEMY_ARMS.sniper.damage : cannon ? ENEMY_ARMS.handcannon.damage : T.damage;
-    this.shoot(1, e.idx, 0, mx, my, mz, dx / l, dy / l, dz / l, dmg * this.diff.damage, e.weapon, 0);
+    // (Madame Pockit has her own factor: the boss stays fair on every setting)
+    this.shoot(1, e.idx, 0, mx, my, mz, dx / l, dy / l, dz / l, dmg * (e.kind === "madame" ? this.diff.boss : this.diff.damage), e.weapon, 0);
   }
 
   /** Can the enemy's gun see the player (no wall between muzzle height and the body)? */

@@ -170,7 +170,7 @@ export const RIDE = {
 /** Room 5, Madame Pockit (round-3 plan section 3). World seconds unless "real"; damage before the
  *  difficulty's damage factor. */
 export const MADAME = {
-  hp: { easy: 2000, normal: 2600, hard: 3000, hardcore: 3400 } as Record<Difficulty, number>,
+  hp: { easy: 2000, normal: 2600, hard: 2600, hardcore: 2800 } as Record<Difficulty, number>,
   /** Pockit #3099 at this scale (model + hit skeleton). */
   scale: 1.25,
   pockit: 3099,
@@ -267,9 +267,9 @@ export type DifficultyTuning = {
 };
 export const DIFFICULTY: Record<Difficulty, DifficultyTuning> = {
   easy: { speedK: 0.55, label: "Chill", damage: 0.5, reaction: 0.9, accuracy: 0.8, wake: 0.9, shooters: 1, far: 32, farFloor: 0.12, hp: 1, boss: 0.5, copium: 2, keep: 1, startCopium: 2, heal: 35, checkpoint: 60, btDrain: 1, killRefill: 1, suppress: 0, flank: 0, grenade: 0, camp: 0, rush: 0 },
-  normal: { speedK: 0.45, label: "Normal", damage: 1.3, reaction: 0.5, accuracy: 1.15, wake: 0.5, shooters: 2, far: 40, farFloor: 0.2, hp: 1, boss: 1.05, copium: 1, keep: 0.8, startCopium: 1, heal: 30, checkpoint: 60, btDrain: 1.25, killRefill: 1.2, suppress: 0.5, flank: 1, grenade: 14, camp: 6, rush: 9 },
-  hard: { speedK: 0.32, label: "Hard", damage: 1.75, reaction: 0.38, accuracy: 1.3, wake: 0.35, shooters: 3, far: 45, farFloor: 0.28, hp: 1.1, boss: 1.3, copium: 1, keep: 0.55, startCopium: 1, heal: 25, checkpoint: 50, btDrain: 1.5, killRefill: 1.3, suppress: 0.8, flank: 2, grenade: 9, camp: 4.5, rush: 6 },
-  hardcore: { speedK: 0.22, label: "Hardcore", damage: 2.3, reaction: 0.3, accuracy: 1.45, wake: 0.25, shooters: 4, far: 50, farFloor: 0.35, hp: 1.2, boss: 1.55, copium: 1, keep: 0.35, startCopium: 0, heal: 25, checkpoint: 40, btDrain: 1.8, killRefill: 1.4, suppress: 1, flank: 3, grenade: 7, camp: 3.5, rush: 4.5 },
+  normal: { speedK: 0.45, label: "Normal", damage: 1.15, reaction: 0.45, accuracy: 1.1, wake: 0.35, shooters: 2, far: 40, farFloor: 0.2, hp: 1, boss: 1.05, copium: 1, keep: 0.8, startCopium: 1, heal: 30, checkpoint: 60, btDrain: 1.25, killRefill: 1.2, suppress: 0.5, flank: 1, grenade: 14, camp: 6, rush: 9 },
+  hard: { speedK: 0.32, label: "Hard", damage: 1.6, reaction: 0.35, accuracy: 1.3, wake: 0.25, shooters: 3, far: 45, farFloor: 0.28, hp: 1.1, boss: 1.15, copium: 1, keep: 0.55, startCopium: 1, heal: 25, checkpoint: 50, btDrain: 1.5, killRefill: 1.3, suppress: 0.8, flank: 2, grenade: 9, camp: 4.5, rush: 6 },
+  hardcore: { speedK: 0.22, label: "Hardcore", damage: 2.1, reaction: 0.28, accuracy: 1.45, wake: 0.18, shooters: 4, far: 50, farFloor: 0.35, hp: 1.2, boss: 1.2, copium: 1, keep: 0.45, startCopium: 1, heal: 25, checkpoint: 45, btDrain: 1.8, killRefill: 1.4, suppress: 1, flank: 3, grenade: 7, camp: 3.5, rush: 4.5 },
 };
 
 export const AI = {
