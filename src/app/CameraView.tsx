@@ -29,7 +29,7 @@
 import { useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { usePrefab } from "react-three-game";
-import { Matrix4, PerspectiveCamera, Vector3 } from "three";
+import { Matrix4, PerspectiveCamera, Quaternion, Vector3 } from "three";
 import { World } from "../sim/world.ts";
 import type { Session } from "./session.ts";
 import { shoulderRight } from "../sim/player.ts";
@@ -45,6 +45,7 @@ import { holdDev } from "./dev/holdcheck.ts";
 import { holdView, playerChest } from "./PlayerView.tsx";
 import { blastShake } from "./ArsenalFx.tsx";
 import { gateStacks } from "./rideGate.ts";
+import { PUNCH, camPunch, punchEnv } from "./hitfeel.ts";
 
 export const CAMERA_NODE = "rp-camera";
 /** Dev builds: ?cam=<id of a "camera" marker> holds the camera on that shot (data.at = look-at point). */
@@ -72,6 +73,9 @@ export const camJolt = { t: 0, dur: 0.25, amp: 0, drop: 0 };
 /** Room 4's car: arm, pivot lift, the crane up per metre the arm is short (capped), the lens's distance
  *  from the walls, the wider lens (deg). */
 export const CAR_CAM = { arm: 2.2, lift: 0.25, crane: 0.55, craneMax: 0.8, margin: 0.42, ceiling: 0.3, fov: 5 } as const;
+const ROLL_AXIS = new Vector3(0, 0, 1);
+const qRoll = new Quaternion();
+
 export function CameraView({ s }: { s: Session }) {
   const prefab = usePrefab();
   const tmp = useMemo(() => ({
@@ -361,18 +365,24 @@ export function CameraView({ s }: { s: Session }) {
     const cam = state.camera;
     let under = false;
     for (let o = cam.parent; o; o = o.parent) if (o === node) { under = true; break; }
+    // the hit punch (hitfeel.ts): a hair of roll about the view axis and a squeeze of the lens, both
+    // about the screen centre, so the crosshair never leaves the aim point; only in the fight's own view
+    camPunch.t += s.paused ? 0 : dt;
+    const pk = !k && !cine.cur && !holdDev.on && !dev ? camPunch.k * punchEnv(camPunch.t) : 0;
+    qRoll.setFromAxisAngle(ROLL_AXIS, pk * PUNCH.roll * camPunch.roll * (p.zoom ? 0.3 : 1));
     if (node && under) {
       node.position.copy(tmp.eye);
-      node.quaternion.setFromRotationMatrix(tmp.m);
+      node.quaternion.setFromRotationMatrix(tmp.m).multiply(qRoll);
     } else {
       cam.position.copy(tmp.eye);
-      cam.quaternion.setFromRotationMatrix(tmp.m);
+      cam.quaternion.setFromRotationMatrix(tmp.m).multiply(qRoll);
     }
     // the scope snaps in (a tiny ease), the rest glides; look sensitivity follows the view's width
     tmp.fov += (fovWant - tmp.fov) * Math.min(1, (p.zoom || fovWant === FOV_SCOPE ? 30 : 8) * dt);
     s.input.fovK = p.zoom ? Math.tan((tmp.fov * Math.PI) / 360) / Math.tan((FOV * Math.PI) / 360) : 1;
-    if (cam instanceof PerspectiveCamera && Math.abs(cam.fov - tmp.fov) > 0.01) {
-      cam.fov = tmp.fov;
+    const fovNow = tmp.fov * (1 - pk * PUNCH.zoom);
+    if (cam instanceof PerspectiveCamera && Math.abs(cam.fov - fovNow) > 0.01) {
+      cam.fov = fovNow;
       cam.updateProjectionMatrix();
     }
   }, FRAME.camera);
