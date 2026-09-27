@@ -23,7 +23,7 @@ export const HOLDCHECK: WeaponId | null = HC === "shotgun" || HC === "ak" || HC 
 export type HoldStats = { frames: number; grip: number; left: number; bend: number; flips: number; reach: number; slide: number; shift: number };
 export type HoldView = "game" | "side" | "right" | "front" | "back";
 
-export const HOLD_STATES = ["idle", "aim-up", "aim-down", "turn", "walk", "back", "strafe-l", "strafe-r", "run", "fire", "reload", "jump", "dive", "prone", "getup", "roll", "swap"] as const;
+export const HOLD_STATES = ["idle", "aim-up", "aim-down", "turn", "walk", "back", "strafe-l", "strafe-r", "run", "fire", "bt", "reload", "jump", "dive", "prone", "getup", "roll", "swap"] as const;
 export type HoldState = (typeof HOLD_STATES)[number];
 
 export const holdDev = {
@@ -115,6 +115,8 @@ export class HoldScript {
       case "strafe-r": f.moveX = 0.2; break;
       case "run": f.moveY = 1; break;
       case "fire": f.fire = t % 60 < 3; break;
+      // bullet time on (shouldered by it), one shot in it
+      case "bt": f.bt = t === 1 && !g.bulletTime; f.fire = t >= 20 && t < 23; break;
       case "reload":
         if (t === 0) p.weapon.mags[0] = Math.min(p.weapon.mags[0], 1);
         f.reload = t === 1;
@@ -124,9 +126,11 @@ export class HoldScript {
       case "prone": f.dodge = t === 1 && p.mode === "normal"; break;
       case "getup": f.jump = p.mode === "prone" && t > 2; break;
       case "roll": f.moveY = t < 150 ? 1 : 0; f.dodge = t === 30; break;
-      // to the base gun and back to the one being checked
-      case "swap": f.slot = t === 1 ? 1 : t === 90 && h.weapon ? (h.weapon === "shotgun" ? 2 : h.weapon === "smgs" ? 3 : 1) : 0; break;
+      // to the next owned gun and back to the one being checked (the AK shares slot 1 with the pistols)
+      case "swap": f.slot = t === 1 ? 9 : t === 90 ? 8 : 0; break;
     }
+    // bullet time off again in every other state
+    if (h.state !== "bt" && t === 1 && g.bulletTime) f.bt = true;
     // keep the mag topped up between states (a reload state starts from a partly spent mag)
     if (h.state !== "reload" && h.state !== "fire" && p.weapon.reloadT <= 0) {
       p.weapon.mags[0] = Math.max(p.weapon.mags[0], 2);

@@ -91,6 +91,13 @@ const AK_MAG_AT = new Vector3(0, -0.005, 0.15);
 const AK_MAG_GRAB = new Vector3(0.02, -0.09, 0.17);
 /** A gun drawn flat for the hold check's pixel count. */
 const MASK = new MeshBasicMaterial({ color: "#ff00ff", toneMapped: false });
+/** Lying with a long gun (dive / prone): the roll onto his left side (rad, about his forward axis; on the
+ *  hips, or the spine when `spine`), the gun's extra cant (rad), the roll's weight through the get-up,
+ *  in / out (s). His right shoulder comes up, and the gun under his cheek clears the big head and hair. */
+const LIE = { roll: 0.6, spine: 0, cant: 0.3, getup: 0, in: 0.15, out: 0.3 };
+/** The get-up with a long gun: the ready weight, the aim correction's clamp (rad), and where the clip
+ *  starts (s): past the push-up, where his face is in the street and the gun under him, onto a knee. */
+const GETUP = { ready: 1, aim: 22 * DEG, start: 0.8 };
 /** Arms spread apart (radians off the aim line; right, left): the akimbo stance puts the right gun out
  *  past his big head and hair, where the shoulder camera sees it; the wrists bend the guns back onto
  *  the crosshair (aimHand). The dual SMGs go wide on both sides so the left one clears his hair too (the
@@ -172,6 +179,9 @@ export const playerMuzzles: [Vector3, Vector3] = [new Vector3(), new Vector3()];
 /** Rendered head / chest points (the kill cam and hit FX look at these). */
 export const playerHead = new Vector3();
 export const playerChest = new Vector3();
+/** The long-gun hold for the camera: `aimed` 0..1 = how far the gun is up in the shoulder (0 with the
+ *  one-handed guns and at the low ready). */
+export const holdView = { aimed: 0 };
 
 /** Screen-door fade on every material under `o`, except the pistols (their materials are shared with
  *  the gang's; the guns hide as a whole instead). */
@@ -318,7 +328,9 @@ export function PlayerView({ s }: { s: Session }) {
     /** The weapon shown in his hands (it changes at the swap point), the swap in progress. */
     shown: "pistols", swapTo: "", swapT: -1, swapW: 0, fireW: 0,
     /** The long-gun hold: IK weight, low-ready weight, seconds since his last shot (the player's clock), recoil. */
-    ikW: 0, readyW: 1, sinceShot: 99, lgRecoil: 0, posed: false });
+    ikW: 0, readyW: 1, sinceShot: 99, lgRecoil: 0, posed: false,
+    /** Lying with a long gun (dive / prone, eased): the roll onto his left side. */
+    lieW: 0 });
   const tmp = useMemo(() => ({ aim: new Vector3(), side: new Vector3(), a: new Vector3(), q: new Quaternion() }), []);
 
   useEffect(() => {
@@ -406,7 +418,8 @@ export function PlayerView({ s }: { s: Session }) {
         pl.play(pick(pl, C.roll), { hold: true, timeScale: 3.2, fade: 0.1, startAt: 0.1 });
         r.clip = "roll";
       } else if (p.mode === "getup") {
-        pl.play(pick(pl, C.getUp), { hold: true, timeScale: 2.8, fade: 0.12 });
+        if (holdDev.on && holdDev.tweak["gu.start"] !== undefined) GETUP.start = holdDev.tweak["gu.start"];
+        pl.play(pick(pl, C.getUp), { hold: true, timeScale: 2.8, fade: 0.12, startAt: isLongGun(r.shown) ? GETUP.start : 0 });
         r.clip = "getup";
       } else if (p.mode === "dead") {
         // how much street is behind him decides how far he flies
@@ -527,8 +540,19 @@ export function PlayerView({ s }: { s: Session }) {
       }
       // the roll and the get-up carry it at the ready too (he is not aiming through a tumble)
       const tumble = p.mode === "roll" || p.mode === "getup";
-      ready = normal ? r.readyW * (1 - runShare) * (1 - reloadK) : tumble ? 1 : 0;
+      if (holdDev.on) for (const k of ["ready", "aim"] as const) if (holdDev.tweak["gu." + k] !== undefined) GETUP[k] = holdDev.tweak["gu." + k];
+      ready = normal ? r.readyW * (1 - runShare) * (1 - reloadK) : p.mode === "getup" ? GETUP.ready : tumble ? 1 : 0;
       if (holdDev.on && holdDev.tweak.ready !== undefined) ready = holdDev.tweak.ready;
+    }
+    holdView.aimed = long && alive ? 1 - r.readyW : 0;
+    // lying with a long gun: the body rolls onto his left side, his right shoulder up (the gun under his
+    // right cheek comes out from under the big head and hair, where the camera behind him sees it)
+    if (holdDev.on) for (const k of ["roll", "spine", "cant", "getup"] as const) if (holdDev.tweak["lie." + k] !== undefined) LIE[k] = holdDev.tweak["lie." + k];
+    const lieWant = long && alive ? (lying ? 1 : p.mode === "getup" ? LIE.getup : 0) : 0;
+    r.lieW += (lieWant - r.lieW) * Math.min(1, dt / (lieWant > r.lieW ? LIE.in : LIE.out));
+    if (r.lieW > 1e-3 && LIE.roll > 0) {
+      const f = tmp.a.set(0, 0, 1).applyQuaternion(rig.root.quaternion);
+      rotateBoneWorld(LIE.spine ? B.spine02 : B.hips, f, -LIE.roll * r.lieW);
     }
     if (alive && normal) {
       // spine twist back toward the aim, and a little pitch with it (more with a long gun: the chest
@@ -603,11 +627,11 @@ export function PlayerView({ s }: { s: Session }) {
         weight: ik,
         aim: alive ? tmp.aim : null,
         aimW: alive ? (1 - 0.9 * (r.shown === "shotgun" ? reloadK : 0)) * (1 - (1 - READY.aim) * ready) : 0,
-        aimMax: lying ? HOLD.aimMaxLying : HOLD.aimMax,
+        aimMax: lying ? HOLD.aimMaxLying : p.mode === "getup" ? GETUP.aim : HOLD.aimMax,
         ready,
         tiltDown,
         tiltRoll,
-        cant: HOLD.cant * (1 - reloadK),
+        cant: HOLD.cant * (1 - reloadK) + LIE.cant * r.lieW,
         recoil,
         leftPath,
         // along the mag change the left wrist keeps most of the clip's own set (the palm turns with the

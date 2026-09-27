@@ -22,7 +22,7 @@ if (!profile) {
 const base = process.argv[2] ?? "http://localhost:4880";
 const RIGS = (process.argv[3] ?? "652,4764,2564,723,3171,250").split(",");
 const GUNS = (process.argv[4] ?? "shotgun,ak").split(",");
-const ALL_STATES = ["idle", "aim-up", "aim-down", "turn", "walk", "back", "strafe-l", "strafe-r", "run", "fire", "reload", "reload-2", "jump", "dive", "prone", "getup", "roll", "swap"];
+const ALL_STATES = ["idle", "aim-up", "aim-down", "turn", "walk", "back", "strafe-l", "strafe-r", "run", "fire", "bt", "reload", "reload-2", "jump", "dive", "prone", "getup", "roll", "swap"];
 const STATES = process.argv[5] ? process.argv[5].split(",") : ALL_STATES;
 const VIEWS = (process.env.RADPAYNE_HOLD_VIEWS ?? "game,side").split(",");
 const outDir = path.resolve(".local/shots/hold");
@@ -36,11 +36,12 @@ const gfx = gpu
 /** Seconds into a state when it freezes for the shots (the script's own clock, 120 Hz steps). */
 const FREEZE: Record<string, number> = {
   idle: 1.2, "aim-up": 1.0, "aim-down": 1.0, turn: 1.0, walk: 1.3, back: 1.3, "strafe-l": 1.1, "strafe-r": 1.1, run: 1.2,
-  fire: 0.12, reload: 0.55, "reload-2": 1.25, jump: 0.3, dive: 0.42, prone: 1.7, getup: 0.35, roll: 1.35, swap: 1.25,
+  fire: 0.12, bt: 0.5, reload: 0.55, "reload-2": 1.25, jump: 0.3, dive: 0.42, prone: 1.7, getup: 0.35, roll: 1.35, swap: 1.25,
 };
 /** The script state each check state runs. */
 const SCRIPT: Record<string, string> = { "reload-2": "reload" };
 /** Acceptance (spec 1.7): grip < 0.3 cm, left palm < 1.5 cm, bend < 60 deg, no flips; pixels at rest. */
+const AIMED = new Set(["fire", "bt", "dive", "prone"]);
 const LIMIT = { grip: 0.003, left: 0.015, bend: (60 * Math.PI) / 180, aimedPx: 1200, readyPx: 2000 };
 
 const browser = await puppeteer.launch({
@@ -98,6 +99,7 @@ try {
     for (const gun of GUNS) {
       const url = `${base}/?holdcheck=${gun}&radbro=${rig}&seed=1&milady=0${gpu ? "&webgl2" : ""}`;
       await page.goto(url, { waitUntil: "load" });
+      await page.addStyleTag({ content: ".rp-hc-mask * { filter: none !important; } .rp-hc-mask .rp-fxl { display: none !important; }" });
       // in play, the Radbro built, a few frames rendered
       let ready = false;
       for (let i = 0; i < 240 && !ready; i++) {
@@ -133,10 +135,12 @@ try {
           await sleep(220);
           await page.screenshot({ path: path.join(outDir, `${rig}-${gun}-${state}-${view}.png`) });
           if (view === "game") {
-            await page.evaluate(`window.__holdcheck.mask = true`);
+            // the count reads flat magenta: the canvas grade (bullet time's sepia, low-health
+            // desaturation) and the screen overlays (grain, speed rays) come off for it
+            await page.evaluate(`window.__holdcheck.mask = true; document.body.classList.add("rp-hc-mask")`);
             await sleep(150);
             ({ px, muzzle } = await countMask(page));
-            await page.evaluate(`window.__holdcheck.mask = false`);
+            await page.evaluate(`window.__holdcheck.mask = false; document.body.classList.remove("rp-hc-mask")`);
           }
         }
         await page.evaluate(`window.__holdcheck.view = "game"; window.__holdcheck.unfreeze()`);
@@ -166,7 +170,8 @@ for (const r of rows) {
   // the pixel targets are the long guns' (the one-handed guns are small by nature)
   const long = r.gun === "shotgun" || r.gun === "ak";
   if (long && r.state === "idle" && r.px < LIMIT.readyPx) why.push(`ready ${r.px} px`);
-  if (long && r.state === "fire" && r.px < LIMIT.aimedPx) why.push(`aimed ${r.px} px`);
+  // shouldered: shooting, in bullet time, in the dive and prone
+  if (long && AIMED.has(r.state) && r.px < LIMIT.aimedPx) why.push(`aimed ${r.px} px`);
   if (why.length) { fails++; console.log(`FAIL ${r.rig} ${r.gun} ${r.state}: ${why.join(", ")}`); }
 }
 const muzzles = rows.filter(r => r.muzzle).length;
