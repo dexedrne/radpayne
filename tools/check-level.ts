@@ -8,6 +8,7 @@ import { readLevel } from "../src/world/level.ts";
 import { World } from "../src/sim/world.ts";
 import { Graph } from "../src/ai/graph.ts";
 import { PICKUPS } from "../src/combat/weapons.ts";
+import { coverReport } from "../src/sim/cover.ts";
 
 const dir = path.resolve(import.meta.dirname, "..", "public", "levels");
 const arg = process.argv[2];
@@ -54,6 +55,13 @@ for (const f of files) {
   const kinds = ["goon", "rusher", "heavy", "madame"].filter(k => k !== "madame" || level.markers.some(m => m.kind === "enemy" && m.data.kind === k)).map(k => `${k} ${level.markers.filter(m => m.kind === "enemy" && (m.data.kind ?? "goon") === k).length}`).join(" / ");
   const crowd = level.markers.filter(m => m.kind === "crowd").reduce((n, m) => n + Number(m.data.count ?? 1), 0);
   console.log(`${f}: "${level.room.name}" ${level.boxes.length} colliders, spawn ${count("spawn")}, enemies ${count("enemy")} (${kinds}), covers ${count("cover")}, waypoints ${count("waypoint")} (${graph.nodes.reduce((s, n) => s + n.links.length, 0) / 2} links), pickups ${count("pickup")}, triggers ${count("trigger")}, secrets ${count("secret")} (${level.doors.length} doors, ${level.breakables.length} breakables), eggs ${count("egg")}${crowd ? `, crowd ${crowd} (${count("crowdExit")} exits)` : ""}`);
+  // derived cover (sim/cover.ts): what the colliders give the player and the gang, and how much of the
+  // walkable room (its waypoints) has cover within reach
+  const cv = coverReport(world, graph);
+  console.log(`  cover: ${cv.low} low (${cv.lowM.toFixed(0)} m), ${cv.high} high (${cv.edges} open edges), ${cv.ai} gang points (${cv.aiReach} reachable); ${Math.round(cv.coverage * 100)} % of the waypoints have cover within ${cv.within} m`);
+  // (an open dance floor or a lobby may stay open: below 85 % the bare spots are listed, to put props at)
+  // (the greybox is the tests' bare arena: it keeps its layout)
+  if (cv.coverage < 0.85 && f !== "greybox.json") issues.push(`only ${Math.round(cv.coverage * 100)} % of the waypoints have cover within ${cv.within} m: add cover props near ${cv.bare.join(", ")}`);
   for (const i of issues) console.log(`  ! ${i}`);
   bad += issues.length;
 }

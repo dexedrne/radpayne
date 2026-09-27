@@ -23,6 +23,8 @@ export type Cover = {
   side: number;
   /** Enemy index holding it, or -1. */
   claimed: number;
+  /** The derived cover segment it stands on (sim/cover.ts), -1 for a hand-placed marker. */
+  seg: number;
 };
 
 export class Graph {
@@ -68,7 +70,7 @@ export class Graph {
       if (m.kind !== "cover") continue;
       const high = m.data.height === "high";
       const side = m.data.side === "left" ? 1 : m.data.side === "right" ? -1 : 1;
-      this.covers.push({ id: m.id, x: m.x, y: m.y, z: m.z, fx: Math.sin(m.yaw), fz: Math.cos(m.yaw), high, side, claimed: -1 });
+      this.covers.push({ id: m.id, x: m.x, y: m.y, z: m.z, fx: Math.sin(m.yaw), fz: Math.cos(m.yaw), high, side, claimed: -1, seg: -1 });
     }
   }
 
