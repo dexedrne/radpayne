@@ -78,6 +78,27 @@ export function setHostileRim(o: Object3D, k: number): void {
   });
 }
 
+type FlashMat = { userData?: { rpFlashK?: number; rpEmBase?: number }; emissiveIntensity?: number; emissiveNode?: unknown };
+
+/** Sets the hit flash (0..1: a white pulse, brightest at the silhouette's edge) on every hostile
+ *  material under `o` (hit feel: app/hitReact.ts). A look without the hostile graph (the street keeps
+ *  her own texture lift) gets the lift pushed up instead: she lights up in her own colours. */
+export function setHitFlash(o: Object3D, k: number): void {
+  o.traverse(c => {
+    const mm = (c as { material?: unknown }).material as FlashMat | FlashMat[] | undefined;
+    if (!mm) return;
+    for (const m of Array.isArray(mm) ? mm : [mm]) {
+      const u = m.userData;
+      if (!u) continue;
+      if (typeof u.rpFlashK === "number") u.rpFlashK = k;
+      else if (typeof m.emissiveIntensity === "number" && !m.emissiveNode) {
+        if (typeof u.rpEmBase !== "number") u.rpEmBase = m.emissiveIntensity;
+        m.emissiveIntensity = u.rpEmBase + 2.4 * k;
+      }
+    }
+  });
+}
+
 /** The hostile rim (round-2 plan section 8): pink-red #ff4d6d, strength 0.35, as a thin fresnel. */
 export const HOSTILE_RIM = { color: [1.0, 0.075, 0.15] as const, strength: 0.35, power: 3 };
 
@@ -87,6 +108,7 @@ export const HOSTILE_RIM = { color: [1.0, 0.075, 0.15] as const, strength: 0.35,
  *  seen from behind is not a solid pink cap), and its strength is the material's userData.rpRimK
  *  uniform: the views take it to 0 when she is down (a body is not a threat: no rim). */
 export function hostileEmissive(m: MeshStandardNodeMaterial, lift: number, flat = 0): void {
+  if (typeof m.userData.rpFlashK !== "number") m.userData.rpFlashK = 0;
   if (m.userData.rpRim === `${lift}|${flat}`) return;
   m.userData.rpRim = `${lift}|${flat}`;
   if (typeof m.userData.rpRimK !== "number") m.userData.rpRimK = 1;
@@ -106,7 +128,9 @@ function hostileGraph(lift: number, flat: number): N {
   if (!g) {
     if (!rimNode) {
       const fres = pow(float(1).sub(saturate(abs(dot(normalView, positionViewDirection)))), HOSTILE_RIM.power);
-      rimNode = vec3(...HOSTILE_RIM.color).mul(fres.mul(HOSTILE_RIM.strength * 2.2)).mul(materialReference("userData.rpRimK", "float") as N);
+      rimNode = vec3(...HOSTILE_RIM.color).mul(fres.mul(HOSTILE_RIM.strength * 2.2)).mul(materialReference("userData.rpRimK", "float") as N)
+        // the hit flash: white, strongest at the edge (the struck girl pops off the night for a beat)
+        .add(vec3(1.5, 1.45, 1.4).mul(fres.mul(0.75).add(0.25)).mul(materialReference("userData.rpFlashK", "float") as N));
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const own: any = flat > 0 ? vec3(flat, flat, flat * 1.08) : (materialColor as N).rgb.mul(lift);

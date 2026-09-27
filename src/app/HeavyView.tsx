@@ -30,6 +30,7 @@ import { wrapAngle } from "../sim/aim.ts";
 import { breathe } from "./warmup.ts";
 import { heldByCam } from "./cine.ts";
 import { RADBRO_JOINTS, boneReader, xrayRigs } from "./xray.ts";
+import { applyReactBones, reactOf, rootOffset, startSlide, tickReact, type ReactBones } from "./hitReact.ts";
 
 const UP = new Vector3(0, 1, 0);
 /** Additive lift on every heavy material (linear): mid grey, so the charcoal reads on a dark wall. */
@@ -45,6 +46,8 @@ type HeavyRig = {
   materials: Material[];
   shotgun: Group;
   spine: Object3D | undefined;
+  /** The hit reaction's bones (hitReact.ts). */
+  bones: ReactBones;
   hit: AnimationAction | null;
   fire: AnimationAction | null;
   reload: AnimationAction | null;
@@ -132,11 +135,13 @@ function makeHeavy(e: Enemy, src: Object3D, pack: Object3D | null, gunPack: Obje
   laser.renderOrder = 6;
   return {
     idx: e.idx, root, model, player, materials, shotgun, spine: findBone(model, "Spine"), hit,
+    bones: { spine: findBone(model, "Spine01") ?? undefined, chest: findBone(model, "Spine02") ?? undefined, neck: findBone(model, "neck") ?? undefined, head: findBone(model, "Head") ?? undefined },
     fire: layer(player, r2, "Shotgun_Fire"), reload: layer(player, r2, "Shotgun_Reload"), laser,
     clip: "", yaw: e.facing, deadShown: false, blast: false, fireW: 0, reloadW: 0, rim: 1,
   };
 }
 
+const OFF = new Vector3();
 const V = { a: new Vector3(), b: new Vector3(), dir: new Vector3(), want: new Vector3(), axis: new Vector3(), q: new Quaternion() };
 
 export function HeavyView({ s }: { s: Session }) {
@@ -211,7 +216,7 @@ export function HeavyView({ s }: { s: Session }) {
       const p = s.renderE[r.idx] ?? e;
       r.root.visible = e.state !== "inactive";
       if (!r.root.visible) return;
-      r.root.position.set(p.x, p.y, p.z);
+      r.root.position.set(p.x, p.y, p.z).add(rootOffset(reactOf(r.idx), OFF)); // the hit's knock-back / the kill's slide (view only)
       const rimWant = e.state === "dead" && !heldByCam(e) ? 0 : 1;
       if (r.rim !== rimWant) { r.rim = rimWant > r.rim ? 1 : Math.max(0, r.rim - dt / 0.6); setHostileRim(r.root, r.rim); }
       const pl = r.player;
@@ -223,6 +228,7 @@ export function HeavyView({ s }: { s: Session }) {
           r.yaw = Math.atan2(-e.killDX, -e.killDZ);
           const l = Math.hypot(e.killDX, e.killDZ) || 1;
           const hit = g.world.raycast(e.x, e.y + 0.9, e.z, e.killDX / l, 0, e.killDZ / l, 6, false);
+          startSlide(reactOf(r.idx), hit ? Math.min(2, hit.t) : 2);
           const d = r.blast ? pick(pl, ["Death_Back", "Death_Back_2", "Falling_Down"]) : pick(pl, deathFor(hit ? hit.t : 6, (r.idx * 0.37 + s.run * 0.61) % 1));
           if (d) pl.play(d, { hold: true, fade: 0.08 });
           r.fire?.stop(); r.reload?.stop();
@@ -262,9 +268,10 @@ export function HeavyView({ s }: { s: Session }) {
   }, FRAME.animator);
 
   // -3: the upper body onto the player while he aims, the pump, the laser, the muzzle
-  useFrame(state => {
+  useFrame((state, raw) => {
     const g = s.game;
     const pr = s.renderP;
+    const dtR = Math.min(raw, 0.1), dtW = dtR * s.viewScale;
     rigs.current.forEach(r => {
       if (!r) return;
       const e = g.enemies[r.idx];
@@ -272,6 +279,10 @@ export function HeavyView({ s }: { s: Session }) {
       if (!r.root.visible) return;
       r.root.updateMatrixWorld(true);
       const alive = e.state !== "dead";
+      // the hit reaction over his clip (a big man: a little less of it)
+      const held = heldByCam(e);
+      const react = tickReact(r.idx, r.root, held, dtW, s.paused ? 0 : dtR);
+      if (!held) applyReactBones(react, r.bones, 0.7);
       const aiming = alive && e.stagger <= 0 && e.reloadT <= 0 && (e.tell > 0 || e.sees) && e.state !== "idle";
       if (aiming) {
         V.want.set(pr.x, pr.y + 1.0, pr.z);
