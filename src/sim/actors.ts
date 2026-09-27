@@ -1,7 +1,7 @@
 // Player and enemy state (plain data; the systems live in sim/player.ts, ai/goon.ts and sim/game.ts).
 import { makeHitActor, type HitActor } from "../combat/trace.ts";
 import { makeWeapon, type BaseWeapon, type WeaponId, type WeaponState } from "../combat/weapons.ts";
-import { HEAVY_SCALE, MADAME, PLAYER } from "./tuning.ts";
+import { GUARD, HEAVY_SCALE, MADAME, PLAYER } from "./tuning.ts";
 
 export type PlayerMode = "normal" | "dive" | "prone" | "getup" | "roll" | "dead";
 
@@ -57,6 +57,23 @@ export type Player = {
   banked: number;
   /** The last weapon used in each key's category (a key press goes back to it). */
   lastInSlot: Partial<Record<number, WeaponId>>;
+  /** #4764's guard (sim/game.ts stepGuard): up; seconds up / down (his clock); the meter (0..GUARD.max);
+   *  seconds of a break left; a perfect parry allowed on this raise (it was down long enough). */
+  guard: boolean;
+  guardT: number;
+  guardIdle: number;
+  guardMeter: number;
+  guardBroken: number;
+  /** Broken, and the meter not yet back to GUARD.minRaise. */
+  guardLock: boolean;
+  parryOk: boolean;
+  /** The melee button: held last step; real seconds since its press (-1: not held). */
+  guardHeld: boolean;
+  guardPress: number;
+  /** A shotgun blast's shove on his guard: seconds left and the push (m/s, xz). */
+  shoveT: number;
+  shoveX: number;
+  shoveZ: number;
 };
 
 export function makePlayer(x: number, y: number, z: number, facing: number, base: BaseWeapon = "pistols"): Player {
@@ -68,6 +85,7 @@ export function makePlayer(x: number, y: number, z: number, facing: number, base
     weapon: gun, owned: [base], arsenal: { [base]: gun }, pivotUp: 1.55, speed: 0,
     hit: makeHitActor("radbro", 0), moveWX: 0, moveWZ: 0,
     grenades: 0, throwT: 0, meleeT: 0, meleeDone: true, zoom: false, zoomBlock: false, banked: 0, lastInSlot: {},
+    guard: false, guardT: 0, guardIdle: 99, guardMeter: GUARD.max, guardBroken: 0, guardLock: false, parryOk: false, guardHeld: false, guardPress: -1, shoveT: 0, shoveX: 0, shoveZ: 0,
   };
 }
 

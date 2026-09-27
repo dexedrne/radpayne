@@ -1,7 +1,7 @@
 // Dev hold check (arsenal spec 1.7): ?holdcheck=<any weapon id>&radbro=<id> starts the room
 // with that gun in hand, no gang, no crowd, and drives the player from a script instead of the input
 // (stand, walk, back-pedal, strafe, run, fire, reload, turns, aim up / down, jump, dive -> prone ->
-// get-up, dive into a roll). PlayerView measures the hold every frame into `holdDev.stats[state]`:
+// get-up, dive into a roll; #4764's katana guard and cut). PlayerView measures the hold every frame into `holdDev.stats[state]`:
 //   grip  - the right hand's gun against where the hold wants it (m)
 //   left  - the left palm's distance to the gun's rail (m; the authored parts of a reload are exempt)
 //   bend  - hand against forearm, from the bind pose (rad)
@@ -23,7 +23,7 @@ export const HOLDCHECK: WeaponId | null = HC && HC in WEAPONS ? (HC as WeaponId)
 export type HoldStats = { frames: number; grip: number; left: number; bend: number; flips: number; reach: number; slide: number; shift: number };
 export type HoldView = "game" | "side" | "right" | "front" | "back";
 
-export const HOLD_STATES = ["idle", "aim-up", "aim-down", "turn", "walk", "back", "strafe-l", "strafe-r", "run", "fire", "bt", "reload", "jump", "dive", "prone", "getup", "roll", "swap"] as const;
+export const HOLD_STATES = ["idle", "aim-up", "aim-down", "turn", "walk", "back", "strafe-l", "strafe-r", "run", "fire", "bt", "reload", "jump", "dive", "prone", "getup", "roll", "swap", "guard", "slash"] as const;
 export type HoldState = (typeof HOLD_STATES)[number];
 
 export const holdDev = {
@@ -128,6 +128,9 @@ export class HoldScript {
       case "roll": f.moveY = t < 150 ? 1 : 0; f.dodge = t === 30; break;
       // to the next owned gun and back to the one being checked (the AK shares slot 1 with the pistols)
       case "swap": f.slot = t === 1 ? 9 : t === 90 ? 8 : 0; break;
+      // #4764: the katana's guard held; the cut (a tap)
+      case "guard": f.melee = t === 1; f.guard = t >= 1; break;
+      case "slash": f.melee = t === 1; break;
     }
     // bullet time off again in every other state
     if (h.state !== "bt" && t === 1 && g.bulletTime) f.bt = true;

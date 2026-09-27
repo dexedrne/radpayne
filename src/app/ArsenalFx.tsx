@@ -4,6 +4,9 @@
 // (#4764's katana: a curved ribbon, white core with his cyan edge, gone in 0.2 s; the strike: a small
 // white arc), and the debris of a breakable (wood splinters, or glitter off glass). World time for the
 // world, so bullet time slows a blast like everything else.
+// #4764's guard: a round off the blade is a burst of white-gold sparks and a short hot streak along the
+// way it goes (glancing off, or on its way back in bullet time: the round itself is FxView's); a perfect
+// parry adds a white ring, a shotgun blast a bigger burst; a broken guard throws a spray of sparks.
 import { useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import {
@@ -25,6 +28,7 @@ const add = (color: string, opacity: number) => own(new MeshBasicMaterial({ colo
 type Blast = { t: number; x: number; y: number; z: number; flash: Mesh; ring: Mesh; smoke: Mesh[]; sparks: { m: Mesh; v: Vector3 }[]; scorch: Mesh };
 type Slash = { t: number; g: Group; life: number };
 type Bit = { m: Mesh; v: Vector3; t: number };
+type Clang = { t: number; sparks: { m: Mesh; v: Vector3 }[]; streak: Mesh | null; ring: Mesh | null; x: number; y: number; z: number; rx: number; ry: number; rz: number };
 
 export function ArsenalFx({ s }: { s: Session }) {
   const fx = useMemo(() => {
@@ -53,7 +57,7 @@ export function ArsenalFx({ s }: { s: Session }) {
       shock: new RingGeometry(0.85, 1, 40),
       disc: new CircleGeometry(1, 24),
       box: new BoxGeometry(1, 1, 1),
-      blasts: [] as Blast[], slashes: [] as Slash[], bits: [] as Bit[], run: -1,
+      blasts: [] as Blast[], slashes: [] as Slash[], bits: [] as Bit[], clangs: [] as Clang[], run: -1,
       scorchMat: own(new MeshBasicMaterial({ color: "#0b0906", transparent: true, opacity: 0.7, depthWrite: false })),
     };
   }, []);
@@ -118,6 +122,34 @@ export function ArsenalFx({ s }: { s: Session }) {
       sg.traverse(o => { o.frustumCulled = false; });
       fx.group.add(sg);
       fx.slashes.push({ t: 0, g: sg, life: katana ? 0.2 : 0.16 });
+    } else if (e.type === "deflect" || (e.type === "guard" && e.what === "break")) {
+      // off the blade: sparks thrown along the way the round goes, a short hot streak, a ring on a parry
+      const p = g.player;
+      const d = e.type === "deflect" ? e : null;
+      const x = d ? d.x : p.x - Math.sin(p.yaw) * 0.45, y = d ? d.y : p.y + 1.2, z = d ? d.z : p.z - Math.cos(p.yaw) * 0.45;
+      const rx = d ? d.rx : 0, ry = d ? d.ry : 1, rz = d ? d.rz : 0;
+      const n = !d ? 22 : d.blast ? (d.first ? 16 : 3) : 10;
+      const sparks: Clang["sparks"] = [];
+      for (let i = 0; i < n; i++) {
+        const m = new Mesh(fx.box, add(i % 3 ? "#fff3c4" : "#ffffff", 0.95));
+        m.scale.set(0.012, 0.012, 0.09 + (i % 4) * 0.03);
+        m.position.set(x, y, z);
+        const a = i * 2.39996, k = 0.55 + ((i * 37) % 10) / 20;
+        const v = new Vector3(rx * 3 + Math.cos(a) * 2.2, ry * 3 + Math.sin(a * 1.3) * 1.8 + 0.6, rz * 3 + Math.sin(a) * 2.2).normalize().multiplyScalar(4 + 5 * k);
+        sparks.push({ m, v });
+      }
+      let streak: Mesh | null = null, ring: Mesh | null = null;
+      if (d && !d.returned && (!d.blast || d.first)) {
+        streak = new Mesh(fx.box, add("#ffe7a8", 0.9));
+        streak.scale.set(0.02, 0.02, 1.1);
+      }
+      if (d?.perfect && d.first) {
+        ring = new Mesh(fx.shock, add("#ffffff", 0.9));
+        ring.position.set(x, y, z);
+        ring.lookAt(x - Math.sin(p.yaw) * -1, y, z - Math.cos(p.yaw) * -1);
+      }
+      for (const m of [...sparks.map(sp => sp.m), ...(streak ? [streak] : []), ...(ring ? [ring] : [])]) { m.frustumCulled = false; fx.group.add(m); }
+      fx.clangs.push({ t: 0, sparks, streak, ring, x, y, z, rx, ry, rz });
     } else if (e.type === "break") {
       const glass = e.surface === "glass" || e.surface === "mirror";
       for (let i = 0; i < (glass ? 40 : 22); i++) {
@@ -143,7 +175,8 @@ export function ArsenalFx({ s }: { s: Session }) {
       for (const b of fx.blasts) for (const m of [b.flash, b.ring, b.scorch, ...b.smoke, ...b.sparks.map(sp => sp.m)]) fx.group.remove(m);
       for (const sl of fx.slashes) fx.group.remove(sl.g);
       for (const b of fx.bits) fx.group.remove(b.m);
-      fx.blasts.length = 0; fx.slashes.length = 0; fx.bits.length = 0;
+      for (const c of fx.clangs) for (const m of [...c.sparks.map(sp => sp.m), c.streak, c.ring]) if (m) fx.group.remove(m);
+      fx.blasts.length = 0; fx.slashes.length = 0; fx.bits.length = 0; fx.clangs.length = 0;
     }
     blastShake.k = Math.max(0, blastShake.k - dt * 2.2);
     // live grenades: the frag spins in flight; the red ring on the floor under it
@@ -198,6 +231,38 @@ export function ArsenalFx({ s }: { s: Session }) {
       const k = 1 - sl.t / sl.life;
       sl.g.children.forEach((c, j) => { ((c as Mesh).material as MeshBasicMaterial).opacity = Math.max(0, k) * (j === 0 ? 0.95 : 0.55); });
       if (k <= 0) { fx.group.remove(sl.g); fx.slashes.splice(i--, 1); }
+    }
+    // off the blade (world time: bullet time holds the sparks in the air)
+    for (let i = 0; i < fx.clangs.length; i++) {
+      const c = fx.clangs[i];
+      c.t += wdt;
+      const t = c.t;
+      for (const sp of c.sparks) {
+        sp.v.y -= 9 * wdt;
+        sp.m.position.addScaledVector(sp.v, wdt);
+        sp.m.lookAt(sp.m.position.x + sp.v.x, sp.m.position.y + sp.v.y, sp.m.position.z + sp.v.z);
+        (sp.m.material as MeshBasicMaterial).opacity = Math.max(0, 0.95 * (1 - t / 0.35));
+        sp.m.visible = t < 0.35;
+      }
+      if (c.streak) {
+        // the glancing round: a 1.1 m streak racing off the blade, gone in 0.2 s
+        const head = Math.min(6, 30 * t);
+        const len = Math.min(1.1, head);
+        c.streak.position.set(c.x + c.rx * (head - len / 2), c.y + c.ry * (head - len / 2), c.z + c.rz * (head - len / 2));
+        c.streak.lookAt(c.x + c.rx * 10, c.y + c.ry * 10, c.z + c.rz * 10);
+        c.streak.scale.z = Math.max(0.01, len);
+        (c.streak.material as MeshBasicMaterial).opacity = Math.max(0, 0.9 * (1 - t / 0.2));
+        c.streak.visible = t < 0.2;
+      }
+      if (c.ring) {
+        c.ring.scale.setScalar(0.1 + 0.5 * Math.min(1, t / 0.15));
+        (c.ring.material as MeshBasicMaterial).opacity = Math.max(0, 0.9 * (1 - t / 0.25));
+        c.ring.visible = t < 0.25;
+      }
+      if (t > 0.4) {
+        for (const m of [...c.sparks.map(sp => sp.m), c.streak, c.ring]) if (m) { fx.group.remove(m); (m.material as MeshBasicMaterial).dispose(); }
+        fx.clangs.splice(i--, 1);
+      }
     }
     // debris
     for (let i = 0; i < fx.bits.length; i++) {

@@ -15,7 +15,7 @@ import { aimDir } from "./aim.ts";
 import { Crowd } from "./crowd.ts";
 import { Fnv1a, Rand, hash01 } from "./math.ts";
 import { PM_DIVE, PM_GETUP, PM_JUMP, PM_LAND, PM_PRONE, muzzleOf, pivotOf, stepPlayer } from "./player.ts";
-import { AI, BREACH, CHECKPOINT_MIN_HEALTH, DIFFICULTY, DODGE, DT, ENEMY, ENEMY_ARMS, GRENADE, HEAVY, HEAVY_SCALE, KILLCAM, MADAME, MAX_RANGE, MELEE, METER, PLAYER, PROJECTILE_SPEED, RUSHER, TIME, USE, type Difficulty } from "./tuning.ts";
+import { AI, BREACH, CHECKPOINT_MIN_HEALTH, DIFFICULTY, DODGE, DT, ENEMY, ENEMY_ARMS, GRENADE, GUARD, HEAVY, HEAVY_SCALE, KILLCAM, MADAME, MAX_RANGE, MELEE, METER, PLAYER, PROJECTILE_SPEED, RUSHER, TIME, USE, type Difficulty } from "./tuning.ts";
 import { PLAYER_ID, type GameEvent, type InputFrame, type V3 } from "./types.ts";
 import { World, circleRectOverlap, type Box } from "./world.ts";
 import { Ride } from "./ride.ts";
@@ -187,8 +187,13 @@ export class Game {
   private readonly v3: V3 = { x: 0, y: 0, z: 0 };
   private readonly scratchCaps = makeCapsules();
   private lastPlayerKill: { from: V3; to: V3; enemy: number; headshot: boolean; chase: boolean } | null = null;
-  /** #4764: the katana (else the strike). */
+  /** #4764: the katana (else the strike) and its guard. */
   readonly katana: boolean;
+  /** World time until which a goon in front of his raised guard holds her fire (GUARD.hesitate). */
+  guardHoldUntil = -1;
+  /** World time of the last shotgun blast each shooter put on his guard (one charge per blast). */
+  private readonly guardBlastAt = new Map<number, number>();
+  private readonly vr: V3 = { x: 0, y: 0, z: 0 };
   /** Live grenades. */
   readonly grenadesLive: Grenade[] = [];
   private nextGrenade = 1;
@@ -428,7 +433,7 @@ export class Game {
     const pin = inControl ? inp : FROZEN_INPUT(inp, p);
     if (inControl && p.mode !== "dead") {
       if (inp.slot > 0) this.switchWeapon(inp.slot);
-      if (inp.reload && p.meleeT <= 0 && startReload(p.weapon)) this.emit({ type: "reload", hand: 0 });
+      if (inp.reload && p.meleeT <= 0 && !p.guard && startReload(p.weapon)) this.emit({ type: "reload", hand: 0 });
       if (inp.copium) this.useCopium();
       if (inp.dodge && p.mode === "normal" && p.dodgeCooldown <= 0) {
         const before = this.meter;
@@ -441,7 +446,7 @@ export class Game {
     // drops it until the button is let go
     if (!pin.zoom) p.zoomBlock = false;
     if (p.zoom && (p.weapon.reloadT > 0 || p.mode !== "normal" || p.weapon.id !== "sniper")) p.zoomBlock = true;
-    const zoom = inControl && !!pin.zoom && !p.zoomBlock && p.weapon.id === "sniper" && p.mode === "normal" && p.weapon.reloadT <= 0 && p.meleeT <= 0;
+    const zoom = inControl && !!pin.zoom && !p.zoomBlock && p.weapon.id === "sniper" && p.mode === "normal" && p.weapon.reloadT <= 0 && p.meleeT <= 0 && !p.guard;
     if (zoom !== p.zoom) { p.zoom = zoom; this.emit({ type: "zoom", on: zoom }); }
     const pm = stepPlayer(this.world, p, pin, DT, pdt);
     if (pm & PM_DIVE) this.emit({ type: "dodge" });
@@ -463,9 +468,12 @@ export class Game {
     this.updateAim();
     if (inControl && p.mode !== "dead") {
       if (inp.interact) this.interact();
-      if (inp.melee) this.startMelee();
+      // #4764's melee button is the guard while held (stepGuard: a tap cuts on the release); a press that
+      // came and went between two steps cuts now, like everyone else's strike
+      if (inp.melee && !(this.katana && inp.guard)) this.startMelee();
       if (inp.throw) this.throwGrenade();
     }
+    if (this.katana) this.stepGuard(inp, inControl, pdt);
     const w = p.weapon;
     if (stepWeapon(w, pdt)) this.emit({ type: "reloaded" });
     // the melee (his clock): the hit resolves at the wind-up
@@ -475,7 +483,7 @@ export class Game {
       p.meleeT = Math.max(0, p.meleeT - pdt);
       if (!p.meleeDone && M.time - p.meleeT >= MELEE.windup) { p.meleeDone = true; if (p.mode !== "dead") this.resolveMelee(); }
     }
-    const canFire = inControl && p.mode !== "dead" && p.mode !== "getup" && p.meleeT <= 0;
+    const canFire = inControl && p.mode !== "dead" && p.mode !== "getup" && p.meleeT <= 0 && !p.guard;
     const hand = triggerWeapon(w, canFire && inp.fire);
     if (hand >= 0) this.firePlayer(hand);
     else if (canFire && inp.fire && !w.wasDown && w.reloadT > 0) this.emit({ type: "dryfire" });
@@ -697,6 +705,7 @@ export class Game {
   private startMelee(): void {
     const p = this.player;
     if (p.meleeT > 0 || p.mode !== "normal") return;
+    if (p.guard) this.lowerGuard();
     const M = this.katana ? MELEE.katana : MELEE.strike;
     p.meleeT = M.time;
     p.meleeDone = false;
@@ -732,7 +741,7 @@ export class Game {
       e.flinch = Math.max(e.flinch, M.flinch);
       if (e.weapon === "sniper") e.tell = 0;
       if (M.knock > 0 && e.kind !== "heavy" && e.kind !== "madame" && !e.perch) { e.knockT = MELEE.knockTime; e.knockX = (dx / dl) * M.knock; e.knockZ = (dz / dl) * M.knock; }
-      this.emit({ type: "blood", x: c.x, y: c.y, z: c.z, dx: dx / dl, dy: 0, dz: dz / dl, target: e.idx, part: HB_TORSO });
+      this.emit({ type: "blood", x: c.x, y: c.y, z: c.z, dx: dx / dl, dy: 0, dz: dz / dl, target: e.idx, part: HB_TORSO, ...(this.katana ? { ink: true } : {}) });
       this.emit({ type: "hurt", target: e.idx, amount: dmg, part: HB_TORSO, hp: Math.max(0, e.hp) });
       if (e.state === "idle") alertGoon(this, e, 0);
       if (e.kind === "heavy" && e.hp > 0 && M.damage >= HEAVY.staggerAt && e.stagger <= 0) {
@@ -754,10 +763,162 @@ export class Game {
     this.emit({ type: "melee", kind: this.katana ? "katana" : "strike", phase: "hit", hits });
   }
 
+  // ---- #4764's guard ---------------------------------------------------------------------------
+
+  /** The melee button held: the guard goes up at the press (or as soon as it can while the button stays
+   *  down: after a cut, a landing, a break); let go within GUARD.tap of the press and it was a tap: the
+   *  cut. The meter drains while it is up and refills once it has been down a moment. */
+  private stepGuard(inp: InputFrame, inControl: boolean, pdt: number): void {
+    const p = this.player;
+    const held = inControl && p.mode !== "dead" && !!inp.guard;
+    if (held && !p.guardHeld) p.guardPress = 0;
+    else if (held) p.guardPress += DT;
+    if (!held && p.guardHeld) {
+      const tap = p.guardPress >= 0 && p.guardPress < GUARD.tap;
+      if (p.guard) this.lowerGuard();
+      p.guardPress = -1;
+      if (tap && inControl && p.mode !== "dead") this.startMelee();
+    }
+    p.guardHeld = held;
+    if (p.guardBroken > 0) p.guardBroken = Math.max(0, p.guardBroken - pdt);
+    if (p.guard && (p.mode !== "normal" || !held)) this.lowerGuard();
+    if (held && !p.guard && p.mode === "normal" && p.meleeT <= 0 && p.guardBroken <= 0 && p.guardMeter >= (p.guardLock ? GUARD.minRaise : 1)) this.raiseGuard();
+    // the gang in front of him doubts it once it is a guard (past a tap): a beat before the next round
+    if (p.guard && p.guardPress >= GUARD.tap && (p.guardPress - DT < GUARD.tap || p.guardT === 0)) this.guardHoldUntil = this.time + GUARD.hesitate;
+    if (p.guard) {
+      p.guardT += pdt;
+      p.guardMeter -= GUARD.hold * pdt;
+      if (p.guardMeter <= 0) this.breakGuard();
+    } else {
+      p.guardIdle += pdt;
+      if (p.guardIdle >= GUARD.refillDelay) p.guardMeter = Math.min(GUARD.max, p.guardMeter + GUARD.refill * pdt);
+      if (p.guardLock && p.guardMeter >= GUARD.minRaise) p.guardLock = false;
+    }
+  }
+
+  private raiseGuard(): void {
+    const p = this.player;
+    p.guard = true;
+    p.guardT = 0;
+    p.parryOk = p.guardIdle >= GUARD.reParry;
+    p.weapon.reloadT = 0;
+    if (p.zoom) { p.zoom = false; p.zoomBlock = true; this.emit({ type: "zoom", on: false }); }
+    this.emit({ type: "guard", what: "up" });
+  }
+
+  private lowerGuard(): void {
+    const p = this.player;
+    if (!p.guard) return;
+    p.guard = false;
+    p.guardIdle = 0;
+    this.emit({ type: "guard", what: "down" });
+  }
+
+  /** The meter ran out: the blade is knocked aside, no guard for GUARD.broken and until the meter is
+   *  back to GUARD.minRaise. */
+  private breakGuard(): void {
+    const p = this.player;
+    p.guardMeter = 0;
+    p.guard = false;
+    p.guardIdle = 0;
+    p.guardBroken = GUARD.broken;
+    p.guardLock = true;
+    this.emit({ type: "guard", what: "break" });
+  }
+
+  /** Whether a point is inside his guard's front arc (the gang reads it: who holds fire, who flanks). */
+  inGuardArc(x: number, z: number): boolean {
+    const p = this.player;
+    const dx = x - p.x, dz = z - p.z, d = Math.hypot(dx, dz);
+    return d < 1e-3 || (dx * -Math.sin(p.yaw) + dz * -Math.cos(p.yaw)) / d >= GUARD.arcCos;
+  }
+
+  /** A goon facing his raised guard holds her fire for a beat after it goes up. */
+  guardHolds(e: Enemy): boolean {
+    return this.player.guard && this.time < this.guardHoldUntil && this.inGuardArc(e.x, e.z);
+  }
+
+  /** A round (hitscan or a projectile) reaches him along (dx, dy, dz): with the guard up and the round
+   *  from the front arc it meets the blade (no damage). The meter pays (a perfect parry does not; a
+   *  shotgun blast pays once and shoves him back); in bullet time the round goes back as his own, at the
+   *  one under the crosshair, else at the shooter; outside it the round glances off, harmless. */
+  private deflect(x: number, y: number, z: number, dx: number, dy: number, dz: number, shooter: number, weapon: string): void {
+    const p = this.player;
+    const hl = Math.hypot(dx, dz) || 1;
+    const blast = weapon === "shotgun";
+    let first = true;
+    if (blast) {
+      const at = this.guardBlastAt.get(shooter);
+      first = at === undefined || this.time - at > 0.12;
+      if (first) this.guardBlastAt.set(shooter, this.time);
+    }
+    const perfect = p.parryOk && p.guardT <= GUARD.parry;
+    if (first) {
+      if (!perfect) p.guardMeter -= blast ? GUARD.blast : GUARD.deflect;
+      if (blast) {
+        p.shoveT = GUARD.shoveTime;
+        p.shoveX = (dx / hl) * GUARD.shove;
+        p.shoveZ = (dz / hl) * GUARD.shove;
+        p.vx = p.shoveX;
+        p.vz = p.shoveZ;
+      }
+    }
+    // bullet time: back at the one under the crosshair, else at the shooter (one round per blast)
+    let target = -1;
+    const r = this.vr;
+    if (this.bulletTime && first) {
+      const a = this.aimEnemy >= 0 ? this.enemies[this.aimEnemy] : undefined;
+      const e = shooter >= 0 ? this.enemies[shooter] : undefined;
+      if (a && a.state !== "dead" && a.hit.hittable) { target = a.idx; r.x = this.aimPoint.x; r.y = this.aimPoint.y; r.z = this.aimPoint.z; }
+      else if (e && e.state !== "dead" && e.hit.hittable && aimPoint(e.hit.body, e.hit.pose, HB_TORSO, r, this.scratchCaps)) target = e.idx;
+    }
+    let rx: number, ry: number, rz: number;
+    const id = this.nextProjectile++;
+    if (target >= 0) {
+      rx = r.x - x; ry = r.y - y; rz = r.z - z;
+      const l = Math.hypot(rx, ry, rz) || 1;
+      rx /= l; ry /= l; rz /= l;
+      this.projectiles.push({ id, team: 0, shooter: PLAYER_ID, x, y, z, dx: rx, dy: ry, dz: rz, left: MAX_RANGE, damage: GUARD.returnDamage, alive: true, sx: x, sy: y, sz: z, weapon: "returned", pierce: 0, skip: [] });
+    } else {
+      // off the blade: back the way it came, thrown wide and up (seeded per step and round: no rng draw)
+      const u = hash01(this.seed, this.stepN, id, 0x64), v = hash01(this.seed, this.stepN, id, 0x65);
+      const side = (u - 0.5) * 2.4;
+      rx = -dx + (-dz / hl) * side; ry = 0.35 + v * 0.9; rz = -dz + (dx / hl) * side;
+      const l = Math.hypot(rx, ry, rz) || 1;
+      rx /= l; ry /= l; rz /= l;
+    }
+    this.emit({ type: "deflect", x, y, z, dx, dy, dz, rx, ry, rz, perfect, returned: target >= 0, blast, first, shooter, target, id });
+    if (p.guardMeter <= 0) this.breakGuard();
+  }
+
+  /** His guard is up and a round travelling along (dx, dz) comes from its front arc. */
+  private guardFront(dx: number, dz: number): boolean {
+    const p = this.player;
+    if (!this.katana || !p.guard || p.mode !== "normal") return false;
+    const hl = Math.hypot(dx, dz);
+    return hl > 1e-6 && (dx * Math.sin(p.yaw) + dz * Math.cos(p.yaw)) / hl >= GUARD.arcCos;
+  }
+
+  /** Where a round o + t d (t <= maxT) crosses his raised blade: a disc GUARD.disc.r across, GUARD.disc.at
+   *  in front of his chest, facing the aim (rounds from the front arc only); -1 when it does not. Near
+   *  misses that cross it are caught too. */
+  private guardCut(ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, maxT: number): number {
+    if (!this.guardFront(dx, dz)) return -1;
+    const p = this.player;
+    const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);
+    const den = dx * fx + dz * fz;
+    if (den > -1e-6) return -1;
+    const cx = p.x + fx * GUARD.disc.at, cy = p.y + GUARD.disc.y, cz = p.z + fz * GUARD.disc.at;
+    const t = ((cx - ox) * fx + (cz - oz) * fz) / den;
+    if (t < 0 || t > maxT) return -1;
+    const x = ox + dx * t - cx, y = oy + dy * t - cy, z = oz + dz * t - cz;
+    return x * x + y * y + z * z <= GUARD.disc.r * GUARD.disc.r ? t : -1;
+  }
+
   /** G: a frag from his left hand on a 35 deg loft onto the aim point (3-20 m out). */
   private throwGrenade(): void {
     const p = this.player;
-    if (p.grenades <= 0 || p.throwT > 0 || p.mode !== "normal" || p.meleeT > 0) return;
+    if (p.grenades <= 0 || p.throwT > 0 || p.mode !== "normal" || p.meleeT > 0 || p.guard) return;
     p.grenades--;
     p.throwT = GRENADE.cooldown;
     const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw), rx = Math.cos(p.yaw), rz = -Math.sin(p.yaw);
@@ -1166,6 +1327,14 @@ export class Game {
       return;
     }
     const h = trace(this.world, this.actors, team, ox, oy, oz, dx, dy, dz, MAX_RANGE, this.th);
+    // #4764's raised blade in its way (in front of him, before whatever it would hit)
+    const gt = team === 1 ? this.guardCut(ox, oy, oz, dx, dy, dz, h.t) : -1;
+    if (gt >= 0) {
+      const x = ox + dx * gt, y = oy + dy * gt, z = oz + dz * gt;
+      this.emit({ type: "shot", shooter, hand, ox, oy, oz, ex: x, ey: y, ez: z, projectile: false, id, weapon, pellet });
+      this.deflect(x, y, z, dx, dy, dz, shooter, weapon);
+      return;
+    }
     // round 3: his shot may meet one of the boss room's small targets first
     const cut = team === 0 && this.boss ? this.boss.intercept(ox, oy, oz, dx, dy, dz, h.t) : null;
     if (cut) {
@@ -1216,7 +1385,13 @@ export class Game {
       b.skip.forEach((k, j) => { this.actors[k].hittable = was[j]; });
       // round 3: his bullet may meet one of the boss room's small targets first
       const cut = b.team === 0 && this.boss ? this.boss.intercept(b.x, b.y, b.z, b.dx, b.dy, b.dz, h.t) : null;
-      if (cut) {
+      // the gang's round across #4764's raised blade (in front of him, before whatever it would hit)
+      const gt = b.team === 1 ? this.guardCut(b.x, b.y, b.z, b.dx, b.dy, b.dz, h.t) : -1;
+      if (gt >= 0) {
+        b.x += b.dx * gt; b.y += b.dy * gt; b.z += b.dz * gt;
+        b.alive = false;
+        this.deflect(b.x, b.y, b.z, b.dx, b.dy, b.dz, b.shooter, b.weapon);
+      } else if (cut) {
         b.x += b.dx * cut.t; b.y += b.dy * cut.t; b.z += b.dz * cut.t;
         b.alive = false;
         this.boss!.hitTarget(this, cut, b.sx, b.sy, b.sz);
@@ -1255,6 +1430,8 @@ export class Game {
     }
     if (h.kind !== HIT_ACTOR) return;
     const target = h.actor - 1; // -1 = player
+    // #4764's guard: a round from the front meets the blade instead
+    if (target === PLAYER_ID && this.guardFront(dx, dz)) { this.deflect(h.x - dx * GUARD.blade, h.y - dy * GUARD.blade, h.z - dz * GUARD.blade, dx, dy, dz, shooter, weapon); return; }
     this.emit({ type: "blood", x: h.x, y: h.y, z: h.z, dx, dy, dz, target, part: h.part });
     // blood on the wall behind (within 3 m)
     const wh = this.world.raycast(h.x + dx * 0.3, h.y + dy * 0.3, h.z + dz * 0.3, dx, dy, dz, 3, true);
@@ -1454,6 +1631,7 @@ export class Game {
     for (const e of this.enemies) h.f64(e.x).f64(e.z).f64(e.facing).f64(e.hp).str(e.state).f64(e.timer).i32(e.cover).f64(e.tell).f64(e.stagger);
     h.i32(this.projectiles.length).i32(this.breached.length).f64(this.breachSlow);
     for (const b of this.projectiles) h.f64(b.x).f64(b.y).f64(b.z);
+    h.i32(p.guard ? 1 : 0).i32(p.guardLock ? 1 : 0).f64(p.guardT).f64(p.guardMeter).f64(p.guardBroken).f64(p.shoveT).f64(this.guardHoldUntil);
     h.i32(p.grenades).i32(p.banked).f64(p.meleeT).i32(p.zoom ? 1 : 0).i32(this.found.length).i32(this.opened.length).i32(this.broken.length).i32(this.grenadesLive.length);
     for (const gr of this.grenadesLive) h.f64(gr.x).f64(gr.y).f64(gr.z).f64(gr.fuse);
     this.ride?.hashInto(h);
@@ -1484,7 +1662,7 @@ export function insideTrigger(t: Marker, x: number, y: number, z: number): boole
   return Math.abs(lx) <= t.hx && Math.abs(lz) <= t.hz && Math.abs(y - t.y) <= Math.max(t.hy, 1.5);
 }
 
-const frozen: InputFrame = { moveX: 0, moveY: 0, yaw: 0, pitch: 0, fire: false, bt: false, dodge: false, jump: false, reload: false, copium: false, slot: 0, skip: false, melee: false, throw: false, interact: false, zoom: false };
+const frozen: InputFrame = { moveX: 0, moveY: 0, yaw: 0, pitch: 0, fire: false, bt: false, dodge: false, jump: false, reload: false, copium: false, slot: 0, skip: false, melee: false, throw: false, interact: false, zoom: false, guard: false };
 /** Outside control (kill cam, results) the player keeps the aim but does nothing else. */
 function FROZEN_INPUT(_inp: InputFrame, p: Player): InputFrame {
   frozen.yaw = p.yaw;

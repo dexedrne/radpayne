@@ -1,5 +1,5 @@
 // Pad vibration, light: his shots (a heavier kick for the big guns), hits on him, the landings, a melee
-// that connects, a frag going off. Dual-rumble through gamepad.vibrationActuator where the browser has
+// that connects, a frag going off, a round off #4764's blade and his guard breaking. Dual-rumble through gamepad.vibrationActuator where the browser has
 // it; nothing where it does not. The page plays it only with Vibration on and the pad in use.
 import { PLAYER_ID, type GameEvent } from "../sim/types.ts";
 
@@ -24,6 +24,11 @@ export function rumbleOf(e: GameEvent): Rumble | null {
       return e.phase === "hit" && e.hits > 0 ? { strong: 0.2, weak: 0.35, ms: 80 } : null;
     case "explode":
       return { strong: 0.4, weak: 0.3, ms: 200 };
+    // #4764's blade stops a round: a sharp tick (a shotgun blast knocks, a broken guard jolts)
+    case "deflect":
+      return !e.first ? null : e.blast ? { strong: 0.35, weak: 0.3, ms: 120 } : { strong: 0.05, weak: 0.3, ms: 40 };
+    case "guard":
+      return e.what === "break" ? { strong: 0.45, weak: 0.3, ms: 160 } : null;
     default:
       return null;
   }

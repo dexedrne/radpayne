@@ -5,7 +5,8 @@
 // hold, and it snaps back. Which kills: the room's last kill always (its ride replaces the old chase;
 // the sim's own final-kill cam then plays on as the swing around her), and with "special shots" a
 // sniper kill, a headshot past CINE.longRange, one hand-cannon / sniper round through two bodies, a
-// grenade that takes two or more; "always" adds any kill by a shot. At most one every CINE.cooldown
+// grenade that takes two or more, a round #4764's katana sent back in bullet time ("RETURN TO SENDER");
+// "always" adds any kill by a shot. At most one every CINE.cooldown
 // real seconds (the last kill is never held back), never while Madame Pockit makes an entrance, changes
 // phase, throws her coat off or starts her last stand, never while the elevator car is between stops
 // or a breach runs slow, and any key skips it. A hand-cannon / sniper round still flying on through a
@@ -40,7 +41,7 @@ export const CINE = {
   pierceWait: 0.8,
 } as const;
 
-export type CineKind = "final" | "sniper" | "long" | "pierce" | "grenade" | "shot";
+export type CineKind = "final" | "sniper" | "long" | "pierce" | "grenade" | "return" | "shot";
 /** One kill by his hand (the sim's kill event): weapon, where the shot came from and where it hit. */
 export type CineKill = { enemy: number; weapon: string; headshot: boolean; part: number; from: V3; to: V3; final: boolean; at: number };
 export type CinePhase = "flight" | "xray" | "out";
@@ -85,6 +86,8 @@ export function pickCine(kills: CineKill[], recent: CineKill[], mode: KillcamMod
   if (mode === "final" || since < (mode === "always" ? CINE.alwaysCooldown : CINE.cooldown)) return null;
   const blast = kills.filter(k => k.weapon === "grenade");
   if (blast.length >= 2) return { kind: "grenade", kills: blast };
+  const back = kills.find(k => k.weapon === "returned");
+  if (back) return { kind: "return", kills: [back] };
   for (const k of kills) {
     if (!PIERCING.has(k.weapon)) continue;
     const through = [...recent, ...kills].filter(o => o !== k && o.weapon === k.weapon && sameOrigin(o, k));
@@ -104,7 +107,8 @@ export const flightFor = (m: number): number => Math.max(CINE.minFlight, Math.mi
 function tagOf(kind: CineKind, kills: CineKill[], m: number): string {
   const range = `${Math.round(m)} M`;
   switch (kind) {
-    case "final": return "FINAL KILL";
+    case "final": return kills[kills.length - 1].weapon === "returned" ? "RETURN TO SENDER" : "FINAL KILL";
+    case "return": return "RETURN TO SENDER";
     case "sniper": return `${kills[0].headshot ? "HEADSHOT" : "SNIPER"} · ${range}`;
     case "long": return `HEADSHOT · ${range}`;
     case "pierce": return `${kills.length === 2 ? "TWO" : kills.length === 3 ? "THREE" : kills.length} WITH ONE`;

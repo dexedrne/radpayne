@@ -1,7 +1,8 @@
 // The gamepad's layout, shared by the input (what each button does), the prompts (which glyph a hint
 // shows) and the controls lists. The Gamepad API's standard mapping; the layout follows the console
 // shooters of the genre: L2 aims, R2 fires, R1 dives, a stick click is bullet time, L1 / the d-pad
-// change the gun, Square reloads (or uses what is in reach), Triangle throws, Circle strikes.
+// change the gun, Square reloads (or uses what is in reach), Triangle throws, Circle strikes (#4764: a
+// tap cuts with the katana, held it is his guard).
 // Pure: no DOM, no store (the tests import it).
 
 /** Standard-mapping button indices (the PlayStation names; Xbox: A B X Y, LB RB LT RT, View Menu, LS RS). */
@@ -62,7 +63,7 @@ export const GLYPH_NAME: Record<PadKind, Record<Glyph, string>> = {
 export const PAD_CONTROLS: Array<[Glyph[], string]> = [
   [["ls"], "move"], [["rs"], "aim"], [["r2"], "fire"], [["l2"], "aim (sniper: scope)"],
   [["r3", "l3"], "bullet time"], [["r1"], "shootdodge"], [["cross"], "jump low cover"], [["square"], "reload / use"],
-  [["dup"], "copium"], [["l1", "dpadH"], "weapon"], [["circle"], "melee"], [["triangle"], "grenade"], [["ddown"], "use"],
+  [["dup"], "copium"], [["l1", "dpadH"], "weapon"], [["circle"], "melee (#4764: tap cut, hold guard)"], [["triangle"], "grenade"], [["ddown"], "use"],
   [["options"], "pause"],
 ];
 

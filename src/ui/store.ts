@@ -76,6 +76,11 @@ export type Hud = {
   pins: string[];
   /** What E would do right now (a secret door or an egg in reach, faced): the prompt's label, "" = none. */
   use: string;
+  /** #4764's katana guard: he has it; its meter (0..1); up; broken. */
+  katana: boolean;
+  guard: number;
+  guardUp: boolean;
+  guardBroken: boolean;
 };
 
 /** One hit on the player: where the shooter stood (NaN = no shooter: a fall), when, how hard. */
@@ -176,6 +181,7 @@ export const HUD_INITIAL: Hud = {
   roomLabel: "", objective: "", objectiveAt: 0, weaponId: "pistols", owned: ["pistols"], reserve: Infinity, hands: 2, ammo: { pistols: Infinity },
   refill: null, btRefusedAt: 0, killcamProgress: 0, cine: 0, cineTag: "", awake: false, run: 0,
   grenades: 0, lastInSlot: {}, zoom: false, secrets: 0, secretsTotal: 0, pins: [], use: "",
+  katana: false, guard: 1, guardUp: false, guardBroken: false,
 };
 
 export const useUi = create<Ui>(() => ({

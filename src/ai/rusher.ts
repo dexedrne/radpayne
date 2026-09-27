@@ -2,11 +2,12 @@
 //   idle -> alert (reaction) -> rush: paths straight at the player until she is 5-9 m away (her own
 //   distance, seeded) -> engage: strafes left / right, flipping every 1.2 s, and fires bursts of 6.
 //   Out of range or out of sight she rushes again. Below 25 HP she takes cover ONCE (move -> cover ->
-//   one peek), then rushes again.
+//   one peek), then rushes again. While #4764's katana guard faces her she circles for the nearer edge
+//   of its arc, faster, and on past it for a moment (she keeps shooting).
 // Runs on world time like the goon.
 import type { Enemy } from "../sim/actors.ts";
 import type { Game } from "../sim/game.ts";
-import { AI, ENEMY, RUSHER } from "../sim/tuning.ts";
+import { AI, ENEMY, GUARD, RUSHER } from "../sim/tuning.ts";
 import { alertGoon, faceToward, followPath, perceive, pickCover, releaseCover, setState, tryFire, within } from "./goon.ts";
 
 const R = ENEMY.rusher;
@@ -83,9 +84,17 @@ export function stepRusher(g: Game, e: Enemy, dt: number): void {
     case "engage": {
       faceToward(e, p.x, p.z, 9, dt);
       e.timer -= dt;
+      // #4764's guard toward her: she circles for its nearer edge, faster, and keeps going a while past it
+      const flank = p.guard && g.inGuardArc(e.x, e.z);
+      if (flank) {
+        const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw), side = fx * -dz - fz * -dx;
+        if (Math.abs(side) > 1e-6) e.strafe = side > 0 ? -1 : 1;
+        e.timer = RUSHER.strafeEvery;
+      }
       if (e.timer <= 0) { e.strafe = -e.strafe; e.timer = RUSHER.strafeEvery; }
       // strafe across the line to him; drift in or out to hold her distance
-      let vx = (-dz / dist) * e.strafe * R.walk, vz = (dx / dist) * e.strafe * R.walk;
+      const k = flank ? GUARD.flank : 1;
+      let vx = (-dz / dist) * e.strafe * R.walk * k, vz = (dx / dist) * e.strafe * R.walk * k;
       const hold = dist - e.engageAt;
       if (Math.abs(hold) > 1) { vx += (dx / dist) * Math.sign(hold) * R.walk * 0.5; vz += (dz / dist) * Math.sign(hold) * R.walk * 0.5; }
       e.vx = vx;

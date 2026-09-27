@@ -29,10 +29,14 @@ export type InputFrame = {
   interact?: boolean;
   /** The sniper's scope (right mouse / LT held while the sniper is in hand). */
   zoom?: boolean;
+  /** The melee button held (F / Circle): #4764 raises his katana's guard while it is down; let go within
+   *  a moment of the press and it was a tap: the cut. A press that came and went between two steps
+   *  (`melee` without `guard`) cuts at once, as it does for everyone else. */
+  guard?: boolean;
 };
 
 export function emptyInput(): InputFrame {
-  return { moveX: 0, moveY: 0, yaw: 0, pitch: 0, fire: false, bt: false, dodge: false, jump: false, reload: false, copium: false, slot: 0, skip: false, melee: false, throw: false, interact: false, zoom: false };
+  return { moveX: 0, moveY: 0, yaw: 0, pitch: 0, fire: false, bt: false, dodge: false, jump: false, reload: false, copium: false, slot: 0, skip: false, melee: false, throw: false, interact: false, zoom: false, guard: false };
 }
 
 export type V3 = { x: number; y: number; z: number };
@@ -45,7 +49,8 @@ export type GameEvent =
    *  pellet: 0 for the first projectile of a trigger pull (flash + sound), 1.. for the rest of a shotgun's. */
   | { type: "shot"; shooter: number; hand: number; ox: number; oy: number; oz: number; ex: number; ey: number; ez: number; projectile: boolean; id: number; weapon: string; pellet: number }
   | { type: "impact"; x: number; y: number; z: number; nx: number; ny: number; nz: number; surface: string; shooter: number }
-  | { type: "blood"; x: number; y: number; z: number; dx: number; dy: number; dz: number; target: number; part: number }
+  /** ink: #4764's blade (no blood: an ink-and-spark cut). */
+  | { type: "blood"; x: number; y: number; z: number; dx: number; dy: number; dz: number; target: number; part: number; ink?: boolean }
   | { type: "decal"; x: number; y: number; z: number; nx: number; ny: number; nz: number; blood: boolean }
   | { type: "hurt"; target: number; amount: number; part: number; hp: number; shooter?: number; fromX?: number; fromZ?: number }
   /** blast: a point-blank shotgun kill by the player (the body is blown back). */
@@ -87,6 +92,12 @@ export type GameEvent =
   /** A melee: `phase` start (the swing begins) / hit (it resolved: `hits` bodies); kind katana | strike. */
   | { type: "melee"; kind: "katana" | "strike"; phase: "start" | "hit"; hits: number }
   | { type: "zoom"; on: boolean }
+  /** #4764's guard: raised, lowered, broken (its meter ran out: down for GUARD.broken). */
+  | { type: "guard"; what: "up" | "down" | "break" }
+  /** A round met his guard at (x, y, z), coming along (dx, dy, dz): it goes off along (rx, ry, rz): back at
+   *  `target` (an enemy index) as his own round in bullet time (`returned`), else off the blade, harmless.
+   *  first: the blast's first pellet (a shotgun blast is one clang, one charge, one shove). */
+  | { type: "deflect"; x: number; y: number; z: number; dx: number; dy: number; dz: number; rx: number; ry: number; rz: number; perfect: boolean; returned: boolean; blast: boolean; first: boolean; shooter: number; target: number; id: number }
   // secrets: found (n of `of` in the room), a secret door opened, a breakable broke, E at an egg
   | { type: "secret"; id: string; n: number; of: number; name: string }
   | { type: "open"; node: string }

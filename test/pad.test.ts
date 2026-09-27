@@ -346,3 +346,24 @@ test("gamepad: a pad-played room's recorded frames replay bit-exactly", () => {
     assert.equal(r.hash(), s.game.hash());
   });
 });
+
+test("gamepad: Circle held is #4764's guard (the level in the frame), its press still the melee edge", () => {
+  withPad(b => {
+    const l = new InputLatch();
+    l.poll(1 / 60);
+    press(b, BTN.circle);
+    l.poll(1 / 60);
+    let f = l.consume();
+    assert.equal(f.melee, true);
+    assert.equal(f.guard, true);
+    l.poll(1 / 60);
+    f = l.consume();
+    assert.equal(f.melee, false);
+    assert.equal(f.guard, true, "held");
+    press(b, BTN.circle, false);
+    l.poll(1 / 60);
+    f = l.consume();
+    assert.equal(f.guard, false);
+  });
+  assert.ok(PAD_CONTROLS.some(([gs, what]) => gs.includes("circle") && /guard/.test(what)), "the controls list says so");
+});

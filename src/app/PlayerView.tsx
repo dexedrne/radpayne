@@ -15,16 +15,22 @@
 // shooting, and both hands are solved onto the gun with two-bone arm IK every frame (the right on the
 // grip, the left on the pump / handguard, riding the clip's rack and feed; the AK's mag change is a
 // scripted left-hand path). The shoulder camera moves out and down while a long gun is out (CameraView).
+// #4764's katana: worn on his left hip (the model's rigid `Katana` node on the hips: scabbard and hilt);
+// drawn for the cut and for the guard, when the hip's hilt goes and the drawn blade is in his hand. The
+// guard (the melee button held) holds it across his body in both hands: the game places the blade (grip
+// in front of his chest, the tip up to his left, the edge out) and both arms are solved onto its hilt
+// with the two-bone IK, the right hand at the guard, the left below it; the guns wait.
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useAssetRuntime } from "react-three-game";
-import { AnimationMixer, AnimationUtils, Box3, Euler, Group, LoopOnce, MeshBasicMaterial, Quaternion, Vector3, type AnimationAction, type Camera, type PerspectiveCamera, type AnimationClip, type Bone, type Material, type Mesh, type Object3D } from "three";
+import { AnimationMixer, AnimationUtils, Box3, BufferGeometry, Euler, Group, LoopOnce, Matrix4, Mesh, MeshBasicMaterial, Quaternion, Vector3, type AnimationAction, type Camera, type PerspectiveCamera, type AnimationClip, type Bone, type Material, type Object3D } from "three";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 import type { Session } from "./session.ts";
 import { AnimPlayer } from "../anim/animPlayer.ts";
 import { CLIPS, SHOTGUN_CLIPS, UPPER_BODY, aimLimb, deathFor, findBone, pick, rotateBoneWorld } from "../anim/rig.ts";
 import { RADBRO_GRIPS, SHOTGUN_SCALE } from "../anim/grips.ts";
 import { LONG_GUN_GEOM, LongGunHold, READY } from "../anim/hold.ts";
+import { setWorldQuaternion, solveTwoBone } from "../anim/ik.ts";
 import { RADBRO_GAIT, RUN_FROM, clipSpeed, legsFor } from "../anim/gait.ts";
 import { clipsPath, gunClipsPath, lightUp, modelPath, r2ClipsPath } from "./characters.ts";
 import { SHOTGUN_PUMP, SHOTGUN_RACK, aimHand, attachGun, makeAk, makeGrenade, makeHandCannon, makeKatana, makePistol, makeSawedOff, makeShotgun, makeSmg, makeSniper, muzzleWorld } from "./guns.ts";
@@ -59,6 +65,23 @@ const SWING = {
 } as const;
 /** The throw's left-hand arc (his frame, from the chest): back and up, then out forward; seconds. */
 const THROW = { from: [-0.35, 0.5, -0.25], to: [-0.1, 0.55, 0.75], time: 0.4 } as const;
+/** #4764's guard (his frame off the chest bone: right, up, forward): the drawn katana's grip, the way the
+ *  blade points (across him from his left hip up past his right shoulder, a little out: from the camera
+ *  over that shoulder it shows beside his head), how far below the right hand the left grips the
+ *  hilt (m), the elbows' poles, the chest's turn (rad, to his right), in / out (s). */
+const GUARD_POSE = {
+  grip: [-0.02, -0.1, 0.3] as [number, number, number],
+  blade: [0.75, 0.62, 0.25] as [number, number, number],
+  left: 0.11,
+  poleR: [0.55, -0.8, -0.15] as [number, number, number],
+  poleL: [-0.55, -0.8, 0.1] as [number, number, number],
+  twist: 0,
+  in: 0.05,
+  out: 0.1,
+};
+/** The katana's grip turned for the left hand: the right's (the blade rising from the fist) mirrored. */
+const KATANA_TIP = new Euler(-1.15, 0.35, 0);
+const KATANA_TIP_LEFT = new Euler(-1.15, -0.35, 0);
 const DEG = Math.PI / 180;
 /** The long-gun hold's numbers (arsenal spec 1.2-1.4). */
 const HOLD: { aimMax: number; aimMaxLying: number; pitch: readonly [number, number]; aimedFor: number; toAimed: number; toReady: number; cant: number; ikIn: number; ikOut: number; aimTwist: number } = {
@@ -157,6 +180,10 @@ type Rig = {
   sniper: Group;
   rifle: Group;
   katana: Group;
+  /** The model's hip katana, split: the hilt (it goes when the blade is drawn) and the scabbard. */
+  hipHilt: Object3D | null;
+  /** The left hand's grip on the katana (hand-bone space: position, rotation). */
+  katanaLeft: { p: Vector3; q: Quaternion };
   grenade: Group;
   hit: AnimationAction | null;
   reload: AnimationAction | null;
@@ -261,10 +288,21 @@ function makeRig(id: RadbroId, src: Object3D, pack: Object3D | null, gunPack: Ob
     attachGun(katana, bones.rHand, grips.right, 1, 1);
     // a sword rises from the fist (the pistol frame's barrel points out of it): the blade tipped up and
     // out, so it draws a line across the view as the arm cuts instead of pointing into the lens
-    katana.quaternion.multiply(new Quaternion().setFromEuler(new Euler(-1.15, 0.35, 0)));
+    katana.quaternion.multiply(new Quaternion().setFromEuler(KATANA_TIP));
     katana.userData.grip = katana.quaternion.clone();
   }
   if (bones.lHand) attachGun(grenade, bones.lHand, grips.left, 1, 1.3);
+  const katanaLeft = { p: new Vector3(...grips.left.p), q: new Quaternion(...grips.left.q).normalize().multiply(new Quaternion().setFromEuler(KATANA_TIP_LEFT)) };
+  const hipHilt = splitHipKatana(model);
+  // the drawn blade takes the hip katana's own hilt and guard (the same wrap and tsuba he wears)
+  if (hipHilt) {
+    const h = new Mesh((hipHilt as Mesh).geometry, (hipHilt as Mesh).material);
+    h.rotation.x = -Math.PI / 2;
+    h.position.set(0, 0.022, 0.085);
+    h.frustumCulled = false;
+    katana.add(h);
+    for (const o of katana.userData.hilt as Object3D[]) o.visible = false;
+  }
   const drawn = [...smgs, shotgun, ak, handcannon, sawedoff, sniper, rifle, katana, grenade];
   for (const g of drawn) g.visible = false;
   // the guns he has not drawn yet are compiled with the room anyway (look/compile.ts: hidden models)
@@ -315,7 +353,40 @@ function makeRig(id: RadbroId, src: Object3D, pack: Object3D | null, gunPack: Ob
   const base = [...player.clips.values()].map(clip => ({ clip, long: /^(Shotgun_|Heavy_Stagger)/.test(clip.name) && clip.name !== "Shotgun_Prone_GetUp", run: clip.name === "Shotgun_Run" }));
   const pose: Rig["pose"] = [];
   model.traverse(o => { if ((o as Bone).isBone) pose.push({ bone: o as Bone, q: o.quaternion.clone(), p: o.position.clone() }); });
-  return { id, root, model, player, materials, guns, smgs, shotgun, ak, handcannon, sawedoff, sniper, rifle, katana, grenade, bones, hit, reload, sgFire, sgReload, swap, hold, base, pose };
+  return { id, root, model, player, materials, guns, smgs, shotgun, ak, handcannon, sawedoff, sniper, rifle, katana, hipHilt, katanaLeft, grenade, bones, hit, reload, sgFire, sgReload, swap, hold, base, pose };
+}
+
+/** The split of each source katana geometry (the asset cache shares one across the rigs it builds). */
+const hiltSplit = new WeakMap<BufferGeometry, { scabbard: BufferGeometry; hilt: BufferGeometry }>();
+
+/** The model's rigid hip katana (#4764: the node `Katana` on the hips; its mesh runs from the scabbard's
+ *  end at -y to the pommel at +y, the guard at the belt near y = 0): the hilt and guard become their
+ *  own mesh (hidden while the blade is drawn), the rest stays the scabbard. Null without one. */
+function splitHipKatana(model: Object3D): Object3D | null {
+  const node = model.getObjectByName("Katana") as Mesh | undefined;
+  if (!node || !node.isMesh) return null;
+  const src = node.geometry as BufferGeometry;
+  let split = hiltSplit.get(src);
+  if (!split) {
+    const pos = src.getAttribute("position");
+    const idx = src.index ? Array.from(src.index.array) : Array.from({ length: pos.count }, (_, i) => i);
+    const hilt: number[] = [], rest: number[] = [];
+    for (let i = 0; i + 2 < idx.length; i += 3) {
+      const y = (pos.getY(idx[i]) + pos.getY(idx[i + 1]) + pos.getY(idx[i + 2])) / 3;
+      (y > -0.012 ? hilt : rest).push(idx[i], idx[i + 1], idx[i + 2]);
+    }
+    const scabbard = src.clone(), h = src.clone();
+    scabbard.setIndex(rest);
+    h.setIndex(hilt);
+    split = { scabbard, hilt: h };
+    hiltSplit.set(src, split);
+  }
+  node.geometry = split.scabbard;
+  const hm = new Mesh(split.hilt, node.material);
+  hm.name = "KatanaHilt";
+  hm.frustumCulled = false;
+  node.add(hm);
+  return hm;
 }
 
 /** The one gun of a single-gun weapon (the long guns, the one-handed ones). */
@@ -356,6 +427,46 @@ function holdCheckView(rig: Rig, gun: Group, cam: Camera, size: { width: number;
   holdDev.muzzleOnScreen = mx >= 0 && my >= 0 && mx < size.width && my < size.height;
 }
 
+const gq = new Quaternion(), gq2 = new Quaternion(), gm = new Matrix4(), gv = new Vector3(), gv2 = new Vector3(), gX = new Vector3(), gY = new Vector3(), gZ = new Vector3(), gPole = new Vector3(), gS = new Vector3();
+
+/** #4764's guard: the katana across his body (GUARD_POSE, his frame off the chest), the right arm solved
+ *  so the drawn katana's grip lands there with the blade along the pose, then the left arm onto the hilt
+ *  below it, blended by `w`. */
+function guardPose(rig: Rig, w: number, facing: number, offChest: (o: readonly number[], out: Vector3) => Vector3): void {
+  const B = rig.bones;
+  if (w <= 1e-3 || !B.rArm || !B.rFore || !B.rHand || !B.lArm || !B.lFore || !B.lHand) return;
+  const fwX = Math.sin(facing), fwZ = Math.cos(facing), rtX = -Math.cos(facing), rtZ = Math.sin(facing);
+  const inFrame = (o: readonly number[], out: Vector3) => out.set(rtX * o[0] + fwX * o[2], o[1], rtZ * o[0] + fwZ * o[2]);
+  // the katana's world frame: +Z along the blade, the edge (-Y) out to the front
+  const grip = offChest(GUARD_POSE.grip, gv);
+  inFrame(GUARD_POSE.blade, gZ).normalize();
+  gY.set(-fwX, 0, -fwZ).addScaledVector(gZ, -(-fwX * gZ.x - fwZ * gZ.z)).normalize();
+  gX.crossVectors(gY, gZ);
+  gm.makeBasis(gX, gY, gZ);
+  gq.setFromRotationMatrix(gm);
+  // the right hand: where it must be for the katana (its child at its grip) to sit there
+  const k = rig.katana;
+  const s = B.rHand.getWorldScale(gS).x;
+  const kq = k.userData.grip as Quaternion, kp = k.userData.gripPos as Vector3;
+  const hq = gq2.copy(gq).multiply(gq2.clone().copy(kq).invert());
+  const hp = gv2.copy(kp).multiplyScalar(s).applyQuaternion(hq);
+  hp.subVectors(grip, hp);
+  solveTwoBone(B.rArm, B.rFore, B.rHand, hp, inFrame(GUARD_POSE.poleR, gPole), w);
+  setWorldQuaternion(B.rHand, hq, w);
+  k.quaternion.copy(kq);
+  k.position.copy(kp);
+  k.updateMatrixWorld(true);
+  // the left hand on the hilt below it: a second grip GUARD_POSE.left down the hilt, turned as the left
+  // hand holds the katana (the right's grip mirrored)
+  k.getWorldQuaternion(gq);
+  const lq = gq.multiply(gq2.copy(rig.katanaLeft.q).invert());
+  const at = k.localToWorld(gv.set(0, 0, -GUARD_POSE.left));
+  const lp = gv2.copy(rig.katanaLeft.p).multiplyScalar(s).applyQuaternion(lq);
+  lp.subVectors(at, lp);
+  solveTwoBone(B.lArm, B.lFore, B.lHand, lp, inFrame(GUARD_POSE.poleL, gPole), w);
+  setWorldQuaternion(B.lHand, lq, w);
+}
+
 export function PlayerView({ s }: { s: Session }) {
   const assets = useAssetRuntime();
   const radbro = useUi(st => st.radbro);
@@ -374,7 +485,9 @@ export function PlayerView({ s }: { s: Session }) {
     /** Lying with a long gun (dive / prone, eased): the roll onto his left side. */
     lieW: 0,
     /** Seconds since the last throw (the left hand's lob), the melee swing's twist this frame. */
-    throwT: 99 });
+    throwT: 99,
+    /** #4764's guard pose weight (eased). */
+    guardW: 0 });
   const tmp = useMemo(() => ({ aim: new Vector3(), side: new Vector3(), a: new Vector3(), q: new Quaternion() }), []);
 
   useEffect(() => {
@@ -429,7 +542,7 @@ export function PlayerView({ s }: { s: Session }) {
     const pos = s.renderP;
     if (r.run !== s.run) {
       r.run = s.run; r.clip = ""; r.mode = ""; r.legYaw = p.facing; r.bodyYaw = p.facing; r.jumpHold = false; r.reloadW = 0; r.back = false;
-      r.shown = p.weapon.id; r.swapTo = ""; r.swapT = -1; r.swapW = 0; r.fireW = 0; r.ikW = 1; r.readyW = 1; r.sinceShot = 99; r.lgRecoil = 0; r.throwT = 99;
+      r.shown = p.weapon.id; r.swapTo = ""; r.swapT = -1; r.swapW = 0; r.fireW = 0; r.ikW = 1; r.readyW = 1; r.sinceShot = 99; r.lgRecoil = 0; r.throwT = 99; r.guardW = 0;
       pl.force(pick(pl, (isLongGun(p.weapon.id) ? SHOTGUN_CLIPS : CLIPS).idle), 0);
       rig.hit?.stop();
       rig.reload?.stop();
@@ -608,6 +721,9 @@ export function PlayerView({ s }: { s: Session }) {
     const cutK = mu < 0 ? 0 : smooth(Math.min(1, mu / sw.cut));
     const meleeW = mu < 0 ? 0 : Math.sin(Math.PI * Math.min(1, mu));
     const meleeTwist = (sw.twist[0] + (sw.twist[1] - sw.twist[0]) * cutK) * meleeW;
+    const guardWant = g.katana && p.guard && alive && normal ? 1 : 0;
+    r.guardW += (guardWant - r.guardW) * Math.min(1, dt / (guardWant ? GUARD_POSE.in : GUARD_POSE.out));
+    if (r.guardW < 1e-3) r.guardW = 0;
     r.throwT += dt * s.playerScale;
     const tu = r.throwT / THROW.time;
     const throwW = tu < 1 && alive ? Math.sin(Math.PI * tu) : 0;
@@ -621,7 +737,7 @@ export function PlayerView({ s }: { s: Session }) {
       // spine twist back toward the aim, and a little pitch with it (more with a long gun: the chest
       // carries the shouldered gun onto the aim, the hold only corrects the rest); the low ready turns
       // the chest a little to his right (the gun goes out from his body, where the camera sees it)
-      const twist = r.twist - (long ? READY.twist * ready + HOLD.aimTwist * (1 - ready) * (1 - reloadK) : 0) + meleeTwist;
+      const twist = (r.twist - (long ? READY.twist * ready + HOLD.aimTwist * (1 - ready) * (1 - reloadK) : 0)) * (1 - r.guardW) + meleeTwist - GUARD_POSE.twist * r.guardW;
       if (Math.abs(twist) > 1e-3) {
         rotateBoneWorld(B.spine02, UP, twist * 0.3);
         rotateBoneWorld(B.spine01, UP, twist * 0.3);
@@ -789,13 +905,15 @@ export function PlayerView({ s }: { s: Session }) {
     }
     // the melee: the right arm cuts along an arc (#4764 draws his katana, the guns wait); a long gun's
     // strike is the chest's turn with both hands on it
-    rig.katana.visible = g.katana && meleeW > 0.02;
+    rig.katana.visible = g.katana && (meleeW > 0.02 || r.guardW > 0.02);
     if (rig.katana.visible) for (const gun of allGuns(rig)) gun.visible = false;
+    if (rig.hipHilt) rig.hipHilt.visible = !rig.katana.visible;
     if (meleeW > 0 && (!long || g.katana)) {
       const a = sw.from, b = sw.to;
       aimLimb(B.rArm, B.rHand, offChest([a[0] + (b[0] - a[0]) * cutK, a[1] + (b[1] - a[1]) * cutK, a[2] + (b[2] - a[2]) * cutK], vB), meleeW);
       if (rig.katana.visible) aimHand(undefined, rig.katana, null, 0);
     }
+    if (r.guardW > 0) guardPose(rig, r.guardW * (1 - meleeW), p.facing, offChest);
     rig.grenade.visible = throwW > 0 && tu < 0.3;
     held.forEach((gun, h) => muzzleWorld(gun, playerMuzzles[h]));
     B.head?.getWorldPosition(playerHead);

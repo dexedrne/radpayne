@@ -113,6 +113,7 @@ export const FILES = [
   ...["handcannon_mag_out", "handcannon_mag_in", "handcannon_slide", "sawedoff_open", "sawedoff_shells_out", "sawedoff_shell_in", "sawedoff_close",
     "sniper_bolt", "scope_in", "scope_out", "grenade_pin", "grenade_throw", "grenade_bounce", "grenade_bounce_2", "grenade_explode", "grenade_explode_2",
     "katana_draw", "katana_slash", "katana_slash_2", "katana_hit", "melee_swing", "melee_hit", "melee_hit_2", "plywood_break", "secret_door",
+    "katana_guard", "katana_deflect", "katana_deflect_2", "katana_parry", "katana_return", "katana_break", "katana_sheathe",
     "meow_happy", "meow_happy_2", "meow_happy_3", "meow_sulky", "meow_sulky_2", "meow_sulky_3"].map(k => `sfx/${k}`),
 ] as const;
 
@@ -1036,6 +1037,25 @@ export const sfxArsenal = {
     }
     if (kind === "katana") play(e, variant(pick("katana_hit", ["sfx/impact_body", "sfx/impact_body_2"]).keys), { gain: 0.8 });
     else play(e, variant(pick("melee_hit", ["sfx/impact_body_heavy"]).keys), { gain: 0.8 });
+  },
+  /** #4764's katana guard: up (the blade comes across), sheathed (`at` real seconds from now: after a
+   *  cut or a guard let down), knocked aside (broken). */
+  guard(what: "up" | "sheathe" | "break", at = 0): void {
+    const e = sfxOn();
+    if (!e) return;
+    if (what === "up") play(e, variant(pick("katana_guard", ["sfx/katana_draw"]).keys), { gain: 0.45 });
+    else if (what === "sheathe") play(e, variant(pick("katana_sheathe", ["sfx/reload_slide"]).keys), { gain: 0.35, at: e.ac.currentTime + at });
+    else play(e, variant(pick("katana_break", ["sfx/impact_metal", "sfx/impact_metal_2"]).keys), { gain: 0.9 });
+  },
+  /** A round off his blade: the clang (a perfect parry rings; a shotgun blast is a heavy knock), and in
+   *  bullet time the round going back. */
+  deflect(o: { perfect: boolean; returned: boolean; blast: boolean }): void {
+    const e = sfxOn();
+    if (!e) return;
+    play(e, variant(pick("katana_deflect", ["sfx/impact_metal", "sfx/impact_metal_2"]).keys), { gain: 0.75 });
+    if (o.perfect) play(e, variant(pick("katana_parry", ["sfx/impact_metal"]).keys), { gain: 0.7 });
+    if (o.blast) play(e, variant(pick("katana_break", ["sfx/impact_metal_2"]).keys), { gain: 0.55 });
+    if (o.returned) play(e, variant(pick("katana_return", ["sfx/dive_whoosh"]).keys), { gain: 0.85 });
   },
   /** The scope glass in / out. */
   zoom(on: boolean): void {

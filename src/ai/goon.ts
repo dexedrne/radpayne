@@ -1,6 +1,7 @@
 // Goon state machine (spec section 5):
 //   idle -> alert (reaction delay) -> move to cover -> cover <-> peek & shoot -> reposition (move)
-//   no usable cover -> engage (stand, strafe, shoot). Hits flinch (no firing for a moment).
+//   no usable cover -> engage (stand, strafe, shoot). Hits flinch (no firing for a moment). #4764
+//   raising his katana's guard in front of her makes her hold her fire for a beat (GUARD.hesitate).
 // Runs on world time, so bullet time stretches every reaction and burst by 1 / 0.3.
 // Shared helpers (facing, paths, cover, bursts with the shooter slots) are exported for the rusher and
 // the heavy (ai/rusher.ts, ai/heavy.ts); ai/enemies.ts picks the brain per kind.
@@ -271,6 +272,8 @@ export function tryFire(g: Game, e: Enemy, dt: number, moving: boolean): void {
   }
   e.fireT -= dt;
   if (e.fireT > 0) return;
+  // #4764 raised his katana's guard in front of her: a beat of doubt before the next round
+  if (e.kind === "goon" && g.guardHolds(e)) return;
   if (!g.canShoot(e)) { e.fireT = 0.15; return; }
   if (!slotFree(g, e)) { e.fireT = 0.2 + 0.3 * g.rng.next(); return; }
   e.lastShotT = g.time;

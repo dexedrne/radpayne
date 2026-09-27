@@ -4,10 +4,14 @@
 // It never shoots the crowd (they are not hostiles), picks up the weapons it walks past (and goes for
 // one lying within 20 m when nothing is in sight), and takes the shotgun up close, the SMGs at range.
 // At a locked breach door (room 3) it dives through when it is within 4 m and heading for it.
+// With `blade` (#4764, ?bot&blade) it plays the katana's guard: bullet time as soon as anyone shoots, the
+// guard held (at least past a tap) while a round flies at it from the front, the crosshair on the one it
+// wants the round to go back to.
 // Used by the Node smoke test and the browser's ?bot mode (same input frames -> same result).
 import { HB_HEAD, HB_TORSO, aimPoint, makeCapsules } from "../combat/hitboxes.ts";
 import { PICKUPS, SLOT_ORDER, WEAPONS, ammoLeft, slotOf, type WeaponId } from "../combat/weapons.ts";
 import { insideTrigger, type Game } from "./game.ts";
+import { GUARD } from "./tuning.ts";
 import { bossAim, grenadeEscape } from "./boss.ts";
 import { pivotOf } from "./player.ts";
 import { emptyInput, type InputFrame } from "./types.ts";
@@ -46,6 +50,10 @@ export class Bot {
   private nadeCd = 0;
   /** Test / dev: keep this weapon in hand whenever it has rounds (the view checks of one gun). */
   only: WeaponId | null = null;
+  /** #4764: guard against the rounds in bullet time and send them back (the katana smoke). */
+  blade = false;
+  /** Real seconds the guard stays held (past a tap: a quick let-go would be the cut). */
+  private guardFor = 0;
   private fired = false;
   /** Seconds without a target (bullet time goes off only after a moment: no on / off every step). */
   private lost = 0;
@@ -69,7 +77,7 @@ export class Bot {
     const f = this.frame;
     const p = g.player;
     f.fire = f.bt = f.dodge = f.jump = f.reload = f.copium = f.skip = false;
-    f.melee = f.throw = f.interact = f.zoom = false;
+    f.melee = f.throw = f.interact = f.zoom = f.guard = false;
     f.slot = 0;
     f.moveX = f.moveY = 0;
     f.yaw = p.yaw;
@@ -217,6 +225,7 @@ export class Bot {
         if (this.sidestep > 0) { this.sidestep -= 1 / 120; f.moveX = this.strafe; }
       }
     }
+    if (this.blade && g.katana) this.guard(g, f, shooting);
     // out of a heart grenade's ring
     const esc = g.boss ? grenadeEscape(g) : null;
     if (esc && p.mode === "normal") {
@@ -227,6 +236,29 @@ export class Bot {
     if (p.health < 50 && p.copium > 0 && p.healLeft <= 0) f.copium = true;
     if (p.mode === "prone") f.moveY = 1;
     return f;
+  }
+
+  /** The katana's guard: bullet time once anyone shoots at it; in bullet time the guard stays up (no
+   *  shooting: the rounds it sends back do the work) while the meter lasts, held at least 0.3 s (never a
+   *  tap); out of bullet time, up for a round it sees coming at it from the front within 9 m. */
+  private guard(g: Game, f: InputFrame, shooting: number): void {
+    const p = g.player;
+    this.guardFor = Math.max(0, this.guardFor - 1 / 120);
+    const fight = shooting >= 1 && this.lost === 0;
+    if (fight && !g.bulletTime && g.meter > 2 && p.mode === "normal") f.bt = true;
+    const low = p.guard ? p.guardMeter < 12 : p.guardMeter < 40;
+    if (p.mode !== "normal" || low || p.guardBroken > 0) { this.guardFor = 0; return; }
+    if (g.bulletTime && fight) this.guardFor = Math.max(this.guardFor, 0.3);
+    const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);
+    for (const b of g.projectiles) {
+      if (b.team !== 1 || !b.alive) continue;
+      const tx = p.x - b.x, ty = p.y + 1.1 - b.y, tz = p.z - b.z, d = Math.hypot(tx, ty, tz) || 1;
+      if (d > 9 || (tx * b.dx + ty * b.dy + tz * b.dz) / d < 0.97) continue;
+      if ((-b.dx * fx - b.dz * fz) / (Math.hypot(b.dx, b.dz) || 1) < GUARD.arcCos + 0.1) continue;
+      this.guardFor = Math.max(this.guardFor, 0.3);
+      break;
+    }
+    if (this.guardFor > 0) { f.guard = true; f.fire = false; f.melee = false; }
   }
 
   /** The sawed-off under 4 m, the shotgun under 9 m, the hand cannon on a heavy, the sniper past 22 m,

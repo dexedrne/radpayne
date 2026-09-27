@@ -4,7 +4,7 @@
 import type { Player } from "./actors.ts";
 import type { InputFrame } from "./types.ts";
 import type { World } from "./world.ts";
-import { DODGE, DODGE_GRAVITY, PLAYER, ZOOM } from "./tuning.ts";
+import { DODGE, DODGE_GRAVITY, GUARD, PLAYER, ZOOM } from "./tuning.ts";
 import { isLongGun, isOneHand } from "../combat/weapons.ts";
 import { PITCH_MAX, PITCH_MIN, SHOULDER, facingOfAim } from "./aim.ts";
 
@@ -66,8 +66,10 @@ export function stepPlayer(world: World, p: Player, inp: InputFrame, dt: number,
       }
       // backpedal slower (move against the aim)
       const fwdDot = moving ? (mx * -sy + mz * -cy) / Math.max(ml, 1e-6) : 0;
-      const speed = PLAYER.runSpeed * (fwdDot < -0.3 ? PLAYER.backSpeed : 1) * (p.zoom ? ZOOM.move : 1);
-      const tvx = mx * speed, tvz = mz * speed;
+      const speed = PLAYER.runSpeed * (fwdDot < -0.3 ? PLAYER.backSpeed : 1) * (p.zoom ? ZOOM.move : 1) * (p.guard ? GUARD.move : 1);
+      let tvx = mx * speed, tvz = mz * speed;
+      // a shotgun blast on his guard pushes him back (the move keys wait)
+      if (p.shoveT > 0) { p.shoveT = Math.max(0, p.shoveT - pdt); tvx = p.shoveX; tvz = p.shoveZ; }
       const a = (p.grounded ? PLAYER.accel : PLAYER.airAccel) * pdt;
       let dvx = tvx - p.vx, dvz = tvz - p.vz;
       const dl = Math.sqrt(dvx * dvx + dvz * dvz);
