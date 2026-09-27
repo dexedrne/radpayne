@@ -233,9 +233,9 @@ export function stepGoon(g: Game, e: Enemy, dt: number): void {
 
 /** A free shooter slot (difficulty: at most N of the gang shooting at once); mid-burst shooters keep theirs. */
 export function slotFree(g: Game, e: Enemy): boolean {
-  if (g.time - e.lastShotT <= AI.shooterHold) return true;
+  if (g.time - e.lastShotT <= AI.shooterHold || e.kind === "madame") return true; // the boss never waits her turn
   let busy = 0;
-  for (const o of g.enemies) if (o !== e && o.state !== "dead" && g.time - o.lastShotT <= AI.shooterHold) busy++;
+  for (const o of g.enemies) if (o !== e && o.kind !== "madame" && o.state !== "dead" && g.time - o.lastShotT <= AI.shooterHold) busy++;
   return busy < g.diff.shooters;
 }
 

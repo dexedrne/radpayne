@@ -1,7 +1,7 @@
 // Player and enemy state (plain data; the systems live in sim/player.ts, ai/goon.ts and sim/game.ts).
 import { makeHitActor, type HitActor } from "../combat/trace.ts";
 import { makeWeapon, type BaseWeapon, type WeaponId, type WeaponState } from "../combat/weapons.ts";
-import { HEAVY_SCALE, PLAYER } from "./tuning.ts";
+import { HEAVY_SCALE, MADAME, PLAYER } from "./tuning.ts";
 
 export type PlayerMode = "normal" | "dive" | "prone" | "getup" | "roll" | "dead";
 
@@ -57,13 +57,15 @@ export function makePlayer(x: number, y: number, z: number, facing: number, base
 }
 
 // rush: a rusher's charge straight at the player; advance: a heavy's slow walk toward him
-export type EnemyState = "inactive" | "idle" | "alert" | "move" | "cover" | "peek" | "engage" | "rush" | "advance" | "dead";
+// flee: an add running for her door once Madame Pockit is down (round 3)
+export type EnemyState = "inactive" | "idle" | "alert" | "move" | "cover" | "peek" | "engage" | "rush" | "advance" | "dead" | "flee";
 
 /** goon: pistol, cover and peek (room 1). rusher: SMG, charges and strafes, cover once when hurt.
  *  heavy: a rival Radbro with a pump shotgun, slow advance, a laser-sight tell, staggers, no cover. */
-export type EnemyKind = "goon" | "rusher" | "heavy";
+/** madame: the penthouse boss (round 3, sim/boss.ts + ai/madame.ts): a Milady with dual SMGs. */
+export type EnemyKind = "goon" | "rusher" | "heavy" | "madame";
 export type EnemyWeapon = "pistol" | "smg" | "shotgun";
-export const KIND_WEAPON: Record<EnemyKind, EnemyWeapon> = { goon: "pistol", rusher: "smg", heavy: "shotgun" };
+export const KIND_WEAPON: Record<EnemyKind, EnemyWeapon> = { goon: "pistol", rusher: "smg", heavy: "shotgun", madame: "smg" };
 
 export type Enemy = {
   idx: number;
@@ -142,15 +144,22 @@ export type Enemy = {
   deaf: boolean;
   /** Heavy with marker data {hold: true}: holds his spot (the manager behind his desk) and fires from it. */
   hold: boolean;
+  /** Health at the start (the boss bar reads hp / maxHp). */
+  maxHp: number;
+  /** Gone from the fight without dying (round 3: an add who ran once the boss was down, or never came
+   *  in): not counted alive. */
+  fled: boolean;
 };
 
 export function makeEnemy(idx: number, id: string, x: number, y: number, z: number, facing: number, hp: number, milady: number, group: string, kind: EnemyKind = "goon"): Enemy {
   const hit = makeHitActor(kind === "heavy" ? "radbro" : "milady", 1);
   if (kind === "heavy") hit.pose.scale = HEAVY_SCALE;
+  if (kind === "madame") hit.pose.scale = MADAME.scale;
   return {
     idx, id, kind, weapon: KIND_WEAPON[kind], milady, model: "", group, x, y, z, vx: 0, vz: 0, facing, hp, state: group ? "inactive" : "idle", stateT: 0, react: 0, timer: 0,
     cover: -1, lastCover: -1, path: [], pathI: 0, peeks: 0, peeksMax: 2, burstLeft: 0, fireT: 0, flinch: 0, sees: false, lastSeenX: x, lastSeenZ: z,
     lean: 0, leanTarget: 0, crouch: false, deadT: 0, deathHold: false, killDX: 0, killDZ: 1, headshot: false, strafe: 1, hit, patrol: [], shots: 0,
     lastShotT: -1e9, perch: false, tell: 0, stagger: 0, shells: 6, reloadT: 0, coverUsed: false, engageAt: 7, repath: 0, drop: "", deaf: false, hold: false,
+    maxHp: hp, fled: false,
   };
 }

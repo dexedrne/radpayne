@@ -81,13 +81,16 @@ export type EnemyTuning = {
   /** Muzzle height when standing (m above the feet). */
   muzzleUp: number;
 };
-export const ENEMY: Record<"goon" | "rusher" | "heavy", EnemyTuning> = {
+export const ENEMY: Record<"goon" | "rusher" | "heavy" | "madame", EnemyTuning> = {
   // idleSight: how far an idle goon (chatting in the rain, before the alert trigger) notices the player
   goon: { hp: 60, radius: 0.35, walk: 2.2, run: 4.2, fireInterval: 0.42, burst: 3, damage: 9, sight: 34, idleSight: 18, fov: 0.35, pellets: 1, spread: 0, muzzleUp: 1.35 },
   // SMG in the right hand: charges to 5-9 m, then strafes and fires bursts of 6
   rusher: { hp: 50, radius: 0.35, walk: 2.6, run: 4.6, fireInterval: 0.1, burst: 6, damage: 4, sight: 30, idleSight: 16, fov: 0.35, pellets: 1, spread: 0, muzzleUp: 1.35 },
   // pump shotgun: 8 pellets x 3.5, full damage within 6 m, 30 % at 16 m
   heavy: { hp: 140, radius: 0.45, walk: 1.5, run: 2.2, fireInterval: 1.1, burst: 1, damage: 3.5, sight: 26, idleSight: 14, fov: 0.35, pellets: 8, spread: (3 * Math.PI) / 180, muzzleUp: 1.4 * HEAVY_SCALE },
+  // round 3: Madame Pockit, the penthouse boss (MADAME below): dual SMGs, bursts of 10; hp is per
+  // difficulty (MADAME.hp); run is her brisk walk between cover in phases 1-2 (phase 3 runs like a rusher)
+  madame: { hp: 1100, radius: 0.42, walk: 2.4, run: 3.4, fireInterval: 0.08, burst: 10, damage: 4, sight: 40, idleSight: 30, fov: 0.2, pellets: 1, spread: 0, muzzleUp: 1.35 * 1.25 },
 };
 
 /** Rusher behaviour (world seconds / metres). */
@@ -134,6 +137,75 @@ export const BREACH = {
   react: 0.5,
   /** Real seconds in front of the door without a dive before the heavy inside kicks it open. */
   kickAfter: 25,
+} as const;
+
+/** Room 4, the elevator (round-3 plan section 2): a static car, the shaft scrolls past in the view; each
+ *  stop opens its landing. World seconds unless "real". */
+export const RIDE = {
+  /** The door beat when a landing opens on the gang: world speed for `doorSlowReal` real s, no meter. */
+  doorSlow: 0.3,
+  doorSlowReal: 1.0,
+  /** At a stop: the bell before the doors move, then they open / close in this long (a pried door
+   *  opens over its stop's `pry` instead). */
+  arrive: 1.0,
+  open: 1.2,
+  close: 1.2,
+  /** Share of their travel at which opening doors leave the world (and the door beat starts). */
+  gap: 0.45,
+  /** The roof heavy: the thud, the hatch's tell (it flickers, dust sifts), then he drops through and
+   *  lands in a crouch (no firing). */
+  hatchTell: 2.0,
+  land: 0.8,
+  hatchY: 2.6,
+  gravity: 22,
+  /** He is outside a finished stop this long (real s): the HUD tells him to get back in the car. */
+  backHint: 6,
+  /** The cables: the snap, then the fall (the view's scroll runs backwards, fast), then the brakes. */
+  dropAfter: 0.4,
+  drop: 2.2,
+  /** How far inside the car (m from its walls) he must stand for the doors to close. */
+  inside: 0.45,
+} as const;
+
+/** Room 5, Madame Pockit (round-3 plan section 3). World seconds unless "real"; damage before the
+ *  difficulty's damage factor. */
+export const MADAME = {
+  hp: { easy: 850, normal: 1100, hard: 1400 } as Record<"easy" | "normal" | "hard", number>,
+  /** Pockit #3099 at this scale (model + hit skeleton). */
+  scale: 1.25,
+  pockit: 3099,
+  /** Phase 2 / 3 / the last stand at these shares of her health. */
+  phase2: 0.66,
+  phase3: 0.33,
+  lastStand: 0.1,
+  /** Hits on the coat (anything but the head) until it comes off. */
+  coat: 0.8,
+  /** Phase 3 opens with the coat thrown off: she cannot be hurt for this long. */
+  coatThrow: 1.2,
+  /** Her first alert: she says her piece before she draws (and cannot be hurt while she does). */
+  introHold: 2.4,
+  /** Between her bursts of 10. */
+  burstPause: [1.1, 1.7] as const,
+  /** Phase 3 (and cornered): she moves like a rusher, a little faster. */
+  run3: 1.1,
+  engage: 7,
+  /** The SMG sweep: two pink laser lines cross the floor (the tell), then a burst along the same arc. */
+  sweep: { every: [7, 10] as const, first: 4, tell: 0.6, tell3: 0.45, dur: 1.4, arc: (70 * Math.PI) / 180, interval: 0.07, damage: 4, spread: (1.2 * Math.PI) / 180, range: [4, 24] as const },
+  /** Heart grenades (phase 2 on): wind-up with the grenade held high (shoot it there: it goes off on her),
+   *  a lob, a pink ring where it lands; shot in the air it pops harmlessly. */
+  grenade: { every2: 5.5, every3: 4.0, first: 2.5, wind: 0.7, flight: 1.0, fuse: 1.6, gravity: 16, radius: 3.5, center: 40, edge: 10, hand: 60, stagger: 1.5, hitRadius: 0.4, spread3: 2.2, range: [5, 22] as const },
+  /** The chandelier over the round rug: two hits on its chain drop it; on her: damage + knockdown. Once. */
+  chandelier: { hits: 2, damage: 180, knock: 2.0, fall: 0.45, chainRadius: 0.32 },
+  /** The add doors: the red lamp over it lights this long before it opens; the first batch, then pairs
+   *  every `every` s while fewer than `maxLive` of that door's adds stand. */
+  doors: { lamp: 2.0, first: 3, pair: 2, every: 6, maxLive: 3 },
+  /** The last stand: she runs for the bag (then the terrace door); the world slows by itself. */
+  lastStandSlow: 0.25,
+  lastStandReal: 2.0,
+  lastStandRun: 5.0,
+  /** Adds run for their door when she goes down, this fast, gone within this long. */
+  flee: 4.4,
+  fleeMax: 6,
 } as const;
 
 /** A checkpoint restores at least this much health (the fight after it starts fair). */
