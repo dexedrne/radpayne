@@ -2,8 +2,8 @@
 // play only) -> PLAY -> the ENDING cutscene (e1: the first time the room is cleared, after the kill cam
 // and the walk to the club door) -> RESULTS (room clear or rugged) -> retry / title. One canvas, mounted once;
 // retries swap the Game inside the session. Pointer lock lost = pause. The fight starts from the
-// "click to fight" prompt: a click, Enter or Space takes the pointer lock (mouse play); gamepad A or
-// Start plays without it (the right stick aims), and a later click on the game switches to the mouse.
+// "click to fight" prompt: a click, Enter or Space takes the pointer lock (mouse play); the pad's Cross or
+// Options plays without it (the right stick aims), and a later click on the game switches to the mouse.
 // Round 2: a cleared room with a `next` room goes on: its cutscene (room.cutsceneAfter; room 1's is the
 // e1 ending panels), then the next room's session replaces this one in the same canvas (the room is a
 // checkpoint: dying there retries that room, with the guns, rounds and frags he walked in with). The
@@ -40,6 +40,8 @@ import { UiEffects } from "../ui/hud/UiEffects.tsx";
 import { FightPrompt, Loading, Pause, ResultsScreen, Title, layer } from "../ui/screens.tsx";
 import { Cutscene, loadCutscene, prefetchCutscene, type CutsceneData } from "../ui/Cutscene.tsx";
 import { attachDom } from "../input/input.ts";
+import { activePad, useDevice } from "../input/device.ts";
+import { playRumble, rumbleOf } from "../input/rumble.ts";
 import { setMuted, unlockAudio } from "../audio/engine.ts";
 import { groupReady, loadEndSamples, loadLaterSamples, loadSamples, setFootsteps, setHeartbeat, setMusic, setMusicGate, stopNarration, stopRoomAudio } from "../audio/sfx.ts";
 import { Bot } from "../sim/bot.ts";
@@ -329,6 +331,27 @@ export default function PlayPage() {
     void frames(4).then(() => warmLook()).finally(() => { renderGate.warming--; });
   }), []);
   useEffect(() => { if (session) { session.input.sensitivity = sensitivity; session.input.invertY = invertY; } }, [session, sensitivity, invertY]);
+  // the pad's settings (pause menu, Controls: GAMEPAD)
+  const padSens = useUi(s => s.padSens);
+  const padInvertY = useUi(s => s.padInvertY);
+  const deadZone = useUi(s => s.deadZone);
+  const aimAssist = useUi(s => s.aimAssist);
+  useEffect(() => {
+    if (!session) return;
+    session.input.padSens = padSens;
+    session.input.padInvertY = padInvertY;
+    session.input.deadZone = deadZone;
+    session.input.assistLevel = aimAssist;
+  }, [session, padSens, padInvertY, deadZone, aimAssist]);
+  // the pad's vibration: his shots, hits on him, the landings (light), with Vibration on and the pad in use
+  useEffect(() => {
+    if (!session) return;
+    return session.on(e => {
+      if (session.bot || !useUi.getState().vibration || useDevice.getState().device !== "pad") return;
+      const r = rumbleOf(e);
+      if (r) playRumble(activePad(), r);
+    });
+  }, [session]);
 
   // input + pointer lock
   useEffect(() => {
@@ -352,7 +375,8 @@ export default function PlayPage() {
     addEventListener("keydown", kd);
     if (session) {
       // on the prompt, Start and A start the fight on the pad; Start pauses once it is on
-      session.onPadStart = () => { if (awaitingFight()) fightOnPad(); else if (useUi.getState().screen === "play") pause(); };
+      // (not the Options press that just closed the pause menu: the menu may see it first this frame)
+      session.onPadStart = () => { if (awaitingFight()) fightOnPad(); else if (useUi.getState().screen === "play" && performance.now() - resumedAt.current > 250) pause(); };
       session.onPadA = () => { if (awaitingFight()) fightOnPad(); };
     }
     return () => {
@@ -361,6 +385,8 @@ export default function PlayPage() {
     };
   });
 
+  /** When the pause menu last closed (its Options press must not pause again). */
+  const resumedAt = useRef(0);
   const lock = () => { if (!AUTO) void (canvasEl()?.requestPointerLock() as unknown as Promise<void> | undefined)?.catch?.(() => undefined); };
 
   /** Gamepad A / Start on the prompt: play without the pointer lock. Runs inside the session's
@@ -655,7 +681,7 @@ export default function PlayPage() {
       {screen === "play" && <Hud />}
       {screen === "play" && <BossBar />}
       {screen === "play" && !locked && !padFight && !AUTO && !STILL && <FightPrompt onLock={() => { session?.input.flush(); lock(); }} />}
-      {screen === "paused" && <Pause onResume={() => { useUi.setState({ screen: "play" }); if (session) { session.input.flush(); session.paused = !BOT && !document.pointerLockElement && !padFightRef.current; } lock(); }} onRestart={retry} onQuit={toTitle} />}
+      {screen === "paused" && <Pause onResume={() => { resumedAt.current = performance.now(); useUi.setState({ screen: "play" }); if (session) { session.input.flush(); session.paused = !BOT && !document.pointerLockElement && !padFightRef.current; } lock(); }} onRestart={retry} onQuit={toTitle} />}
       {screen === "results" && <ResultsScreen onRetry={retry} onTitle={toTitle} />}
       {!session && <div style={{ ...layer, background: "#05060c" }}>{useUi.getState().load.error ?? "loading…"}</div>}
       <UiEffects />

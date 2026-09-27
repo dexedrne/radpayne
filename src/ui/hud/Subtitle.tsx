@@ -1,11 +1,13 @@
 // Bottom centre: the narrator's subtitle (a cream caption) and the key-hint row under it.
 import { Caption } from "./Caption.tsx";
-import { Keycap } from "./Keycap.tsx";
+import { Keycap, usePadPrompts } from "./Keycap.tsx";
+import { padKeys } from "../../input/pad.ts";
 import { parseHint, subtitleWidth } from "./logic.ts";
 import { hudScaleNow } from "./scale.ts";
 
 export function HintRow({ hint }: { hint: string }) {
-  const parts = parseHint(hint);
+  const pad = usePadPrompts();
+  const parts = parseHint(hint).map(p => (pad ? { ...p, keys: padKeys(p.keys) } : p));
   if (!parts.length) return null;
   return (
     <div className="rp-hint">

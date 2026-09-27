@@ -50,15 +50,41 @@ Pick a Radbro and a difficulty, then press **PLAY**. Click the game to lock the 
 | E | use: secret doors, the cat, the arcade cabinet |
 | Esc | pause |
 
-A gamepad also works: left stick to move, right stick to aim, RT to fire, LT for bullet time (with the
-sniper in hand hold LT to scope; d-pad up is bullet time then), B to dive, A to jump, X to reload, Y for
-copium, RB to throw a grenade, R3 for melee, d-pad down to use, d-pad left / right or LB for the weapon.
+**Gamepad** (PlayStation or Xbox, standard mapping; plug it in any time). The layout is the console
+shooters' (PlayStation names, Xbox in brackets):
+
+| Button | Action |
+|---|---|
+| Left stick / right stick | move / aim |
+| R2 (RT) | fire (analog: pull past a third) |
+| L2 (LT) | aim: a steadier stick and the aim assist's pull; with the sniper in hand, hold to scope |
+| R3 or L3 (click a stick) | bullet time |
+| R1 (RB) | shootdodge |
+| Cross (A) | jump |
+| Square (X) | reload, or use what is in reach (a secret door, the cat, the cabinet) |
+| Triangle (Y) | throw a grenade |
+| Circle (B) | melee (#4764: the katana) |
+| L1 (LB) / d-pad left-right | weapon (next / previous, twins included) |
+| D-pad up / down | copium / use |
+| Options (Menu) | pause |
+
+Every screen works on the pad alone: the title (d-pad or left stick to choose, Cross to play), the fight
+prompt (Cross), the cutscenes (Cross next, Circle or Options skip), the pause menu and its settings
+(Circle back, L1 / R1 pages), the results, TO BE CONTINUED; any button skips a kill cam. Every prompt,
+hint and controls list follows the device used last: a pad button shows that pad's glyphs (Cross /
+Circle / Square / Triangle for a Sony pad, A / B / X / Y otherwise), a key or a click brings the keys
+back. Pause menu, Controls, GAMEPAD: **Stick sensitivity**, **Invert Y (stick)** (the mouse keeps its
+own), **Dead zone** (radial, 5-30 %, default 12 %), **Vibration** (light: your shots, hits on you,
+landings; where the browser has dual-rumble) and **Aim assist** Off / Low / Normal (the default): near
+a Milady you can see, the stick slows down, and holding L2 (or firing) pulls the aim lightly onto her.
+Never through a wall, never onto the dead, and the mouse never gets it. The pad feeds the same input
+frames as the keys, so a recorded log replays the same whatever played it.
 
 Walk over a gun to take it (the first one of a kind, then its ammo). The gang's pistols feed your SMGs
 with 9 mm, banked until you have them. The hand cannon and the sniper put a round through a body into
 the next one.
 
-The cutscenes: click, Space or Enter turns the page, Esc skips the rest.
+The cutscenes: click, Space or Enter turns the page, Esc skips the rest (the pad: Cross, Circle).
 
 After you land from a dive you lie prone and can keep shooting. Press a move key to get up (0.6 s). If
 you hold a move key as you land, you roll straight into a run. Kill the whole room, watch the last
@@ -89,7 +115,7 @@ open himself. Clearing the security office is a checkpoint: dying after it retri
 ## Develop
 
 ```bash
-npm test           # node --test: time scale, weapons, hitboxes, projectiles vs hitscan, AI, the breach, checkpoints, replay, smoke bots, kill-cam framing and picks, the talk budget
+npm test           # node --test: time scale, weapons, hitboxes, projectiles vs hitscan, AI, the breach, checkpoints, replay, smoke bots, kill-cam framing and picks, the talk budget, the pad (layout, sticks, triggers, glyphs, aim assist, vibration, a pad-played replay)
 npm run typecheck
 npm run build      # production build in dist/
 npm run greybox    # regenerate public/levels/greybox.json
@@ -298,6 +324,12 @@ input log. Bullet time is a time scale on it.
   counted per fight minute by speaker (`VOICE RATE`).
   `RADPAYNE_GPU=1` uses the machine's GPU (WebGL2); without it Chromium falls back to SwiftShader
   (very slow).
+- **Pad check:** with the dev server up, `RADPAYNE_CHROME_PROFILE=<throwaway dir> RADPAYNE_GPU=1 node
+  tools/padsmoke.ts "http://localhost:4880/?seed=1&webgl2" .local/shots/pad` plays with a fake
+  DualSense only (`navigator.getGamepads` replaced in the page; no key, no click): the title, cutscene
+  1, the fight prompt, room 1 (the bot's intent turned into sticks and buttons: the aim is the right
+  stick with the aim assist, the fire is R2), the pause menu and its GAMEPAD settings, the quit to the
+  title; then the same title with an Xbox pad. It shoots each screen and prints the frames the pad fed.
 - **Hold check:** with the dev server up, `RADPAYNE_CHROME_PROFILE=<throwaway dir> node tools/holdcheck.ts
   http://localhost:4880 [rigs] [guns] [states]` walks every Radbro through stand, aim up / down, turn,
   walk, back-pedal, strafe, run, fire, reload, jump, dive, prone, get-up and roll with each long gun. It

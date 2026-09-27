@@ -1,7 +1,9 @@
-// Menu input: keyboard (arrows, Enter / Space, Esc, Tab / Shift+Tab) and gamepad (D-pad, A, B,
-// LB / RB, Start) turned into menu actions. Keys are taken in the capture phase so the page's own
-// Esc handler (pause while playing) never sees a key a menu used.
-import { useEffect, useRef, useState } from "react";
+// Menu input: keyboard (arrows, Enter / Space, Esc, Tab / Shift+Tab) and gamepad (d-pad or left stick,
+// Cross / A confirm, Circle / B back, L1 / R1 pages, Options / Start back out of a menu) turned into menu
+// actions. Keys are taken in the capture phase so the page's own Esc handler (pause while playing)
+// never sees a key a menu used. The pad read is the last one used (input/device.ts).
+import { useEffect, useRef } from "react";
+import { activePad, useDevice } from "../input/device.ts";
 
 export type MenuAction = "up" | "down" | "left" | "right" | "enter" | "back" | "tabNext" | "tabPrev";
 
@@ -9,7 +11,7 @@ const KEYS: Record<string, MenuAction> = {
   ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
   Enter: "enter", NumpadEnter: "enter", Space: "enter", Escape: "back",
 };
-// standard mapping: 0 A, 1 B, 4 LB, 5 RB, 9 Start, 12-15 D-pad
+// standard mapping: 0 Cross / A, 1 Circle / B, 4 L1 / LB, 5 R1 / RB, 9 Options / Start, 12-15 d-pad
 const PAD: Array<[number, MenuAction]> = [[12, "up"], [13, "down"], [14, "left"], [15, "right"], [0, "enter"], [1, "back"], [9, "back"], [4, "tabPrev"], [5, "tabNext"]];
 
 /** Calls `on(action)`; return false from it to let the key through. */
@@ -50,7 +52,7 @@ export function usePadInput(on: (a: MenuAction) => void, opts: { enabled?: boole
     let stickDir = "", stickNext = 0;
     const poll = () => {
       raf = requestAnimationFrame(poll);
-      const p = firstPad();
+      const p = activePad();
       if (!p) return;
       for (const [b, a] of buttons) {
         const down = !!p.buttons[b]?.pressed;
@@ -64,7 +66,7 @@ export function usePadInput(on: (a: MenuAction) => void, opts: { enabled?: boole
       if (dir && (dir !== stickDir || t >= stickNext)) { cb.current(dir as MenuAction); stickNext = t + (dir !== stickDir ? 380 : 140); }
       stickDir = dir;
     };
-    const first = firstPad();
+    const first = activePad();
     if (first) for (const [b] of buttons) prev[b] = !!first.buttons[b]?.pressed;
     raf = requestAnimationFrame(poll);
     return () => cancelAnimationFrame(raf);
@@ -73,21 +75,7 @@ export function usePadInput(on: (a: MenuAction) => void, opts: { enabled?: boole
   }, [enabled, stick]);
 }
 
-function firstPad(): Gamepad | null {
-  const pads = typeof navigator !== "undefined" ? navigator.getGamepads?.() ?? [] : [];
-  return [...pads].find(x => x && x.connected) ?? null;
-}
-
-/** Whether a gamepad is plugged in (for showing its buttons in hints). */
+/** Whether a gamepad is plugged in (hot-plug; input/device.ts watches). */
 export function usePadConnected(): boolean {
-  const [on, setOn] = useState(() => !!firstPad());
-  useEffect(() => {
-    const f = () => setOn(!!firstPad());
-    addEventListener("gamepadconnected", f);
-    addEventListener("gamepaddisconnected", f);
-    // some browsers only list a pad after its first button press: look again now and then
-    const t = setInterval(f, 1000);
-    return () => { removeEventListener("gamepadconnected", f); removeEventListener("gamepaddisconnected", f); clearInterval(t); };
-  }, []);
-  return on;
+  return useDevice(s => s.connected);
 }

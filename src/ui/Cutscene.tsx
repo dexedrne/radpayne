@@ -19,11 +19,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { narrate, sampleDuration, samplesFor, stopNarration } from "../audio/sfx.ts";
 import { assetUrl } from "../app/assets.ts";
 import { FIRST, GAP, holdAfter, lineLen, onScreen, ORIGIN, planPanel, PUSH, PUSH_S, type Shown, type TimedLine } from "./cutsceneTiming.ts";
-import { Keycap } from "./hud/Keycap.tsx";
-import { usePadConnected, usePadInput, type MenuAction } from "./menu.ts";
+import { usePadPrompts } from "./hud/Keycap.tsx";
+import { PadGlyph } from "./hud/PadGlyph.tsx";
+import { useDevice } from "../input/device.ts";
+import { usePadInput, type MenuAction } from "./menu.ts";
 import "./hud/tokens.css";
 
-/** Gamepad: A next, B or Start skip (the standard mapping). */
+/** Gamepad: Cross / A next, Circle / B or Options / Start skip (the standard mapping). */
 const PAD: ReadonlyArray<readonly [number, MenuAction]> = [[0, "enter"], [1, "back"], [9, "back"]];
 
 export type Line = TimedLine;
@@ -127,7 +129,8 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
     if (a === "enter") { stopNarration(); next(); }
     else if (a === "back") finish();
   }, { buttons: PAD, stick: false });
-  const pad = usePadConnected();
+  const pad = usePadPrompts();
+  const kind = useDevice(s => s.kind);
 
   const p = data.panels[i];
   const box = p.box ?? [0.02, 0.03, 0.2, 0.1];
@@ -158,7 +161,10 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
         ))}
       </div>
       <div className="rp-z" style={{ color: "rgba(243,234,216,0.72)", font: "700 17px/1 'Courier Prime', 'Courier New', monospace", display: "flex", alignItems: "center", gap: 8 }}>
-        {data.title ? `${data.title.toUpperCase()} · ` : ""}<Keycap k="CLICK" /> / <Keycap k="SPACE" />{pad && <> / <Keycap k="A" /></>} next <span style={{ opacity: 0.5, margin: "0 4px" }}>·</span> <Keycap k="ESC" />{pad && <> / <Keycap k="B" /></>} skip
+        {data.title ? `${data.title.toUpperCase()} · ` : ""}
+        {pad
+          ? <><PadGlyph g="cross" kind={kind} /> next <span style={{ opacity: 0.5, margin: "0 4px" }}>·</span> <PadGlyph g="circle" kind={kind} /> skip</>
+          : <><span className="rp-key">CLICK</span> / <span className="rp-key">SPACE</span> next <span style={{ opacity: 0.5, margin: "0 4px" }}>·</span> <span className="rp-key">ESC</span> skip</>}
       </div>
     </div>
   );

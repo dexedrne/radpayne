@@ -1,10 +1,13 @@
 // The final-kill cam and the kill cam (app/cine.ts): letterbox bars (a paper rule under the top one, a
 // sand progress line over the bottom one), its tag (FINAL KILL, SNIPER · 41 M, ...), the live time-scale
-// chip, Radbro's line on the last kill, ANY KEY TO SKIP. The rest of the HUD is faded out.
+// chip, Radbro's line on the last kill, ANY KEY TO SKIP (ANY BUTTON on a pad). The rest of the HUD is
+// faded out.
 import { Tag } from "./Tag.tsx";
 import { Caption } from "./Caption.tsx";
+import { usePadPrompts } from "./Keycap.tsx";
 
 export function KillcamOverlay({ on, progress, timeScale, line, tag = "FINAL KILL" }: { on: boolean; progress: number; timeScale: number; line: string; tag?: string }) {
+  const pad = usePadPrompts();
   return (
     <>
       <div className={`rp-lb top${on ? " on" : ""}`} style={{ height: on ? "11vh" : 0 }} />
@@ -25,7 +28,7 @@ export function KillcamOverlay({ on, progress, timeScale, line, tag = "FINAL KIL
           <div className="prog-bg" />
           <div className="prog" style={{ width: `${Math.round(progress * 1000) / 10}%` }} />
           <div style={{ position: "absolute", left: 0, right: 0, bottom: "5.5vh", display: "flex", justifyContent: "center", transform: "translateY(50%)" }}>
-            <div className="rp-z skip">ANY KEY TO SKIP</div>
+            <div className="rp-z skip">{pad ? "ANY BUTTON TO SKIP" : "ANY KEY TO SKIP"}</div>
           </div>
         </div>
       )}

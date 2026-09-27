@@ -5,6 +5,7 @@ import { Game, type GameOptions } from "../sim/game.ts";
 import { TIME } from "../sim/tuning.ts";
 import { FixedStepper } from "../sim/stepper.ts";
 import { InputLatch } from "../input/input.ts";
+import { assistScratch, assistTarget } from "../input/assist.ts";
 import type { GameEvent, InputFrame } from "../sim/types.ts";
 import type { LevelData } from "../world/level.ts";
 
@@ -76,6 +77,9 @@ export class Session {
     this.opts = opts;
     this.game = new Game(level, opts);
     this.input.yaw = this.game.player.yaw;
+    // the pad's aim assist reads the running room (never while paused, held by a kill cam or botted)
+    const scratch = assistScratch();
+    this.input.assistQuery = (yaw, pitch) => (this.paused || this.hold || this.bot ? null : assistTarget(this.game, yaw, pitch, scratch));
     this.snapAll();
   }
 
@@ -113,6 +117,9 @@ export class Session {
   frame(delta: number): void {
     // the sniper in hand: right mouse / LT hold the scope
     this.input.zoomMode = this.game.player.weapon.id === "sniper";
+    // the pad's Square uses what is in reach (a secret door, an egg), else it reloads
+    const ph = this.game.phase;
+    this.input.useHere = (ph === "play" || ph === "clear") && this.game.useTarget() !== null;
     this.input.poll(Math.min(delta, 0.1));
     if (this.input.padStart) this.onPadStart?.();
     if (this.input.padA) this.onPadA?.();
