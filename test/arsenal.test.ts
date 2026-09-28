@@ -113,8 +113,9 @@ test("drops: every hostile drops its gun; 9 mm banked for the SMGs; the rusher's
   assert.equal(p.arsenal.handcannon!.mags[0], 7);
 });
 
-test("the next room: he walks in with the guns, rounds and frags he walked out with", () => {
+test("the next room: he walks in with the guns, rounds, frags and copium he walked out with", () => {
   const a = new Game(level([spawn]), { ai: false, seed: 1, loadout: ["shotgun", "sniper", "smgs"], grenades: 2 });
+  a.player.copium = 5;
   a.player.arsenal.sniper!.mags[0] = 3;
   a.player.arsenal.sniper!.reserve = 4;
   a.player.arsenal.pistols!.mags = [5, 7];
@@ -129,6 +130,7 @@ test("the next room: he walks in with the guns, rounds and frags he walked out w
   assert.equal(p.arsenal.pistols!.reserve, Infinity, "the base gun keeps its endless reserve");
   assert.equal(p.grenades, 2);
   assert.equal(p.banked, 15);
+  assert.equal(p.copium, 5, "his copium comes with him");
   // #250: his AK stays his base gun
   const c = new Game(level([spawn]), { ai: false, seed: 1, base: "ak", carry: new Game(level([spawn]), { ai: false, seed: 1, base: "ak", loadout: ["sniper"] }).carryOut() });
   assert.deepEqual(c.player.owned, ["ak", "sniper"]);

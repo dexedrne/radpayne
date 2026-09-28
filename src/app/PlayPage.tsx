@@ -113,8 +113,9 @@ async function until(ok: () => boolean, capMs: number, onTick?: () => void): Pro
  *  for it (under a cutscene nothing shows); `last` is where it is. */
 type Prep = { promise: Promise<void>; done: boolean; last: { progress: number; what: string }; show: ((progress: number, what: string) => void) | null };
 const preps = new WeakMap<Session, Prep>();
-/** Next-room sessions that got the guns he carried out of the last room (once each). */
-const carried = new WeakSet<Session>();
+/** The carry each next-room session last got (so the cutscene path and the swap hand the same carry over
+ *  once, and a second run of the chapter in the same page still hands over its own). */
+const carried = new WeakMap<Session, unknown>();
 /** The first room holds its render until its shaders are compiled (taken when the page mounts, released
  *  by the title's warm-up). */
 let bootHold = false;
@@ -592,10 +593,10 @@ export default function PlayPage() {
       // the next room (when its level exists), else the results: "to be continued"
       const room = session.level.room;
       const next = typeof room.next === "string" ? room.next : "";
-      // he keeps what he picked up: the guns, their rounds, the frags (a retry of the room too); handed
+      // he keeps what he picked up: the guns, their rounds, the frags, his copium (a retry of the room too); handed
       // over once, before the next room mounts (under the panels, or at the swap)
       const carry = g.carryOut();
-      const handOver = (ns: Session) => { if (!carried.has(ns)) { carried.add(ns); ns.restart({ carry }); } };
+      const handOver = (ns: Session) => { if (carried.get(ns) !== carry) { carried.set(ns, carry); ns.restart({ carry }); } };
       const goOn = () => {
         if (!next) { show(); return; }
         void prepareNext(session).then(ns => {

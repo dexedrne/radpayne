@@ -78,9 +78,9 @@ export type KillCam = {
 export type GameOptions = { seed?: number; difficulty?: Difficulty; ai?: boolean; loadout?: WeaponId[]; base?: BaseWeapon; resume?: Resume; katana?: boolean; grenades?: number; carry?: Carry; pockit?: Readonly<Record<string, number>> };
 
 /** What he walks into the next room with (Game.carryOut at the last room's exit): the guns he picked up
- *  and their rounds, the one in hand, the frags and the banked 9 mm. A retry of that room starts with it
- *  again (the session keeps it in its options). */
-export type Carry = { owned: WeaponId[]; weapon: WeaponId; ammo: Array<[WeaponId, number, number, number]>; grenades: number; banked: number };
+ *  and their rounds, the one in hand, the frags, the banked 9 mm and his copium. A retry of that room starts
+ *  with it again (the session keeps it in its options). */
+export type Carry = { owned: WeaponId[]; weapon: WeaponId; ammo: Array<[WeaponId, number, number, number]>; grenades: number; banked: number; copium?: number };
 
 /** The Pockit goons of a level (goons and rushers without a fixed model), in marker order; `later` =
  *  brought in by a spawn trigger (inactive at the start). */
@@ -327,7 +327,7 @@ export class Game {
     return {
       owned: [...p.owned], weapon: p.weapon.id,
       ammo: p.owned.map(w => { const a = p.arsenal[w]!; return [w, a.mags[0], a.mags[1], a.reserve] as [WeaponId, number, number, number]; }),
-      grenades: p.grenades, banked: p.banked,
+      grenades: p.grenades, banked: p.banked, copium: p.copium,
     };
   }
 
@@ -343,6 +343,8 @@ export class Game {
     if (p.arsenal[c.weapon]) p.weapon = p.arsenal[c.weapon]!;
     p.grenades = Math.min(GRENADE.carry, Math.max(p.grenades, c.grenades));
     p.banked = c.banked;
+    // his copium comes with him (never fewer than the difficulty starts a room with)
+    if (typeof c.copium === "number") p.copium = Math.min(PLAYER.maxCopium, Math.max(p.copium, c.copium));
   }
 
   /** Save a checkpoint at a checkpoint marker (by id; the room's ride saves one at each stop). */
