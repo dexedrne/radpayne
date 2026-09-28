@@ -22,6 +22,8 @@ import { useMenuInput, usePadInput, type MenuAction } from "./menu.ts";
 import { RUGGED_LINE, roomText } from "./rooms.ts";
 import { hudSession } from "./hud/HudFrame.tsx";
 import { TopLeft } from "./Hud.tsx";
+import { setHitFeel, useFeel } from "./feel.ts";
+import type { HitFeelMode } from "../app/hitfeel.ts";
 
 const INK = "#f3ead8";
 
@@ -49,6 +51,7 @@ const ONOFF: ReadonlyArray<readonly ["on" | "off", string]> = [["on", "ON"], ["o
 const CHATTERS: ReadonlyArray<readonly [Chatter, string]> = [["normal", "NORMAL"], ["less", "LESS"], ["off", "OFF (COMBAT)"]];
 const KILLCAMS: ReadonlyArray<readonly [KillcamMode, string]> = [["always", "ALWAYS"], ["special", "SPECIAL SHOTS"], ["final", "FINAL KILL"], ["off", "OFF"]];
 const ASSISTS: ReadonlyArray<readonly [AimAssist, string]> = [["off", "OFF"], ["low", "LOW"], ["normal", "NORMAL"]];
+const HIT_FEELS: ReadonlyArray<readonly [HitFeelMode, string]> = [["full", "FULL"], ["subtle", "SUBTLE"], ["off", "OFF"]];
 /** What each preset looks like (the title and the settings say it the same way). */
 export const PRESET_NOTES: Record<Preset | "custom", string> = {
   low: "low: no bloom, no mirror, a drizzle, a smaller crowd. fastest.",
@@ -65,6 +68,7 @@ const NOTES = {
   killcam: "Special shots: sniper kills, long headshots, two with one round, a grenade's double, the room's last kill. Any key skips.",
   assist: "Gamepad only: the stick slows near a target you can see, and holding L2 / LT (or firing) pulls the aim lightly onto her. Never through walls; the mouse never gets it.",
   deadZone: "How far the sticks move before they count (radial). Raise it if the aim drifts.",
+  hitFeel: "The hitmarker, the hit / kill sounds, the flash and burst on a struck girl, the camera punch on kills and the pad's hit pulses. Subtle: all of it, quieter. Off: none of it (she still flinches).",
 };
 
 export const CONTROLS: Array<[string[], string]> = [
@@ -241,6 +245,7 @@ type Row = { id: string; section?: string; name: string; control: React.ReactNod
 function useSettingRows(tab: Tab): Row[] {
   const ui = useUi();
   const gfx = useGfx();
+  const hitFeel = useFeel(f => f.mode);
   return useMemo((): Row[] => {
     const seg = <T extends string>(id: string, section: string | undefined, name: string, value: T, options: ReadonlyArray<readonly [T, string]>, set: (v: T) => void, extra?: Partial<Row>, swatch?: Partial<Record<T, string>>): Row => ({
       id, section, name, control: <Seg value={value} options={options} onChange={set} swatch={swatch} />,
@@ -264,6 +269,7 @@ function useSettingRows(tab: Tab): Row[] {
       seg("threats", undefined, "Threat markers", ui.threats, THREATS, v => setSetting("threats", v)),
       seg("dmgColour", undefined, "Damage colour", ui.dmgColour, DMG, v => setSetting("dmgColour", v), undefined, DMG_SW),
       seg("subs", undefined, "Subtitles", ui.subs ? "on" : "off", ONOFF, v => setSetting("subs", v === "on")),
+      seg("hitFeel", undefined, "Hit feedback", hitFeel, HIT_FEELS, setHitFeel, { note: NOTES.hitFeel }),
       seg("killcam", "CAMERA", "Kill cam", ui.killcam, KILLCAMS, v => setSetting("killcam", v), { note: NOTES.killcam }),
     ];
     const slider = (id: "padSens" | "deadZone", section: string | undefined, name: string, value: number, min: number, max: number, stepBy: number, format: (v: number) => string, extra?: Partial<Row>): Row => ({
@@ -301,7 +307,7 @@ function useSettingRows(tab: Tab): Row[] {
       },
       seg("chatter", "VOICES", "Voice chatter", ui.chatter, CHATTERS, v => setSetting("chatter", v), { note: NOTES.chatter }),
     ];
-  }, [tab, ui, gfx]);
+  }, [tab, ui, gfx, hitFeel]);
 }
 
 function Settings({ tab, setTab, focus, setFocus, active }: { tab: Tab; setTab: (t: Tab) => void; focus: number; setFocus: (i: number) => void; active: boolean }) {

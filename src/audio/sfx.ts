@@ -248,6 +248,11 @@ export async function samplesReady(ms = 4000): Promise<boolean> {
   return buffers.size > 0;
 }
 
+/** A decoded file, if it is in (the hit confirms layer slices of the impact files: hitSounds.ts). */
+export function sampleBuffer(k: string): AudioBuffer | undefined {
+  return buffers.get(k);
+}
+
 export function sampleDuration(k: string): number {
   return buffers.get(k)?.duration ?? 0;
 }

@@ -33,6 +33,7 @@ import { GOON_LOOK, animateStandIn, makeStandIn, type StandIn } from "./standIn.
 import { heldByCam } from "./cine.ts";
 import { VRM_JOINTS, boneReader, xrayRigs } from "./xray.ts";
 import type { VRMHumanBoneName } from "@pixiv/three-vrm";
+import { applyReactBones, reactOf, rootOffset, startSlide, tickReact } from "./hitReact.ts";
 
 const UP = new Vector3(0, 1, 0);
 const params = new URLSearchParams(location.search);
@@ -94,6 +95,7 @@ const DEATHS = ["Death_Back", "Death_Back_2", "Death_Fwd", "Death_Fwd_2", "Falli
 const LIMBS = ["hips", "leftUpperArm", "rightUpperArm", "leftUpperLeg", "rightUpperLeg"] as const;
 const ARMS = ["leftUpperArm", "rightUpperArm"] as const;
 const AX = new Vector3(1, 0, 0), AZ = new Vector3(0, 0, 1);
+const OFF = new Vector3();
 /** The sniper goon's laser: a unit box from its origin along +Z (scaled to the line). */
 const LASER_GEO = new BoxGeometry(1, 1, 1).translate(0, 0, 0.5);
 
@@ -235,6 +237,12 @@ export function EnemiesView({ s }: { s: Session }) {
           v.legYaw = v.fallYaw;
           v.hit?.stop();
           const pl = v.player;
+          {
+            // the kill's momentum: a slide along the shot as she goes down, short of what is behind her
+            const l = Math.sqrt(e.killDX * e.killDX + e.killDZ * e.killDZ) || 1;
+            const room = g.world.raycast(e.x, e.y + 0.5, e.z, e.killDX / l, 0, e.killDZ / l, 2, false);
+            startSlide(reactOf(v.idx), room ? room.t : 2);
+          }
           if (pl) {
             const l = Math.sqrt(e.killDX * e.killDX + e.killDZ * e.killDZ) || 1;
             const hit = g.world.raycast(e.x, e.y + 0.9, e.z, e.killDX / l, 0, e.killDZ / l, 6, false);
@@ -254,7 +262,7 @@ export function EnemiesView({ s }: { s: Session }) {
           if (idle) { v.player.force(idle, 0); v.player.update(0); v.clip = idle; }
         }
       } else v.yaw += wrapAngle(e.facing - v.yaw) * Math.min(1, 14 * dt);
-      v.root.position.set(p.x, p.y, p.z);
+      v.root.position.set(p.x, p.y, p.z).add(rootOffset(reactOf(v.idx), OFF)); // the hit's knock-back / the kill's slide (view only)
       v.root.scale.setScalar(e.hit.pose.scale ?? 1); // Madame Pockit is a size up (her hit skeleton too)
       tmp.q.setFromAxisAngle(UP, v.player && e.state !== "dead" ? v.legYaw : v.yaw);
       v.root.quaternion.copy(tmp.q);
@@ -325,6 +333,8 @@ export function EnemiesView({ s }: { s: Session }) {
       if (!e || !v.root.visible) continue;
       v.flinch = Math.max(0, v.flinch - wdt * 5);
       v.pain = Math.max(0, v.pain - wdt * 2.5);
+      const held = heldByCam(e);
+      const react = tickReact(v.idx, v.root, held, wdt, s.paused ? 0 : dt);
       const m = v.model;
       const alive = e.state !== "dead";
       const aiming = alive && !e.crouch && (e.state === "peek" || e.state === "engage" || (e.state === "move" && e.sees) || e.state === "alert");
@@ -361,7 +371,6 @@ export function EnemiesView({ s }: { s: Session }) {
             rotateBoneWorld(nb("spine"), tmp.fwd, -e.lean * 0.35);
             rotateBoneWorld(nb("chest"), tmp.fwd, -e.lean * 0.25);
           }
-          if (v.flinch > 0) rotateBoneWorld(nb("chest"), tmp.side, -0.2 * v.flinch);
           if (aiming) aimLimb(nb("rightUpperArm"), nb("rightHand"), tmp.a, 1);
         } else if (v.player && v.deathPlayed) {
           // a death clip that binds nothing leaves her in the bind pose: try the next, then pose by hand
@@ -382,6 +391,8 @@ export function EnemiesView({ s }: { s: Session }) {
             m.body.position.y = 0.12;
           }
         }
+        // the hit reaction over the clip and the aim: lean / twist away from the round, the head snap
+        if (!held) applyReactBones(react, { spine: nb("spine"), chest: nb("chest"), upper: nb("upperChest"), neck: nb("neck"), head: nb("head") });
         // expressions: blink, pain, talk
         const em = m.vrm.expressionManager;
         if (em) {
@@ -401,8 +412,10 @@ export function EnemiesView({ s }: { s: Session }) {
         }
         m.vrm.update(wdt);
       } else {
-        // stand-in: lean the whole body a little
+        // stand-in: lean the whole body a little; a hit tips her upper body away from the round
         v.standIn.rotation.z = alive ? -e.lean * 0.3 : 0;
+        v.si.body.quaternion.identity();
+        if (!held && v.standIn.visible) { v.root.updateMatrixWorld(true); applyReactBones(react, { chest: v.si.body }, 1.5); }
       }
       // the gun: in her hand (swung onto the player while aiming), or floating at the stand-in's hand;
       // once she is down it is the pickup lying by her (her hand is empty)

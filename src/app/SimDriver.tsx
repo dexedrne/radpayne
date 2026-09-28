@@ -25,6 +25,7 @@ import type { GameEvent } from "../sim/types.ts";
 import { METER } from "../sim/tuning.ts";
 import { bossBusy, cine, rideMoving } from "./cine.ts";
 import { sfxCine } from "../audio/sfx.ts";
+import { hitFeelMode } from "../ui/feel.ts";
 
 /** Dev builds: window.__rp.cineCtl is the kill cam (a browser check can stage one). */
 const DEV = import.meta.env.MODE !== "production";
@@ -155,7 +156,8 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
         }
         break;
       case "kill": {
-        sfx.kill(e.headshot);
+        // his kills: the hit feel's kill confirm (HitFeelView), unless Hit feedback is off
+        if (!e.shot || hitFeelMode() === "off") sfx.kill(e.headshot);
         if (e.shot) cine.kill({ enemy: e.target, weapon: e.weapon ?? "", headshot: e.headshot, part: e.headshot ? 0 : 1, from: { x: e.shot.ox, y: e.shot.oy, z: e.shot.oz }, to: { x: e.shot.x, y: e.shot.y, z: e.shot.z }, final: e.final, at: performance.now() / 1000 });
         // the hourglass refill chip (+1.5 / +2.5), unless the meter was already full
         if (meterSeen.current < METER.max - 1e-6) {
