@@ -11837,7 +11837,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "minDiff": "hard"
          }
         }
        }
@@ -11921,7 +11922,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "minDiff": "hard"
          }
         }
        }
@@ -12535,7 +12537,8 @@
           "kind": "goon",
           "group": "waveC2",
           "perch": true,
-          "weapon": "sniper"
+          "weapon": "sniper",
+          "minDiff": "hard"
          }
         }
        }
@@ -13044,6 +13047,26 @@
         "type": "Transform",
         "properties": {
          "position": [33, 0, 5.8]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cop-6",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 0, -3.2]
         }
        },
        "data": {

@@ -82,8 +82,10 @@ for (let i = 0; i < 8; i++) {
 }
 for (const [x, z] of [[-7.8, -7.8], [7.8, -7.8], [-7.8, 7.8], [7.8, 7.8]]) k.cover(`pillar-${x}-${z}`, [x - 0.6, 0, z - 0.6], [x + 0.6, H, z + 0.6], "pillar");
 for (const [id, a, b, face] of [
-  ["shelf-n", [-5, 0, -14.8], [5, 2.6, -14], "s"], ["shelf-w", [-14.8, 0, 2.2], [-14, 2.6, 6], "e"], ["shelf-e", [14, 0, -6], [14.8, 2.6, -2.2], "w"], ["shelf-e2", [14, 0, 2.2], [14.8, 2.6, 6], "w"],
+  ["shelf-n", [-5, 0, -14.8], [5, 2.6, -14], "s"], ["shelf-w", [-14.8, 0, 2.2], [-14, 2.6, 6], "e"], ["shelf-w2", [-14.8, 0, -6], [-14, 2.6, -2.2], "e"], ["shelf-e", [14, 0, -6], [14.8, 2.6, -2.2], "w"], ["shelf-e2", [14, 0, 2.2], [14.8, 2.6, 6], "w"],
 ] as Array<[string, V3, V3, "n" | "s" | "e" | "w"]>) k.cover(id, a, b, "shelfBags", { data: { surface: "wood" } }, { faces: [face] });
+// bullion carts inside the vault door (low): somewhere to duck when the gate shuts behind him
+for (const sx of [-1, 1]) k.cover(`cart-${sx > 0 ? "e" : "w"}`, [sx > 0 ? 2.6 : -4.6, 0, 10.8], [sx > 0 ? 4.6 : -2.6, 0.95, 11.6], "gold", { data: { surface: "metal" } });
 k.box("bonds", [9.4, 0, 10.4], [10.8, 0.9, 11.4], "case", { data: { breakable: 30, surface: "wood", drop: "grenade", amount: 3, secret: "secret-bonds" } });
 // the sliding shelf in the north-west wall, and the room behind
 k.solid.splice(k.solid.findIndex(n => n.id === "wall-d-nw"), 1);

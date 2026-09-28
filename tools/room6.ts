@@ -182,7 +182,7 @@ k.m(
   // on the roof when he comes out (the light's patrol has not seen him yet)
   E("g-1", -9, 0, -2, FACE_W), E("g-2", -7.5, 0, 8, FACE_W), E("g-3", 1, 0, -3.8, FACE_W), E("g-4", 6.5, 0, 6.6, FACE_W),
   E("g-5", 12, 0, 0, FACE_W, { kind: "rusher" }), E("g-6", 0, 1, -12, FACE_S),
-  E("sn-1", -11, 4, 12.4, FACE_E, { perch: true, weapon: "sniper" }), E("sn-2", -14.2, 4, 9.6, FACE_N, { perch: true, weapon: "sniper" }),
+  E("sn-1", -11, 4, 12.4, FACE_E, { perch: true, weapon: "sniper" }), E("sn-2", -14.2, 4, 9.6, FACE_N, { perch: true, weapon: "sniper", minDiff: "hard" }),
   E("sn-3", 26.7, 3, -2, FACE_W, { perch: true, weapon: "sniper" }),
   // wave A (5 down): out of the machine room
   E("a-1", 16.4, 0, -15.2, FACE_S, { group: "waveA" }), E("a-2", 21.6, 0, -15.2, FACE_S, { group: "waveA" }), E("a-3", 19, 0, -17.2, FACE_S, { group: "waveA", kind: "rusher" }),
@@ -193,7 +193,7 @@ k.m(
   E("b-1", 23, 0, 15, FACE_W, { group: "waveB" }), E("b-2", 25, 0, 16, FACE_W, { group: "waveB", kind: "rusher" }), E("b-3", 23, 0, 18, FACE_W, { group: "waveB" }),
   E("b-4", 25.2, 0, 14.4, FACE_W, { group: "waveB", kind: "rusher" }), E("b-5", 22.4, 0, 20, FACE_W, { group: "waveB", kind: "heavy", model: "rival652" }),
   // drop 2 (18 down)
-  E("d2-1", -3, 1, -16, FACE_S, { group: "drop2" }), E("d2-2", 3, 1, -16, FACE_S, { group: "drop2", kind: "rusher" }), E("d2-3", 0, 1, -11, FACE_S, { group: "drop2", kind: "rusher" }), E("d2-4", 0, 1, -18, FACE_S, { group: "drop2" }),
+  E("d2-1", -3, 1, -16, FACE_S, { group: "drop2" }), E("d2-2", 3, 1, -16, FACE_S, { group: "drop2", kind: "rusher", minDiff: "hard" }), E("d2-3", 0, 1, -11, FACE_S, { group: "drop2", kind: "rusher" }), E("d2-4", 0, 1, -18, FACE_S, { group: "drop2" }),
   // wave C (22 down): the machine room again, and up the west stairwell behind him
   E("c-1", 19, 0, -18.6, FACE_S, { group: "waveC", kind: "heavy", model: "rival723", weapon: "handcannon" }), E("c-2", 16.4, 0, -15, FACE_S, { group: "waveC" }), E("c-3", 22, 0, -15, FACE_S, { group: "waveC" }),
   E("c-4", -26.4, 0, -1.6, FACE_E, { group: "waveC2", kind: "rusher" }), E("c-5", -26.4, 0, 1.6, FACE_E, { group: "waveC2", kind: "rusher" }),
@@ -218,6 +218,7 @@ k.m(
   // pickups: copium, the rifle on hvac-2's lee, the shotgun by the south-east stair, the sniper up the tower
   marker("cop-1", "pickup", [-23, 0, 5.5], { item: "copium" }), marker("cop-2", "pickup", [-5, 0, 16.5], { item: "copium" }),
   marker("cop-3", "pickup", [10, 0, -9.5], { item: "copium" }), marker("cop-4", "pickup", [16, 0, 11], { item: "copium" }),
+  marker("cop-5", "pickup", [-9.5, 0, -5], { item: "copium" }), marker("cop-6", "pickup", [5, 0, -1], { item: "copium" }),
   marker("rifle", "pickup", [3.7, 0, 5.2], { item: "rifle" }),
   marker("shotgun", "pickup", [18.5, 0, 20], { item: "shotgun" }),
   marker("sniper", "pickup", [-17.3, 4, 13], { item: "sniper" }),

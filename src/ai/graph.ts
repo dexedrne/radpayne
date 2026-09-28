@@ -43,6 +43,17 @@ export class Graph {
    *  (a pit, a gallery: the stairs link them explicitly). Infinity elsewhere. */
   private readonly maxRise: number;
 
+  /** Chapter 2 (maxRise): the floor under a straight walk stays within maxRise of where it starts (a
+   *  shortcut never cuts across a pit's edge). */
+  private floorHolds(x: number, y: number, z: number, tx: number, tz: number): boolean {
+    const n = Math.ceil(Math.hypot(tx - x, tz - z) / 0.75);
+    for (let i = 1; i <= n; i++) {
+      const gy = this.world.groundBelow(x + ((tx - x) * i) / n, z + ((tz - z) * i) / n, 0.1, y + 1);
+      if (!Number.isFinite(gy) || Math.abs(gy - y) > this.maxRise) return false;
+    }
+    return true;
+  }
+
   constructor(markers: Marker[], world: World, maxRise = Infinity) {
     this.world = world;
     this.maxRise = maxRise;
@@ -158,7 +169,7 @@ export class Graph {
       if (t > 0 && t < 1 && Math.hypot(a.x + abx * t - x, a.z + abz * t - z) < 1.2) { out.shift(); ys.shift(); }
     }
     // shortcut: drop leading waypoints the start can already walk past
-    while (out.length > 1 && (this.maxRise === Infinity || Math.abs(ys[1] - y) <= this.maxRise) && this.walkClear(x, y, z, out[1].x, y, out[1].z)) { out.shift(); ys.shift(); }
+    while (out.length > 1 && (this.maxRise === Infinity || (Math.abs(ys[1] - y) <= this.maxRise && this.floorHolds(x, y, z, out[1].x, out[1].z))) && this.walkClear(x, y, z, out[1].x, y, out[1].z)) { out.shift(); ys.shift(); }
     return out;
   }
 }

@@ -14,7 +14,7 @@ export const ROOF = {
   patrol: 3.0,
   track: { easy: 2.6, normal: 3.3, hard: 3.9 } as PerDiff,
   /** Their aim while he stands in it (x their accuracy). */
-  accuracy: { easy: 1.2, normal: 1.35, hard: 1.5 } as PerDiff,
+  accuracy: { easy: 1.1, normal: 1.15, hard: 1.5 } as PerDiff,
   /** The lamp takes this much of his damage before it goes out (the helicopter leaves). */
   lampHp: 260,
   lampRadius: 0.7,
@@ -77,7 +77,7 @@ export const COUNTESS = {
   /** Phase 3: a quicker tell, and she runs. */
   tell3: { easy: 0.85, normal: 0.65, hard: 0.5 } as PerDiff,
   /** One round of hers: its damage (x difficulty) and its chance (x the usual falloffs: distance, his speed, a dive). */
-  damage: 18,
+  damage: { easy: 18, normal: 15, hard: 18 } as PerDiff,
   hit: 0.62,
   /** During her tell she takes this much more, and this much damage in one tell breaks her aim (a stagger). */
   tellOpen: 1.5,

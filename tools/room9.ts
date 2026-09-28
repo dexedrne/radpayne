@@ -142,8 +142,8 @@ k.wp("cw-e-bot", [23.4, 0, -5], ["cw-e-mid"]);
 const E = (id: string, x: number, y: number, z: number, yaw: number, d: Record<string, unknown> = {}) => marker(id, "enemy", [x, y, z], { kind: "goon", ...d }, yaw);
 k.m(
   // at the desks
-  E("t-1", -15, 0, -4, FACE_W), E("t-2", -15, 0, 4, FACE_W), E("t-3", -9, 0, -11, FACE_W), E("t-4", -9, 0, 11.5, FACE_W),
-  E("t-5", -3, 0, -3, FACE_W), E("t-6", -3, 0, 4.5, FACE_W, { kind: "rusher" }), E("t-7", 3, 0, -12, FACE_W), E("t-8", 3, 0, 12, FACE_W),
+  E("t-1", -15, 0, -4, FACE_W), E("t-2", -15, 0, 4, FACE_W), E("t-3", -9, 0, -11, FACE_W), E("t-4", -9, 0, 11.5, FACE_W, { minDiff: "hard" }),
+  E("t-5", -3, 0, -3, FACE_W), E("t-6", -3, 0, 4.5, FACE_W, { kind: "rusher" }), E("t-7", 3, 0, -12, FACE_W), E("t-8", 3, 0, 12, FACE_W, { minDiff: "hard" }),
   E("t-9", -2, CY, -16.6, FACE_S, { perch: true, weapon: "sniper" }), E("t-10", 10, CY, -16.6, FACE_S),
   // the board room from the start (behind the partition)
   E("r-1", 20.4, 0, -6, FACE_W), E("r-2", 20.4, 0, 6, FACE_W), E("r-3", 24, 0, 0, FACE_W, { kind: "heavy", model: "rival652" }),

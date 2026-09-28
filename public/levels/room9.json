@@ -14172,7 +14172,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "minDiff": "hard"
          }
         }
        }
@@ -14256,7 +14257,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "minDiff": "hard"
          }
         }
        }

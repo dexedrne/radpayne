@@ -15158,7 +15158,8 @@
           "marker": "enemy",
           "kind": "goon",
           "group": "waveB",
-          "weapon": "sniper"
+          "weapon": "sniper",
+          "minDiff": "hard"
          }
         }
        }
@@ -15398,7 +15399,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveD"
+          "group": "waveD",
+          "minDiff": "hard"
          }
         }
        }
@@ -15442,7 +15444,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveD"
+          "group": "waveD",
+          "minDiff": "hard"
          }
         }
        }
@@ -15931,6 +15934,46 @@
         "type": "Transform",
         "properties": {
          "position": [11, 4, -12.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cop-5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17, 4, -2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "pickup",
+          "item": "copium"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cop-6",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4, 4, 15]
         }
        },
        "data": {

@@ -65,6 +65,12 @@ export class Bot {
   private dryFor = -1;
   private hitsSeen = 0;
   private readonly ignore = new Map<number, number>();
+  /** Chapter 2: the walk target it has made no headway toward (a wall between, a pen): its key, the
+   *  closest it got, since when; and the enemies it leaves as walk targets for a while. */
+  private headKey = -1;
+  private headBest = Infinity;
+  private headT = 0;
+  private readonly walkSkip = new Map<number, number>();
   constructor(turnRate = 3.5, settle = 0.3, demo = false) {
     this.turnRate = turnRate;
     this.settle = settle;
@@ -178,6 +184,7 @@ export class Bot {
         let nd = Infinity;
         for (const e of g.enemies) {
           if (e.state === "dead" || e.state === "inactive") continue;
+          if (g.stage && (this.walkSkip.get(e.idx) ?? -1) > g.time) continue;
           const d = (e.x - p.x) ** 2 + (e.z - p.z) ** 2;
           if (d < nd) { nd = d; tx = e.x; tz = e.z; ty = e.y; key = e.idx; }
         }
@@ -233,6 +240,17 @@ export class Bot {
           if (!b) continue;
           const ox = b.cx - p.x, oz = b.cz - p.z, od = Math.hypot(ox, oz);
           if (od < 4 && (ox * dx + oz * dz) / (od * dl) > 0.85) f.dodge = true;
+        }
+        // chapter 2: no headway toward this target in 8 s (back and forth at a wall): leave it for a while
+        if (g.stage && key >= 0) {
+          const dd = Math.hypot(tx - p.x, tz - p.z);
+          if (key !== this.headKey) { this.headKey = key; this.headBest = dd; this.headT = 0; }
+          else if (dd < this.headBest - 1) { this.headBest = dd; this.headT = 0; }
+          else if ((this.headT += 1 / 120) > 8) {
+            if (key >= 700 && key < 700 + g.pickups.length) this.noWay.set(key - 700, g.time + 20);
+            else if (key < 500) this.walkSkip.set(key, g.time + 8);
+            this.headKey = -1; this.pathFor = -2; this.repath = 0;
+          }
         }
         // no progress for a second: hop (low barriers) and sidestep, then repath
         this.stuckT += 1 / 120;

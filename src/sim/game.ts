@@ -25,6 +25,8 @@ import { Boss } from "./boss.ts";
 import { makeStage, type Stage } from "./stage.ts";
 import { COUNTESS, perDiff } from "./tuning2.ts";
 
+const DIFF_RANK: Difficulty[] = ["easy", "normal", "hard", "hardcore"];
+
 export const POCKIT_COUNT = 3333;
 
 export type Phase = "play" | "killcam" | "clear" | "done" | "dead";
@@ -253,6 +255,8 @@ export class Game {
       if (m.kind === "enemy") {
         const kindName = (m.data.kind as string | undefined) ?? "goon";
         if (kindName !== "goon" && kindName !== "rusher" && kindName !== "heavy" && kindName !== "madame" && kindName !== "countess") continue;
+        // (chapter 2: Data {minDiff: "hard"}: she is there only on that difficulty and up)
+        if (typeof m.data.minDiff === "string" && DIFF_RANK.indexOf(this.difficulty) < DIFF_RANK.indexOf(m.data.minDiff as Difficulty)) continue;
         const kind = kindName as EnemyKind;
         const pick = kind === "heavy" ? 0 : kind === "madame" ? MADAME.pockit : kind === "countess" ? COUNTESS.pockit : typeof m.data.milady === "number" ? (m.data.milady as number) : opts.pockit?.[m.id] ?? 1 + Math.floor(hash01(this.seed, n, 0x6d, 0) * POCKIT_COUNT);
         const gy = this.world.groundBelow(m.x, m.z, 0.3, m.y + 1);
@@ -1374,7 +1378,7 @@ export class Game {
       }
       return;
     }
-    const dmg = e.kind === "countess" ? COUNTESS.damage : sniper ? ENEMY_ARMS.sniper.damage : cannon ? ENEMY_ARMS.handcannon.damage : T.damage;
+    const dmg = e.kind === "countess" ? perDiff(COUNTESS.damage, this.difficulty) : sniper ? ENEMY_ARMS.sniper.damage : cannon ? ENEMY_ARMS.handcannon.damage : T.damage;
     // (the bosses, Madame Pockit and the Countess, have their own factor: they stay fair on every setting)
     this.shoot(1, e.idx, 0, mx, my, mz, dx / l, dy / l, dz / l, dmg * (e.kind === "madame" || e.kind === "countess" ? this.diff.boss : this.diff.damage), e.weapon, 0);
   }

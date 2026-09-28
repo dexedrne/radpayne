@@ -2021,6 +2021,46 @@
       }
      },
      {
+      "id": "shelf-w2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-14.4, 1.3, -4.1],
+         "scale": [0.8, 2.6, 3.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "shelfBags"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
       "id": "shelf-e",
       "components": {
        "transform": {
@@ -2095,6 +2135,86 @@
         "properties": {
          "data": {
           "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cart-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3.6, 0.475, 11.2],
+         "scale": [2, 0.95, 0.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "gold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cart-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.6, 0.475, 11.2],
+         "scale": [2, 0.95, 0.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "gold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
          }
         }
        }
@@ -5149,7 +5269,51 @@
       }
      },
      {
-      "id": "cv-shelf-e-72",
+      "id": "cv-shelf-w2-72",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13.38, 0, -5.75],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-shelf-w2-73",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13.38, 0, -2.45],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-shelf-e-74",
       "components": {
        "transform": {
         "type": "Transform",
@@ -5171,7 +5335,7 @@
       }
      },
      {
-      "id": "cv-shelf-e-73",
+      "id": "cv-shelf-e-75",
       "components": {
        "transform": {
         "type": "Transform",
@@ -5193,7 +5357,7 @@
       }
      },
      {
-      "id": "cv-shelf-e2-74",
+      "id": "cv-shelf-e2-76",
       "components": {
        "transform": {
         "type": "Transform",
@@ -5215,7 +5379,7 @@
       }
      },
      {
-      "id": "cv-shelf-e2-75",
+      "id": "cv-shelf-e2-77",
       "components": {
        "transform": {
         "type": "Transform",
@@ -5231,6 +5395,172 @@
           "marker": "cover",
           "height": "high",
           "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-cart-w-78",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3.6, 0, 10.18]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-cart-w-79",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3.6, 0, 12.22],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-cart-w-80",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.98, 0, 11.2],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-cart-w-81",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-5.22, 0, 11.2],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-cart-e-82",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.6, 0, 10.18]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-cart-e-83",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3.6, 0, 12.22],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-cart-e-84",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [5.22, 0, 11.2],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-cart-e-85",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [1.98, 0, 11.2],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
          }
         }
        }
@@ -5306,7 +5636,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-13.5, 0, -4.5]
+         "position": [-13.5, 0, -1.5]
         }
        },
        "data": {
@@ -5325,7 +5655,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-13.5, 0, -1.5]
+         "position": [-13.5, 0, 1.5]
         }
        },
        "data": {
@@ -5344,7 +5674,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-13.5, 0, 1.5]
+         "position": [-10.5, 0, -7.5]
         }
        },
        "data": {
@@ -5363,7 +5693,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-10.5, 0, -7.5]
+         "position": [-10.5, 0, -4.5]
         }
        },
        "data": {
@@ -5382,7 +5712,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-10.5, 0, -4.5]
+         "position": [-10.5, 0, -1.5]
         }
        },
        "data": {
@@ -5401,7 +5731,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-10.5, 0, -1.5]
+         "position": [-10.5, 0, 1.5]
         }
        },
        "data": {
@@ -5420,7 +5750,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-10.5, 0, 1.5]
+         "position": [-10.5, 0, 4.5]
         }
        },
        "data": {
@@ -5439,7 +5769,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-10.5, 0, 4.5]
+         "position": [-10.5, 0, 7.5]
         }
        },
        "data": {
@@ -5458,7 +5788,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-10.5, 0, 7.5]
+         "position": [-7.5, 0, -10.5]
         }
        },
        "data": {
@@ -5477,7 +5807,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-7.5, 0, -10.5]
+         "position": [-7.5, 0, -1.5]
         }
        },
        "data": {
@@ -5496,7 +5826,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-7.5, 0, -1.5]
+         "position": [-7.5, 0, 1.5]
         }
        },
        "data": {
@@ -5515,7 +5845,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-7.5, 0, 1.5]
+         "position": [-7.5, 0, 10.5]
         }
        },
        "data": {
@@ -5534,7 +5864,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-7.5, 0, 10.5]
+         "position": [-4.5, 0, -10.5]
         }
        },
        "data": {
@@ -5553,7 +5883,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-4.5, 0, -10.5]
+         "position": [-4.5, 0, -4.5]
         }
        },
        "data": {
@@ -5572,7 +5902,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-4.5, 0, -4.5]
+         "position": [-4.5, 0, -1.5]
         }
        },
        "data": {
@@ -5591,7 +5921,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-4.5, 0, -1.5]
+         "position": [-4.5, 0, 1.5]
         }
        },
        "data": {
@@ -5610,7 +5940,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-4.5, 0, 1.5]
+         "position": [-4.5, 0, 4.5]
         }
        },
        "data": {
@@ -5629,7 +5959,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-4.5, 0, 4.5]
+         "position": [-4.5, 0, 13.5]
         }
        },
        "data": {
@@ -5648,7 +5978,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-4.5, 0, 10.5]
+         "position": [-1.5, 0, -10.5]
         }
        },
        "data": {
@@ -5667,7 +5997,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-4.5, 0, 13.5]
+         "position": [-1.5, 0, -7.5]
         }
        },
        "data": {
@@ -5686,7 +6016,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-1.5, 0, -10.5]
+         "position": [-1.5, 0, 7.5]
         }
        },
        "data": {
@@ -5705,7 +6035,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-1.5, 0, -7.5]
+         "position": [-1.5, 0, 10.5]
         }
        },
        "data": {
@@ -5724,7 +6054,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-1.5, 0, 7.5]
+         "position": [-1.5, 0, 13.5]
         }
        },
        "data": {
@@ -5743,7 +6073,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-1.5, 0, 10.5]
+         "position": [1.5, 0, -10.5]
         }
        },
        "data": {
@@ -5762,7 +6092,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-1.5, 0, 13.5]
+         "position": [1.5, 0, -7.5]
         }
        },
        "data": {
@@ -5781,7 +6111,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [1.5, 0, -10.5]
+         "position": [1.5, 0, 7.5]
         }
        },
        "data": {
@@ -5800,7 +6130,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [1.5, 0, -7.5]
+         "position": [1.5, 0, 10.5]
         }
        },
        "data": {
@@ -5819,7 +6149,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [1.5, 0, 7.5]
+         "position": [1.5, 0, 13.5]
         }
        },
        "data": {
@@ -5838,7 +6168,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [1.5, 0, 10.5]
+         "position": [4.5, 0, -10.5]
         }
        },
        "data": {
@@ -5857,7 +6187,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [1.5, 0, 13.5]
+         "position": [4.5, 0, -4.5]
         }
        },
        "data": {
@@ -5876,7 +6206,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [4.5, 0, -10.5]
+         "position": [4.5, 0, -1.5]
         }
        },
        "data": {
@@ -5895,7 +6225,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [4.5, 0, -4.5]
+         "position": [4.5, 0, 1.5]
         }
        },
        "data": {
@@ -5914,7 +6244,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [4.5, 0, -1.5]
+         "position": [4.5, 0, 4.5]
         }
        },
        "data": {
@@ -5933,7 +6263,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [4.5, 0, 1.5]
+         "position": [4.5, 0, 13.5]
         }
        },
        "data": {
@@ -5952,7 +6282,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [4.5, 0, 4.5]
+         "position": [7.5, 0, -10.5]
         }
        },
        "data": {
@@ -5971,7 +6301,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [4.5, 0, 10.5]
+         "position": [7.5, 0, -1.5]
         }
        },
        "data": {
@@ -5990,7 +6320,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [4.5, 0, 13.5]
+         "position": [7.5, 0, 1.5]
         }
        },
        "data": {
@@ -6009,7 +6339,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [7.5, 0, -10.5]
+         "position": [7.5, 0, 10.5]
         }
        },
        "data": {
@@ -6028,7 +6358,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [7.5, 0, -1.5]
+         "position": [10.5, 0, -7.5]
         }
        },
        "data": {
@@ -6047,7 +6377,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [7.5, 0, 1.5]
+         "position": [10.5, 0, -4.5]
         }
        },
        "data": {
@@ -6066,7 +6396,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [7.5, 0, 10.5]
+         "position": [10.5, 0, -1.5]
         }
        },
        "data": {
@@ -6085,7 +6415,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10.5, 0, -7.5]
+         "position": [10.5, 0, 1.5]
         }
        },
        "data": {
@@ -6104,7 +6434,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10.5, 0, -4.5]
+         "position": [10.5, 0, 4.5]
         }
        },
        "data": {
@@ -6123,7 +6453,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10.5, 0, -1.5]
+         "position": [10.5, 0, 7.5]
         }
        },
        "data": {
@@ -6142,63 +6472,6 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10.5, 0, 1.5]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "waypoint"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "wp-floor-45",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [10.5, 0, 4.5]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "waypoint"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "wp-floor-46",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [10.5, 0, 7.5]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "waypoint"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "wp-floor-47",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
          "position": [13.5, 0, -1.5]
         }
        },
@@ -6213,7 +6486,7 @@
       }
      },
      {
-      "id": "wp-floor-48",
+      "id": "wp-floor-45",
       "components": {
        "transform": {
         "type": "Transform",

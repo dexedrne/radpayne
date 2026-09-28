@@ -204,13 +204,13 @@ k.m(
   E("a-1", 26, 0, 5, FACE_W, { group: "waveA" }), E("a-2", 26, 0, 9.6, FACE_W, { group: "waveA" }), E("a-3", 28.4, 0, 7, FACE_W, { group: "waveA", kind: "rusher" }),
   E("a-4", 25.6, 0, 11, FACE_W, { group: "waveA" }), E("a-5", 28.6, 0, 10.6, FACE_W, { group: "waveA", kind: "rusher" }),
   // wave B (10 down): the service landing, onto the gallery
-  E("b-1", -1.2, GY, -19.4, FACE_S, { group: "waveB", weapon: "sniper" }), E("b-2", 1.2, GY, -19.4, FACE_S, { group: "waveB" }), E("b-3", -1.2, GY, -21, FACE_S, { group: "waveB", kind: "rusher" }), E("b-4", 1.2, GY, -21, FACE_S, { group: "waveB" }),
+  E("b-1", -1.2, GY, -19.4, FACE_S, { group: "waveB", weapon: "sniper", minDiff: "hard" }), E("b-2", 1.2, GY, -19.4, FACE_S, { group: "waveB" }), E("b-3", -1.2, GY, -21, FACE_S, { group: "waveB", kind: "rusher" }), E("b-4", 1.2, GY, -21, FACE_S, { group: "waveB" }),
   // wave C (15 down): out of the pump corridor into the pit
   E("c-1", -1, PIT, 8.4, FACE_N, { group: "waveC", kind: "rusher" }), E("c-2", 1, PIT, 8.4, FACE_N, { group: "waveC", kind: "rusher" }), E("c-3", -1, PIT, 9.6, FACE_N, { group: "waveC" }),
   E("c-4", 1, PIT, 9.6, FACE_N, { group: "waveC", kind: "rusher" }), E("c-5", 0, PIT, 7.2, FACE_N, { group: "waveC" }),
   // wave D (20 down): the mast stair (the heavy) and the service room
-  E("d-1", 0, 0, 22, FACE_N, { group: "waveD", kind: "heavy", model: "rival723" }), E("d-2", -1.6, 0, 24, FACE_N, { group: "waveD" }), E("d-3", 1.6, 0, 24, FACE_N, { group: "waveD" }),
-  E("d-4", 27.6, 0, 6, FACE_W, { group: "waveD", kind: "rusher" }), E("d-5", 27.6, 0, 8.6, FACE_W, { group: "waveD" }),
+  E("d-1", 0, 0, 22, FACE_N, { group: "waveD", kind: "heavy", model: "rival723" }), E("d-2", -1.6, 0, 24, FACE_N, { group: "waveD" }), E("d-3", 1.6, 0, 24, FACE_N, { group: "waveD", minDiff: "hard" }),
+  E("d-4", 27.6, 0, 6, FACE_W, { group: "waveD", kind: "rusher" }), E("d-5", 27.6, 0, 8.6, FACE_W, { group: "waveD", minDiff: "hard" }),
   // wave E (25 down): up the bridge behind him, and the gallery
   E("e-1", -32, 0, -0.6, FACE_E, { group: "waveE", kind: "rusher" }), E("e-2", -33.5, 0, 0.6, FACE_E, { group: "waveE", kind: "rusher" }), E("e-3", -30.5, 0, 0.6, FACE_E, { group: "waveE" }),
   E("e-4", -1.2, GY, -20.4, FACE_S, { group: "waveE2", kind: "heavy", model: "rival652" }), E("e-5", 1.2, GY, -20.4, FACE_S, { group: "waveE2" }),
@@ -235,6 +235,7 @@ k.m(
   marker("exit", "exit", [0, 0, 19]),
   marker("cop-1", "pickup", [-22.5, 0, -8], { item: "copium" }), marker("cop-2", "pickup", [0, PIT, 3], { item: "copium" }),
   marker("cop-3", "pickup", [16.2, 0, 15], { item: "copium" }), marker("cop-4", "pickup", [11, 0, -12.5], { item: "copium" }),
+  marker("cop-5", "pickup", [-17, 0, -2], { item: "copium" }), marker("cop-6", "pickup", [4, 0, 15], { item: "copium" }),
   marker("smgs", "pickup", [0, 0, 10.2], { item: "smgs" }),
   marker("rifle", "pickup", [-14, GY, -16.5], { item: "rifle" }),
   marker("nades", "pickup", [22.5, 0, -2], { item: "grenade", amount: 2 }),
