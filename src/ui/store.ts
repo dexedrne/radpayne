@@ -82,6 +82,10 @@ export type Hud = {
   guard: number;
   guardUp: boolean;
   guardBroken: boolean;
+  /** Cover (sim/cover.ts): "" none, "near" (a cover press would take one), "low" / "high" (in it), "edge"
+   *  (in high cover at an open edge); `coverDash`: in cover with a spot marked to dash to. */
+  cover: "" | "near" | "low" | "high" | "edge";
+  coverDash: boolean;
 };
 
 /** One hit on the player: where the shooter stood (NaN = no shooter: a fall), when, how hard. */
@@ -149,7 +153,7 @@ type Ui = {
   aimAssist: AimAssist;
 };
 
-const stored = (k: string, d: string): string => {
+export const stored = (k: string, d: string): string => {
   try {
     return localStorage.getItem(`radpayne.${k}`) ?? d;
   } catch {
@@ -182,7 +186,7 @@ export const HUD_INITIAL: Hud = {
   roomLabel: "", objective: "", objectiveAt: 0, weaponId: "pistols", owned: ["pistols"], reserve: Infinity, hands: 2, ammo: { pistols: Infinity },
   refill: null, btRefusedAt: 0, killcamProgress: 0, cine: 0, cineTag: "", awake: false, run: 0,
   grenades: 0, lastInSlot: {}, zoom: false, secrets: 0, secretsTotal: 0, pins: [], use: "",
-  katana: false, guard: 1, guardUp: false, guardBroken: false,
+  katana: false, guard: 1, guardUp: false, guardBroken: false, cover: "", coverDash: false,
 };
 
 export const useUi = create<Ui>(() => ({

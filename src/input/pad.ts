@@ -1,7 +1,7 @@
 // The gamepad's layout, shared by the input (what each button does), the prompts (which glyph a hint
 // shows) and the controls lists. The Gamepad API's standard mapping; the layout follows the console
-// shooters of the genre: L2 aims, R2 fires, R1 dives, a stick click is bullet time, L1 / the d-pad
-// change the gun, Square reloads (or uses what is in reach), Triangle throws, Circle strikes (#4764: a
+// shooters of the genre: L2 aims, R2 fires, R1 dives, a stick click is bullet time, L1 takes cover (in
+// cover L2 pops out and Cross vaults), the d-pad's left-right change the gun, Square reloads (or uses what is in reach), Triangle throws, Circle strikes (#4764: a
 // tap cuts with the katana, held it is his guard).
 // Pure: no DOM, no store (the tests import it).
 
@@ -26,12 +26,13 @@ export type Glyph =
 /** What the player does, as the prompts name it. */
 export type Act =
   | "move" | "aim" | "fire" | "aimHold" | "scope" | "bt" | "dodge" | "jump" | "reload" | "use" | "copium" | "weapon"
-  | "melee" | "grenade" | "pause" | "confirm" | "back" | "navigate" | "change" | "tabs" | "skip" | "mute";
+  | "melee" | "grenade" | "pause" | "confirm" | "back" | "navigate" | "change" | "tabs" | "skip" | "mute" | "cover" | "vault";
 
 /** The glyphs each action shows on a pad (empty: no pad button; the key stays). */
 export const PAD_GLYPHS: Record<Act, Glyph[]> = {
   move: ["ls"], aim: ["rs"], fire: ["r2"], aimHold: ["l2"], scope: ["l2"], bt: ["r3"], dodge: ["r1"], jump: ["cross"],
-  reload: ["square"], use: ["square"], copium: ["dup"], weapon: ["l1", "dpadH"], melee: ["circle"], grenade: ["triangle"],
+  reload: ["square"], use: ["square"], copium: ["dup"], weapon: ["dpadH"], melee: ["circle"], grenade: ["triangle"],
+  cover: ["l1"], vault: ["cross"],
   pause: ["options"], confirm: ["cross"], back: ["circle"], navigate: ["dpadV"], change: ["dpadH"], tabs: ["l1", "r1"],
   skip: ["circle"], mute: [],
 };
@@ -41,7 +42,7 @@ const KEY_ACT: Record<string, Act> = {
   W: "move", A: "move", S: "move", D: "move", WASD: "move", MOUSE: "aim", LMB: "fire", RMB: "bt", Q: "bt", SHIFT: "dodge",
   SPACE: "jump", R: "reload", H: "copium", "1": "weapon", "2": "weapon", "3": "weapon", "4": "weapon", "5": "weapon",
   "1-5": "weapon", WHEEL: "weapon", F: "melee", G: "grenade", E: "use", ESC: "back", P: "pause", ENTER: "confirm",
-  CLICK: "confirm", "↑↓": "navigate", "←→": "change", TAB: "tabs", M: "mute",
+  CLICK: "confirm", "↑↓": "navigate", "←→": "change", TAB: "tabs", M: "mute", C: "cover",
 };
 export const keyAct = (k: string): Act | undefined => KEY_ACT[k.trim().toUpperCase()];
 
@@ -62,8 +63,9 @@ export const GLYPH_NAME: Record<PadKind, Record<Glyph, string>> = {
 /** The pad's controls list (title, pause menu). */
 export const PAD_CONTROLS: Array<[Glyph[], string]> = [
   [["ls"], "move"], [["rs"], "aim"], [["r2"], "fire"], [["l2"], "aim (sniper: scope)"],
-  [["r3", "l3"], "bullet time"], [["r1"], "shootdodge"], [["cross"], "jump low cover"], [["square"], "reload / use"],
-  [["dup"], "copium"], [["l1", "dpadH"], "weapon"], [["circle"], "melee (#4764: tap cut, hold guard)"], [["triangle"], "grenade"], [["ddown"], "use"],
+  [["r3", "l3"], "bullet time"], [["r1"], "shootdodge"], [["l1"], "cover (again: dash to the marked cover)"], [["l2"], "in cover: hold to pop out and aim"],
+  [["cross"], "jump (in cover: vault)"], [["square"], "reload / use"],
+  [["dup"], "copium"], [["dpadH"], "weapon"], [["circle"], "melee (#4764: tap cut, hold guard)"], [["triangle"], "grenade"], [["ddown"], "use"],
   [["options"], "pause"],
 ];
 

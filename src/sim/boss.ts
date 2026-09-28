@@ -22,8 +22,9 @@ import { MADAME } from "./tuning.ts";
 
 /** `flight`: the lob's time in the air; `fuse`: world s from the throw to the blast. */
 export type Grenade = { id: number; x: number; y: number; z: number; x0: number; y0: number; z0: number; vx: number; vy: number; vz: number; tx: number; ty: number; tz: number; age: number; landed: boolean; flight: number; fuse: number };
-export type AddDoor = { door: string; group: string; x: number; z: number; ox: number; oz: number; lamp: number; lit: boolean; open: boolean; queue: number[]; next: number };
-export type BossSettings = { chandelier?: [number, number, number]; rug?: [number, number, number]; bag?: [number, number]; terrace?: [number, number]; doors?: Array<{ door: string; group: string }> };
+/** after: a door the phases do not name lights this many world seconds into phase 2 (-1: a phase's door). */
+export type AddDoor = { door: string; group: string; x: number; z: number; ox: number; oz: number; lamp: number; lit: boolean; open: boolean; queue: number[]; next: number; after: number };
+export type BossSettings = { chandelier?: [number, number, number]; rug?: [number, number, number]; bag?: [number, number]; terrace?: [number, number]; doors?: Array<{ door: string; group: string; after?: number }> };
 /** What his shot met first: the grenade in her hand, a grenade (by id), the chandelier's chain. */
 export type BossTarget = { t: number; kind: "hand" | "grenade" | "chain"; id: number };
 export type Sweep = { tell: number; tellDur: number; t: number; a0: number; a1: number; fireT: number; hand: number; hit: boolean };
@@ -72,9 +73,12 @@ export class Boss {
       const x = box?.cx ?? 0, z = box?.cz ?? 0;
       // outward: away from the hall's centre (the adds wait there; the runners leave that way)
       const l = Math.hypot(x, z) || 1;
-      return { door: d.door, group: d.group, x, z, ox: x + (x / l) * 1.4, oz: z + (z / l) * 1.4, lamp: 0, lit: false, open: false, queue: g.enemies.filter(e => e.group === d.group).map(e => e.idx), next: 0 };
+      return { door: d.door, group: d.group, x, z, ox: x + (x / l) * 1.4, oz: z + (z / l) * 1.4, lamp: 0, lit: false, open: false, queue: g.enemies.filter(e => e.group === d.group).map(e => e.idx), next: 0, after: typeof d.after === "number" ? d.after : -1 };
     });
   }
+
+  /** World time phase 2 began. */
+  private phase2At = 0;
 
   her(g: Game): Enemy {
     return g.enemies[this.idx];
@@ -234,6 +238,7 @@ export class Boss {
         this.phase = 2;
         this.grenadeNext = Math.min(this.grenadeNext, G.first);
         g.emit({ type: "boss", what: "phase2" });
+        this.phase2At = g.time;
         this.light(g, 0);
       } else if (this.phase === 2 && f <= MADAME.phase3) {
         this.phase = 3;
@@ -260,7 +265,11 @@ export class Boss {
         g.emit({ type: "boss", what: "lastStand" });
       }
     }
-    // the add doors
+    // the add doors (a third one, behind him, some way into phase 2: the room is not two doors to camp)
+    for (let i = 0; i < this.doors.length; i++) {
+      const d = this.doors[i];
+      if (d.after >= 0 && !d.lit && this.phase >= 2 && g.time - this.phase2At >= d.after && e.state !== "dead") this.light(g, i);
+    }
     for (const d of this.doors) {
       if (d.lit && !d.open) {
         d.lamp -= dt;
@@ -358,6 +367,7 @@ export class Boss {
     h.f64(this.sweepNext).f64(this.grenadeNext).f64(this.sweep ? this.sweep.t + this.sweep.tell : -1).f64(this.wind ? this.wind.t : -1);
     for (const gr of this.grenades) h.f64(gr.x).f64(gr.y).f64(gr.z).f64(gr.age).f64(gr.fuse);
     for (const d of this.doors) h.f64(d.lamp).i32(d.open ? 1 : 0).i32(d.queue.length).f64(d.next);
+    h.f64(this.phase2At);
   }
 }
 
@@ -378,16 +388,19 @@ export function grenadeEscape(g: Game): { x: number; z: number } | null {
   const b = g.boss;
   if (!b) return null;
   const p = g.player;
-  let ex = 0, ez = 0;
+  let ex = 0, ez = 0, px = 0, pz = 0;
   for (const gr of b.grenades) {
     const dx = p.x - gr.tx, dz = p.z - gr.tz, d = Math.hypot(dx, dz);
     if (d > MADAME.grenade.radius + 0.6) continue;
+    // (between two rings the pushes can cancel: then out square to the line between them)
+    if (!px && !pz) { px = d > 1e-3 ? -dz / d : 0; pz = d > 1e-3 ? dx / d : 1; }
     const l = d || 1;
     ex += (d > 1e-3 ? dx / l : 1) * (MADAME.grenade.radius + 0.6 - d);
     ez += (d > 1e-3 ? dz / l : 0) * (MADAME.grenade.radius + 0.6 - d);
   }
   const l = Math.hypot(ex, ez);
-  return l > 1e-6 ? { x: ex / l, z: ez / l } : null;
+  if (l > 0.25) return { x: ex / l, z: ez / l };
+  return px || pz ? { x: px, z: pz } : null;
 }
 
 /** An add running for her door once Madame Pockit is down: gone (inactive) at the door. */

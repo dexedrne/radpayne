@@ -8,6 +8,7 @@ import { readLevel } from "../src/world/level.ts";
 import { World } from "../src/sim/world.ts";
 import { Graph } from "../src/ai/graph.ts";
 import { PICKUPS } from "../src/combat/weapons.ts";
+import { coverReport } from "../src/sim/cover.ts";
 
 const dir = path.resolve(import.meta.dirname, "..", "public", "levels");
 const arg = process.argv[2];
@@ -54,6 +55,41 @@ for (const f of files) {
   const kinds = ["goon", "rusher", "heavy", "madame"].filter(k => k !== "madame" || level.markers.some(m => m.kind === "enemy" && m.data.kind === k)).map(k => `${k} ${level.markers.filter(m => m.kind === "enemy" && (m.data.kind ?? "goon") === k).length}`).join(" / ");
   const crowd = level.markers.filter(m => m.kind === "crowd").reduce((n, m) => n + Number(m.data.count ?? 1), 0);
   console.log(`${f}: "${level.room.name}" ${level.boxes.length} colliders, spawn ${count("spawn")}, enemies ${count("enemy")} (${kinds}), covers ${count("cover")}, waypoints ${count("waypoint")} (${graph.nodes.reduce((s, n) => s + n.links.length, 0) / 2} links), pickups ${count("pickup")}, triggers ${count("trigger")}, secrets ${count("secret")} (${level.doors.length} doors, ${level.breakables.length} breakables), eggs ${count("egg")}${crowd ? `, crowd ${crowd} (${count("crowdExit")} exits)` : ""}`);
+  // room 4: a stop's waves come in where the car cannot see them (its doors open, from anywhere inside it
+  // at eye height), and from more than one entry
+  const ride = level.room.ride as { car?: number[]; steps?: Array<{ stop?: string; doors?: string[]; groups?: string[]; waves?: Array<{ group: string; hatch?: boolean }> }> } | undefined;
+  if (ride?.steps) {
+    const [x0, z0, x1, z1] = ride.car ?? [-3, -3, 3, 3];
+    for (const st of ride.steps) {
+      if (!st.stop) continue;
+      for (const d of st.doors ?? []) world.setEnabled(d, false);
+      const seen: string[] = [];
+      const entries = new Set<string>();
+      for (const w of st.waves ?? []) {
+        if (w.hatch) { entries.add("hatch"); continue; }
+        for (const m of level.markers) {
+          if (m.kind !== "enemy" || m.data.group !== w.group) continue;
+          entries.add(`${Math.round(m.x / 4)},${Math.round(m.z / 4)}`);
+          let vis = false;
+          for (let i = 0; i <= 4 && !vis; i++) for (let j = 0; j <= 4 && !vis; j++) {
+            const cx = x0 + 0.5 + ((x1 - x0 - 1) * i) / 4, cz = z0 + 0.5 + ((z1 - z0 - 1) * j) / 4;
+            if (world.clear(cx, 1.6, cz, m.x, m.y + 1.2, m.z, true)) vis = true;
+          }
+          if (vis) seen.push(m.id);
+        }
+      }
+      for (const d of st.doors ?? []) world.setEnabled(d, true);
+      console.log(`  ${st.stop}: ${(st.waves ?? []).length} waves from ${entries.size} places${seen.length ? `; in sight of the car: ${seen.join(", ")}` : ", all out of the car's sight"}`);
+      if (seen.length) issues.push(`${st.stop}: wave hostiles in sight of the car: ${seen.join(", ")}`);
+    }
+  }
+  // derived cover (sim/cover.ts): what the colliders give the player and the gang, and how much of the
+  // walkable room (its waypoints) has cover within reach
+  const cv = coverReport(world, graph);
+  console.log(`  cover: ${cv.low} low (${cv.lowM.toFixed(0)} m), ${cv.high} high (${cv.edges} open edges), ${cv.ai} gang points (${cv.aiReach} reachable); ${Math.round(cv.coverage * 100)} % of the waypoints have cover within ${cv.within} m`);
+  // (an open dance floor or a lobby may stay open: below 85 % the bare spots are listed, to put props at)
+  // (the greybox is the tests' bare arena: it keeps its layout)
+  if (cv.coverage < 0.85 && f !== "greybox.json") issues.push(`only ${Math.round(cv.coverage * 100)} % of the waypoints have cover within ${cv.within} m: add cover props near ${cv.bare.join(", ")}`);
   for (const i of issues) console.log(`  ! ${i}`);
   bad += issues.length;
 }

@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { FixedStepper } from "../src/sim/stepper.ts";
 import { Game } from "../src/sim/game.ts";
-import { DT, METER, PROJECTILE_SPEED, TIME } from "../src/sim/tuning.ts";
+import { DIFFICULTY, DT, METER, PROJECTILE_SPEED, TIME } from "../src/sim/tuning.ts";
 import { emptyInput } from "../src/sim/types.ts";
 import { level, markerNode } from "./helpers.ts";
 
@@ -19,7 +19,8 @@ test("stepper: 120 Hz steps, backlog capped, alpha in [0, 1)", () => {
 });
 
 test("bullet time: eases to 0.3, drains the meter in real time, turns itself off when empty", () => {
-  const g = new Game(open(), { ai: false });
+  // (Chill drains it in real time; the harder settings DIFFICULTY.btDrain times faster)
+  const g = new Game(open(), { ai: false, difficulty: "easy" });
   const inp = emptyInput();
   inp.yaw = g.player.yaw;
   inp.bt = true;
@@ -29,6 +30,10 @@ test("bullet time: eases to 0.3, drains the meter in real time, turns itself off
   for (let i = 0; i < 120; i++) g.step(inp);
   assert.equal(g.timeScale, TIME.bulletTime);
   assert.ok(Math.abs(g.meter - (METER.start - 121 * DT)) < 1e-9, `meter ${g.meter}`);
+  const h = new Game(open(), { ai: false, difficulty: "hard" });
+  h.step({ ...inp, bt: true });
+  for (let i = 0; i < 120; i++) h.step(inp);
+  assert.ok(Math.abs(h.meter - (METER.start - 121 * DT * DIFFICULTY.hard.btDrain)) < 1e-9, `hard: meter ${h.meter}`);
   for (let i = 0; i < 120 * 10; i++) g.step(inp);
   assert.equal(g.bulletTime, false);
   assert.equal(g.meter, 0);

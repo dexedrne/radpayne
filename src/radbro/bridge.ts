@@ -36,7 +36,7 @@ export const RADPAYNE: GameInfo = {
   game: "radpayne",
   title: "RadPayne",
   objective: "Shoot your way through the Milady gang's club and up to Madame Pockit's penthouse in bullet time: clear every room, then walk to the door.",
-  hint: "Hold right button or Q for bullet time (R3 on a pad); kills refill the meter. Shift (R1) dives in slow motion.",
+  hint: "Q or right button for bullet time (R3 on a pad); kills refill the meter. Shift (R1) dives in slow motion. C (L1) takes cover.",
   // One control per entry, no commas inside one (the portal's play guide takes a comma-separated list).
   controls: [
     "WASD: move",
@@ -44,7 +44,9 @@ export const RADPAYNE: GameInfo = {
     "Left button: fire",
     "Right button / Q: bullet time",
     "Shift: shootdodge",
-    "Space: jump",
+    "C: take cover (in cover: dash to the marked cover)",
+    "In cover: hold right button to pop out and aim",
+    "Space: jump (in cover: vault over it)",
     "R: reload",
     "H: copium",
     "1-5 / wheel: weapons",

@@ -39,6 +39,7 @@ import { FRAME } from "./frame.ts";
 import { MELEE, TIME } from "../sim/tuning.ts";
 import { WEAPONS, isLongGun, isOneHand } from "../combat/weapons.ts";
 import { SHOULDER, wrapAngle } from "../sim/aim.ts";
+import { tucked } from "../sim/cover.ts";
 import { camView } from "./CameraView.tsx";
 import { holdDev } from "./dev/holdcheck.ts";
 
@@ -505,7 +506,7 @@ export function PlayerView({ s }: { s: Session }) {
         else r.recoil[e.hand] = 1;
       }
       if (e.type === "hurt" && e.target === -1 && e.hp > 0 && rig.hit) rig.hit.reset().setEffectiveWeight(0.9).play();
-      if (e.type === "throw") r.throwT = 0;
+      if (e.type === "throw" && e.by === undefined) r.throwT = 0;
       if (e.type === "reload") {
         // the shotgun's authored feed (the sniper's rounds go in the same way); the AK's (and the rifle's)
         // mag change is a left-hand path on the hold (no layer)
@@ -580,6 +581,12 @@ export function PlayerView({ s }: { s: Session }) {
         if (holdDev.on && holdDev.tweak["gu.start"] !== undefined) GETUP.start = holdDev.tweak["gu.start"];
         pl.play(pick(pl, C.getUp), { hold: true, timeScale: 2.8, fade: 0.12, startAt: isLongGun(r.shown) ? GETUP.start : 0 });
         r.clip = "getup";
+      } else if (p.mode === "vault") {
+        // over low cover: the jump's tucked middle, held, along the vault
+        r.bodyYaw = Math.atan2(p.vault.x1 - p.vault.x0, p.vault.z1 - p.vault.z0);
+        const j = pick(pl, C.jump);
+        if (j) pl.play(j, { hold: true, startAt: 0.4, freezeAt: 0.7, fade: 0.08 });
+        r.clip = "vault";
       } else if (p.mode === "dead") {
         // how much street is behind him decides how far he flies
         const yaw = prev === "normal" ? r.legYaw : r.bodyYaw;
@@ -597,7 +604,12 @@ export function PlayerView({ s }: { s: Session }) {
     let rate = 1, legYawWant = p.facing, want = "";
     if (p.mode === "normal") {
       const speed = Math.sqrt(p.vx * p.vx + p.vz * p.vz);
-      if (!p.grounded) {
+      // in cover: tucked down behind low cover (Cover_Crouch_Idle) facing it; up / out, the aimed idle
+      const cs = p.cover >= 0 ? g.cover[p.cover] : null;
+      if (cs && tucked(cs, p)) {
+        want = pick(pl, C.crouch) || pick(pl, C.idle);
+        if (r.jumpHold) r.jumpHold = false;
+      } else if (!p.grounded) {
         if (!r.jumpHold) {
           r.jumpHold = true;
           const j = pick(pl, C.jump);
@@ -748,7 +760,9 @@ export function PlayerView({ s }: { s: Session }) {
       rotateBoneWorld(B.spine, tmp.side, p.pitch * k2 * (1 - r.reloadW));
     }
     // arms onto the aim point (the clips already hold them out; this makes it exact)
-    const armWant = !alive || p.mode === "roll" || p.mode === "getup" ? 0 : 1;
+    // (tucked down in cover the guns come in to the chest until he blind fires)
+    const coverSeg = p.cover >= 0 ? g.cover[p.cover] : null;
+    const armWant = !alive || p.mode === "roll" || p.mode === "getup" ? 0 : coverSeg && tucked(coverSeg, p) && r.sinceShot > 0.5 ? 0.3 : 1;
     r.armW += (armWant - r.armW) * Math.min(1, (armWant ? 8 : 16) * dt);
     const t = g.aimPoint;
     tmp.aim.set(t.x, t.y, t.z);

@@ -205,6 +205,15 @@
    "color": "#3a3d36",
    "roughness": 0.9
   },
+  "crateWood": {
+   "color": "#6b5236",
+   "roughness": 0.85
+  },
+  "shrinkWrap": {
+   "color": "#8f979c",
+   "roughness": 0.35,
+   "metalness": 0.1
+  },
   "shrub": {
    "color": "#16261a",
    "roughness": 0.95
@@ -1739,6 +1748,143 @@
         "properties": {
          "castShadow": false,
          "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "barrier-c",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-18, 0.5, -0.8],
+         "scale": [0.6, 1, 3.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concrete"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "barrier-d",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-11, 0.5, 0.8],
+         "rotation": [0, 1.571, 0],
+         "scale": [0.6, 1, 3.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concrete"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "barrier-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [21, 0.5, 2.6],
+         "scale": [0.6, 1, 3.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concrete"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "pallets",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [13.6, 0.55, 6.4],
+         "scale": [1.3, 1.1, 1.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "crateWood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
         }
        }
       }
@@ -5151,6 +5297,135 @@
         "type": "Material",
         "properties": {
          "materialId": "barrelOrange"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "barrier-c-base",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-18, 0.12, -0.8],
+         "scale": [0.8, 0.24, 3.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concrete"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "barrier-d-base",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-11, 0.12, 0.8],
+         "rotation": [0, 1.571, 0],
+         "scale": [0.8, 0.24, 3.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concrete"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "barrier-e-base",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [21, 0.12, 2.6],
+         "scale": [0.8, 0.24, 3.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "concrete"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "pallets-wrap",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [13.6, 0.8, 6.4],
+         "scale": [1.32, 0.5, 1.12]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "shrinkWrap"
         }
        },
        "mesh": {

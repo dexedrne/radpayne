@@ -117,6 +117,8 @@ export class Session {
   frame(delta: number): void {
     // the sniper in hand: right mouse / LT hold the scope
     this.input.zoomMode = this.game.player.weapon.id === "sniper";
+    // in cover the right mouse pops him out (held) instead of toggling bullet time
+    this.input.coverMode = this.game.player.cover >= 0 || this.game.player.dashSeg >= 0;
     // the pad's Square uses what is in reach (a secret door, an egg), else it reloads
     const ph = this.game.phase;
     this.input.useHere = (ph === "play" || ph === "clear") && this.game.useTarget() !== null;

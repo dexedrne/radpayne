@@ -33,10 +33,15 @@ export type InputFrame = {
    *  a moment of the press and it was a tap: the cut. A press that came and went between two steps
    *  (`melee` without `guard`) cuts at once, as it does for everyone else. */
   guard?: boolean;
+  /** Cover (C / LB): a press edge. Out of cover: take the marked cover (the one close by, or run to the one
+   *  in view); in cover: dash to the marked spot, or leave when none is marked. */
+  cover?: boolean;
+  /** Aim held (right mouse / LT): in cover he pops out over it or round its edge while it is down. */
+  aim?: boolean;
 };
 
 export function emptyInput(): InputFrame {
-  return { moveX: 0, moveY: 0, yaw: 0, pitch: 0, fire: false, bt: false, dodge: false, jump: false, reload: false, copium: false, slot: 0, skip: false, melee: false, throw: false, interact: false, zoom: false, guard: false };
+  return { moveX: 0, moveY: 0, yaw: 0, pitch: 0, fire: false, bt: false, dodge: false, jump: false, reload: false, copium: false, slot: 0, skip: false, melee: false, throw: false, interact: false, zoom: false, guard: false, cover: false, aim: false };
 }
 
 export type V3 = { x: number; y: number; z: number };
@@ -86,12 +91,15 @@ export type GameEvent =
   /** Bullet time asked for with too little meter (the HUD flashes the hourglass). */
   | { type: "btRefused" }
   // the arsenal: a grenade leaves his left hand (id), bounces, goes off (x, y, z; kills in it)
-  | { type: "throw"; id: number; x: number; y: number; z: number }
+  | { type: "throw"; id: number; x: number; y: number; z: number; /** a goon's frag (ai/tactics.ts): her index */ by?: number }
   | { type: "bounce"; id: number; x: number; y: number; z: number; speed: number }
   | { type: "explode"; id: number; x: number; y: number; z: number }
   /** A melee: `phase` start (the swing begins) / hit (it resolved: `hits` bodies); kind katana | strike. */
   | { type: "melee"; kind: "katana" | "strike"; phase: "start" | "hit"; hits: number }
   | { type: "zoom"; on: boolean }
+  /** Cover (sim/cover.ts): in (took it), out (left it), pop (up / out to shoot), duck (back behind it), vault
+   *  (over low cover), dash (a run to the marked cover); high: the kind he is at. */
+  | { type: "cover"; what: "in" | "out" | "pop" | "duck" | "vault" | "dash"; high: boolean }
   /** #4764's guard: raised, lowered, broken (its meter ran out: down for GUARD.broken). */
   | { type: "guard"; what: "up" | "down" | "break" }
   /** A round met his guard at (x, y, z), coming along (dx, dy, dz): it goes off along (rx, ry, rz): back at

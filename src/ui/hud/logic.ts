@@ -1,5 +1,7 @@
 // Pure HUD maths (no DOM, no React): the scale, the damage slash, the caption budget, the canvas
 // filter, key hints, personal bests. Node tests import this file directly.
+import { SLOT_ORDER, slotOf, type WeaponId } from "../../combat/weapons.ts";
+import type { Glyph } from "../../input/pad.ts";
 
 export const clamp = (v: number, a: number, b: number): number => (v < a ? a : v > b ? b : v);
 export const clamp01 = (v: number): number => clamp(v, 0, 1);
@@ -311,3 +313,17 @@ export function recordBest(st: Storageish | null, room: string, difficulty: stri
   }
   return { prev, isBest };
 }
+
+// ---- weapon tabs on a pad ------------------------------------------------------------------------
+
+/** Which tab each d-pad arm reaches (the game cycles the owned guns in slot order, twins included):
+ *  slot -> its glyph. Pure (the tests read it). */
+export function padTabGlyphs(current: WeaponId, owned: WeaponId[]): Partial<Record<number, Glyph>> {
+  const list = SLOT_ORDER.filter(w => owned.includes(w));
+  const i = list.indexOf(current);
+  if (list.length < 2 || i < 0) return {};
+  const next = slotOf(list[(i + 1) % list.length]), prev = slotOf(list[(i + list.length - 1) % list.length]);
+  if (next === prev) return { [next]: "dpadH" };
+  return { [next]: "dright", [prev]: "dleft" };
+}
+

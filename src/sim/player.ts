@@ -7,6 +7,7 @@ import type { World } from "./world.ts";
 import { DODGE, DODGE_GRAVITY, GUARD, PLAYER, ZOOM } from "./tuning.ts";
 import { isLongGun, isOneHand } from "../combat/weapons.ts";
 import { PITCH_MAX, PITCH_MIN, SHOULDER, facingOfAim } from "./aim.ts";
+import { COVER_MOVE, attachCover, coverSpot, edgeAt, hideRange, leaveCover, segLive, segPoint, tucked, vaultLanding, type CoverSeg } from "./cover.ts";
 
 export const PM_JUMP = 1;
 export const PM_DIVE = 2;
@@ -14,11 +15,17 @@ export const PM_LAND = 4;
 export const PM_PRONE = 8;
 export const PM_GETUP = 16;
 export const PM_ROLL = 32;
+export const PM_COVER_IN = 64;
+export const PM_COVER_OUT = 128;
+export const PM_POP = 256;
+export const PM_DUCK = 512;
+export const PM_VAULT = 1024;
 
 const tmp = { x: 0, z: 0 };
 
-/** One step. `dt` = real step, `pdt` = the player's clock. Returns PM_* bits. */
-export function stepPlayer(world: World, p: Player, inp: InputFrame, dt: number, pdt: number): number {
+/** One step. `dt` = real step, `pdt` = the player's clock; `segs`: the room's cover (sim/cover.ts).
+ *  Returns PM_* bits. */
+export function stepPlayer(world: World, p: Player, inp: InputFrame, dt: number, pdt: number, segs: CoverSeg[] | null = null): number {
   let ev = 0;
   p.yaw = inp.yaw;
   p.pitch = inp.pitch < PITCH_MIN ? PITCH_MIN : inp.pitch > PITCH_MAX ? PITCH_MAX : inp.pitch;
@@ -36,10 +43,16 @@ export function stepPlayer(world: World, p: Player, inp: InputFrame, dt: number,
   let height: number = PLAYER.height;
   let gravity: number = PLAYER.gravity;
   let stepDt = pdt;
+  /** Cover this step: the segment he is in (after the move), placed on its line (no free movement). */
+  let inCover: CoverSeg | null = null;
+  let wantUp = -1;
+  const wasPop = p.coverPop >= 0.5;
+  if (p.mode !== "normal" && (p.cover >= 0 || p.dashSeg >= 0)) { leaveCover(p); ev |= PM_COVER_OUT; }
 
   switch (p.mode) {
     case "normal": {
       p.facing = aimFacing;
+      if (inp.dodge && p.dodgeCooldown <= 0 && (p.cover >= 0 || p.dashSeg >= 0)) { leaveCover(p); ev |= PM_COVER_OUT; }
       if (inp.dodge && p.dodgeCooldown <= 0) {
         // dive along the move input, else straight ahead along the aim
         let dx = mx, dz = mz;
@@ -58,6 +71,73 @@ export function stepPlayer(world: World, p: Player, inp: InputFrame, dt: number,
         gravity = DODGE_GRAVITY;
         stepDt = dt;
         break;
+      }
+      // the run to the marked cover: low and fast, straight at the spot; he is in it on arrival
+      if (segs && p.dashSeg >= 0) {
+        const s = segs[p.dashSeg];
+        p.dashT += pdt;
+        if (!s || !segLive(world, s) || p.dashT > COVER_MOVE.dashGiveUp) { leaveCover(p); ev |= PM_COVER_OUT; }
+        else {
+          const t = segPoint(s, p.dashU, tmp);
+          const dx = t.x - p.x, dz = t.z - p.z, d = Math.hypot(dx, dz);
+          if (d < 0.12) { attachCover(s, p, p.dashU); p.vx = p.vz = 0; ev |= PM_COVER_IN; }
+          else {
+            const sp = Math.min(COVER_MOVE.dash, d / Math.max(pdt, 1e-6));
+            const a = PLAYER.accel * 1.6 * pdt;
+            let dvx = (dx / d) * sp - p.vx, dvz = (dz / d) * sp - p.vz;
+            const dl = Math.hypot(dvx, dvz);
+            if (dl > a) { dvx *= a / dl; dvz *= a / dl; }
+            p.vx += dvx;
+            p.vz += dvz;
+            height = 1.2;
+            wantUp = 1.2;
+            break;
+          }
+        }
+      }
+      if (segs && p.cover >= 0) {
+        const s = segs[p.cover];
+        if (!s || !segLive(world, s)) { leaveCover(p); ev |= PM_COVER_OUT; }
+        else {
+          // pushing away from it (camera-relative input, so "back" off a wall is the stick pulled back)
+          const away = moving && (mx * s.nx + mz * s.nz) / ml > 0.6;
+          p.coverAway = away ? p.coverAway + dt : 0;
+          // the vault over low cover (Space / A)
+          const land = inp.jump && p.grounded ? vaultLanding(world, s, p.x, p.z) : null;
+          if (land) {
+            p.vault.x0 = p.x; p.vault.y0 = p.y; p.vault.z0 = p.z;
+            p.vault.x1 = land.x; p.vault.y1 = land.y; p.vault.z1 = land.z; p.vault.top = s.y + s.top;
+            leaveCover(p);
+            p.mode = "vault";
+            p.modeT = 0;
+            p.vx = p.vz = p.vy = 0;
+            ev |= PM_VAULT | PM_COVER_OUT;
+            height = 1.1;
+            break;
+          }
+          if (p.coverAway >= COVER_MOVE.awayHold) { leaveCover(p); ev |= PM_COVER_OUT; }
+          else {
+            // slide along it (hidden, or up over low cover; out past a high edge he holds still)
+            const along = moving ? mx * s.tx + mz * s.tz : 0;
+            if (!s.high || p.coverPop < 0.05) {
+              const [lo, hi] = hideRange(s);
+              p.coverU = Math.max(lo, Math.min(hi, p.coverU + along * (p.coverPop > 0.5 ? COVER_MOVE.slidePop : COVER_MOVE.slide) * pdt));
+            }
+            if (p.coverPop < 0.05 || !s.high) p.coverEnd = edgeAt(s, p.coverU, p.yaw);
+            // aim held: up over low cover, out past a high edge (mid-wall there is nowhere to go)
+            const want = inp.aim && (!s.high || p.coverEnd !== 0) ? 1 : 0;
+            const k = pdt / COVER_MOVE.popTime;
+            p.coverPop = want > p.coverPop ? Math.min(1, p.coverPop + k) : want < p.coverPop ? Math.max(0, p.coverPop - k) : want;
+            if (p.coverPop >= 0.5 && !wasPop) ev |= PM_POP;
+            if (p.coverPop < 0.5 && wasPop) ev |= PM_DUCK;
+            inCover = s;
+            if (p.coverPop < 0.5) p.facing = Math.atan2(-s.nx, -s.nz);
+            height = tucked(s, p) ? 1.15 : PLAYER.height;
+            wantUp = tucked(s, p) ? Math.max(0.95, Math.min(SHOULDER.up, s.top + 0.22)) : SHOULDER.up;
+            p.vx = p.vz = 0;
+            break;
+          }
+        }
       }
       if (inp.jump && p.grounded) {
         p.vy = PLAYER.jumpSpeed;
@@ -136,6 +216,31 @@ export function stepPlayer(world: World, p: Player, inp: InputFrame, dt: number,
       }
       break;
     }
+    case "vault": {
+      // scripted, real time: along the line, over the top in an arc, onto the landing
+      height = 1.1;
+      p.facing = aimFacing;
+      const v = p.vault, t = Math.min(1, p.modeT / COVER_MOVE.vaultTime);
+      const e = t * t * (3 - 2 * t);
+      const lift = Math.max(0, v.top + COVER_MOVE.vaultClear - Math.max(v.y0, v.y1));
+      p.x = v.x0 + (v.x1 - v.x0) * e;
+      p.z = v.z0 + (v.z1 - v.z0) * e;
+      p.y = v.y0 + (v.y1 - v.y0) * e + 4 * t * (1 - t) * lift;
+      p.vx = (v.x1 - v.x0) / COVER_MOVE.vaultTime;
+      p.vz = (v.z1 - v.z0) / COVER_MOVE.vaultTime;
+      p.vy = 0;
+      p.grounded = false;
+      if (t >= 1) {
+        p.mode = "normal";
+        p.modeT = 0;
+        p.y = v.y1;
+        p.grounded = true;
+        p.vx *= 0.5;
+        p.vz *= 0.5;
+        p.dodgeCooldown = DODGE.cooldown;
+      }
+      break;
+    }
     case "dead": {
       p.vx *= 0.9;
       p.vz *= 0.9;
@@ -144,12 +249,30 @@ export function stepPlayer(world: World, p: Player, inp: InputFrame, dt: number,
     }
   }
 
-  integrate(world, p, stepDt, height, gravity);
-  p.speed = Math.sqrt(p.vx * p.vx + p.vz * p.vz);
+  if (inCover) {
+    // on its line: the hide spot, or out past the edge (the spots were checked when the cover was derived)
+    const x0 = p.x, z0 = p.z;
+    coverSpot(inCover, p, tmp);
+    p.x = tmp.x;
+    p.z = tmp.z;
+    integrate(world, p, stepDt, height, gravity);
+    p.x = tmp.x;
+    p.z = tmp.z;
+    p.speed = Math.hypot(p.x - x0, p.z - z0) / Math.max(pdt, 1e-6);
+  } else if (p.mode !== "vault") {
+    integrate(world, p, stepDt, height, gravity);
+    p.speed = Math.sqrt(p.vx * p.vx + p.vz * p.vz);
+  } else p.speed = Math.hypot(p.vx, p.vz);
+
+  // the shoulder the pivot sits over: an open edge on his left (in cover) takes it left
+  let sideWant = 1;
+  if (inCover && p.coverEnd !== 0) sideWant = p.coverEnd * (inCover.tx * Math.cos(p.yaw) - inCover.tz * Math.sin(p.yaw)) >= 0 ? 1 : -1;
+  p.shoulder += (sideWant - p.shoulder) * Math.min(1, 8 * dt);
+  if (Math.abs(p.shoulder - sideWant) < 1e-3) p.shoulder = sideWant;
 
   // shoulder pivot height eases toward the stance (sim-side, so the aim ray is deterministic)
   const lying = p.mode === "dive" || p.mode === "prone" || p.mode === "dead";
-  const wantUp = lying ? SHOULDER.lyingUp : p.mode === "getup" ? SHOULDER.lyingUp + (SHOULDER.up - SHOULDER.lyingUp) * Math.min(1, p.modeT / DODGE.getUp) : p.mode === "roll" ? 1.1 : SHOULDER.up;
+  if (wantUp < 0) wantUp = lying ? SHOULDER.lyingUp : p.mode === "getup" ? SHOULDER.lyingUp + (SHOULDER.up - SHOULDER.lyingUp) * Math.min(1, p.modeT / DODGE.getUp) : p.mode === "roll" || p.mode === "vault" ? 1.1 : SHOULDER.up;
   p.pivotUp += (wantUp - p.pivotUp) * Math.min(1, 14 * dt);
 
   // hit pose
@@ -159,7 +282,8 @@ export function stepPlayer(world: World, p: Player, inp: InputFrame, dt: number,
   if (p.mode === "dead") { pose.stance = "dead"; p.hit.hittable = false; }
   else if (p.mode === "dive") { pose.stance = "dive"; pose.lieH = 0.45; pose.yaw = Math.atan2(p.dirX, p.dirZ); }
   else if (p.mode === "prone") { pose.stance = "prone"; pose.lieH = 0.27; pose.yaw = Math.atan2(p.dirX, p.dirZ); }
-  else if (p.mode === "roll" || (p.mode === "getup" && p.modeT < DODGE.getUp * 0.5)) { pose.stance = "crouch"; pose.yaw = p.facing; }
+  else if (p.mode === "roll" || p.mode === "vault" || p.dashSeg >= 0 || (p.mode === "getup" && p.modeT < DODGE.getUp * 0.5)) { pose.stance = "crouch"; pose.yaw = p.facing; }
+  else if (inCover && tucked(inCover, p)) { pose.stance = "cover"; pose.yaw = p.facing; }
   else { pose.stance = "stand"; pose.yaw = p.facing; }
   return ev;
 }
@@ -206,10 +330,12 @@ function integrate(world: World, p: Player, dt: number, height: number, gravity:
 /** How far the shoulder pivot sits to his right: SHOULDER.right, less when a wall is closer (the aim
  *  ray must never start on the far side of a thin wall: the club's curtain partition is 0.25 m). */
 export function shoulderRight(world: World | null, p: Player): number {
-  if (!world) return SHOULDER.right;
-  const c = Math.cos(p.yaw), s = Math.sin(p.yaw);
+  // (signed: over his left shoulder in cover at an open edge on his left, p.shoulder < 0)
+  const side = p.shoulder >= 0 ? 1 : -1, want = SHOULDER.right * Math.abs(p.shoulder);
+  if (!world) return side * want;
+  const c = Math.cos(p.yaw) * side, s = Math.sin(p.yaw) * side;
   const h = world.raycast(p.x, p.y + p.pivotUp, p.z, c, 0, -s, SHOULDER.right + 0.3, false);
-  return h ? Math.max(0, Math.min(SHOULDER.right, h.t - 0.3)) : SHOULDER.right;
+  return side * (h ? Math.max(0, Math.min(want, h.t - 0.3)) : want);
 }
 
 /** Shoulder pivot (the aim ray and the camera start here): above the feet, to the camera's right

@@ -261,7 +261,8 @@ export function CameraView({ s }: { s: Session }) {
           // a wall at his right: over his left shoulder instead, until the right is free again
           const other = camWorld.raycast(r.x, by, r.z, -c, 0, sn, baseRight + 0.3, false);
           const leftFree = other ? Math.max(0, other.t - 0.3) : baseRight;
-          if (tmp.swap) { if (rightFree >= baseRight - 0.05 || leftFree < 0.3) tmp.swap = false; }
+          if (p.shoulder < 0) tmp.swap = leftFree >= 0.3; // in cover at a left edge: his left shoulder
+          else if (tmp.swap) { if (rightFree >= baseRight - 0.05 || leftFree < 0.3) tmp.swap = false; }
           else if (rightFree < 0.4 && leftFree > rightFree + 0.25) tmp.swap = true;
           if (tmp.swap) rightWant = -leftFree;
         } else tmp.swap = false;
@@ -307,11 +308,14 @@ export function CameraView({ s }: { s: Session }) {
         // (the wall's pull is kept apart from the base offset: the pull comes in at once and eases back
         // out, while the base follows the long-gun / shouldered / lying eases exactly, so a swap or a shot
         // never reads as a wall and never fades him)
-        const side = camWorld.raycast(r.x, by, r.z, c, 0, -sn, baseRight + 0.3, false);
+        // in cover at an open edge on his left the sim moves the pivot over his left shoulder (p.shoulder
+        // eases from +1 to -1): the lens goes with it, so the view round that corner is his
+        const sg = p.shoulder >= 0 ? 1 : -1, sk = Math.abs(p.shoulder);
+        const side = camWorld.raycast(r.x, by, r.z, c * sg, 0, -sn * sg, baseRight + 0.3, false);
         const pullWant = side ? baseRight - Math.max(0, side.t - 0.3) : 0;
         tmp.pull = pullWant > tmp.pull ? pullWant : tmp.pull + (pullWant - tmp.pull) * Math.min(1, 5 * dt);
-        tmp.right = Math.max(0, baseRight - tmp.pull);
-        tmp.piv.set(r.x + c * tmp.right, by, r.z - sn * tmp.right);
+        tmp.right = Math.max(0, baseRight - tmp.pull) * sk;
+        tmp.piv.set(r.x + c * tmp.right * sg, by, r.z - sn * tmp.right * sg);
         camView.right = tmp.right;
         // the eye drops below the pivot with a long gun (the head then sits above the gun line), or climbs
         // over it lying down; never below a floor under the lens. The wall check runs along the line from

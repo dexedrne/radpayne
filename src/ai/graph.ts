@@ -7,6 +7,8 @@ import type { World } from "../sim/world.ts";
 export const AUTO_LINK = 14;
 /** Height the walk-clear checks sample at (knee height: low cover blocks walking). */
 const WALK_Y = 0.45;
+/** The highest step a walk climbs (the player's step-up, a little over). */
+const STEP = 0.42;
 
 export type Waypoint = { id: string; x: number; y: number; z: number; links: number[] };
 
@@ -23,6 +25,8 @@ export type Cover = {
   side: number;
   /** Enemy index holding it, or -1. */
   claimed: number;
+  /** The derived cover segment it stands on (sim/cover.ts), -1 for a hand-placed marker. */
+  seg: number;
 };
 
 export class Graph {
@@ -61,19 +65,34 @@ export class Graph {
         if (j === i) continue;
         const a = this.nodes[i], b = this.nodes[j];
         const d = Math.sqrt((a.x - b.x) ** 2 + (a.z - b.z) ** 2);
-        if (d <= AUTO_LINK && this.walkClear(a.x, a.y, a.z, b.x, b.y, b.z)) link(i, j);
+        if (d <= AUTO_LINK && this.walkClear(a.x, a.y, a.z, b.x, b.y, b.z) && this.stepsOk(a.x, a.y, a.z, b.x, b.y, b.z)) link(i, j);
       }
     });
     for (const m of markers) {
       if (m.kind !== "cover") continue;
       const high = m.data.height === "high";
       const side = m.data.side === "left" ? 1 : m.data.side === "right" ? -1 : 1;
-      this.covers.push({ id: m.id, x: m.x, y: m.y, z: m.z, fx: Math.sin(m.yaw), fz: Math.cos(m.yaw), high, side, claimed: -1 });
+      this.covers.push({ id: m.id, x: m.x, y: m.y, z: m.z, fx: Math.sin(m.yaw), fz: Math.cos(m.yaw), high, side, claimed: -1, seg: -1 });
     }
   }
 
   walkClear(ax: number, ay: number, az: number, bx: number, by: number, bz: number): boolean {
     return this.world.clear(ax, ay + WALK_Y, az, bx, by + WALK_Y, bz, false);
+  }
+
+  /** A walk between two floor heights climbs in steps (stairs), never a ledge: the floor under the line,
+   *  sampled every 0.2 m, never rises or drops more than a step between two samples. */
+  stepsOk(ax: number, ay: number, az: number, bx: number, by: number, bz: number): boolean {
+    if (Math.abs(by - ay) < 0.05) return true;
+    const d = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(d / 0.2));
+    let last = ay;
+    for (let k = 1; k <= n; k++) {
+      const t = k / n, x = ax + (bx - ax) * t, z = az + (bz - az) * t;
+      const y = this.world.groundBelow(x, z, 0.1, Math.max(ay, by) + 0.1);
+      if (!Number.isFinite(y) || Math.abs(y - last) > STEP) return false;
+      last = y;
+    }
+    return true;
   }
 
   nearest(x: number, y: number, z: number, needClear = true): number {

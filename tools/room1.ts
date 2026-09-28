@@ -388,6 +388,14 @@ for (const [id, x, z] of [["barrier-a", -4, 1.5], ["barrier-b", 5, -2.5]] as Arr
   solid.push(box(id, [x, 0.5, z], [0.6, 1, 3.2], "concrete"));
   decor.push(box(`${id}-base`, [x, 0.12, z], [0.8, 0.24, 3.2], "concrete"), box(`${id}-str1`, [x - 0.31, 0.7, z], [0.02, 0.12, 3.0], "barrelOrange"), box(`${id}-str2`, [x + 0.31, 0.7, z], [0.02, 0.12, 3.0], "barrelOrange"));
 }
+// more cover along the street (the level check wants cover within 5 m of most of it): a jersey barrier
+// past the start, one mid-block, one at the far end, and a stack of delivery pallets by the east kerb
+for (const [id, x, z, yaw] of [["barrier-c", -18, -0.8, 0], ["barrier-d", -11, 0.8, Math.PI / 2], ["barrier-e", 21, 2.6, 0]] as Array<[string, number, number, number]>) {
+  solid.push(box(id, [x, 0.5, z], [0.6, 1, 3.2], "concrete", { rot: [0, yaw, 0] }));
+  decor.push(box(`${id}-base`, [x, 0.12, z], [0.8, 0.24, 3.2], "concrete", { rot: [0, yaw, 0] }));
+}
+solid.push(box("pallets", [13.6, 0.55, 6.4], [1.3, 1.1, 1.1], "crateWood", { data: { surface: "wood" } }));
+decor.push(box("pallets-wrap", [13.6, 0.8, 6.4], [1.32, 0.5, 1.12], "shrinkWrap"));
 // the queue line: crowd barricades wrapped in pink CLUB banners
 solid.push(box("queue-line", [9, 0.55, -6.6], [4.4, 1, 0.25], "bannerPink", { data: { surface: "wood" } }));
 solid.push(box("queue-line-2", [12, 0.55, -5.2], [0.25, 1, 3], "bannerPink", { data: { surface: "wood" } }));
@@ -676,6 +684,8 @@ const materials: Record<string, Record<string, unknown>> = {
   velvet: { color: "#6a0c28", roughness: 0.85 },
   podium: { color: "#15151b", roughness: 0.4, metalness: 0.5 },
   planter: { color: "#3a3d36", roughness: 0.9 },
+  crateWood: { color: "#6b5236", roughness: 0.85 },
+  shrinkWrap: { color: "#8f979c", roughness: 0.35, metalness: 0.1 },
   shrub: { color: "#16261a", roughness: 0.95 },
   wood: { color: "#3b2a1f", roughness: 0.9 },
   mailbox: { color: "#1d3b86", roughness: 0.5, metalness: 0.4 },

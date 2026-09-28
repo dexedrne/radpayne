@@ -16,6 +16,7 @@ import { BossView } from "./BossView.tsx";
 import { CameraView, CAMERA_NODE, FOV } from "./CameraView.tsx";
 import { FxView } from "./FxView.tsx";
 import { PickupsView } from "./PickupsView.tsx";
+import { CoverView } from "./CoverView.tsx";
 import { ArsenalFx } from "./ArsenalFx.tsx";
 import { HitFeelView } from "./HitFeelView.tsx";
 import { HitBurstFx } from "./HitBurstFx.tsx";
@@ -98,6 +99,7 @@ export function Scene({ s, onPhase, bootRef }: { s: Session; onPhase: (p: string
         <BossView s={s} />
         <FxView s={s} />
         <PickupsView s={s} />
+        <CoverView s={s} />
         <ArsenalFx s={s} />
         <HitBurstFx s={s} />
         <EggsView s={s} />

@@ -23,12 +23,14 @@ import { Nudge } from "./hud/Nudge.tsx";
 import { useCaptions } from "./hud/captions.ts";
 import { ThreatLayer } from "./hud/ThreatLayer.tsx";
 import { DamageLayer } from "./hud/DamageLayer.tsx";
+import { FragWarning } from "./hud/FragWarning.tsx";
 import { ScreenFx } from "./hud/ScreenFx.tsx";
 import { KillcamOverlay } from "./hud/KillcamOverlay.tsx";
 import { XrayOverlay } from "./hud/XrayOverlay.tsx";
 import { CINE } from "../app/cine.ts";
 import { btGrade } from "./hud/logic.ts";
 import { hudSession } from "./hud/HudFrame.tsx";
+import { useDevice } from "../input/device.ts";
 
 export { canvasFx } from "./hud/logic.ts";
 export { Crosshair } from "./hud/Crosshair.tsx";
@@ -52,6 +54,7 @@ export function Hud({ s: sProp, paused = false }: { s?: Session | null; paused?:
   const deadAt = useUi(st => st.deadAt);
   // no bloom: the HUD's own glows come back in CSS, the speed lines and halftone go (the old Effects: Clean)
   const clean = useGfx(g => g.bloom) === "off";
+  const pad = useDevice(d => (d.device === "pad" ? d.kind : null));
   const now = performance.now();
   const cap = useCaptions(h, now);
   if (paused) return <div className="rp-hud" style={{ zIndex: 31 }}><TopLeft style={{ opacity: 0.9 }} /></div>;
@@ -71,13 +74,14 @@ export function Hud({ s: sProp, paused = false }: { s?: Session | null; paused?:
       {h.zoom && !kc && !dead && <ScopeOverlay />}
       {s && <DamageLayer s={s} />}
       {s && <ThreatLayer s={s} />}
+      {s && <FragWarning s={s} />}
       <div className={`rp-hud${kc ? " kc" : ""}${dead ? " dead" : ""}${clean ? " rp-clean" : ""}`} data-testid="hud">
         <TopLeft>{cap.objective && <Objective {...cap.objective} now={now} />}</TopLeft>
         <BottomLeft h={h} now={now} />
         {cap.nudge && <Nudge {...cap.nudge} />}
         {cap.subtitle && <Subtitle {...cap.subtitle} now={now} />}
         <div className="rp-br rp-z">
-          <WeaponTabs current={h.weaponId} owned={h.owned} dry={total === 0 && h.reserve <= 0} ammo={h.ammo} last={h.lastInSlot} />
+          <WeaponTabs current={h.weaponId} owned={h.owned} dry={total === 0 && h.reserve <= 0} ammo={h.ammo} last={h.lastInSlot} pad={pad} />
           {h.katana && <GuardMeter meter={h.guard} up={h.guardUp} broken={h.guardBroken} />}
           <AmmoPanel mags={h.mags} magSize={h.magSize} hands={h.hands} reloading={h.reloading} weapon={h.weapon} weaponId={h.weaponId} reserve={h.reserve} />
         </div>

@@ -13,7 +13,9 @@
 //   four pillars (high)               (+-9, +-4)
 //   her dais (0.3 m, one step)        x 11..16, z -4..4: her desk (low), the big screen on the wall behind
 //   the glass wall                    the east wall either side of the dais, the rainy skyline beyond
-//   door A (north) / door B (south)   (0, -11) / (0, 11): the adds wait behind them (8 / 7)
+//   door A (north) / door B (south)   (0, -11) / (0, 11): the adds wait behind them (8 / 6)
+//   door C (west, behind him)         (-16, -6.7): the service door by the lift; 2 adds, 18 s into phase 2
+//                                     (the room is not two doors to camp)
 //   her guards                        4 in the hall from the start (the piano, the bar, the lounge)
 // Room settings: boss (the chandelier's chain, the rug, the bag on her desk, the terrace door, the two
 // add doors: sim/boss.ts), later: the add groups (the boss brings them in). No exit: the clear is her.
@@ -42,7 +44,16 @@ for (const [side, z0, z1] of [["n", -11.2, -11], ["s", 11, 11.2]] as const) {
   solid.push(boxMM(`vest-${side}-ceil`, [-2.6, 3.2, Math.min(z0, zb)], [2.6, 3.4, Math.max(z1, zb)], "coffered"));
 }
 // west wall with the private elevator's doors (shut behind him: her "the doors are locked")
-solid.push(boxMM("wall-w", [-16.2, 0, -11], [-16, H, 11], "ebony"));
+// (and the service door north of the lift, z -7.8..-5.6, with its vestibule behind: door C)
+solid.push(boxMM("wall-w", [-16.2, 0, -5.6], [-16, H, 11], "ebony"));
+solid.push(boxMM("wall-w2", [-16.2, 0, -11], [-16, H, -7.8], "ebony"));
+solid.push(boxMM("wall-w-head", [-16.2, 2.8, -7.8], [-16, H, -5.6], "ebony"));
+solid.push(boxMM("door-c", [-16.15, 0, -7.8], [-16.05, 2.8, -5.6], "doorDouble", { hidden: true, data: { surface: "wood", camera: true } }));
+decor.push(boxMM("door-w-frame", [-16.24, 2.8, -7.95], [-15.96, 2.95, -5.45], "brass"));
+solid.push(boxMM("vest-w-back", [-19.4, 0, -8.8], [-19.2, H, -4.6], "damask"));
+solid.push(boxMM("vest-w-n", [-19.4, 0, -9.0], [-16.2, H, -8.8], "damask"));
+solid.push(boxMM("vest-w-s", [-19.4, 0, -4.6], [-16.2, H, -4.4], "damask"));
+solid.push(boxMM("vest-w-ceil", [-19.4, 3.2, -9.0], [-16.2, 3.4, -4.4], "coffered"));
 decor.push(boxMM("lift-doors", [-16.0, 0, -0.9], [-15.97, 2.3, 0.9], "brass"));
 decor.push(boxMM("lift-frame", [-16.0, 2.3, -1.05], [-15.95, 2.45, 1.05], "brassDark"));
 decor.push(boxMM("lift-lamp", [-15.99, 2.6, -0.2], [-15.96, 2.72, 0.2], "lampWarm"));
@@ -79,6 +90,11 @@ for (const [x, z] of [[-9, -4], [9, -4], [-9, 4], [9, 4]]) solid.push(boxMM(`pil
 solid.push(boxMM("chair-w", [-5.2, 0, -0.6], [-4.3, 0.9, 0.6], "sofa", { data: { surface: "wood" } }));
 solid.push(boxMM("chair-e", [4.3, 0, -0.6], [5.2, 0.9, 0.6], "sofa", { data: { surface: "wood" } }));
 solid.push(boxMM("console-n", [-6, 0, -10.9], [-3, 0.9, -10.3], "ebonyDark", { data: { surface: "wood" } }));
+// by the lift: two long ebony planters to start the fight behind (he steps out into the open otherwise)
+for (const [id, z0, z1] of [["planter-lift-n", -3.6, -1.8], ["planter-lift-s", 1.8, 3.6]] as const) {
+  solid.push(boxMM(id, [-12.2, 0, z0], [-11.6, 1.0, z1], "ebonyDark", { data: { surface: "wood" } }));
+  decor.push(boxMM(`${id}-green`, [-12.15, 1.0, z0 + 0.05], [-11.65, 1.25, z1 - 0.05], "planterGreen"));
+}
 solid.push(boxMM("console-s", [-7, 0, 10.3], [-4, 0.9, 10.9], "ebonyDark", { data: { surface: "wood" } }));
 decor.push(prim("vase-n", "cylinder", [-4.5, 1.2, -10.6], [0.14, 0.2, 0.6, 14], "vase"), prim("vase-s", "cylinder", [-5.5, 1.2, 10.6], [0.14, 0.2, 0.6, 14], "vase"));
 
@@ -109,7 +125,9 @@ const markers: Node[] = [
   // Madame Pockit behind her desk (she keeps the bag there)
   marker("madame", "enemy", [15.0, 0.3, 0.9], { kind: "madame", drop: false }, FACE_W),
   ...doorAdds("a", -12.2, ["goon", "goon", "rusher", "goon", "rusher", "goon", "rusher", "goon"]),
-  ...doorAdds("b", 12.2, ["rusher", "rusher", "heavy", "rusher", "goon", "goon", "rusher"]),
+  ...doorAdds("b", 12.2, ["rusher", "rusher", "heavy", "rusher", "goon", "goon"]),
+  // door C's three, in the west vestibule
+  ...(["goon", "goon"] as const).map((k, i) => marker(`add-c-${i + 1}`, "enemy", [-18.0 - (i % 2) * 0.9, 0, -7.6 + i * 1.1], { kind: k, group: "doorC", deaf: true }, FACE_E)),
   // her guards: in the hall from the start (the fight opens on them while she says her piece)
   marker("guard-1", "enemy", [-6.2, 0, -6.6], { kind: "goon", group: "guards" }, FACE_W),
   marker("guard-2", "enemy", [4.4, 0, 7.0], { kind: "goon", group: "guards" }, FACE_W),
@@ -155,6 +173,8 @@ const markers: Node[] = [
   marker("wp-door-a-out", "waypoint", [0, 0, -12.4], {}),
   marker("wp-door-b-in", "waypoint", [0, 0, 10.2], { links: ["wp-door-b-out"], door: "door-b" }),
   marker("wp-door-b-out", "waypoint", [0, 0, 12.4], {}),
+  marker("wp-door-c-in", "waypoint", [-15.2, 0, -6.7], { links: ["wp-door-c-out"], door: "door-c" }),
+  marker("wp-door-c-out", "waypoint", [-17.6, 0, -6.7], {}),
   // pickups: copium (by the lift x 2, behind the piano, behind the bar), the shotgun behind the bar,
   // the SMGs by the piano
   marker("copium-v1", "pickup", [-15.3, 0, -1.8], { item: "copium", amount: 1 }),
@@ -203,6 +223,7 @@ const materials: Record<string, Record<string, unknown>> = {
   vase: { color: "#d6cfc4", roughness: 0.2 },
   terrace: { color: "#2a2c30", roughness: 0.6 },
   glass: { color: "#9fb4c8", roughness: 0.1, metalness: 0.2 },
+  planterGreen: { color: "#2f4a34", roughness: 0.9 },
   // lit
   lampWarm: glow("#ffc98a", 1.1),
   cove: glow("#ffb870", 0.7),
@@ -210,9 +231,9 @@ const materials: Record<string, Record<string, unknown>> = {
 
 writeLevel("room5", "Room 5: the penthouse", {
   name: "The Penthouse", number: 5, cutsceneAfter: "c4", music: "penthouse", look: "penthouse", footsteps: "hard", tutorial: false,
-  clearLine: "", later: ["doorA", "doorB"], chapterEnd: true,
+  clearLine: "", later: ["doorA", "doorB", "doorC"], chapterEnd: true,
   boss: {
     chandelier: [0, 5.3, 0], rug: [0, 0, 2.4], bag: [14.6, -2.4], terrace: [15.3, 6.3],
-    doors: [{ door: "door-a", group: "doorA" }, { door: "door-b", group: "doorB" }],
+    doors: [{ door: "door-a", group: "doorA" }, { door: "door-b", group: "doorB" }, { door: "door-c", group: "doorC", after: 18 }],
   },
 }, materials, solid, decor, markers);

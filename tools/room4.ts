@@ -6,21 +6,33 @@
 // at (-0.5, 0)) with doors on three sides, and the ride is a script in the room settings (sim/ride.ts)
 // the view plays as a shaft scrolling past the closed gates. Each stop opens one side's doors onto its
 // landing; the three landings lie on three sides of the car and never overlap:
+// Round 4 (the spawns): no stop brings its gang in through one door. Each landing has two or three
+// entries the car cannot see into (a service passage, a fire-escape door, a linen room; the stairwell, a
+// back office, a coat corridor; the stairs, a side room, a service door, the car's own roof hatch), and
+// after the first group the rest come in small staggered waves (the stop's `waves`: by the clock or by
+// the stop's losses, whichever is first), some straight to cover, some round to the car's blind angles.
+// The landings' far ends hold the frags, shells and cans that make him step out of the car.
 //   R1  going up (12 s): the muzak, the narrator.
-//   S1  EAST, the laundry floor   x 3.2..13.2, z -4.6..2.8: 4 goons chatting, backs half turned; the
-//       doors' opening is the door beat (1 s of free slow motion). Carts (low), a linen cage and a
-//       pillar (high), the washers (low). The shotgun on the folding table.
+//   S1  EAST, the laundry floor   x 3.2..13.2, z -4.6..2.8: 4 goons (two chatting, backs half turned;
+//       one behind the linen cage, one down by the washers); the doors' opening is the door beat (1 s of
+//       free slow motion). Then 2 rushers out of the service passage (north-east, it runs on south
+//       behind the east wall), 2 goons out of the linen room (south-east), 1 in off the fire escape
+//       (north). Carts (low), the linen cage and a pillar (high), the washers (low). The shotgun on the
+//       folding table, frags by the linen room's door.
 //   R2  a heavy on the roof: the thud, the hatch's 2 s tell, he drops into the car.
-//   S2  WEST, the gallery floor   x -17.2..-3.2, z -6..2.8: 3 goons + 2 rushers who know he is coming;
-//       2 more rushers up the stairwell (far west) once 3 of them are down. Marble, plinths (high),
-//       a bench and the reception desk (low). The dual SMGs on the bench.
+//   S2  WEST, the gallery floor   x -17.2..-3.2, z -6..2.8: 3 goons + 2 rushers who know he is coming
+//       (two already behind the plinths and the desk). Then 2 rushers up the stairwell (far west), 2
+//       goons out of the back office (north), 1 goon out of the coat corridor (south). Marble, plinths
+//       (high), a bench and the reception desk (low). The dual SMGs on the bench.
 //   R3  the cables: the snap, the fall, the brakes.
-//   S3  SOUTH, the dead floor     x -9..9, z 3.2..17.2: goons pry the doors open (2 s); three waves (3
-//       goons + a heavy at the doors, then 2 rushers + 2 goons up the stairs, then a heavy + 2
-//       rushers); the stairs (the open south-east corner) are the way out. Columns and scaffolding
-//       (high), cement bags (low).
-//       Two rushers come out of the service passage (the laundry's back door) once 3 are down.
-// Hostiles 25 (goons 12, rushers 10, heavies 3), 3 checkpoints (one per stop, saved as the car arrives).
+//   S3  SOUTH, the dead floor     x -9..9, z 3.2..17.2: goons pry the doors open (2 s): 3 goons (one
+//       already back behind the bags) + a heavy. Then a rusher up the stairs (south-east, walled so
+//       the car cannot see up them) and 2 goons out of the side room (west) together; a rusher drops
+//       through the car's roof hatch (the car is no place to stay); last, the hand-cannon heavy out of
+//       the service door (south) and a rusher up the stairs. The stairs are the way out. Columns and
+//       scaffolding (high), cement bags (low).
+// Hostiles 30 (goons 18, rushers 9, heavies 3), 3 checkpoints (one per stop, saved as the car arrives).
+// `npm run check-level room4` checks every wave starts out of the car's sight, and from how many places.
 // Material tokens (the elevator look, src/app/look/tower.tsx): "glow <g>" (+ "flicker"). No lettering.
 import { FACE_E, FACE_N, FACE_S, FACE_W, box, boxMM, glow, marker, prim, tex, writeLevel, type Node, type V3 } from "./levelKit.ts";
 
@@ -29,7 +41,7 @@ const decor: Node[] = [];
 const CAR_H = 3.4;
 
 // ---------------------------------------------------------------- floor
-solid.push(boxMM("floor", [-22, -0.5, -8], [15, 0, 19], "concrete"));
+solid.push(boxMM("floor", [-22, -0.5, -11], [16, 0, 21], "concrete"));
 
 // ---------------------------------------------------------------- the car
 decor.push(boxMM("car-floor", [-3, 0, -3], [3, 0.012, 3], "carFloor"));
@@ -75,16 +87,36 @@ decor.push(boxMM("car-bulb", [1.18, CAR_H - 0.2, -0.12], [1.42, CAR_H - 0.02, 0.
 const L1_H = 3.2;
 decor.push(boxMM("l1-floor", [3.2, 0, -4.6], [13.2, 0.012, 2.8], "vinyl"));
 solid.push(boxMM("l1-ceil", [3.0, L1_H, -4.8], [13.4, L1_H + 0.2, 3.0], "ceilTile"));
-solid.push(boxMM("l1-wall-n", [3.0, 0, -4.8], [13.4, L1_H, -4.6], "block"));
-solid.push(boxMM("l1-wall-s", [3.0, 0, 2.8], [13.4, L1_H, 3.0], "block"));
+// the north wall with the fire-escape door (x 9.0..10.4) and the fire escape's cage behind it
+solid.push(boxMM("l1-wall-n", [3.0, 0, -4.8], [9.0, L1_H, -4.6], "block"));
+solid.push(boxMM("l1-wall-n2", [10.4, 0, -4.8], [13.4, L1_H, -4.6], "block"));
+solid.push(boxMM("l1-wall-n-head", [9.0, 2.3, -4.8], [10.4, L1_H, -4.6], "block"));
+decor.push(boxMM("l1-fe-floor", [8.0, 0, -7.0], [11.8, 0.012, -4.8], "stairEdge"));
+solid.push(boxMM("l1-fe-w", [7.8, 0, -7.2], [8.0, L1_H, -4.8], "concreteDark"));
+solid.push(boxMM("l1-fe-e", [11.8, 0, -7.2], [12.0, L1_H, -4.8], "concreteDark"));
+solid.push(boxMM("l1-fe-n", [7.8, 0, -7.2], [12.0, L1_H, -7.0], "concreteDark"));
+solid.push(boxMM("l1-fe-ceil", [7.8, L1_H, -7.2], [12.0, L1_H + 0.2, -4.6], "concreteDark"));
+decor.push(boxMM("l1-fe-exit", [9.5, 2.4, -4.62], [9.9, 2.54, -4.6], "exitRed"));
+// the south wall with the linen room's door (x 10.6..12.0) and the linen room (x 9.6..13.2, z 3..6.4)
+solid.push(boxMM("l1-wall-s", [3.0, 0, 2.8], [10.6, L1_H, 3.0], "block"));
+solid.push(boxMM("l1-wall-s2", [12.0, 0, 2.8], [13.4, L1_H, 3.0], "block"));
+solid.push(boxMM("l1-wall-s-head", [10.6, 2.3, 2.8], [12.0, L1_H, 3.0], "block"));
+decor.push(boxMM("l1-linen-floor", [9.6, 0, 3.0], [13.2, 0.012, 6.4], "vinyl"));
+solid.push(boxMM("l1-linen-w", [9.4, 0, 3.0], [9.6, L1_H, 6.6], "block"));
+solid.push(boxMM("l1-linen-e", [13.2, 0, 3.0], [13.4, L1_H, 6.6], "block"));
+solid.push(boxMM("l1-linen-s", [9.4, 0, 6.4], [13.4, L1_H, 6.6], "block"));
+solid.push(boxMM("l1-linen-ceil", [9.4, L1_H, 3.0], [13.4, L1_H + 0.2, 6.6], "ceilTile"));
+solid.push(boxMM("l1-linen-shelf", [9.6, 0, 5.8], [11.4, 1.9, 6.4], "cage", { data: { surface: "metal" } }));
+decor.push(boxMM("l1-linen-stack", [9.7, 0.3, 5.9], [11.3, 1.7, 6.3], "linen"));
 // the east wall with the service passage's doorway (z -4.6..-2.8) and the passage behind it
 solid.push(boxMM("l1-wall-e", [13.2, 0, -2.8], [13.4, L1_H, 2.8], "block"));
 solid.push(boxMM("l1-wall-e-head", [13.2, 2.4, -4.6], [13.4, L1_H, -2.8], "block"));
-decor.push(boxMM("l1-back-floor", [13.4, 0, -4.6], [15.0, 0.012, -2.8], "vinyl"));
+// (the passage runs on south behind the east wall: whoever waits in it is out of the car's sight)
+decor.push(boxMM("l1-back-floor", [13.4, 0, -4.6], [15.0, 0.012, 0.4], "vinyl"));
 solid.push(boxMM("l1-back-n", [13.4, 0, -4.8], [15.0, L1_H, -4.6], "concreteDark"));
-solid.push(boxMM("l1-back-s", [13.4, 0, -2.8], [15.0, L1_H, -2.6], "concreteDark"));
-solid.push(boxMM("l1-back-e", [15.0, 0, -4.8], [15.2, L1_H, -2.6], "concreteDark"));
-solid.push(boxMM("l1-back-ceil", [13.2, L1_H, -4.8], [15.2, L1_H + 0.2, -2.6], "ceilTile"));
+solid.push(boxMM("l1-back-s", [13.4, 0, 0.4], [15.0, L1_H, 0.6], "concreteDark"));
+solid.push(boxMM("l1-back-e", [15.0, 0, -4.8], [15.2, L1_H, 0.6], "concreteDark"));
+solid.push(boxMM("l1-back-ceil", [13.2, L1_H, -4.8], [15.2, L1_H + 0.2, 0.6], "ceilTile"));
 solid.push(boxMM("l1-wall-w", [3.0, 0, -4.6], [3.2, L1_H, -3.2], "block"));
 solid.push(boxMM("l1-cart-1", [6.0, 0.1, -3.4], [7.2, 1.0, -2.6], "cart", { data: { surface: "metal" } }));
 solid.push(boxMM("l1-cart-2", [8.0, 0.1, 1.2], [9.2, 1.0, 2.0], "cart", { data: { surface: "metal" } }));
@@ -102,8 +134,26 @@ decor.push(boxMM("l1-exit", [13.18, 2.6, -3.9], [13.2, 2.74, -3.5], "exitRed"));
 const L2_H = 3.6;
 decor.push(boxMM("l2-floor", [-17.2, 0, -6], [-3.2, 0.012, 2.8], "marble"));
 solid.push(boxMM("l2-ceil", [-17.4, L2_H, -6.2], [-3.0, L2_H + 0.2, 3.0], "ceilDark"));
-solid.push(boxMM("l2-wall-n", [-17.4, 0, -6.2], [-3.0, L2_H, -6.0], "damask"));
-solid.push(boxMM("l2-wall-s", [-17.4, 0, 2.8], [-3.0, L2_H, 3.0], "damask"));
+// the north wall with the back office's door (x -11.4..-10.0) and the office (x -13.4..-8.0, z -9.6..-6.2)
+solid.push(boxMM("l2-wall-n", [-17.4, 0, -6.2], [-11.4, L2_H, -6.0], "damask"));
+solid.push(boxMM("l2-wall-n2", [-10.0, 0, -6.2], [-3.0, L2_H, -6.0], "damask"));
+solid.push(boxMM("l2-wall-n-head", [-11.4, 2.4, -6.2], [-10.0, L2_H, -6.0], "damask"));
+decor.push(boxMM("l2-office-floor", [-13.4, 0, -9.6], [-8.0, 0.012, -6.2], "marble"));
+solid.push(boxMM("l2-office-w", [-13.6, 0, -9.8], [-13.4, L2_H, -6.2], "damask"));
+solid.push(boxMM("l2-office-e", [-8.0, 0, -9.8], [-7.8, L2_H, -6.2], "damask"));
+solid.push(boxMM("l2-office-n", [-13.6, 0, -9.8], [-7.8, L2_H, -9.6], "damask"));
+solid.push(boxMM("l2-office-ceil", [-13.6, L2_H, -9.8], [-7.8, L2_H + 0.2, -6.0], "ceilDark"));
+solid.push(boxMM("l2-office-desk", [-9.6, 0, -9.4], [-8.2, 0.8, -8.4], "desk", { data: { surface: "wood" } }));
+// the south wall with the coat corridor's door (x -15.2..-13.8) and the corridor (x -17.2..-12.0, z 3..5.6)
+solid.push(boxMM("l2-wall-s", [-17.4, 0, 2.8], [-15.2, L2_H, 3.0], "damask"));
+solid.push(boxMM("l2-wall-s2", [-13.8, 0, 2.8], [-3.0, L2_H, 3.0], "damask"));
+solid.push(boxMM("l2-wall-s-head", [-15.2, 2.4, 2.8], [-13.8, L2_H, 3.0], "damask"));
+decor.push(boxMM("l2-coat-floor", [-17.2, 0, 3.0], [-12.0, 0.012, 5.6], "marble"));
+solid.push(boxMM("l2-coat-w", [-17.4, 0, 3.0], [-17.2, L2_H, 5.8], "damask"));
+solid.push(boxMM("l2-coat-e", [-12.0, 0, 3.0], [-11.8, L2_H, 5.8], "damask"));
+solid.push(boxMM("l2-coat-s", [-17.4, 0, 5.6], [-11.8, L2_H, 5.8], "damask"));
+solid.push(boxMM("l2-coat-ceil", [-17.4, L2_H, 3.0], [-11.8, L2_H + 0.2, 5.8], "ceilDark"));
+decor.push(boxMM("l2-coat-rail", [-16.8, 1.7, 5.3], [-12.4, 1.74, 5.36], "chrome"));
 solid.push(boxMM("l2-wall-e1", [-3.2, 0, -6.0], [-3.0, L2_H, -3.2], "damask"));
 // the far wall with the stairwell's doorway (z -5.6..-3.6) and the stairwell behind it
 solid.push(boxMM("l2-wall-w1", [-17.4, 0, -3.6], [-17.2, L2_H, 2.8], "damask"));
@@ -135,9 +185,28 @@ decor.push(boxMM("l3-floor", [-9, 0, 3.2], [9, 0.012, 17.2], "concreteBare"));
 solid.push(boxMM("l3-ceil", [-9.2, L3_H, 3.0], [9.2, L3_H + 0.2, 17.4], "concreteDark"));
 solid.push(boxMM("l3-wall-n1", [-9.2, 0, 3.0], [-3.2, L3_H, 3.2], "concreteDark"));
 solid.push(boxMM("l3-wall-n2", [3.2, 0, 3.0], [9.2, L3_H, 3.2], "concreteDark"));
-solid.push(boxMM("l3-wall-w", [-9.2, 0, 3.2], [-9.0, L3_H, 17.4], "concreteDark"));
+// the west wall with the side room's gap (z 13.0..14.4, clear of the scaffold) and the side room (x
+// -13.4..-9.2, z 9.6..15)
+solid.push(boxMM("l3-wall-w", [-9.2, 0, 3.2], [-9.0, L3_H, 13.0], "concreteDark"));
+solid.push(boxMM("l3-wall-w2", [-9.2, 0, 14.4], [-9.0, L3_H, 17.4], "concreteDark"));
+solid.push(boxMM("l3-wall-w-head", [-9.2, 2.5, 13.0], [-9.0, L3_H, 14.4], "concreteDark"));
+decor.push(boxMM("l3-side-floor", [-13.4, 0, 9.6], [-9.2, 0.012, 15.0], "concreteBare"));
+solid.push(boxMM("l3-side-w", [-13.6, 0, 9.4], [-13.4, L3_H, 15.2], "concreteDark"));
+solid.push(boxMM("l3-side-n", [-13.6, 0, 9.4], [-9.2, L3_H, 9.6], "concreteDark"));
+solid.push(boxMM("l3-side-s", [-13.6, 0, 15.0], [-9.2, L3_H, 15.2], "concreteDark"));
+solid.push(boxMM("l3-side-ceil", [-13.6, L3_H, 9.4], [-9.0, L3_H + 0.2, 15.2], "concreteDark"));
+solid.push(boxMM("l3-side-bags", [-12.8, 0, 10.4], [-11.2, 0.9, 11.2], "bags", { data: { surface: "drywall" } }));
 solid.push(boxMM("l3-wall-e", [9.0, 0, 3.2], [9.2, L3_H, 17.4], "concreteDark"));
-solid.push(boxMM("l3-wall-s", [-9.2, 0, 17.2], [9.2, L3_H, 17.4], "concreteDark"));
+// the south wall with the service door (x -4.4..-3.0) and the service corridor behind (z 17.4..20)
+solid.push(boxMM("l3-wall-s", [-9.2, 0, 17.2], [-4.4, L3_H, 17.4], "concreteDark"));
+solid.push(boxMM("l3-wall-s2", [-3.0, 0, 17.2], [9.2, L3_H, 17.4], "concreteDark"));
+solid.push(boxMM("l3-wall-s-head", [-4.4, 2.4, 17.2], [-3.0, L3_H, 17.4], "concreteDark"));
+decor.push(boxMM("l3-svc-floor", [-7.0, 0, 17.4], [-1.0, 0.012, 20.0], "concreteBare"));
+solid.push(boxMM("l3-svc-w", [-7.2, 0, 17.4], [-7.0, L3_H, 20.2], "concreteDark"));
+solid.push(boxMM("l3-svc-e", [-1.0, 0, 17.4], [-0.8, L3_H, 20.2], "concreteDark"));
+solid.push(boxMM("l3-svc-s", [-7.2, 0, 20.0], [-0.8, L3_H, 20.2], "concreteDark"));
+solid.push(boxMM("l3-svc-ceil", [-7.2, L3_H, 17.4], [-0.8, L3_H + 0.2, 20.2], "concreteDark"));
+decor.push(boxMM("l3-svc-exit", [-3.9, 2.5, 17.18], [-3.5, 2.64, 17.2], "exitRed"));
 for (const [x, z] of [[-5, 8], [5, 8], [-5, 13.4], [2.6, 13.2]]) solid.push(boxMM(`l3-col-${x}-${z}`, [x - 0.35, 0, z - 0.35], [x + 0.35, L3_H, z + 0.35], "concrete"));
 // scaffolding: an invisible collider (high cover) the camera knows, poles and boards
 function scaffold(id: string, x0: number, z0: number, x1: number, z1: number): void {
@@ -156,8 +225,11 @@ decor.push(boxMM("l3-plywood", [-8.95, 0, 5.0], [-8.85, 2.4, 7.4], "plywood"), b
 // z 15..17.2 (open: a kill cam there never has a wall at its lens), a guard rail and the exit light
 decor.push(boxMM("l3-stair-exit", [7.0, 2.5, 17.16], [7.4, 2.64, 17.2], "exitRed"));
 for (let i = 0; i < 6; i++) decor.push(boxMM(`l3-step-${i}`, [5.3 + i * 0.6, 0, 16.2], [5.9 + i * 0.6, 0.02, 17.1], "stairEdge"));
-decor.push(boxMM("l3-stair-rail", [5.2, 1.0, 15.9], [9.0, 1.05, 15.95], "scaffold"));
-for (const x of [5.2, 7.1, 9.0]) decor.push(prim(`l3-stair-post-${x}`, "cylinder", [x, 0.5, 15.92], [0.025, 0.025, 1.0, 6], "scaffold"));
+// the stairwell's walls: a wall to the north and a return on the west with the way in (z 15.6..17.2), so
+// what comes up the stairs is out of the car's sight until it steps out
+solid.push(boxMM("l3-stair-wall-n", [5.0, 0, 14.6], [9.0, L3_H, 14.8], "concreteDark"));
+solid.push(boxMM("l3-stair-wall-w", [5.0, 0, 14.8], [5.2, L3_H, 15.6], "concreteDark"));
+solid.push(boxMM("l3-stair-head", [5.0, 2.5, 15.6], [5.2, L3_H, 17.2], "concreteDark"));
 // hanging work lamps
 for (const [x, z] of [[-4, 6], [3, 6.5], [-3, 11.5], [4, 12.5], [0, 15.5]]) {
   decor.push(prim(`l3-cord-${x}-${z}`, "cylinder", [x, L3_H - 0.4, z], [0.01, 0.01, 0.8, 4], "metalDark"));
@@ -172,36 +244,46 @@ const markers: Node[] = [
   marker("cp-s1", "checkpoint", [-0.4, 0, -0.6], {}, FACE_E),
   marker("cp-s2", "checkpoint", [0.5, 0, 0.6], {}, FACE_W),
   marker("cp-s3", "checkpoint", [0.9, 0, -0.6], {}, FACE_S),
-  // S1: chatting, backs half turned to the doors (idle: the door beat is his)
+  // S1: chatting, backs half turned to the doors (idle: the door beat is his); one already behind the
+  // linen cage, one down by the washers
   marker("l1-goon-1", "enemy", [10.2, 0, 0.1], { kind: "goon", group: "L1" }, FACE_N + 0.5),
   marker("l1-goon-2", "enemy", [11.0, 0, -0.9], { kind: "goon", group: "L1" }, FACE_E + 0.9),
-  marker("l1-goon-3", "enemy", [9.3, 0, -3.8], { kind: "goon", group: "L1" }, FACE_E),
-  marker("l1-goon-4", "enemy", [12.3, 0, 2.2], { kind: "goon", group: "L1" }, FACE_W + 0.6),
-  // S1b: the service passage, once 3 of them are down
-  marker("l1b-rusher-1", "enemy", [14.3, 0, -4.1], { kind: "rusher", group: "L1b" }, FACE_W),
-  marker("l1b-rusher-2", "enemy", [14.5, 0, -3.3], { kind: "rusher", group: "L1b" }, FACE_W),
+  marker("l1-goon-3", "enemy", [11.65, 0, -2.0], { kind: "goon", group: "L1" }, FACE_W),
+  marker("l1-goon-4", "enemy", [5.5, 0, -3.5], { kind: "goon", group: "L1" }, FACE_S),
+  // S1 waves: the service passage (north-east), the linen room (south-east), the fire escape (north)
+  marker("l1b-rusher-1", "enemy", [14.2, 0, -1.2], { kind: "rusher", group: "L1b" }, FACE_N),
+  marker("l1b-rusher-2", "enemy", [14.3, 0, -0.3], { kind: "rusher", group: "L1b" }, FACE_N),
+  marker("l1c-goon-1", "enemy", [12.6, 0, 4.9], { kind: "goon", group: "L1c" }, FACE_N),
+  marker("l1c-goon-2", "enemy", [10.2, 0, 4.2], { kind: "goon", group: "L1c" }, FACE_N),
+  marker("l1d-goon-1", "enemy", [8.5, 0, -6.5], { kind: "goon", group: "L1d" }, FACE_S),
   // R2: the heavy on the roof (placed by the hatch when he drops)
   marker("roof-heavy", "enemy", [-0.5, 0, 0], { kind: "heavy", model: "rival652", group: "roof" }, FACE_E),
-  // S2: they know he is coming; two more up the stairwell once three are down
+  // S2: they know he is coming: two already behind the plinths and the desk, the rest out in the gallery
   marker("l2-goon-1", "enemy", [-9.6, 0, -2.8], { kind: "goon", group: "L2" }, FACE_E),
-  marker("l2-goon-2", "enemy", [-12.8, 0, 2.0], { kind: "goon", group: "L2" }, FACE_E),
+  marker("l2-goon-2", "enemy", [-12.6, 0, 1.1], { kind: "goon", group: "L2" }, FACE_E),
   marker("l2-goon-3", "enemy", [-15.9, 0, 0.2], { kind: "goon", group: "L2" }, FACE_E),
   marker("l2-rusher-1", "enemy", [-7.8, 0, 1.9], { kind: "rusher", group: "L2" }, FACE_E),
   marker("l2-rusher-2", "enemy", [-11.2, 0, -2.6], { kind: "rusher", group: "L2" }, FACE_E),
-  marker("l2b-rusher-1", "enemy", [-19.0, 0, -4.8], { kind: "rusher", group: "L2b" }, FACE_E),
-  marker("l2b-rusher-2", "enemy", [-19.8, 0, -3.6], { kind: "rusher", group: "L2b" }, FACE_E),
-  // S3: W1 at the doors (they pry them), W2 and W3 up the stairwell
+  // S2 waves: the stairwell (far west), the back office (north), the coat corridor (south)
+  marker("l2b-rusher-1", "enemy", [-20.5, 0, -2.8], { kind: "rusher", group: "L2b" }, FACE_E),
+  marker("l2b-rusher-2", "enemy", [-19.6, 0, -2.6], { kind: "rusher", group: "L2b" }, FACE_E),
+  marker("l2c-goon-1", "enemy", [-12.6, 0, -8.8], { kind: "goon", group: "L2c" }, FACE_S),
+  marker("l2c-goon-2", "enemy", [-9.0, 0, -7.4], { kind: "goon", group: "L2c" }, FACE_S),
+  marker("l2d-goon-1", "enemy", [-16.4, 0, 4.6], { kind: "goon", group: "L2d" }, FACE_N),
+  // S3: W1 at the doors (they pry them), one of them already back behind the bags
   marker("l3-goon-1", "enemy", [-1.0, 0, 4.4], { kind: "goon", group: "L3" }, FACE_N),
   marker("l3-goon-2", "enemy", [1.1, 0, 4.5], { kind: "goon", group: "L3" }, FACE_N),
-  marker("l3-goon-3", "enemy", [3.4, 0, 5.4], { kind: "goon", group: "L3" }, FACE_N),
+  marker("l3-goon-3", "enemy", [-1.6, 0, 7.65], { kind: "goon", group: "L3" }, FACE_N),
   marker("l3-heavy-1", "enemy", [0, 0, 6.2], { kind: "heavy", model: "rival723", group: "L3" }, FACE_N),
-  marker("l3b-rusher-1", "enemy", [6.0, 0, 16.0], { kind: "rusher", group: "L3b" }, FACE_N),
-  marker("l3b-rusher-2", "enemy", [7.4, 0, 16.2], { kind: "rusher", group: "L3b" }, FACE_N),
-  marker("l3b-goon-1", "enemy", [8.3, 0, 15.3], { kind: "goon", group: "L3b" }, FACE_N),
-  marker("l3b-goon-2", "enemy", [6.6, 0, 15.2], { kind: "goon", group: "L3b" }, FACE_N),
-  marker("l3c-heavy", "enemy", [7.0, 0, 16.3], { kind: "heavy", model: "rival652", group: "L3c", weapon: "handcannon" }, FACE_N),
-  marker("l3c-rusher-1", "enemy", [5.8, 0, 15.4], { kind: "rusher", group: "L3c" }, FACE_N),
-  marker("l3c-rusher-2", "enemy", [8.4, 0, 16.4], { kind: "rusher", group: "L3c" }, FACE_N),
+  // S3 waves: up the stairs (south-east) and out of the side room (west) together; a rusher through the
+  // car's roof hatch; last, the hand-cannon heavy out of the service door (south) with a rusher up the
+  // stairs
+  marker("l3b-rusher-1", "enemy", [6.2, 0, 16.2], { kind: "rusher", group: "L3b" }, FACE_W),
+  marker("l3w-goon-1", "enemy", [-12.4, 0, 12.0], { kind: "goon", group: "L3w" }, FACE_E),
+  marker("l3w-goon-2", "enemy", [-12.6, 0, 9.9], { kind: "goon", group: "L3w" }, FACE_E),
+  marker("l3h-rusher", "enemy", [-0.5, 0, 0], { kind: "rusher", group: "L3h" }, FACE_S),
+  marker("l3c-heavy", "enemy", [-6.2, 0, 19.2], { kind: "heavy", model: "rival652", group: "L3c", weapon: "handcannon" }, FACE_E),
+  marker("l3c-rusher-1", "enemy", [7.4, 0, 15.6], { kind: "rusher", group: "L3c" }, FACE_W),
   // cover points (facing = the direction they protect toward: the car)
   marker("cv-car-a", "cover", [-1.3, 0, -2.35], { height: "low" }, FACE_E),
   marker("cv-car-b", "cover", [1.4, 0, 2.4], { height: "low" }, FACE_W),
@@ -228,7 +310,7 @@ const markers: Node[] = [
   // when the graph is built)
   ...([
     ["c0", 0, 0], ["c-n", 0.2, -2.1], ["c-e", 2.1, 0], ["c-w", -2.1, 0], ["c-s", 0, 2.1],
-    ["l1-a", 5.8, -1.6], ["l1-b", 6.4, 1.9], ["l1-c", 9.2, -3.6], ["l1-d", 9.8, 0.5], ["l1-e", 12.2, -3.4], ["l1-f", 12.5, 2.3], ["l1-g", 12.2, -0.4], ["l1-back", 14.2, -3.7],
+    ["l1-a", 5.8, -1.6], ["l1-b", 6.4, 1.9], ["l1-c", 9.2, -3.6], ["l1-d", 9.8, 0.5], ["l1-e", 12.2, -3.4], ["l1-f", 12.5, 2.3], ["l1-g", 12.2, -0.4], ["l1-back", 14.2, -3.7], ["l1-back-s", 14.2, -0.6],
     ["l2-a", -6.0, -4.9], ["l2-b", -6.2, 1.9], ["l2-c", -9.6, 1.9], ["l2-d", -10.2, -3.0], ["l2-e", -13.0, -2.2], ["l2-f", -16.2, -4.6], ["l2-g", -16.2, 1.9], ["l2-h", -13.4, -5.3],
     ["l3-a", -2.6, 5.0], ["l3-b", 3.0, 7.0], ["l3-c", -6.8, 5.4], ["l3-d", -7.4, 8.4], ["l3-e", 0.2, 9.0], ["l3-f", -2.6, 11.2], ["l3-g", 7.4, 9.2], ["l3-h", 4.2, 15.6], ["l3-i", -6.2, 15.8], ["l3-j", 0.6, 13.2], ["l3-k", 7.6, 13.6],
   ] as Array<[string, number, number]>).map(([id, x, z]) => marker(`wp-${id}`, "waypoint", [x, 0, z])),
@@ -238,7 +320,15 @@ const markers: Node[] = [
   marker("wp-l2-in", "waypoint", [-4.2, 0, 0], { links: ["wp-c-w"], door: "door-w" }),
   marker("wp-l3-in", "waypoint", [0, 0, 4.2], { links: ["wp-c-s"], door: "door-s" }),
   marker("wp-l2-stair", "waypoint", [-19.2, 0, -4.2]),
-  marker("wp-l3-stair", "waypoint", [6.6, 0, 15.8]),
+  // the new entries: the fire escape and the linen room (S1), the back office and the coat corridor (S2),
+  // the side room and the service corridor (S3), each with a node in its doorway
+  ...([
+    ["l1-fe", 10.4, -6.0], ["l1-fe-door", 9.7, -4.0], ["l1-linen", 11.4, 4.4], ["l1-linen-door", 11.3, 2.2],
+    ["l2-office", -10.7, -8.2], ["l2-office-door", -10.7, -5.4], ["l2-coat", -14.5, 4.3], ["l2-coat-door", -14.5, 2.2],
+    ["l3-side", -11.3, 13.0], ["l3-side-door", -8.2, 13.7], ["l3-svc", -3.7, 18.7], ["l3-svc-door", -3.7, 16.4],
+  ] as Array<[string, number, number]>).map(([id, x, z]) => marker(`wp-${id}`, "waypoint", [x, 0, z])),
+  marker("wp-l3-stair", "waypoint", [6.8, 0, 16.3]),
+  marker("wp-l3-stair-door", "waypoint", [4.4, 0, 16.4]),
   marker("wp-l3-mouth", "waypoint", [6.3, 0, 13.9]),
   // pickups: copium (the car, S2, S3 x2), the shotgun (S1), the SMGs (S2), ammo on S3
   marker("copium-car", "pickup", [-2.2, 0, -1.2], { item: "copium", amount: 1 }),
@@ -251,12 +341,12 @@ const markers: Node[] = [
   marker("copium-l3-a", "pickup", [-8.3, 0, 16.5], { item: "copium", amount: 1 }),
   marker("copium-l3-b", "pickup", [8.3, 0, 3.9], { item: "copium", amount: 1 }),
   marker("shells-l3", "pickup", [-7.6, 0, 8.6], { item: "shotgun_ammo" }),
+  // out at the landings' far ends (reasons to leave the car): frags by the linen room, shells in the
+  // back office's doorway, frags in the side room
+  marker("grenades-l1", "pickup", [12.5, 0, 1.9], { item: "grenade", amount: 2 }),
+  marker("shells-l2", "pickup", [-10.7, 0, -6.6], { item: "shotgun_ammo" }),
+  marker("grenades-l3", "pickup", [-10.2, 0, 14.4], { item: "grenade", amount: 1 }),
   marker("smg-ammo-l3", "pickup", [3.6, 0, 12.0], { item: "smgs_ammo" }),
-  // the stairwell reinforcements (S2) and S3's waves 2 and 3
-  marker("trigger-l1b", "trigger", [0, -40, 0], { action: "spawn", group: "L1b", afterKills: 3 }, 0, [0.2, 0.2, 0.2]),
-  marker("trigger-l2b", "trigger", [0, -40, 0], { action: "spawn", group: "L2b", afterKills: 10 }, 0, [0.2, 0.2, 0.2]),
-  marker("trigger-l3b", "trigger", [0, -40, 0], { action: "spawn", group: "L3b", whenClear: "L3" }, 0, [0.2, 0.2, 0.2]),
-  marker("trigger-l3c", "trigger", [0, -40, 0], { action: "spawn", group: "L3c", whenClear: "L3b" }, 0, [0.2, 0.2, 0.2]),
   // the way out: the S3 stairwell
   marker("exit-stairs", "exit", [7.2, 0, 16.6], {}, FACE_S),
   marker("trigger-exit", "trigger", [7.0, 1, 16.0], { action: "exit" }, 0, [3.2, 3, 2.0]),
@@ -265,6 +355,9 @@ const markers: Node[] = [
     ["car-fill", -1.2, 2.8, -0.6, "#cfd8ea", 4, 6], // (the caged bulb's light is RideView's: it dies with the cables)
     ["l1-a", 6.2, 2.5, -1.2, "#ffb266", 12, 9], ["l1-b", 10.6, 2.5, 0.6, "#ffb266", 12, 9],
     ["l2-a", -6, 3.0, -1.5, "#e4ecff", 11, 9], ["l2-b", -10, 3.0, -1.5, "#e4ecff", 11, 9], ["l2-c", -14, 3.0, -1.5, "#e4ecff", 11, 9], ["l2-stair", -19.2, 2.8, -4.2, "#ff2a1a", 3, 4],
+    ["l1-fe", 9.9, 2.6, -6.0, "#ffb266", 5, 5], ["l1-linen", 11.4, 2.6, 4.6, "#ffb266", 6, 6],
+    ["l2-office", -10.7, 3.0, -8.0, "#e4ecff", 6, 6], ["l2-coat", -14.5, 3.0, 4.3, "#e4ecff", 5, 6],
+    ["l3-side", -11.3, 2.6, 12.6, "#ffd9a8", 8, 8], ["l3-svc", -3.7, 2.6, 18.7, "#ff2a1a", 3, 5],
     ["l3-a", -4, 2.6, 6, "#ffd9a8", 16, 11], ["l3-b", 3, 2.6, 6.5, "#ffd9a8", 16, 11], ["l3-c", -3, 2.6, 11.5, "#ffd9a8", 16, 11], ["l3-d", 4, 2.6, 12.5, "#ffd9a8", 16, 11], ["l3-e", 0, 2.6, 15.5, "#ffd9a8", 13, 10],
   ] as Array<[string, number, number, number, string, number, number]>).map(([id, x, y, z, color, intensity, distance]) => marker(`light-${id}`, "light", [x, y, z], { color, intensity, distance })),
   // camera shots (?cam=<id> in dev builds)
@@ -328,17 +421,20 @@ const materials: Record<string, Record<string, unknown>> = {
 writeLevel("room4", "Room 4: the elevator", {
   name: "The Elevator", number: 4, next: "room5", cutsceneAfter: "c3", music: "elevator", look: "elevator", footsteps: "hard",
   enterLine: "r4_enter", enterDelay: 1.5, clearLine: "r4_clear", tutorial: false,
-  later: ["L1", "roof", "L2", "L3"],
+  later: ["L1", "L1b", "L1c", "L1d", "roof", "L2", "L2b", "L2c", "L2d", "L3", "L3b", "L3w", "L3h", "L3c"],
   ride: {
     car: [-3, -3, 3, 3],
     hatch: [-0.5, 0],
     steps: [
       { t: 12 },
-      { stop: "S1", side: "e", doors: ["door-e"], groups: ["L1", "L1b"], slow: true, checkpoint: "cp-s1" },
+      { stop: "S1", side: "e", doors: ["door-e"], groups: ["L1", "L1b", "L1c", "L1d"], slow: true, checkpoint: "cp-s1",
+        waves: [{ group: "L1b", down: 2, after: 9 }, { group: "L1c", down: 4, after: 16 }, { group: "L1d", down: 5, after: 21 }] },
       { t: 24, roof: 5, group: "roof" },
-      { stop: "S2", side: "w", doors: ["door-w"], groups: ["L2", "L2b"], alert: true, checkpoint: "cp-s2" },
+      { stop: "S2", side: "w", doors: ["door-w"], groups: ["L2", "L2b", "L2c", "L2d"], alert: true, checkpoint: "cp-s2",
+        waves: [{ group: "L2b", down: 3, after: 10 }, { group: "L2c", down: 5, after: 16 }, { group: "L2d", down: 6, after: 23 }] },
       { t: 11, cables: 3.5 },
-      { stop: "S3", side: "s", doors: ["door-s"], groups: ["L3", "L3b", "L3c"], pry: 2.0, alert: true, checkpoint: "cp-s3", last: true },
+      { stop: "S3", side: "s", doors: ["door-s"], groups: ["L3", "L3b", "L3w", "L3h", "L3c"], pry: 2.0, alert: true, checkpoint: "cp-s3", last: true,
+        waves: [{ group: "L3b", down: 3, after: 12 }, { group: "L3w", down: 3, after: 12 }, { group: "L3h", down: 6, after: 24, hatch: true }, { group: "L3c", down: 7, after: 32 }] },
     ],
   },
 }, materials, solid, decor, markers);

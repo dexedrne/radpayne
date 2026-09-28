@@ -8,7 +8,9 @@
 //   stop: { stop: id, side, doors: [collider node ids], groups: [groups to clear; the first comes in when
 //           the doors open, later ones by their own triggers], slow?: true (the door beat), pry?: s (forced
 //           open from outside, slowly), alert?: true (they know he is coming), checkpoint?: marker id,
-//           last?: true (the doors stay open: the room's exit is out there) }
+//           last?: true (the doors stay open: the room's exit is out there), waves?: [{ group, after?: s (after
+//           the doors start to open), down?: N (once N of this stop's hostiles are down; whichever comes
+//           first), hatch?: true (she drops through the car's roof hatch) }] }
 // Each stop saves a checkpoint (Resume.ride): a retry starts at that stop, the car just arriving.
 import { alertGoon, setState } from "../ai/goon.ts";
 import type { Game } from "./game.ts";
@@ -16,7 +18,10 @@ import type { Fnv1a } from "./math.ts";
 import { DT, RIDE } from "./tuning.ts";
 
 export type RideLeg = { t: number; roof?: number; group?: string; cables?: number };
-export type RideStop = { stop: string; side: string; doors: string[]; groups: string[]; slow?: boolean; pry?: number; alert?: boolean; checkpoint?: string; last?: boolean };
+/** A wave at a stop: a group brought in by the clock (after the doors start to open) or by the stop's
+ *  losses, whichever comes first; `hatch`: its one hostile drops through the car's roof hatch. */
+export type RideWave = { group: string; after?: number; down?: number; hatch?: boolean };
+export type RideStop = { stop: string; side: string; doors: string[]; groups: string[]; slow?: boolean; pry?: number; alert?: boolean; checkpoint?: string; last?: boolean; waves?: RideWave[] };
 export type RideSettings = { car: [number, number, number, number]; hatch?: [number, number]; steps: Array<RideLeg | RideStop> };
 export type RidePhase = "leg" | "arrive" | "opening" | "open" | "closing";
 
@@ -45,6 +50,9 @@ export class Ride {
   started = false;
   /** The open stop's doors are out of the world (at RIDE.gap of their travel: the gap is wide enough). */
   through = false;
+  /** World seconds since this stop's doors started to open (-1: not yet), and its waves brought in (bits). */
+  since = -1;
+  waved = 0;
 
   constructor(g: Game, s: RideSettings) {
     this.steps = Array.isArray(s.steps) ? s.steps : [];
@@ -74,6 +82,9 @@ export class Ride {
     this.backSaid = false;
     this.through = false;
     this.started = true;
+    this.since = -1;
+    this.waved = 0;
+    this.hatchGroup = "";
   }
 
   /** Inside the car's floor, at least `margin` m from its walls. */
@@ -110,6 +121,9 @@ export class Ride {
     this.out = 0;
     this.backSaid = false;
     this.through = false;
+    this.since = -1;
+    this.waved = 0;
+    this.hatchGroup = "";
     const s = this.cur;
     if (!s) return;
     if (isStop(s)) {
@@ -173,11 +187,13 @@ export class Ride {
       if (this.t >= s.t && !waiting) this.enter(g, this.i + 1);
       return;
     }
+    if (this.since >= 0) { this.since += dt; this.stepWaves(g, s); }
     switch (this.phase) {
       case "arrive":
         if (this.t < RIDE.arrive) return;
         this.phase = "opening";
         this.t = 0;
+        this.since = 0;
         if (s.groups[0]) this.spawn(g, s.groups[0], !!s.alert);
         g.emit({ type: "ride", what: "open", stop: s.stop, side: s.side, ...(s.pry ? { pry: true } : {}) });
         return;
@@ -221,6 +237,41 @@ export class Ride {
     }
   }
 
+  /** A stop's waves (RideWave): each once, when its clock or its count of the stop's losses comes up. */
+  private stepWaves(g: Game, s: RideStop): void {
+    const waves = s.waves;
+    if (!waves?.length) return;
+    let down = -1;
+    for (let i = 0; i < waves.length; i++) {
+      if (this.waved & (1 << i)) continue;
+      const w = waves[i];
+      if (w.down !== undefined && down < 0) {
+        down = 0;
+        for (const e of g.enemies) if (s.groups.includes(e.group) && e.state === "dead") down++;
+      }
+      if (!((w.after !== undefined && this.since >= w.after) || (w.down !== undefined && down >= w.down))) continue;
+      // (one drop through the hatch at a time: a second waits for the first to land)
+      if (w.hatch && (this.dropping >= 0 || this.hatchGroup)) continue;
+      this.waved |= 1 << i;
+      if (w.hatch) {
+        // the thud on the roof, the hatch's tell, then she drops in
+        this.hatchGroup = w.group;
+        this.hatchT = RIDE.hatchTell;
+        g.emit({ type: "ride", what: "roof" });
+      } else {
+        this.spawn(g, w.group, true);
+        g.emit({ type: "trigger", id: `wave-${w.group}`, action: "spawn", group: w.group });
+      }
+    }
+    if (this.hatchGroup) {
+      this.hatchT -= DT * g.timeScale;
+      if (this.hatchT <= 0) { this.hatchDrop(g, this.hatchGroup); this.hatchGroup = ""; }
+    }
+  }
+  /** A wave's drop through the hatch waiting on its tell (the group, world s left). */
+  private hatchGroup = "";
+  private hatchT = 0;
+
   /** The hatch gives: the leg's heavy drops in over the hatch, facing the player, and lands in a crouch
    *  (a stagger for the fall and RIDE.land: no firing). */
   private hatchDrop(g: Game, group: string): void {
@@ -237,12 +288,14 @@ export class Ride {
     e.deaf = false;
     e.hit.hittable = true;
     e.stagger = Math.sqrt((2 * RIDE.hatchY) / RIDE.gravity) + RIDE.land;
+    // (a goon or a rusher has no stagger: she waits out the fall in her alert)
+    if (e.kind !== "heavy") e.react = e.stagger * 0.8;
     this.dropping = e.idx;
     this.vy = 0;
     g.syncEnemyPose(e);
   }
 
   hashInto(h: Fnv1a): void {
-    h.i32(this.i).str(this.phase).f64(this.t).f64(this.open).i32(this.beats).i32(this.dropping).f64(this.vy).f64(this.out).i32(this.through ? 1 : 0);
+    h.i32(this.i).str(this.phase).f64(this.t).f64(this.open).i32(this.beats).i32(this.dropping).f64(this.vy).f64(this.out).i32(this.through ? 1 : 0).f64(this.since).i32(this.waved).str(this.hatchGroup).f64(this.hatchT);
   }
 }

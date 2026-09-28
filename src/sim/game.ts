@@ -6,6 +6,7 @@
 import { Graph } from "../ai/graph.ts";
 import { alertGoon, onGoonDeath, setState } from "../ai/goon.ts";
 import { stepEnemy } from "../ai/enemies.ts";
+import { TACTICS, makeTactics, stepTactics, type Tactics } from "../ai/tactics.ts";
 import { HB_HEAD, HB_MULT, HB_TORSO, aimPoint, makeCapsules } from "../combat/hitboxes.ts";
 import { HIT_ACTOR, HIT_NONE, HIT_WORLD, makeTraceHit, trace, type HitActor, type TraceHit } from "../combat/trace.ts";
 import { PICKUPS, PIERCE_K, SLOT_ORDER, SWAP_TIME, WEAPONS, makeWeapon, slotOf, startReload, stepWeapon, triggerWeapon, type BaseWeapon, type WeaponId } from "../combat/weapons.ts";
@@ -14,7 +15,8 @@ import { makeEnemy, makePlayer, type Enemy, type EnemyKind, type EnemyWeapon, ty
 import { aimDir } from "./aim.ts";
 import { Crowd } from "./crowd.ts";
 import { Fnv1a, Rand, hash01 } from "./math.ts";
-import { PM_DIVE, PM_GETUP, PM_JUMP, PM_LAND, PM_PRONE, muzzleOf, pivotOf, stepPlayer } from "./player.ts";
+import { PM_COVER_IN, PM_COVER_OUT, PM_DIVE, PM_DUCK, PM_GETUP, PM_JUMP, PM_LAND, PM_POP, PM_PRONE, PM_VAULT, muzzleOf, pivotOf, stepPlayer } from "./player.ts";
+import { COVER_MOVE, aiCovers, attachCover, coverOf, findTarget, leaveCover, tucked, type CoverSeg, type CoverTarget } from "./cover.ts";
 import { AI, BREACH, CHECKPOINT_MIN_HEALTH, DIFFICULTY, DODGE, DT, ENEMY, ENEMY_ARMS, GRENADE, GUARD, HEAVY, HEAVY_SCALE, KILLCAM, MADAME, MAX_RANGE, MELEE, METER, PLAYER, PROJECTILE_SPEED, RUSHER, TIME, USE, type Difficulty } from "./tuning.ts";
 import { PLAYER_ID, type GameEvent, type InputFrame, type V3 } from "./types.ts";
 import { World, circleRectOverlap, type Box } from "./world.ts";
@@ -51,7 +53,8 @@ export type Projectile = {
 };
 
 /** A live frag: world-time flight, bounces, the fuse. `landed` once it first touched something. */
-export type Grenade = { id: number; x: number; y: number; z: number; vx: number; vy: number; vz: number; fuse: number; landed: boolean; resting: boolean; bounces: number };
+/** by: -1 his, else the goon who threw it (ai/tactics.ts). */
+export type Grenade = { id: number; x: number; y: number; z: number; vx: number; vy: number; vz: number; fuse: number; landed: boolean; resting: boolean; bounces: number; by?: number };
 
 export type KillCam = {
   /** Real seconds since it started. */
@@ -204,6 +207,12 @@ export class Game {
   readonly broken: string[] = [];
   /** Hit points left per breakable node. */
   private readonly breakHp = new Map<string, number>();
+  /** The room's cover, derived from its colliders (sim/cover.ts), and what a cover press would take now
+   *  (the HUD marks it). */
+  readonly cover: CoverSeg[];
+  coverTarget: CoverTarget | null = null;
+  /** The gang against his cover (ai/tactics.ts). */
+  readonly tactics: Tactics = makeTactics();
 
   constructor(level: LevelData, opts: GameOptions = {}) {
     this.level = level;
@@ -215,7 +224,15 @@ export class Game {
     this.secrets = level.markers.filter(m => m.kind === "secret");
     this.rng = new Rand(this.seed ^ 0x5eed);
     this.world = new World(level.boxes);
+    this.cover = coverOf(this.world);
     this.graph = new Graph(level.markers, this.world);
+    // the gang takes the same cover he does: the derived points join the hand-placed ones (none within a
+    // metre of one), those with a way to them
+    for (const c of aiCovers(this.cover)) {
+      if (this.graph.covers.some(k => Math.hypot(k.x - c.x, k.z - c.z) < 1)) continue;
+      if (this.graph.nearest(c.x, c.y, c.z) < 0) continue;
+      this.graph.covers.push(c);
+    }
     const spawn = level.markers.find(m => m.kind === "spawn");
     const sx = spawn?.x ?? 0, sz = spawn?.z ?? 0;
     const sy = this.world.groundBelow(sx, sz, PLAYER.radius, (spawn?.y ?? 0) + 1);
@@ -233,7 +250,7 @@ export class Game {
         const kind = kindName as EnemyKind;
         const pick = kind === "heavy" ? 0 : kind === "madame" ? MADAME.pockit : typeof m.data.milady === "number" ? (m.data.milady as number) : opts.pockit?.[m.id] ?? 1 + Math.floor(hash01(this.seed, n, 0x6d, 0) * POCKIT_COUNT);
         const gy = this.world.groundBelow(m.x, m.z, 0.3, m.y + 1);
-        const hp = kind === "madame" ? MADAME.hp[this.difficulty] : ENEMY[kind].hp;
+        const hp = kind === "madame" ? MADAME.hp[this.difficulty] : Math.round(ENEMY[kind].hp * this.diff.hp);
         const e = makeEnemy(n, m.id, m.x, Number.isFinite(gy) ? gy : m.y, m.z, m.yaw, hp, pick, typeof m.data.group === "string" ? m.data.group : "", kind);
         if (e.group && !spawned.has(e.group)) e.state = "idle";
         e.perch = m.data.perch === true;
@@ -252,6 +269,8 @@ export class Game {
         n++;
       } else if (m.kind === "pickup") {
         const item = (m.data.item as string) ?? "copium";
+        // the harder settings leave some of the room's cans out (the same ones every time: by id)
+        if (item === "copium" && this.diff.keep < 1 && hashStr(m.id) >= this.diff.keep) continue;
         const base = typeof m.data.amount === "number" ? (m.data.amount as number) : item === "copium" ? 1 : PICKUPS[item]?.amount ?? 1;
         // copium scales with the difficulty; weapons and ammo do not
         const pk: Pickup = { id: m.id, item, amount: item === "copium" ? Math.max(1, Math.floor(base * this.diff.copium)) : base, x: m.x, y: m.y, z: m.z, taken: false };
@@ -264,6 +283,7 @@ export class Game {
     for (const k of this.pickups) k.secret = this.secrets.some(sm => insideTrigger(sm, k.x, k.y + 0.3, k.z));
     for (const b of level.breakables) this.breakHp.set(b.node, b.hp);
     this.player.grenades = Math.min(GRENADE.carry, opts.grenades ?? 0);
+    this.player.copium = this.diff.startCopium;
     this.stats.secrets = 0;
     this.stats.secretsTotal = this.secrets.length;
     for (const e of this.enemies) this.syncEnemyPose(e);
@@ -372,7 +392,7 @@ export class Game {
     for (const w of r.owned) this.giveWeapon(w);
     for (const [w, m0, m1, res] of r.ammo) { const a = p.arsenal[w]; if (a) { a.mags[0] = m0; a.mags[1] = m1; a.reserve = res; } }
     if (p.arsenal[r.weapon]) p.weapon = p.arsenal[r.weapon]!;
-    p.health = Math.max(r.health, CHECKPOINT_MIN_HEALTH);
+    p.health = Math.max(r.health, Math.min(CHECKPOINT_MIN_HEALTH, this.diff.checkpoint));
     p.copium = r.copium;
     this.meter = Math.max(r.meter, METER.start * 0.5);
     this.stats = { ...r.stats, secrets: this.found.length, secretsTotal: this.secrets.length };
@@ -413,7 +433,7 @@ export class Game {
       else this.emit({ type: "btRefused" }); // the HUD flashes the hourglass
     }
     if (this.bulletTime) {
-      this.meter -= DT;
+      this.meter -= DT * this.diff.btDrain;
       this.stats.btTime += DT;
       if (this.meter <= 0) { this.meter = 0; this.setBulletTime(false); }
     }
@@ -435,6 +455,7 @@ export class Game {
       if (inp.slot > 0) this.switchWeapon(inp.slot);
       if (inp.reload && p.meleeT <= 0 && !p.guard && startReload(p.weapon)) this.emit({ type: "reload", hand: 0 });
       if (inp.copium) this.useCopium();
+      if (inp.cover && p.mode === "normal") this.pressCover();
       if (inp.dodge && p.mode === "normal" && p.dodgeCooldown <= 0) {
         const before = this.meter;
         if (this.meter > 0) this.meter = Math.max(0, this.meter - METER.dodgeCost);
@@ -448,7 +469,15 @@ export class Game {
     if (p.zoom && (p.weapon.reloadT > 0 || p.mode !== "normal" || p.weapon.id !== "sniper")) p.zoomBlock = true;
     const zoom = inControl && !!pin.zoom && !p.zoomBlock && p.weapon.id === "sniper" && p.mode === "normal" && p.weapon.reloadT <= 0 && p.meleeT <= 0 && !p.guard;
     if (zoom !== p.zoom) { p.zoom = zoom; this.emit({ type: "zoom", on: zoom }); }
-    const pm = stepPlayer(this.world, p, pin, DT, pdt);
+    const pm = stepPlayer(this.world, p, pin, DT, pdt, this.cover);
+    if (pm & (PM_COVER_IN | PM_COVER_OUT | PM_POP | PM_DUCK | PM_VAULT)) {
+      const high = p.cover >= 0 && !!this.cover[p.cover]?.high;
+      if (pm & PM_COVER_OUT) this.emit({ type: "cover", what: "out", high: false });
+      if (pm & PM_VAULT) this.emit({ type: "cover", what: "vault", high: false });
+      if (pm & PM_COVER_IN) this.emit({ type: "cover", what: "in", high });
+      if (pm & PM_POP) this.emit({ type: "cover", what: "pop", high });
+      if (pm & PM_DUCK) this.emit({ type: "cover", what: "duck", high });
+    }
     if (pm & PM_DIVE) this.emit({ type: "dodge" });
     if (pm & PM_JUMP) this.emit({ type: "jump" });
     if (pm & PM_LAND) this.emit({ type: "land", prone: (pm & PM_PRONE) !== 0 });
@@ -459,13 +488,15 @@ export class Game {
 
     // copium over time (player clock)
     if (p.healLeft > 0 && p.mode !== "dead") {
-      const add = Math.min(p.healLeft, (PLAYER.copiumHeal / PLAYER.copiumTime) * pdt);
+      const add = Math.min(p.healLeft, (this.diff.heal / PLAYER.copiumTime) * pdt);
       p.healLeft -= add;
       p.health = Math.min(PLAYER.maxHealth, p.health + add);
     }
 
     // aim + weapon; E, the melee and the throw go where he aims this step
     this.updateAim();
+    // the cover a press would take next (the HUD marks it)
+    this.coverTarget = inControl && p.mode === "normal" && p.dashSeg < 0 && p.grounded ? findTarget(this.world, this.cover, p) : null;
     if (inControl && p.mode !== "dead") {
       if (inp.interact) this.interact();
       // #4764's melee button is the guard while held (stepGuard: a tap cuts on the release); a press that
@@ -488,7 +519,8 @@ export class Game {
     if (hand >= 0) this.firePlayer(hand);
     else if (canFire && inp.fire && !w.wasDown && w.reloadT > 0) this.emit({ type: "dryfire" });
 
-    // enemies
+    // enemies (the gang's tactics against his cover first)
+    if (this.aiOn && this.phase === "play") stepTactics(this, wdt);
     if (this.aiOn) for (const e of this.enemies) if (e.state !== "dead" && e.state !== "inactive") stepEnemy(this, e, wdt);
     for (const e of this.enemies) this.moveEnemy(e, wdt);
     // one alert wakes the whole room (the club: the DJ calls it)
@@ -671,9 +703,43 @@ export class Game {
     const p = this.player;
     if (p.copium <= 0 || p.health >= PLAYER.maxHealth || p.healLeft > 0) return;
     p.copium--;
-    p.healLeft = PLAYER.copiumHeal;
+    p.healLeft = this.diff.heal;
     this.stats.copiumUsed++;
     this.emit({ type: "copium" });
+  }
+
+  /** C / LB: out of cover, take the marked cover (at once when it is right here, else a run to it); in
+   *  cover, the dash to the marked spot, or out of it when nothing is marked; running to one, stop. */
+  private pressCover(): void {
+    const p = this.player;
+    if (p.dashSeg >= 0) { leaveCover(p); this.emit({ type: "cover", what: "out", high: false }); return; }
+    const t = this.coverTarget;
+    if (!t) {
+      if (p.cover >= 0) { leaveCover(p); this.emit({ type: "cover", what: "out", high: false }); }
+      return;
+    }
+    const s = this.cover[t.seg];
+    if (p.cover >= 0) leaveCover(p);
+    if (!t.dash) {
+      attachCover(s, p, t.u);
+      p.vx = p.vz = 0;
+      this.emit({ type: "cover", what: "in", high: s.high });
+      return;
+    }
+    p.dashSeg = t.seg;
+    p.dashU = t.u;
+    p.dashT = 0;
+    this.emit({ type: "cover", what: "dash", high: s.high });
+  }
+
+  /** How high the gang looks for him (LOS): the shoulder pivot, or his tucked head behind low cover. */
+  private losUp(): number {
+    const p = this.player;
+    if (p.cover >= 0) {
+      const s = this.cover[p.cover];
+      if (s && tucked(s, p)) return 0.8;
+    }
+    return p.pivotUp;
   }
 
   private fireTrigger(t: Trigger): void {
@@ -934,11 +1000,18 @@ export class Game {
     const den = 2 * c * c * (R * t - dy);
     let v = den > 0.05 ? Math.sqrt((GRENADE.gravity * R * R) / den) : GRENADE.maxSpeed;
     v = Math.max(GRENADE.minSpeed, Math.min(GRENADE.maxSpeed, v));
-    const gr: Grenade = { id: this.nextGrenade++, x: ox, y: oy, z: oz, vx: hx * v * c, vy: v * Math.sin(th), vz: hz * v * c, fuse: GRENADE.fuse, landed: false, resting: false, bounces: 0 };
+    const gr: Grenade = { id: this.nextGrenade++, x: ox, y: oy, z: oz, vx: hx * v * c, vy: v * Math.sin(th), vz: hz * v * c, fuse: GRENADE.fuse, landed: false, resting: false, bounces: 0, by: -1 };
     this.grenadesLive.push(gr);
     this.emit({ type: "throw", id: gr.id, x: ox, y: oy, z: oz });
     // they hear the pin
     for (const e of this.enemies) if (e.state === "idle" && !e.deaf && (e.x - p.x) ** 2 + (e.z - p.z) ** 2 < 12 * 12) alertGoon(this, e, 0.3);
+  }
+
+  /** A goon's frag (ai/tactics.ts): from her hand at (ox, oy, oz) with that velocity. */
+  enemyGrenade(e: Enemy, ox: number, oy: number, oz: number, vx: number, vy: number, vz: number): void {
+    const gr: Grenade = { id: this.nextGrenade++, x: ox, y: oy, z: oz, vx, vy, vz, fuse: GRENADE.fuse, landed: false, resting: false, bounces: 0, by: e.idx };
+    this.grenadesLive.push(gr);
+    this.emit({ type: "throw", id: gr.id, x: ox, y: oy, z: oz, by: e.idx });
   }
 
   /** World-time flight with bounces off the boxes and the floor, the fuse, the girls running from it. */
@@ -1011,13 +1084,14 @@ export class Game {
       if (e.state === "idle") alertGoon(this, e, 0);
       if (e.kind === "heavy" && e.hp > 0 && dmg >= HEAVY.staggerAt && e.stagger <= 0) { e.stagger = HEAVY.stagger; e.tell = 0; this.emit({ type: "stagger", enemy: e.idx }); }
       const hl = Math.hypot(dx, dz) || 1;
-      if (e.hp <= 0) this.killEnemy(e, false, dx / hl, dz / hl, { ox: bx, oy: by, oz: bz, x: this.v.x, y: this.v.y, z: this.v.z }, true, false, "grenade");
+      // (a goon's own frag: no kill of his)
+      if (e.hp <= 0) this.killEnemy(e, false, dx / hl, dz / hl, (gr.by ?? -1) < 0 ? { ox: bx, oy: by, oz: bz, x: this.v.x, y: this.v.y, z: this.v.z } : null, true, false, "grenade");
     }
     const p = this.player;
     if (p.mode !== "dead") {
-      const tx = p.x, ty = p.y + (p.mode === "dive" || p.mode === "prone" ? 0.4 : 1.1), tz = p.z;
+      const tx = p.x, ty = p.y + (p.mode === "dive" || p.mode === "prone" ? 0.4 : p.hit.pose.stance === "cover" ? 0.6 : 1.1), tz = p.z;
       const d = Math.hypot(tx - bx, ty - by, tz - bz);
-      if (d < R && this.world.clear(bx, by, bz, tx, ty, tz, true)) this.hurtPlayer(dmgAt(d) * GRENADE.self, -1);
+      if (d < R && this.world.clear(bx, by, bz, tx, ty, tz, true)) this.hurtPlayer(dmgAt(d) * ((gr.by ?? -1) < 0 ? GRENADE.self : TACTICS.player * this.diff.damage), gr.by ?? -1);
     }
     for (const b of this.level.breakables) {
       const box = this.level.boxes.find(x => x.node === b.node);
@@ -1194,6 +1268,9 @@ export class Game {
     const p = this.player;
     const def = WEAPONS[p.weapon.id];
     const m = muzzleOf(p, hand, this.v3);
+    // from behind cover without popping out: blind fire, the gun held up over it or round its edge
+    const cs = p.cover >= 0 ? this.cover[p.cover] : null;
+    const blind = !!cs && p.coverPop < 0.7 && this.blindMuzzle(cs, hand, m);
     // muzzle -> aim point, then the weapon spread
     let dx = this.aimPoint.x - m.x, dy = this.aimPoint.y - m.y, dz = this.aimPoint.z - m.z;
     let l = Math.sqrt(dx * dx + dy * dy + dz * dz);
@@ -1201,35 +1278,60 @@ export class Game {
     dx /= l; dy /= l; dz /= l;
     this.stats.shots += def.pellets; // accuracy counts every pellet (hits do)
     // hearing: idle goons in range wake up
+    // (and the awake ones know where he is from it: his shots give him away, blind fire too)
     for (const e of this.enemies) {
-      if (e.state !== "idle" || e.deaf) continue;
+      if (e.deaf || e.state === "dead" || e.state === "inactive") continue;
       const ex = e.x - p.x, ez = e.z - p.z;
-      if (ex * ex + ez * ez < AI.hearing * AI.hearing) alertGoon(this, e, 0.15);
+      if (ex * ex + ez * ez >= AI.hearing * AI.hearing) continue;
+      if (e.state === "idle") alertGoon(this, e, 0.15);
+      else { e.seenAt = this.time; e.lastSeenX = p.x; e.lastSeenZ = p.z; }
     }
-    const cone = p.zoom ? def.zoomSpread : def.spread;
+    const cone = (p.zoom ? def.zoomSpread : def.spread) + (blind ? COVER_MOVE.blind : 0);
     for (let k = 0; k < def.pellets; k++) {
       const s = this.spread(dx, dy, dz, cone);
       this.shoot(0, PLAYER_ID, hand, m.x, m.y, m.z, s.x, s.y, s.z, def.damage, def.id, k, def.pierce);
     }
   }
 
+  /** Blind fire's muzzle: over the top of low cover, or out round the open edge of high cover (the
+   *  hands only); false (the normal muzzle) mid-wall or when he aims away from it. */
+  private blindMuzzle(s: CoverSeg, hand: number, m: V3): boolean {
+    const p = this.player;
+    const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);
+    if (fx * -s.nx + fz * -s.nz < 0.1) return false;
+    const side = hand === 0 ? 0.12 : -0.12;
+    if (!s.high) {
+      m.x = p.x - s.nx * 0.2 + s.tx * side; m.z = p.z - s.nz * 0.2 + s.tz * side; m.y = s.y + s.top + 0.12;
+      return true;
+    }
+    if (p.coverEnd === 0) return false;
+    const c = p.coverEnd < 0 ? s.cornerA - 0.22 : s.cornerB + 0.22;
+    m.x = s.ax + s.tx * c - s.nx * 0.12; m.z = s.az + s.tz * c - s.nz * 0.12; m.y = p.y + 1.25 + side * 0.3;
+    return true;
+  }
+
   /** Enemy fires at the player (accuracy falls off with distance and the player's speed). */
-  enemyFire(e: Enemy, moving: boolean): void {
+  enemyFire(e: Enemy, moving: boolean, at: V3 | null = null): void {
     const p = this.player;
     const T = ENEMY[e.kind];
     const c = Math.cos(e.facing), s = Math.sin(e.facing);
     const up = e.crouch && e.state !== "peek" ? 0.95 : T.muzzleUp;
     const reach = e.kind === "heavy" ? 0.75 * HEAVY_SCALE : 0.45, side = e.kind === "heavy" ? 0.12 : 0.18;
-    const mx = e.x + s * reach - c * side, my = e.y + up, mz = e.z + c * reach + s * side;
+    // (leaning out of high cover: the gun goes out with her)
+    const ln = e.lean * 0.34;
+    const mx = e.x + s * reach - c * side + c * ln, my = e.y + up, mz = e.z + c * reach + s * side - s * ln;
     const tgt = this.v;
-    if (!aimPoint("radbro", p.hit.pose, p.hit.pose.stance === "dive" || p.hit.pose.stance === "prone" ? HB_TORSO : HB_TORSO, tgt, this.scratchCaps)) return;
+    // suppressing fire (ai/tactics.ts) goes at a point over his cover, else at his body
+    if (at) { tgt.x = at.x; tgt.y = at.y; tgt.z = at.z; }
+    else if (!aimPoint("radbro", p.hit.pose, HB_TORSO, tgt, this.scratchCaps)) return;
     let dx = tgt.x - mx, dy = tgt.y - my, dz = tgt.z - mz;
     const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
     const sniper = e.weapon === "sniper", cannon = e.weapon === "handcannon";
     // the sniper keeps her aim out to her range
-    const distF = sniper ? (dist <= ENEMY_ARMS.sniper.range ? 1 : AI.farFloor) : dist <= AI.near ? 1 : dist >= AI.far ? AI.farFloor : 1 - ((1 - AI.farFloor) * (dist - AI.near)) / (AI.far - AI.near);
+    const D = this.diff;
+    const distF = sniper ? (dist <= ENEMY_ARMS.sniper.range ? 1 : D.farFloor) : dist <= AI.near ? 1 : dist >= D.far ? D.farFloor : 1 - ((1 - D.farFloor) * (dist - AI.near)) / (D.far - AI.near);
     const fast = p.mode === "dive" || p.mode === "roll";
-    const speedF = fast ? AI.dodgeMul : 1 - AI.speedK * Math.min(1, p.speed / PLAYER.runSpeed);
+    const speedF = fast ? AI.dodgeMul : 1 - D.speedK * Math.min(1, p.speed / PLAYER.runSpeed);
     const chance = (sniper ? ENEMY_ARMS.sniper.hit : AI.baseHit) * distF * speedF * this.diff.accuracy * (moving ? 0.55 : 1);
     const hitRoll = this.rng.next() < chance;
     // aim offset in the plane across the line of fire
@@ -1257,13 +1359,25 @@ export class Game {
       return;
     }
     const dmg = sniper ? ENEMY_ARMS.sniper.damage : cannon ? ENEMY_ARMS.handcannon.damage : T.damage;
-    this.shoot(1, e.idx, 0, mx, my, mz, dx / l, dy / l, dz / l, dmg * this.diff.damage, e.weapon, 0);
+    // (Madame Pockit has her own factor: the boss stays fair on every setting)
+    this.shoot(1, e.idx, 0, mx, my, mz, dx / l, dy / l, dz / l, dmg * (e.kind === "madame" ? this.diff.boss : this.diff.damage), e.weapon, 0);
   }
 
   /** Can the enemy's gun see the player (no wall between muzzle height and the body)? */
   canShoot(e: Enemy): boolean {
     const p = this.player;
-    return this.world.clear(e.x, e.y + ENEMY[e.kind].muzzleUp, e.z, p.x, p.y + p.pivotUp * 0.75, p.z, true);
+    const ln = e.lean * 0.34, lx = Math.cos(e.facing) * ln, lz = -Math.sin(e.facing) * ln;
+    return this.world.clear(e.x + lx, e.y + ENEMY[e.kind].muzzleUp, e.z + lz, p.x, p.y + this.losUp() * 0.75, p.z, true);
+  }
+
+  /** Suppressing fire's line: from her gun to the point over his cover, not blocked short of the cover
+   *  itself (a wall between them is no suppression). */
+  suppressLine(e: Enemy, at: V3): boolean {
+    const ln = e.lean * 0.34, ox = e.x + Math.cos(e.facing) * ln, oy = e.y + ENEMY[e.kind].muzzleUp, oz = e.z - Math.sin(e.facing) * ln;
+    const dx = at.x - ox, dy = at.y - oy, dz = at.z - oz, d = Math.hypot(dx, dy, dz);
+    if (d < 1e-3) return false;
+    const h = this.world.raycast(ox, oy, oz, dx / d, dy / d, dz / d, d, true);
+    return !h || h.t > d - 1.4;
   }
 
   /** Line of sight + view cone (unless already alerted) + range. */
@@ -1282,7 +1396,8 @@ export class Game {
       if ((fx * dx + fz * dz) / d < G.fov) return false;
     }
     const eyeY = e.y + (e.crouch ? 1.1 : e.kind === "heavy" ? 1.45 * HEAVY_SCALE : 1.65);
-    return this.world.clear(e.x, eyeY, e.z, p.x, p.y + Math.max(0.5, p.pivotUp - 0.2), p.z, true);
+    const ln = e.lean * 0.34;
+    return this.world.clear(e.x + Math.cos(e.facing) * ln, eyeY, e.z - Math.sin(e.facing) * ln, p.x, p.y + Math.max(0.5, this.losUp() - 0.2), p.z, true);
   }
 
   /** Tell alertable friends nearby. */
@@ -1524,7 +1639,7 @@ export class Game {
     if (shot) {
       this.stats.kills++;
       if (headshot) this.stats.headshots++;
-      this.meter = Math.min(METER.max, this.meter + (headshot ? METER.headshotRefill : METER.killRefill));
+      this.meter = Math.min(METER.max, this.meter + (headshot ? METER.headshotRefill : METER.killRefill) * this.diff.killRefill);
       this.lastPlayerKill = { from: { x: shot.ox, y: shot.oy, z: shot.oz }, to: { x: shot.x, y: shot.y, z: shot.z }, enemy: e.idx, headshot, chase };
     }
     this.emit({ type: "kill", target: e.idx, headshot, final, ...(blast ? { blast } : {}), ...(shot ? { weapon, shot: { ...shot } } : {}) });
@@ -1628,10 +1743,12 @@ export class Game {
     h.f64(p.x).f64(p.y).f64(p.z).f64(p.vx).f64(p.vy).f64(p.vz).f64(p.health).i32(p.copium).str(p.mode).f64(p.modeT);
     h.str(p.weapon.id).i32(p.weapon.mags[0]).i32(p.weapon.mags[1]).f64(p.weapon.cooldown).f64(p.weapon.reloadT).f64(p.weapon.reserve);
     h.f64(this.meter).f64(this.timeScale).f64(this.time).i32(this.rng.s).str(this.phase);
-    for (const e of this.enemies) h.f64(e.x).f64(e.z).f64(e.facing).f64(e.hp).str(e.state).f64(e.timer).i32(e.cover).f64(e.tell).f64(e.stagger);
+    for (const e of this.enemies) h.f64(e.x).f64(e.z).f64(e.facing).f64(e.hp).str(e.state).f64(e.timer).i32(e.cover).f64(e.tell).f64(e.stagger).str(e.role);
+    h.f64(this.tactics.x).f64(this.tactics.z).f64(this.tactics.t).f64(this.tactics.nadeAt).f64(this.tactics.fx).f64(this.tactics.fz);
     h.i32(this.projectiles.length).i32(this.breached.length).f64(this.breachSlow);
     for (const b of this.projectiles) h.f64(b.x).f64(b.y).f64(b.z);
     h.i32(p.guard ? 1 : 0).i32(p.guardLock ? 1 : 0).f64(p.guardT).f64(p.guardMeter).f64(p.guardBroken).f64(p.shoveT).f64(this.guardHoldUntil);
+    h.i32(p.cover).f64(p.coverU).f64(p.coverPop).i32(p.coverEnd).i32(p.dashSeg).f64(p.shoulder).f64(p.pivotUp);
     h.i32(p.grenades).i32(p.banked).f64(p.meleeT).i32(p.zoom ? 1 : 0).i32(this.found.length).i32(this.opened.length).i32(this.broken.length).i32(this.grenadesLive.length);
     for (const gr of this.grenadesLive) h.f64(gr.x).f64(gr.y).f64(gr.z).f64(gr.fuse);
     this.ride?.hashInto(h);
@@ -1655,6 +1772,13 @@ export function boxDist(b: Box, x: number, z: number): number {
   return Math.hypot(ex, ez);
 }
 
+/** A string's hash in 0..1 (FNV-1a): stable per id, whatever the seed. */
+export function hashStr(id: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619);
+  return (h >>> 0) / 4294967296;
+}
+
 export function insideTrigger(t: Marker, x: number, y: number, z: number): boolean {
   const dx = x - t.x, dz = z - t.z;
   const c = Math.cos(t.yaw), s = Math.sin(t.yaw);
@@ -1662,7 +1786,7 @@ export function insideTrigger(t: Marker, x: number, y: number, z: number): boole
   return Math.abs(lx) <= t.hx && Math.abs(lz) <= t.hz && Math.abs(y - t.y) <= Math.max(t.hy, 1.5);
 }
 
-const frozen: InputFrame = { moveX: 0, moveY: 0, yaw: 0, pitch: 0, fire: false, bt: false, dodge: false, jump: false, reload: false, copium: false, slot: 0, skip: false, melee: false, throw: false, interact: false, zoom: false, guard: false };
+const frozen: InputFrame = { moveX: 0, moveY: 0, yaw: 0, pitch: 0, fire: false, bt: false, dodge: false, jump: false, reload: false, copium: false, slot: 0, skip: false, melee: false, throw: false, interact: false, zoom: false, guard: false, cover: false, aim: false };
 /** Outside control (kill cam, results) the player keeps the aim but does nothing else. */
 function FROZEN_INPUT(_inp: InputFrame, p: Player): InputFrame {
   frozen.yaw = p.yaw;
