@@ -132,7 +132,7 @@ export class Boss {
       if (!this.wind) return;
       this.wind = null;
       // (the next wind-up comes on the usual clock, as after a throw)
-      this.grenadeNext = (this.phase >= 3 ? G.every3 : G.every2) + g.rng.next();
+      this.grenadeNext = ((this.phase >= 3 ? G.every3 : G.every2) + g.rng.next()) * MADAME.pace[g.difficulty];
       const h = this.handPoint(e);
       this.blast(g, h.x, h.y, h.z, true);
       // it went off on her: damage (the kill cam replays his shot when it finishes her) and a stagger
@@ -278,13 +278,13 @@ export class Boss {
           g.world.setEnabled(d.door, false);
           g.emit({ type: "boss", what: "door", door: d.door });
           if (e.state !== "dead") this.spawnAdds(g, d, MADAME.doors.first);
-          d.next = MADAME.doors.every;
+          d.next = MADAME.doors.every * MADAME.pace[g.difficulty];
         }
       } else if (d.open && d.queue.length && e.state !== "dead") {
         d.next -= dt;
-        if (d.next <= 0 && this.liveAdds(g, d) < MADAME.doors.maxLive) {
+        if (d.next <= 0 && this.liveAdds(g, d) < MADAME.maxLive[g.difficulty]) {
           this.spawnAdds(g, d, MADAME.doors.pair);
-          d.next = MADAME.doors.every;
+          d.next = MADAME.doors.every * MADAME.pace[g.difficulty];
         }
       }
     }
