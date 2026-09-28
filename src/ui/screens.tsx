@@ -24,6 +24,7 @@ import { hudSession } from "./hud/HudFrame.tsx";
 import { TopLeft } from "./Hud.tsx";
 import { setHitFeel, useFeel } from "./feel.ts";
 import type { HitFeelMode } from "../app/hitfeel.ts";
+import { CHAPTERS, clearedChapters, type ChapterId } from "./chapters.ts";
 
 const INK = "#f3ead8";
 
@@ -120,7 +121,7 @@ function useFontsReady(): boolean {
 // ---- title ---------------------------------------------------------------------------------------
 
 /** The title's focus rows, top to bottom (↑↓ / Tab / D-pad move, ←→ change, Enter / A plays from any). */
-const TITLE_ROWS = ["radbro", "difficulty", "graphics", "play"] as const;
+const TITLE_ROWS = ["chapter", "radbro", "difficulty", "graphics", "play"] as const;
 type TitleRow = (typeof TITLE_ROWS)[number];
 
 export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean }) {
@@ -130,14 +131,19 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
   const fonts = useFontsReady();
   const go = ready && fonts;
   const [row, setRow] = useState<TitleRow>("radbro");
+  // the chapter select, once chapter 1 is cleared on this browser
+  const chapterOpen = useMemo(() => clearedChapters().includes(1), []);
+  const chapter = useUi(s => s.chapter);
+  const rows = TITLE_ROWS.filter(r => r !== "chapter" || chapterOpen);
   const pick = (id: RadbroId) => { useUi.setState({ radbro: id }); store("radbro", id); };
-  const move = (d: number) => setRow(r => TITLE_ROWS[(TITLE_ROWS.indexOf(r) + d + TITLE_ROWS.length) % TITLE_ROWS.length]);
+  const move = (d: number) => setRow(r => rows[(rows.indexOf(r) + d + rows.length) % rows.length]);
   useMenuInput(a => {
     if (a === "enter") { if (go) onPlay(); return; }
     if (a === "up" || a === "tabPrev") return move(-1);
     if (a === "down" || a === "tabNext") return move(1);
     if (a === "left" || a === "right") {
       const d = a === "right" ? 1 : -1;
+      if (row === "chapter") { useUi.setState({ chapter: (chapter === 1 ? 2 : 1) as ChapterId }); return; }
       if (row === "radbro") {
         const i = RADBROS.findIndex(r => r.id === radbro);
         pick(RADBROS[(i + d + RADBROS.length) % RADBROS.length].id);
@@ -152,7 +158,13 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
     <div className="rp-layer" style={{ background: "linear-gradient(180deg, rgba(5,6,12,0.55), rgba(5,6,12,0.9) 70%)", overflowY: "auto" }}>
       <div className="rp-title rp-z" style={{ visibility: fonts ? "visible" : "hidden" }}>
         <div className="rp-wordmark">RAD<span>PAYNE</span></div>
-        <div className="rp-chapter">CHAPTER 1: RUGGED</div>
+        {chapterOpen ? (
+          <div className={`rp-chapter rp-focusrow${row === "chapter" ? " focus" : ""}`} {...focus("chapter")} data-testid="title-chapter" style={{ display: "flex", gap: 10 }}>
+            {([1, 2] as ChapterId[]).map(n => (
+              <button key={n} type="button" className={`rp-mbtn${chapter === n ? " primary" : ""}`} onClick={() => useUi.setState({ chapter: n })} data-testid={`chapter-${n}`}>{CHAPTERS[n].name}</button>
+            ))}
+          </div>
+        ) : <div className="rp-chapter">CHAPTER 1: RUGGED</div>}
         <div className={`rp-cards rp-focusrow${row === "radbro" ? " focus" : ""}`} {...focus("radbro")}>
           {RADBROS.map(r => (
             <button key={r.id} type="button" onClick={() => pick(r.id)} data-testid={`pick-${r.id}`} className={`rp-panel rp-card${radbro === r.id ? " on" : ""}`} style={radbro === r.id ? { borderColor: r.color } : undefined}>
@@ -436,7 +448,7 @@ function bestFor(r: Results): { prev: number | null; isBest: boolean } {
 
 /** Round 3: the end of the chapter: a black card, TO BE CONTINUED, before the results (a click, Enter,
  *  Space or a pad's Cross / Circle / Options skips it). Game UI, never baked into the panels. */
-function ChapterCard({ onDone }: { onDone: () => void }) {
+function ChapterCard({ onDone, n = 1 }: { onDone: () => void; n?: number }) {
   const [out, setOut] = useState(false);
   useEffect(() => {
     const a = setTimeout(() => setOut(true), 3400), b = setTimeout(onDone, 4100);
@@ -449,12 +461,12 @@ function ChapterCard({ onDone }: { onDone: () => void }) {
   return (
     <div className="rp-layer" data-testid="tbc" onClick={onDone} style={{ background: "#040405", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 18, opacity: out ? 0 : 1, transition: "opacity 0.7s", animation: "rp-line 1.2s ease-out", pointerEvents: "auto" }}>
       <div style={{ font: '400 120px/0.9 var(--display)', letterSpacing: 10, color: "var(--paper)" }}>TO BE CONTINUED</div>
-      <div style={{ font: '400 28px/1 var(--display)', letterSpacing: 6, color: "var(--pink)" }}>CHAPTER 1: RUGGED · COMPLETE</div>
+      <div style={{ font: '400 28px/1 var(--display)', letterSpacing: 6, color: "var(--pink)" }}>{CHAPTERS[(n === 2 ? 2 : 1) as ChapterId].name} · COMPLETE</div>
     </div>
   );
 }
 
-export function ResultsScreen({ onRetry, onTitle }: { onRetry: () => void; onTitle: () => void }) {
+export function ResultsScreen({ onRetry, onTitle, onNext }: { onRetry: () => void; onTitle: () => void; onNext?: () => void }) {
   const r = useUi(s => s.results);
   const photo = useUi(s => s.lastKillPhoto);
   const [photoOk, setPhotoOk] = useState(true);
@@ -470,7 +482,7 @@ export function ResultsScreen({ onRetry, onTitle }: { onRetry: () => void; onTit
     else return false;
   }, !!r);
   if (!r) return null;
-  if (card && r.chapter) return <ChapterCard onDone={() => setCard(false)} />;
+  if (card && r.chapter) return <ChapterCard n={r.chapter.n} onDone={() => setCard(false)} />;
   const chapter = r.chapter;
   const s = chapter ? chapter.stats : r.stats;
   const best = bestFor(r);
@@ -498,7 +510,7 @@ export function ResultsScreen({ onRetry, onTitle }: { onRetry: () => void; onTit
         </div>
         <div className="rp-head">
           <div className={`rp-splash${r.cleared ? "" : " rugged"}`}>
-            {r.cleared ? chapter ? <div className="big">CHAPTER<br />ONE</div> : <div className="big">ROOM<br />CLEAR</div> : <div className="big">RUGGED</div>}
+            {r.cleared ? chapter ? <div className="big">CHAPTER<br />{CHAPTERS[(chapter.n === 2 ? 2 : 1) as ChapterId].word}</div> : <div className="big">ROOM<br />CLEAR</div> : <div className="big">RUGGED</div>}
             {r.cleared && <div className="rp-tbc">{chapter ? "TO BE CONTINUED" : `TO BE CONTINUED: ${text.next}`}</div>}
             {r.cleared && photo && photoOk && (
               <div className="rp-photo" data-testid="evidence">
@@ -531,8 +543,24 @@ export function ResultsScreen({ onRetry, onTitle }: { onRetry: () => void; onTit
             })}
             <span className="total">PINS {RADBROS.filter(b => have.includes(b.id)).length}/{RADBROS.length}</span>
           </div>
+          {/* chapter 2's gold editions (g<id>), once one has turned up */}
+          {RADBROS.some(b => have.includes(`g${b.id}`)) && (
+            <div className="rp-pins" data-testid="gold-pins">
+              {RADBROS.map(b => {
+                const got = have.includes(`g${b.id}`);
+                return (
+                  <div key={b.id} className={`pin${got ? " got" : ""}`} style={{ borderColor: "#e8c24a", background: got ? "#e8c24a" : "transparent" }} title={`gold #${b.id}`}>
+                    {got && <img src={assetUrl(`/ui/radbro${b.id}.webp`)} alt="" />}
+                    {r.pins?.includes(`g${b.id}`) && <span className="new">NEW</span>}
+                  </div>
+                );
+              })}
+              <span className="total">GOLD {RADBROS.filter(b => have.includes(`g${b.id}`)).length}/{RADBROS.length}</span>
+            </div>
+          )}
           <div className="rp-rbtns">
             <button type="button" className={`rp-mbtn primary${sel === 0 ? " sel" : ""}`} onClick={onRetry} onMouseEnter={() => setSel(0)} data-testid="retry">{r.cleared ? "PLAY AGAIN" : "RETRY"}<BtnKey k="ENTER" /></button>
+            {onNext && <button type="button" className="rp-mbtn primary" onClick={onNext} data-testid="next-chapter">{CHAPTERS[2].name}</button>}
             <button type="button" className={`rp-mbtn${sel === 1 ? " sel" : ""}`} onClick={onTitle} onMouseEnter={() => setSel(1)} data-testid="to-title">TITLE<BtnKey k="ESC" /></button>
             <div className="rp-meta">{text.chapter} · {where}</div>
           </div>

@@ -94,7 +94,7 @@ export type Hurt = { sx: number; sz: number; at: number; amount: number; shooter
 /** pins: the pins picked up in this run (the results mark them NEW). chapter: the last room of the
  *  chapter was cleared (round 3: after cutscene 4): the totals of every room cleared this visit, and how
  *  many rooms that was. */
-export type Results = { cleared: boolean; stats: Stats; room: string; difficulty: Difficulty; radbro: RadbroId; pins?: string[]; chapter?: { stats: Stats; rooms: number } };
+export type Results = { cleared: boolean; stats: Stats; room: string; difficulty: Difficulty; radbro: RadbroId; pins?: string[]; chapter?: { stats: Stats; rooms: number; n?: number } };
 
 export type Quality = "high" | "low";
 export type HudSize = "s" | "m" | "l";
@@ -118,6 +118,8 @@ type Ui = {
   invertY: boolean;
   hud: Hud;
   results: Results | null;
+  /** The chapter the title plays (its chapter select, once chapter 1 is cleared). */
+  chapter: 1 | 2;
   load: { progress: number; label: string; error: string | null };
   locked: boolean;
   /** Hit marker / kill flash stamps (performance.now()). */
@@ -199,6 +201,7 @@ export const useUi = create<Ui>(() => ({
   invertY: stored("invertY", "0") === "1",
   hud: HUD_INITIAL,
   results: null,
+  chapter: 1,
   load: { progress: 0, label: "", error: null },
   locked: false,
   hitAt: 0,

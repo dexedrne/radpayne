@@ -10,7 +10,9 @@ const WALK_Y = 0.45;
 /** The highest step a walk climbs (the player's step-up, a little over). */
 const STEP = 0.42;
 
-export type Waypoint = { id: string; x: number; y: number; z: number; links: number[] };
+/** solo (chapter 2: Data {solo: true}): linked by its explicit links only (never auto-linked to), and
+ *  never a path's start or goal from more than 1.2 m below or above it (stairs up to a platform). */
+export type Waypoint = { id: string; x: number; y: number; z: number; links: number[]; solo?: boolean };
 
 export type Cover = {
   id: string;
@@ -37,13 +39,18 @@ export class Graph {
    *  while that door is out of the world (the elevator's landing doors, the penthouse's add doors). */
   private readonly gates = new Map<number, string>();
 
-  constructor(markers: Marker[], world: World) {
+  /** Chapter 2 (room setting maxRise): no auto-link, path start or goal across more height than this
+   *  (a pit, a gallery: the stairs link them explicitly). Infinity elsewhere. */
+  private readonly maxRise: number;
+
+  constructor(markers: Marker[], world: World, maxRise = Infinity) {
     this.world = world;
+    this.maxRise = maxRise;
     const wps = markers.filter(m => m.kind === "waypoint");
     const byId = new Map<string, number>();
     for (const m of wps) {
       byId.set(m.id, this.nodes.length);
-      this.nodes.push({ id: m.id, x: m.x, y: m.y, z: m.z, links: [] });
+      this.nodes.push({ id: m.id, x: m.x, y: m.y, z: m.z, links: [], ...(m.data.solo === true ? { solo: true } : {}) });
     }
     const link = (a: number, b: number) => {
       if (a === b) return;
@@ -62,10 +69,10 @@ export class Graph {
     wps.forEach((m, i) => {
       if (Array.isArray(m.data.links)) return;
       for (let j = 0; j < this.nodes.length; j++) {
-        if (j === i) continue;
+        if (j === i || this.nodes[j].solo) continue;
         const a = this.nodes[i], b = this.nodes[j];
         const d = Math.sqrt((a.x - b.x) ** 2 + (a.z - b.z) ** 2);
-        if (d <= AUTO_LINK && this.walkClear(a.x, a.y, a.z, b.x, b.y, b.z) && this.stepsOk(a.x, a.y, a.z, b.x, b.y, b.z)) link(i, j);
+        if (d <= AUTO_LINK && Math.abs(a.y - b.y) <= this.maxRise && this.walkClear(a.x, a.y, a.z, b.x, b.y, b.z) && this.stepsOk(a.x, a.y, a.z, b.x, b.y, b.z)) link(i, j);
       }
     });
     for (const m of markers) {
@@ -101,6 +108,7 @@ export class Graph {
       const n = this.nodes[i];
       const d = (n.x - x) ** 2 + (n.z - z) ** 2;
       if (d >= bd) continue;
+      if ((n.solo || this.maxRise < Infinity) && Math.abs(n.y - y) > Math.min(1.2, this.maxRise)) continue;
       if (needClear && !this.walkClear(x, y, z, n.x, n.y, n.z)) continue;
       best = i;
       bd = d;
@@ -141,9 +149,16 @@ export class Graph {
     }
     if (s !== g && came[g] < 0) return null;
     const out: Array<{ x: number; z: number }> = [{ x: tx, z: tz }];
-    for (let i = g; i >= 0; i = came[i]) out.unshift({ x: this.nodes[i].x, z: this.nodes[i].z });
+    const ys: number[] = [ty];
+    for (let i = g; i >= 0; i = came[i]) { out.unshift({ x: this.nodes[i].x, z: this.nodes[i].z }); ys.unshift(this.nodes[i].y); }
+    // chapter 2 (maxRise): partway along the first link already (halfway up a stair): skip its first node
+    if (this.maxRise < Infinity && out.length > 2) {
+      const a = out[0], b = out[1], abx = b.x - a.x, abz = b.z - a.z, l2 = abx * abx + abz * abz;
+      const t = l2 > 1e-6 ? ((x - a.x) * abx + (z - a.z) * abz) / l2 : 0;
+      if (t > 0 && t < 1 && Math.hypot(a.x + abx * t - x, a.z + abz * t - z) < 1.2) { out.shift(); ys.shift(); }
+    }
     // shortcut: drop leading waypoints the start can already walk past
-    while (out.length > 1 && this.walkClear(x, y, z, out[1].x, y, out[1].z)) out.shift();
+    while (out.length > 1 && (this.maxRise === Infinity || Math.abs(ys[1] - y) <= this.maxRise) && this.walkClear(x, y, z, out[1].x, y, out[1].z)) { out.shift(); ys.shift(); }
     return out;
   }
 }

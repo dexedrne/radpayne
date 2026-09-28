@@ -95,7 +95,9 @@ function build(item: string, amount: number, pin?: string): { g: Group; kind: Ki
     kind = "can";
   } else if (item === "pin") {
     kind = "pin";
-    const bro = RADBROS.find(b => b.id === pin) ?? RADBROS[0];
+    // chapter 2's gold editions: "g<id>", the same face on a gold rim
+    const gold = !!pin && pin.startsWith("g");
+    const bro = RADBROS.find(b => b.id === (gold ? pin!.slice(1) : pin)) ?? RADBROS[0];
     let face = pinFace.get(bro.id);
     if (!face) {
       face = new MeshBasicMaterial({ color: "#ffffff", toneMapped: false });
@@ -103,7 +105,7 @@ function build(item: string, amount: number, pin?: string): { g: Group; kind: Ki
       new TextureLoader().load(assetUrl(`/ui/radbro${bro.id}.webp`), t => { t.colorSpace = SRGBColorSpace; face!.map = t; face!.needsUpdate = true; });
       pinFace.set(bro.id, face);
     }
-    const rimMat = new MeshBasicMaterial({ color: bro.color, toneMapped: false });
+    const rimMat = new MeshBasicMaterial({ color: gold ? "#ffcf4a" : bro.color, toneMapped: false });
     rimMat.userData.rpOwn = true;
     const disc = new Mesh(pinGeo, [rimMat, face, face]);
     disc.rotation.x = Math.PI / 2;

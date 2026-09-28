@@ -22,6 +22,8 @@ import { PLAYER_ID, type GameEvent, type InputFrame, type V3 } from "./types.ts"
 import { World, circleRectOverlap, type Box } from "./world.ts";
 import { Ride } from "./ride.ts";
 import { Boss } from "./boss.ts";
+import { makeStage, type Stage } from "./stage.ts";
+import { COUNTESS, perDiff } from "./tuning2.ts";
 
 export const POCKIT_COUNT = 3333;
 
@@ -113,6 +115,8 @@ export type Resume = {
   grenades?: number; banked?: number; found?: string[]; opened?: string[]; broken?: string[];
   /** Room 4: the ride's step (the stop the car is at). */
   ride?: number;
+  /** Chapter 2: the room's set piece (Stage.save). */
+  stage?: number[];
 };
 
 export type Stats = { kills: number; headshots: number; shots: number; hits: number; damageTaken: number; copiumUsed: number; time: number; btTime: number; dodges: number; secrets?: number; secretsTotal?: number };
@@ -168,6 +172,8 @@ export class Game {
   /** Round 3: room 4's ride and room 5's boss (null elsewhere). */
   readonly ride: Ride | null = null;
   readonly boss: Boss | null = null;
+  /** Chapter 2: the room's set piece (sim/stage.ts; null elsewhere). */
+  readonly stage: Stage | null = null;
   /** The music set over the room's own (room 4 after the cables snap); null = the room's. */
   music: string | null = null;
   bulletTime = false;
@@ -225,7 +231,7 @@ export class Game {
     this.rng = new Rand(this.seed ^ 0x5eed);
     this.world = new World(level.boxes);
     this.cover = coverOf(this.world);
-    this.graph = new Graph(level.markers, this.world);
+    this.graph = new Graph(level.markers, this.world, typeof level.room.maxRise === "number" ? level.room.maxRise : Infinity);
     // the gang takes the same cover he does: the derived points join the hand-placed ones (none within a
     // metre of one), those with a way to them
     for (const c of aiCovers(this.cover)) {
@@ -246,11 +252,11 @@ export class Game {
     for (const m of level.markers) {
       if (m.kind === "enemy") {
         const kindName = (m.data.kind as string | undefined) ?? "goon";
-        if (kindName !== "goon" && kindName !== "rusher" && kindName !== "heavy" && kindName !== "madame") continue;
+        if (kindName !== "goon" && kindName !== "rusher" && kindName !== "heavy" && kindName !== "madame" && kindName !== "countess") continue;
         const kind = kindName as EnemyKind;
-        const pick = kind === "heavy" ? 0 : kind === "madame" ? MADAME.pockit : typeof m.data.milady === "number" ? (m.data.milady as number) : opts.pockit?.[m.id] ?? 1 + Math.floor(hash01(this.seed, n, 0x6d, 0) * POCKIT_COUNT);
+        const pick = kind === "heavy" ? 0 : kind === "madame" ? MADAME.pockit : kind === "countess" ? COUNTESS.pockit : typeof m.data.milady === "number" ? (m.data.milady as number) : opts.pockit?.[m.id] ?? 1 + Math.floor(hash01(this.seed, n, 0x6d, 0) * POCKIT_COUNT);
         const gy = this.world.groundBelow(m.x, m.z, 0.3, m.y + 1);
-        const hp = kind === "madame" ? MADAME.hp[this.difficulty] : Math.round(ENEMY[kind].hp * this.diff.hp);
+        const hp = kind === "madame" ? MADAME.hp[this.difficulty] : kind === "countess" ? perDiff(COUNTESS.hp, this.difficulty) : Math.round(ENEMY[kind].hp * this.diff.hp);
         const e = makeEnemy(n, m.id, m.x, Number.isFinite(gy) ? gy : m.y, m.z, m.yaw, hp, pick, typeof m.data.group === "string" ? m.data.group : "", kind);
         if (e.group && !spawned.has(e.group)) e.state = "idle";
         e.perch = m.data.perch === true;
@@ -290,6 +296,8 @@ export class Game {
     // round 3: the elevator's ride (room.ride) and the penthouse boss (an enemy of kind "madame")
     if (level.room.ride && typeof level.room.ride === "object") this.ride = new Ride(this, level.room.ride as never);
     if (this.enemies.some(e => e.kind === "madame")) this.boss = new Boss(this);
+    // chapter 2: the room's set piece (room.stage)
+    this.stage = makeStage(this);
     this.crowd = new Crowd(level.markers, this.world, this.graph, { seed: this.seed, pockitCount: POCKIT_COUNT });
     for (const w of opts.loadout ?? []) this.giveWeapon(w);
     // a loadout starts with its last weapon in hand
@@ -318,6 +326,7 @@ export class Game {
       health: p.health, copium: p.copium, meter: this.meter, stats: { ...this.stats },
       grenades: p.grenades, banked: p.banked, found: [...this.found], opened: [...this.opened], broken: [...this.broken],
       ...(this.ride ? { ride: this.ride.i } : {}),
+      ...(this.stage?.save ? { stage: this.stage.save() } : {}),
     };
   }
 
@@ -399,6 +408,7 @@ export class Game {
     this.meter = Math.max(r.meter, METER.start * 0.5);
     this.stats = { ...r.stats, secrets: this.found.length, secretsTotal: this.secrets.length };
     if (this.ride && typeof r.ride === "number") this.ride.resumeAt(r.ride);
+    if (this.stage?.load && r.stage) this.stage.load(this, r.stage);
     this.saved = r;
   }
 
@@ -541,6 +551,7 @@ export class Game {
     // the add doors, the chandelier)
     this.ride?.step(this, wdt);
     this.boss?.step(this, wdt);
+    this.stage?.step(this, wdt);
 
     // pickups + triggers
     if (inControl && p.mode !== "dead") {
@@ -807,8 +818,8 @@ export class Game {
       const dmg = this.bossShare(e, M.damage);
       e.hp -= dmg;
       e.flinch = Math.max(e.flinch, M.flinch);
-      if (e.weapon === "sniper") e.tell = 0;
-      if (M.knock > 0 && e.kind !== "heavy" && e.kind !== "madame" && !e.perch) { e.knockT = MELEE.knockTime; e.knockX = (dx / dl) * M.knock; e.knockZ = (dz / dl) * M.knock; }
+      if (e.weapon === "sniper" && e.kind !== "countess") e.tell = 0;
+      if (M.knock > 0 && e.kind !== "heavy" && e.kind !== "madame" && e.kind !== "countess" && !e.perch) { e.knockT = MELEE.knockTime; e.knockX = (dx / dl) * M.knock; e.knockZ = (dz / dl) * M.knock; }
       this.emit({ type: "blood", x: c.x, y: c.y, z: c.z, dx: dx / dl, dy: 0, dz: dz / dl, target: e.idx, part: HB_TORSO, ...(this.katana ? { ink: true } : {}) });
       this.emit({ type: "hurt", target: e.idx, amount: dmg, part: HB_TORSO, hp: Math.max(0, e.hp) });
       if (e.state === "idle") alertGoon(this, e, 0);
@@ -1054,7 +1065,7 @@ export class Game {
       if (!gr.landed) continue;
       // goons and rushers with a clear line to it run out of the radius after a beat (the idle hear it)
       for (const e of this.enemies) {
-        if (e.kind === "heavy" || e.kind === "madame" || e.perch || e.fled || e.state === "dead" || e.state === "inactive" || e.fleeWait > 0 || e.fleeT > 0) continue;
+        if (e.kind === "heavy" || e.kind === "madame" || e.kind === "countess" || e.perch || e.fled || e.state === "dead" || e.state === "inactive" || e.fleeWait > 0 || e.fleeT > 0) continue;
         const dx = e.x - gr.x, dz = e.z - gr.z, d = Math.hypot(dx, dz);
         if (d > GRENADE.fleeRadius || !this.world.clear(gr.x, gr.y + 0.2, gr.z, e.x, e.y + 1, e.z, true)) continue;
         if (e.state === "idle") alertGoon(this, e, 0);
@@ -1081,7 +1092,7 @@ export class Game {
       const dmg = this.bossShare(e, dmgAt(d));
       e.hp -= dmg;
       e.flinch = Math.max(e.flinch, AI.flinch);
-      if (e.weapon === "sniper") e.tell = 0;
+      if (e.weapon === "sniper" && e.kind !== "countess") e.tell = 0;
       this.emit({ type: "hurt", target: e.idx, amount: dmg, part: HB_TORSO, hp: Math.max(0, e.hp) });
       if (e.state === "idle") alertGoon(this, e, 0);
       if (e.kind === "heavy" && e.hp > 0 && dmg >= HEAVY.staggerAt && e.stagger <= 0) { e.stagger = HEAVY.stagger; e.tell = 0; this.emit({ type: "stagger", enemy: e.idx }); }
@@ -1264,6 +1275,9 @@ export class Game {
     // round 3: the boss room's small targets (the grenade in her hand, a grenade, the chain) are on the crosshair too
     const cut = this.boss ? this.boss.intercept(piv.x, piv.y, piv.z, d.x, d.y, d.z, h.t) : null;
     if (cut) { this.aimEnemy = -1; this.aimPoint.x = piv.x + d.x * cut.t; this.aimPoint.y = piv.y + d.y * cut.t; this.aimPoint.z = piv.z + d.z * cut.t; }
+    // chapter 2: the room's small target (the helicopter's lamp)
+    const sc = !cut && this.stage?.intercept ? this.stage.intercept(piv.x, piv.y, piv.z, d.x, d.y, d.z, h.t) : null;
+    if (sc) { this.aimEnemy = -1; this.aimPoint.x = piv.x + d.x * sc.t; this.aimPoint.y = piv.y + d.y * sc.t; this.aimPoint.z = piv.z + d.z * sc.t; }
   }
 
   private firePlayer(hand: number): void {
@@ -1334,7 +1348,7 @@ export class Game {
     const distF = sniper ? (dist <= ENEMY_ARMS.sniper.range ? 1 : D.farFloor) : dist <= AI.near ? 1 : dist >= D.far ? D.farFloor : 1 - ((1 - D.farFloor) * (dist - AI.near)) / (D.far - AI.near);
     const fast = p.mode === "dive" || p.mode === "roll";
     const speedF = fast ? AI.dodgeMul : 1 - D.speedK * Math.min(1, p.speed / PLAYER.runSpeed);
-    const chance = (sniper ? ENEMY_ARMS.sniper.hit : AI.baseHit) * distF * speedF * this.diff.accuracy * (moving ? 0.55 : 1);
+    const chance = (e.kind === "countess" ? COUNTESS.hit : sniper ? ENEMY_ARMS.sniper.hit : AI.baseHit) * distF * speedF * this.diff.accuracy * (moving ? 0.55 : 1) * (this.stage?.accuracy?.(this, e) ?? 1);
     const hitRoll = this.rng.next() < chance;
     // aim offset in the plane across the line of fire
     let ox = 0, oy = 0, oz = 0;
@@ -1360,9 +1374,9 @@ export class Game {
       }
       return;
     }
-    const dmg = sniper ? ENEMY_ARMS.sniper.damage : cannon ? ENEMY_ARMS.handcannon.damage : T.damage;
-    // (Madame Pockit has her own factor: the boss stays fair on every setting)
-    this.shoot(1, e.idx, 0, mx, my, mz, dx / l, dy / l, dz / l, dmg * (e.kind === "madame" ? this.diff.boss : this.diff.damage), e.weapon, 0);
+    const dmg = e.kind === "countess" ? COUNTESS.damage : sniper ? ENEMY_ARMS.sniper.damage : cannon ? ENEMY_ARMS.handcannon.damage : T.damage;
+    // (the bosses, Madame Pockit and the Countess, have their own factor: they stay fair on every setting)
+    this.shoot(1, e.idx, 0, mx, my, mz, dx / l, dy / l, dz / l, dmg * (e.kind === "madame" || e.kind === "countess" ? this.diff.boss : this.diff.damage), e.weapon, 0);
   }
 
   /** Can the enemy's gun see the player (no wall between muzzle height and the body)? */
@@ -1459,6 +1473,12 @@ export class Game {
       this.boss!.hitTarget(this, cut, ox, oy, oz);
       return;
     }
+    const sc = team === 0 && this.stage?.intercept ? this.stage.intercept(ox, oy, oz, dx, dy, dz, h.t) : null;
+    if (sc) {
+      this.emit({ type: "shot", shooter, hand, ox, oy, oz, ex: ox + dx * sc.t, ey: oy + dy * sc.t, ez: oz + dz * sc.t, projectile: false, id, weapon, pellet });
+      this.stage!.hitTarget?.(this, sc, ox, oy, oz, damage);
+      return;
+    }
     if (pierce <= 0) {
       this.emit({ type: "shot", shooter, hand, ox, oy, oz, ex: h.x, ey: h.y, ez: h.z, projectile: false, id, weapon, pellet });
       this.resolveHit(h, ox, oy, oz, dx, dy, dz, damage, team, shooter, weapon);
@@ -1502,6 +1522,7 @@ export class Game {
       b.skip.forEach((k, j) => { this.actors[k].hittable = was[j]; });
       // round 3: his bullet may meet one of the boss room's small targets first
       const cut = b.team === 0 && this.boss ? this.boss.intercept(b.x, b.y, b.z, b.dx, b.dy, b.dz, h.t) : null;
+      const sc = b.team === 0 && !cut && this.stage?.intercept ? this.stage.intercept(b.x, b.y, b.z, b.dx, b.dy, b.dz, h.t) : null;
       // the gang's round across #4764's raised blade (in front of him, before whatever it would hit)
       const gt = b.team === 1 ? this.guardCut(b.x, b.y, b.z, b.dx, b.dy, b.dz, h.t) : -1;
       if (gt >= 0) {
@@ -1512,6 +1533,10 @@ export class Game {
         b.x += b.dx * cut.t; b.y += b.dy * cut.t; b.z += b.dz * cut.t;
         b.alive = false;
         this.boss!.hitTarget(this, cut, b.sx, b.sy, b.sz);
+      } else if (sc) {
+        b.x += b.dx * sc.t; b.y += b.dy * sc.t; b.z += b.dz * sc.t;
+        b.alive = false;
+        this.stage!.hitTarget?.(this, sc, b.sx, b.sy, b.sz, b.damage);
       } else if (h.kind === HIT_ACTOR && b.pierce > 0) {
         // on through the body: the rest of its flight goes on from there next step
         b.pierce--;
@@ -1560,7 +1585,7 @@ export class Game {
     const e = this.enemies[target];
     if (!e || e.state === "dead") return;
     if (team === 0) this.stats.hits++;
-    const amount = damage * HB_MULT[h.part] * (e.kind === "madame" && this.boss ? this.boss.damageMul(h.part) : 1);
+    const amount = damage * HB_MULT[h.part] * (e.kind === "madame" && this.boss ? this.boss.damageMul(h.part) : 1) * (this.stage?.damageMul?.(e, h.part) ?? 1);
     const shot = team === 0 ? { ox, oy, oz, x: h.x, y: h.y, z: h.z } : null;
     const blast = team === 0 && (weapon === "shotgun" || weapon === "sawedoff") && (e.x - ox) ** 2 + (e.z - oz) ** 2 < 4 * 4;
     this.damageEnemy(e, amount, h.part, dx, dz, shot, blast, weapon);
@@ -1569,6 +1594,7 @@ export class Game {
   /** Madame Pockit's share of a blow that is not a bullet (a melee, a frag): her coat's and the coat
    *  throw's factor, and never her kill before the last stand. Anyone else takes it all. */
   private bossShare(e: Enemy, amount: number): number {
+    if (e.kind === "countess" && this.stage?.damageMul) return this.stage.clampDamage?.(e, amount * this.stage.damageMul(e, HB_TORSO)) ?? amount;
     if (e.kind !== "madame" || !this.boss) return amount;
     return this.boss.clampDamage(e, amount * this.boss.damageMul(HB_TORSO));
   }
@@ -1580,9 +1606,10 @@ export class Game {
     if (e.state === "dead" || amount <= 0) return;
     const target = e.idx;
     if (e.kind === "madame" && this.boss) amount = this.boss.clampDamage(e, amount);
+    if (this.stage?.clampDamage) amount = this.stage.clampDamage(e, amount);
     e.hp -= amount;
-    e.flinch = e.kind === "madame" ? MADAME.flinch : AI.flinch;
-    if (e.weapon === "sniper") e.tell = 0; // a hit spoils her aim
+    e.flinch = e.kind === "madame" ? MADAME.flinch : e.kind === "countess" ? COUNTESS.flinch : AI.flinch;
+    if (e.weapon === "sniper" && e.kind !== "countess") e.tell = 0; // a hit spoils her aim
     this.emit({ type: "hurt", target, amount, part, hp: Math.max(0, e.hp) });
     if (e.state === "idle") alertGoon(this, e, 0);
     if (e.kind === "heavy" && e.hp > 0) {
@@ -1616,6 +1643,7 @@ export class Game {
     e.stagger = 0;
     // round 3: the boss down: her adds run (they are not counted any more), so the clear is her kill
     if (e.kind === "madame") this.boss?.down(this);
+    this.stage?.onKill?.(this, e);
     if (e.drop && PICKUPS[e.drop]) {
       // the gun (or ammo) lands at the body; off a perch it falls 1.3 m out toward him, to the ground below
       let x = e.x, z = e.z, y = e.y;
@@ -1755,6 +1783,7 @@ export class Game {
     for (const gr of this.grenadesLive) h.f64(gr.x).f64(gr.y).f64(gr.z).f64(gr.fuse);
     this.ride?.hashInto(h);
     this.boss?.hashInto(h);
+    this.stage?.hashInto(h);
     return h.hex();
   }
 }

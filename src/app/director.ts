@@ -34,6 +34,7 @@ import { bark, crowdVoice, heavyBark, narrate, pa, radbro, stopNarration, worldV
 import { useUi, type Chatter } from "../ui/store.ts";
 import { PLAYER } from "../sim/tuning.ts";
 import { MADAME, ROUND3_BARKS, ROUND3_CLEAR_LINES, ROUND3_HINTS, ROUND3_NARRATION } from "./round3Lines.ts";
+import { CH2_BARKS, CH2_CLEAR_LINES, CH2_FILLER, CH2_HINTS, CH2_NARRATION, CH2_STORY, COUNTESS_KEY, COUNTESS_LINES } from "./chapter2Lines.ts";
 
 /** this.io.now() until which goon i is talking (EnemiesView moves the mouth). */
 export const goonTalk: number[] = [];
@@ -41,6 +42,7 @@ export const goonTalk: number[] = [];
 /** The narrator's tutorial / room lines: subtitle == spoken line. */
 export const NARRATION: Record<string, string> = {
   ...ROUND3_NARRATION,
+  ...CH2_NARRATION,
   tut_shoot: "they saw me first. it didn't help them much.",
   tut_bullet_time: "everything slowed down. i'd had practice watching things fall.",
   tut_shootdodge: "the only way out was sideways. guns first.",
@@ -59,6 +61,7 @@ export const NARRATION: Record<string, string> = {
 };
 const HINTS: Record<string, string> = {
   ...ROUND3_HINTS,
+  ...CH2_HINTS,
   tut_shoot: "LMB: shoot · WASD: move",
   tut_bullet_time: "RMB / Q: bullet time",
   tut_shootdodge: "SHIFT: shootdodge",
@@ -72,11 +75,11 @@ const HINTS: Record<string, string> = {
 /** The DJ's PA lines (subtitled). */
 const PA: Record<string, string> = { pa_1: "girls? we have a guest.", pa_2: "party's over, cutie.", pa_3: "send the rest." };
 /** Clear lines are the room's last word: a queued one drops the tutorial lines still waiting. */
-const CLEAR_LINES = new Set(["room_clear", "r2_clear", "r3_clear", ...ROUND3_CLEAR_LINES]);
+const CLEAR_LINES = new Set(["room_clear", "r2_clear", "r3_clear", ...ROUND3_CLEAR_LINES, ...CH2_CLEAR_LINES]);
 /** The narrator's story beats: every time, on every setting (with the clear lines). */
-const STORY = new Set(["r2_enter", "r3_enter", "r4_enter", "r4_cables", "r5_laststand", ...CLEAR_LINES]);
+const STORY = new Set(["r2_enter", "r3_enter", "r4_enter", "r4_cables", "r5_laststand", ...CH2_STORY, ...CLEAR_LINES]);
 /** The narrator's commentary: the first time ever, with Voice chatter Normal only. The rest teach. */
-const FILLER = new Set(["r2_rusher", "r4_stop1", "r4_reinforce", "r4_stuck"]);
+const FILLER = new Set(["r2_rusher", "r4_stop1", "r4_reinforce", "r4_stuck", ...CH2_FILLER]);
 /** A narrator line's weight in the talk budget. */
 export function lineKind(id: string): "story" | "teach" | "filler" {
   return STORY.has(id) ? "story" : FILLER.has(id) ? "filler" : "teach";
@@ -404,7 +407,7 @@ export class Director {
   private bark(i: number, kind: BarkKind, key = false): void {
     const now = this.io.now() / 1000;
     const e = this.s.game.enemies[i];
-    if (!e || e.kind === "madame" || this.chatter === "off" || this.s.quiet?.(i)) return; // (her own lines: madame())
+    if (!e || e.kind === "madame" || e.kind === "countess" || this.chatter === "off" || this.s.quiet?.(i)) return; // (her own lines: madame())
     if (e.kind === "heavy") {
       // the heavy's own few words (never the girls' voices)
       const line: HeavyLine | null = kind === "alert" ? "alert_1" : kind === "hit" ? (Math.random() < 0.5 ? "hit_1" : "hit_2") : kind === "spotted" ? (Math.random() < 0.5 ? "spotted_1" : "spotted_2") : kind === "reload" ? "reload_1" : null;
@@ -572,6 +575,7 @@ export class Director {
         break;
       case "ride": this.onRide(e); break;
       case "boss": this.onBoss(e); break;
+      case "stage": this.onStage(e); break;
       case "kill":
         if (g.stats.kills === 2 && !this.said.has("tut_bullet_time")) this.say("tut_bullet_time", 0.2);
         if (g.enemies[e.target]?.kind === "heavy") this.heavy(e.target, "death_1", true);
@@ -682,6 +686,69 @@ export class Director {
     }
   }
 
+  /** Chapter 2: the set pieces' lines and the Countess's. */
+  private onStage(e: Extract<GameEvent, { type: "stage" }>): void {
+    const g = this.s.game;
+    switch (e.what) {
+      case "lit": this.say("r6_light", 0.3); break;
+      case "drop": {
+        this.say("r6_drop", 0.8);
+        const who = g.enemies.find(k => k.group === e.group && k.state !== "dead");
+        if (who && this.chatter !== "off") { this.alerted.add(e.group ?? ""); this.voiceAt("goon_a/rope_1", who.x, who.z, CH2_BARKS["goon_a/rope_1"], 1.5, who.idx); }
+        break;
+      }
+      case "lampOut": this.say("r6_lightout", 0.5); break;
+      case "crack": this.say("r7_crack", 0.1); break;
+      case "collapse": this.say("r7_fall", 0.6); break;
+      case "klaxon": {
+        this.say("r8_klaxon", 0.2);
+        const who = g.enemies.find(k => k.state !== "dead" && k.state !== "inactive" && k.kind === "goon");
+        if (who && this.chatter !== "off") this.voiceAt("goon_b/wind_1", who.x, who.z, CH2_BARKS["goon_b/wind_1"], 1.5, who.idx);
+        break;
+      }
+      case "gone": this.say("r8_wind", 0.8); break;
+      case "shutterWarn": this.say("r9_shutters", 0.2); break;
+      case "dark": this.say("r9_dark", 0.4); break;
+      case "aim": if (g.stage?.kind === "vault") this.say("r10_rifle", 0.1); break;
+      case "beamHigh": case "beamLow": {
+        this.say("r10_beam", 0);
+        if (this.said.has("r10_beam") && Math.random() < this.budget.herCall) this.countess(e.what === "beamLow" ? "beam_1" : "beam_2", 0.3);
+        break;
+      }
+      case "intro": this.countess("intro", 3); break;
+      case "phase2": this.countess("phase2", 2); break;
+      case "phase3": this.countess("phase3", 2); break;
+      case "stagger": if (Math.random() < 0.5) this.countess("hit_2", 0.5); break;
+      case "lastStand": { this.say("r10_laststand", 0.2); const run = this.run; this.io.later(() => { if (run === this.run) this.countess("last_stand", 6); }, 500); break; }
+      case "down": this.countess("down_1", 6); break;
+    }
+  }
+
+  /** The Countess's line (voices/countess), subtitled; a line with no voice file yet still shows its
+   *  subtitle (chapter 2's voices are to come: docs/chapter2-assets.md). */
+  private countess(line: string, wait = 2): void {
+    const g = this.s.game;
+    const st = g.stage?.boss?.(g);
+    const e = st ? g.enemies[st.idx] : undefined;
+    const key = COUNTESS_KEY.has(line);
+    if (!e || (!key && this.chatter === "off")) return;
+    if (line !== "down_1" && (e.state === "dead" || g.phase !== "play")) return;
+    const text = COUNTESS_LINES[line] ?? "";
+    const run = this.run;
+    this.other(wait, () => {
+      if (run !== this.run || this.s.hold) return 0;
+      const now = this.io.now() / 1000;
+      if (!key && now < this.combatNext) return 0;
+      const { dist, pan } = this.where(e.x, e.z);
+      const len = this.io.worldVoice?.(`countess/${line}`, dist, pan) ?? 0;
+      const shown = len > 0 ? len : text ? Math.max(1.8, text.length * 0.06) : 0;
+      if (shown <= 0) return 0;
+      this.aired(now, shown, !key);
+      if (text) this.sub(text, shown + 0.6);
+      return shown;
+    });
+  }
+
   /** Every frame (real time). */
   frame(): void {
     if (this.run !== this.s.run) this.reset();
@@ -711,7 +778,7 @@ export class Director {
         if (e.reloadT > 0 && lr <= 0 && Math.random() < b.heavyReload) this.heavy(e.idx, "reload_1");
         this.lastReload[e.idx] = e.reloadT;
         if (e.state === "advance" && Math.random() < 0.0005 * b.heavyReload * 5) this.heavy(e.idx, "advance_1");
-      } else if (e.kind !== "madame") {
+      } else if (e.kind !== "madame" && e.kind !== "countess") {
         const lb = this.lastBurst[e.idx] ?? e.burstLeft;
         if (e.burstLeft > lb && e.state !== "dead" && Math.random() < b.reload) this.bark(e.idx, "reload");
         this.lastBurst[e.idx] = e.burstLeft;
@@ -776,7 +843,7 @@ export class Director {
         if (!story) markEver(line.id);
         if (!CLEAR_LINES.has(line.id)) this.heard.add(line.id);
         const d = this.io.narrate(line.id);
-        const until = now + Math.max(d, 3.5);
+        const until = now + Math.max(d, 3.5, d > 0 ? 0 : (NARRATION[line.id] ?? "").length * 0.06);
         this.narratorUntil = until + 0.6;
         this.narratorAt = now;
         this.combatNext = Math.max(this.combatNext, until + (story ? Math.min(3, b.gap) : b.gap)); // the gap after it, as after any line

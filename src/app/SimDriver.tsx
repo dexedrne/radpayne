@@ -95,7 +95,7 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
       const mode = useUi.getState().killcam;
       // no special-shot cam: out of the fight, him down, a breach's (or her last stand's) slow motion,
       // her big moments, the car between stops (the room's last kill always passes)
-      const blocked = g.phase !== "play" || g.player.mode === "dead" || g.breachSlow > 0 || bossBusy(g.boss, now, kc.boss) || rideMoving(g.ride);
+      const blocked = g.phase !== "play" || g.player.mode === "dead" || g.breachSlow > 0 || bossBusy(g.boss, now, kc.boss) || rideMoving(g.ride) || !!g.stage?.busy?.(g);
       // a hand-cannon / sniper round still in the air, with a body left in it: its next kill joins the cam
       const flying = (k: { weapon: string; from: { x: number; y: number; z: number } }) => g.projectiles.some(b => b.team === 0 && b.alive && b.pierce > 0 && b.weapon === k.weapon && Math.abs(b.sx - k.from.x) + Math.abs(b.sy - k.from.y) + Math.abs(b.sz - k.from.z) < 1e-4);
       const c = cine.decide(now, mode, blocked, flying);
@@ -210,7 +210,7 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
       case "secret": sfxArsenal.secret(false); break;
       case "open": sfxArsenal.door(); break;
       case "break": { const w = where(e.x, e.z); sfxArsenal.breakIt(e.surface, w.dist, w.pan); break; }
-      case "interact": if (e.egg === "george") sfxArsenal.meow("happy"); else if (e.egg === "cabinet") sfxArsenal.egg("arcade"); else if (e.egg === "figurine") sfxArsenal.egg("squeak"); break;
+      case "interact": if (e.egg === "george") sfxArsenal.meow("happy"); else if (e.egg === "cabinet") sfxArsenal.egg("arcade"); else if (e.egg === "figurine" || e.egg === "duck" || e.egg === "koi") sfxArsenal.egg("squeak"); break;
       case "playerDead": setHeartbeat(false); useUi.setState({ deadAt: performance.now() }); break;
     }
   }), [s, heard]);
@@ -260,8 +260,10 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
         const d = door ? Math.sqrt((door.x - g.player.x) ** 2 + (door.z - g.player.z) ** 2) : 99;
         const near = Math.max(0.15, Math.min(1, 1 - d / 45));
         setAmbience(true);
-        setClubBass(near);
-        setNeonBuzz(Math.max(0, 1 - d / 14));
+        // (chapter 2's roof: the storm, no club under it)
+        const storm = room.ambience === "storm";
+        setClubBass(storm ? 0 : near);
+        setNeonBuzz(storm ? 0 : Math.max(0, 1 - d / 14));
       } else {
         // the back rooms: the air handling, and the club's kick through the wall (heavily low-passed)
         const back = room.look === "backrooms";
@@ -337,5 +339,5 @@ function promptOf(t: ReturnType<Session["game"]["useTarget"]>, alive: boolean): 
   if (!t || !alive) return "";
   if ("door" in t) return "open";
   const egg = String(t.egg.data.egg ?? "");
-  return egg === "george" ? "pet george" : egg === "cabinet" ? "play" : "use";
+  return egg === "george" ? "pet george" : egg === "cabinet" ? "play" : egg === "duck" ? "squeeze" : egg === "koi" ? "feed" : "use";
 }

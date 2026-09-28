@@ -28,7 +28,7 @@ import { registerLook } from "./compile.ts";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type N = any;
 
-type LookNumbers = {
+export type LookNumbers = {
   exposure: number;
   bloom: { subtle: { strength: number; radius: number; threshold: number }; original: { strength: number; radius: number; threshold: number } };
   fog: { color: string; density: number };
@@ -166,10 +166,11 @@ function Post({ msaa, level, L }: { msaa: boolean; level: Bloom; L: LookNumbers 
   return null;
 }
 
-function TowerLook({ level, s, which }: { level: LevelData; s?: Session; which: "elevator" | "penthouse" }) {
+/** The tower look with a room's own numbers (chapter 2's looks, look/sky.tsx, pass theirs). */
+export function TowerLook({ level, s, which, numbers, children }: { level: LevelData; s?: Session; which: "elevator" | "penthouse"; numbers?: LookNumbers; children?: React.ReactNode }) {
   const scene = useThree(st => st.scene);
   const gfx = useGfx();
-  const L = TOWER[which];
+  const L = numbers ?? TOWER[which];
   useEffect(() => {
     const prevBg = scene.backgroundNode, prevFog = scene.fogNode;
     scene.backgroundNode = color(L.background);
@@ -185,6 +186,7 @@ function TowerLook({ level, s, which }: { level: LevelData; s?: Session; which: 
       <Materials lift={L.hostileLift} />
       {s && <CombatRead s={s} />}
       <Post msaa={gfx.msaa} level={gfx.bloom} L={L} />
+      {children}
     </>
   );
 }

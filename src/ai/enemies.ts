@@ -7,10 +7,12 @@ import { stepHeavy } from "./heavy.ts";
 import { stepRusher } from "./rusher.ts";
 import { stepMadame } from "./madame.ts";
 import { stepFlee } from "../sim/boss.ts";
+import { stepCountess } from "./countess.ts";
 
 export function stepEnemy(g: Game, e: Enemy, dt: number): void {
   if (e.state === "flee") stepFlee(g, e, dt); // round 3: an add running once the boss is down
   else if (e.kind === "madame") stepMadame(g, e, dt);
+  else if (e.kind === "countess") stepCountess(g, e, dt);
   else if (e.kind === "rusher") stepRusher(g, e, dt);
   else if (e.kind === "heavy") stepHeavy(g, e, dt);
   else stepGoon(g, e, dt);

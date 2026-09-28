@@ -43,7 +43,8 @@ const browser = await puppeteer.launch({
   executablePath: process.env.CHROME_PATH ?? "/usr/bin/chromium",
   headless: true,
   userDataDir: profile,
-  args: [`--user-data-dir=${profile}`, ...gfx, "--window-size=1280,720", "--autoplay-policy=no-user-gesture-required"],
+  // (RADPAYNE_NO_SANDBOX=1: a container that runs the browser as root)
+  args: [`--user-data-dir=${profile}`, ...gfx, "--window-size=1280,720", "--autoplay-policy=no-user-gesture-required", ...(process.env.RADPAYNE_NO_SANDBOX === "1" ? ["--no-sandbox"] : [])],
   defaultViewport: { width: 1280, height: 720 },
 });
 const log: string[] = [];

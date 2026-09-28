@@ -1,0 +1,58 @@
+{
+  "id": "ch2d",
+  "title": "Chapter 2: Keeping Score",
+  "music": "counting",
+  "panels": [
+    {
+      "image": "",
+      "tone": "sky",
+      "box": [
+        0.02,
+        0.03,
+        0.2,
+        0.08
+      ],
+      "lines": [
+        {
+          "audio": "ch2d_01",
+          "text": "the ship came down on a tower above the clouds. no street, no rain, no sirens, no crowds."
+        }
+      ],
+      "dur": 6.3
+    },
+    {
+      "image": "",
+      "tone": "phone",
+      "box": [
+        0.02,
+        0.03,
+        0.2,
+        0.08
+      ],
+      "lines": [
+        {
+          "audio": "ch2d_02",
+          "text": "the top floor was a trading floor, screens from wall to wall. every name in the city was up there. she had them all."
+        }
+      ],
+      "dur": 7.8
+    },
+    {
+      "image": "",
+      "tone": "phone",
+      "box": [
+        0.02,
+        0.03,
+        0.2,
+        0.08
+      ],
+      "lines": [
+        {
+          "audio": "ch2d_03",
+          "text": "mine was near the bottom, in red. the column next to it said pending. pending what, it never said."
+        }
+      ],
+      "dur": 6.8
+    }
+  ]
+}

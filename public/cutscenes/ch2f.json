@@ -1,0 +1,58 @@
+{
+  "id": "ch2f",
+  "title": "Chapter 2: Keeping Score",
+  "music": "street",
+  "panels": [
+    {
+      "image": "",
+      "tone": "dawn",
+      "box": [
+        0.02,
+        0.03,
+        0.2,
+        0.08
+      ],
+      "lines": [
+        {
+          "audio": "ch2f_01",
+          "text": "she went down still counting. she never got to one. the sun came up regardless. it doesn't care who won."
+        }
+      ],
+      "dur": 7.2
+    },
+    {
+      "image": "",
+      "tone": "vault",
+      "box": [
+        0.02,
+        0.03,
+        0.2,
+        0.08
+      ],
+      "lines": [
+        {
+          "audio": "ch2f_02",
+          "text": "my bag was on a shelf, one of a thousand in a row. i took mine. the others had owners. i thought they ought to know."
+        }
+      ],
+      "dur": 7.8
+    },
+    {
+      "image": "",
+      "tone": "phone",
+      "box": [
+        0.02,
+        0.03,
+        0.2,
+        0.08
+      ],
+      "lines": [
+        {
+          "audio": "ch2f_03",
+          "text": "her ledger lay open, every name and every fall. the last page was in another hand. somebody was counting her, after all."
+        }
+      ],
+      "dur": 8
+    }
+  ]
+}

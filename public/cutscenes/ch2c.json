@@ -1,0 +1,70 @@
+{
+  "id": "ch2c",
+  "title": "Chapter 2: Keeping Score",
+  "music": "airship",
+  "panels": [
+    {
+      "image": "",
+      "tone": "sky",
+      "box": [
+        0.02,
+        0.03,
+        0.2,
+        0.08
+      ],
+      "lines": [
+        {
+          "audio": "ch2c_01",
+          "text": "above the garden an airship pulled against the mast. somebody up there was leaving, and leaving fast."
+        }
+      ],
+      "dur": 7
+    },
+    {
+      "image": "",
+      "tone": "sky",
+      "box": [
+        0.02,
+        0.03,
+        0.2,
+        0.08
+      ],
+      "lines": [
+        {
+          "audio": "ch2c_02",
+          "text": "i caught the gangway as the last rope let go. the city fell away. i didn't look below."
+        }
+      ],
+      "dur": 6.2
+    },
+    {
+      "image": "",
+      "tone": "airship",
+      "box": [
+        0.02,
+        0.03,
+        0.2,
+        0.08
+      ],
+      "lines": [
+        {
+          "audio": "ch2c_03",
+          "text": "inside it was velvet and brass, and quiet, the expensive kind. the city was a mile down. up here, nobody minds."
+        },
+        {
+          "audio": "ch2c_g1",
+          "speaker": "goon_a",
+          "text": "\"no ticket, no seat, and nowhere to run.\""
+        },
+        {
+          "audio": "ch2c_g2",
+          "speaker": "goon_b",
+          "text": "\"it's a long way down, cutie. that's half the fun.\""
+        }
+      ],
+      "dur": 13.9,
+      "size": 0.86,
+      "maxW": 0.52
+    }
+  ]
+}

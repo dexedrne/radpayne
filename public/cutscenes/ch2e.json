@@ -1,0 +1,72 @@
+{
+  "id": "ch2e",
+  "title": "Chapter 2: Keeping Score",
+  "music": "vault",
+  "panels": [
+    {
+      "image": "",
+      "tone": "vault",
+      "box": [
+        0.02,
+        0.03,
+        0.2,
+        0.08
+      ],
+      "lines": [
+        {
+          "audio": "ch2e_01",
+          "text": "the vault door was a foot thick, round, and open wide. like she'd been waiting. like she wanted me inside."
+        }
+      ],
+      "dur": 7.3
+    },
+    {
+      "image": "",
+      "tone": "vault",
+      "box": [
+        0.02,
+        0.03,
+        0.2,
+        0.08
+      ],
+      "lines": [
+        {
+          "audio": "ch2e_02",
+          "text": "every bag they'd ever taken, stacked in rows up to the dome. and on top of it all, counting, the woman who called it home."
+        },
+        {
+          "audio": "ch2e_c1",
+          "speaker": "countess",
+          "text": "\"three hundred and four came up here with a gun. you're three hundred and five, little one. make it fun.\""
+        }
+      ],
+      "dur": 14.3,
+      "size": 0.86,
+      "maxW": 0.52
+    },
+    {
+      "image": "",
+      "tone": "dawn",
+      "box": [
+        0.02,
+        0.03,
+        0.2,
+        0.08
+      ],
+      "lines": [
+        {
+          "audio": "ch2e_03",
+          "text": "the sun came up behind her and it hit the gold like a bell. i'd been counted before. i'd been rugged as well."
+        },
+        {
+          "audio": "ch2e_c2",
+          "speaker": "countess",
+          "text": "\"everyone gets counted. that's just how it's done. let's count you down together. ten to none.\""
+        }
+      ],
+      "dur": 13,
+      "size": 0.86,
+      "maxW": 0.52
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import { CrowdView } from "./CrowdView.tsx";
 import { PropsView } from "./PropsView.tsx";
 import { RideView } from "./RideView.tsx";
 import { BossView } from "./BossView.tsx";
+import { Chapter2View } from "./Chapter2View.tsx";
 import { CameraView, CAMERA_NODE, FOV } from "./CameraView.tsx";
 import { FxView } from "./FxView.tsx";
 import { PickupsView } from "./PickupsView.tsx";
@@ -97,6 +98,7 @@ export function Scene({ s, onPhase, bootRef }: { s: Session; onPhase: (p: string
         <PropsView s={s} />
         <RideView s={s} />
         <BossView s={s} />
+        <Chapter2View s={s} />
         <FxView s={s} />
         <PickupsView s={s} />
         <CoverView s={s} />
