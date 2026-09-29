@@ -92,10 +92,13 @@ export const CUTS: Cut[] = [
 
 const root = path.resolve(import.meta.dirname, "..");
 const r1 = (v: number) => Math.round(v * 10) / 10;
-/** A panel's hold: its lines read in turn (no voice yet: reading time) + about a second. */
+/** A panel's hold: recorded 96 kbps clips, or reading time when a clip is absent, plus about a second. */
 function dur(p: P): number {
   let t = FIRST;
-  for (const l of p.lines) t += readTime(l.text) + GAP;
+  for (const l of p.lines) {
+    const file = path.join(root, "public", "audio", "voices", l.who, `${l.key}.mp3`);
+    t += (fs.existsSync(file) ? fs.statSync(file).size / 12000 : readTime(l.text)) + GAP;
+  }
   return r1(t + 0.8);
 }
 
@@ -107,7 +110,7 @@ if (import.meta.main) {
       return {
         image: has ? img : "",
         tone: p.tone,
-        box: [0.02, 0.03, 0.2, 0.08],
+        box: [0.015, 0.025, 0.225, 0.12],
         lines: p.lines.map(l => ({ audio: l.key, ...(l.who !== "narrator" ? { speaker: l.who } : {}), text: l.text })),
         dur: dur(p),
         ...(p.lines.length > 1 ? { size: 0.86, maxW: 0.52 } : {}),
@@ -119,16 +122,14 @@ if (import.meta.main) {
   }
 }
 
-/** docs/chapter2-assets.md: what needs real art and real voices. */
+/** docs/chapter2-assets.md: panel and voice reference. */
 function assetsDoc(): string {
   const o: string[] = [];
-  o.push("# Chapter 2: the art and voices it still needs", "");
-  o.push("Chapter 2 plays start to finish on placeholders: every panel below shows its tone (a painted gradient) or,");
-  o.push("where the file exists, the image; every line below shows its caption, and plays its voice once the file is");
-  o.push("there. Regenerate the cutscene JSONs after adding panel art with `node tools/chapter2-script.ts` (it picks up");
-  o.push("`public/cutscenes/<id>/panel_<n>.webp` by itself, then set each panel's `box` over the painted caption box).");
-  o.push("Voices go in `public/audio/voices/<speaker>/<key>.mp3`; add each new key to `CH2_VOICED` in");
-  o.push("`src/audio/chapter2.ts` so it preloads (an unlisted file is never fetched: the caption plays alone).", "");
+  o.push("# Chapter 2: art and voice reference", "");
+  o.push("The cutscene panels and listed voices are recorded. Regenerate the cutscene JSONs with");
+  o.push("`node tools/chapter2-script.ts` after changing a panel or line. It picks up panel images and");
+  o.push("sets panel holds from the recorded clips. Voices live in `public/audio/voices/<speaker>/<key>.mp3`");
+  o.push("and are preloaded through `CH2_VOICED` in `src/audio/chapter2.ts`.", "");
   o.push("Style: the chapter 1 comic panels (ink noir, heavy blacks, rain and neon, a cream caption box in a top corner,");
   o.push("3:2). The narrator (the Radbro) is low, tired and serious; the Miladys are high and cute; the Countess is a");
   o.push("Milady too: sweet, precise and cold, never loud.", "");
@@ -136,7 +137,7 @@ function assetsDoc(): string {
   for (const cut of CUTS) {
     o.push(`### ${cut.id}: ${cut.when}`, "");
     cut.panels.forEach((p, i) => {
-      o.push(`${i + 1}. \`public/cutscenes/${cut.id}/panel_${i + 1}.webp\` (placeholder tone \`${p.tone}\`): ${p.art}`);
+      o.push(`${i + 1}. \`public/cutscenes/${cut.id}/panel_${i + 1}.webp\` (fallback tone \`${p.tone}\`): ${p.art}`);
     });
     o.push("");
   }

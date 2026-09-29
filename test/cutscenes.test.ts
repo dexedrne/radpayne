@@ -33,7 +33,7 @@ function mp3Seconds(path: URL): number {
   return (frames * 1152) / sr;
 }
 
-const CUTS = ["c1", "e1", "c2", "cs3a", "c3", "c4"];
+const CUTS = ["c1", "e1", "c2", "cs3a", "c3", "c4", "ch2a", "ch2b", "ch2c", "ch2d", "ch2e", "ch2f"];
 
 test("room 3 goes up to room 4 through the elevator cutscene: four panels on disk, one narrator line each, its own sound group", () => {
   const room3 = JSON.parse(readFileSync(new URL("levels/room3.json", root), "utf8")) as { root: { components: { data: { properties: { data: { room: { next: string; cutsceneAfter?: string; exitHold?: number } } } } } } };

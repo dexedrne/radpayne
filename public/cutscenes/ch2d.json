@@ -4,13 +4,13 @@
   "music": "counting",
   "panels": [
     {
-      "image": "",
+      "image": "/cutscenes/ch2d/panel_1.webp",
       "tone": "sky",
       "box": [
-        0.02,
-        0.03,
-        0.2,
-        0.08
+        0.015,
+        0.025,
+        0.225,
+        0.12
       ],
       "lines": [
         {
@@ -18,16 +18,16 @@
           "text": "the ship came down on a tower above the clouds. no street, no rain, no sirens, no crowds."
         }
       ],
-      "dur": 6.3
+      "dur": 8.3
     },
     {
-      "image": "",
+      "image": "/cutscenes/ch2d/panel_2.webp",
       "tone": "phone",
       "box": [
-        0.02,
-        0.03,
-        0.2,
-        0.08
+        0.015,
+        0.025,
+        0.225,
+        0.12
       ],
       "lines": [
         {
@@ -35,16 +35,16 @@
           "text": "the top floor was a trading floor, screens from wall to wall. every name in the city was up there. she had them all."
         }
       ],
-      "dur": 7.8
+      "dur": 7.9
     },
     {
-      "image": "",
+      "image": "/cutscenes/ch2d/panel_3.webp",
       "tone": "phone",
       "box": [
-        0.02,
-        0.03,
-        0.2,
-        0.08
+        0.015,
+        0.025,
+        0.225,
+        0.12
       ],
       "lines": [
         {
@@ -52,7 +52,7 @@
           "text": "mine was near the bottom, in red. the column next to it said pending. pending what, it never said."
         }
       ],
-      "dur": 6.8
+      "dur": 7.2
     }
   ]
 }

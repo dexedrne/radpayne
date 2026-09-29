@@ -4,13 +4,13 @@
   "music": "vault",
   "panels": [
     {
-      "image": "",
+      "image": "/cutscenes/ch2e/panel_1.webp",
       "tone": "vault",
       "box": [
-        0.02,
-        0.03,
-        0.2,
-        0.08
+        0.015,
+        0.025,
+        0.225,
+        0.12
       ],
       "lines": [
         {
@@ -18,16 +18,16 @@
           "text": "the vault door was a foot thick, round, and open wide. like she'd been waiting. like she wanted me inside."
         }
       ],
-      "dur": 7.3
+      "dur": 7.9
     },
     {
-      "image": "",
+      "image": "/cutscenes/ch2e/panel_2.webp",
       "tone": "vault",
       "box": [
-        0.02,
-        0.03,
-        0.2,
-        0.08
+        0.015,
+        0.025,
+        0.225,
+        0.12
       ],
       "lines": [
         {
@@ -40,18 +40,18 @@
           "text": "\"three hundred and four came up here with a gun. you're three hundred and five, little one. make it fun.\""
         }
       ],
-      "dur": 14.3,
+      "dur": 13.9,
       "size": 0.86,
       "maxW": 0.52
     },
     {
-      "image": "",
+      "image": "/cutscenes/ch2e/panel_3.webp",
       "tone": "dawn",
       "box": [
-        0.02,
-        0.03,
-        0.2,
-        0.08
+        0.015,
+        0.025,
+        0.225,
+        0.12
       ],
       "lines": [
         {
@@ -64,7 +64,7 @@
           "text": "\"everyone gets counted. that's just how it's done. let's count you down together. ten to none.\""
         }
       ],
-      "dur": 13,
+      "dur": 13.4,
       "size": 0.86,
       "maxW": 0.52
     }

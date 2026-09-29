@@ -4,13 +4,13 @@
   "music": "garden",
   "panels": [
     {
-      "image": "",
+      "image": "/cutscenes/ch2b/panel_1.webp",
       "tone": "storm",
       "box": [
-        0.02,
-        0.03,
-        0.2,
-        0.08
+        0.015,
+        0.025,
+        0.225,
+        0.12
       ],
       "lines": [
         {
@@ -21,13 +21,13 @@
       "dur": 7.2
     },
     {
-      "image": "",
+      "image": "/cutscenes/ch2b/panel_2.webp",
       "tone": "sky",
       "box": [
-        0.02,
-        0.03,
-        0.2,
-        0.08
+        0.015,
+        0.025,
+        0.225,
+        0.12
       ],
       "lines": [
         {
@@ -35,16 +35,16 @@
           "text": "a glass bridge hung across to the tower next door. sixty floors of nothing underneath. i'd walked worse before."
         }
       ],
-      "dur": 7.6
+      "dur": 8.5
     },
     {
-      "image": "",
+      "image": "/cutscenes/ch2b/panel_3.webp",
       "tone": "garden",
       "box": [
-        0.02,
-        0.03,
-        0.2,
-        0.08
+        0.015,
+        0.025,
+        0.225,
+        0.12
       ],
       "lines": [
         {
@@ -62,7 +62,7 @@
           "text": "\"let him drip. he won't be dripping anymore.\""
         }
       ],
-      "dur": 14.7,
+      "dur": 16.5,
       "size": 0.86,
       "maxW": 0.52
     }

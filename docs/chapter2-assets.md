@@ -1,11 +1,9 @@
-# Chapter 2: the art and voices it still needs
+# Chapter 2: art and voice reference
 
-Chapter 2 plays start to finish on placeholders: every panel below shows its tone (a painted gradient) or,
-where the file exists, the image; every line below shows its caption, and plays its voice once the file is
-there. Regenerate the cutscene JSONs after adding panel art with `node tools/chapter2-script.ts` (it picks up
-`public/cutscenes/<id>/panel_<n>.webp` by itself, then set each panel's `box` over the painted caption box).
-Voices go in `public/audio/voices/<speaker>/<key>.mp3`; add each new key to `CH2_VOICED` in
-`src/audio/chapter2.ts` so it preloads (an unlisted file is never fetched: the caption plays alone).
+The cutscene panels and listed voices are recorded. Regenerate the cutscene JSONs with
+`node tools/chapter2-script.ts` after changing a panel or line. It picks up panel images and
+sets panel holds from the recorded clips. Voices live in `public/audio/voices/<speaker>/<key>.mp3`
+and are preloaded through `CH2_VOICED` in `src/audio/chapter2.ts`.
 
 Style: the chapter 1 comic panels (ink noir, heavy blacks, rain and neon, a cream caption box in a top corner,
 3:2). The narrator (the Radbro) is low, tired and serious; the Miladys are high and cute; the Countess is a
@@ -15,40 +13,40 @@ Milady too: sweet, precise and cold, never loud.
 
 ### ch2a: the start of chapter 2 (before room 6, the roof)
 
-1. `public/cutscenes/ch2a/panel_1.webp` (placeholder tone `phone`): Madame Pockit's phone face up on the black marble of the penthouse, the screen lit, a caller ID that reads only a small gold crown. The Radbro's hand reaching for it, bag strap over his wrist. Rain-streaked glass behind.
-2. `public/cutscenes/ch2a/panel_2.webp` (placeholder tone `storm`): A narrow concrete stairwell climbing up past the penthouse floor, a bare bulb every landing, rain hammering the steel door at the top, light leaking under it.
-3. `public/cutscenes/ch2a/panel_3.webp` (placeholder tone `storm`): The tower roof in a downpour: a black helicopter hovering off the edge, its searchlight a hard white cone on the roof door. Two Pockit Miladys in raincoats with pistols, backlit by the beam, one pointing at the door.
-4. `public/cutscenes/ch2a/panel_4.webp` (placeholder tone `guns`): Close on the Radbro in the doorway, soaked, guns low, the searchlight flaring behind him into a halo; the whole city a long way below, out of focus.
+1. `public/cutscenes/ch2a/panel_1.webp` (fallback tone `phone`): Madame Pockit's phone face up on the black marble of the penthouse, the screen lit, a caller ID that reads only a small gold crown. The Radbro's hand reaching for it, bag strap over his wrist. Rain-streaked glass behind.
+2. `public/cutscenes/ch2a/panel_2.webp` (fallback tone `storm`): A narrow concrete stairwell climbing up past the penthouse floor, a bare bulb every landing, rain hammering the steel door at the top, light leaking under it.
+3. `public/cutscenes/ch2a/panel_3.webp` (fallback tone `storm`): The tower roof in a downpour: a black helicopter hovering off the edge, its searchlight a hard white cone on the roof door. Two Pockit Miladys in raincoats with pistols, backlit by the beam, one pointing at the door.
+4. `public/cutscenes/ch2a/panel_4.webp` (fallback tone `guns`): Close on the Radbro in the doorway, soaked, guns low, the searchlight flaring behind him into a halo; the whole city a long way below, out of focus.
 
 ### ch2b: after room 6 (the roof), before room 7 (the sky garden)
 
-1. `public/cutscenes/ch2b/panel_1.webp` (placeholder tone `storm`): The helicopter banking away into the storm clouds, its searchlight swinging off the roof; the Radbro small on the helipad below, looking up.
-2. `public/cutscenes/ch2b/panel_2.webp` (placeholder tone `sky`): A glass skybridge between two towers, lit from underneath, rain running down it; sixty floors of city lights straight down through the floor. The Radbro halfway across, a silhouette.
-3. `public/cutscenes/ch2b/panel_3.webp` (placeholder tone `garden`): A greenhouse on top of the next tower: palms and ferns under a glass roof, a koi pond, warm lamps, clouds pressed against the glass. Two Miladys in garden-party dresses with pistols, one pointing at his wet footprints on the lawn.
+1. `public/cutscenes/ch2b/panel_1.webp` (fallback tone `storm`): The helicopter banking away into the storm clouds, its searchlight swinging off the roof; the Radbro small on the helipad below, looking up.
+2. `public/cutscenes/ch2b/panel_2.webp` (fallback tone `sky`): A glass skybridge between two towers, lit from underneath, rain running down it; sixty floors of city lights straight down through the floor. The Radbro halfway across, a silhouette.
+3. `public/cutscenes/ch2b/panel_3.webp` (fallback tone `garden`): A greenhouse on top of the next tower: palms and ferns under a glass roof, a koi pond, warm lamps, clouds pressed against the glass. Two Miladys in garden-party dresses with pistols, one pointing at his wet footprints on the lawn.
 
 ### ch2c: after room 7 (the sky garden), before room 8 (the airship)
 
-1. `public/cutscenes/ch2c/panel_1.webp` (placeholder tone `sky`): Above the greenhouse, a private airship straining at a mooring mast in the blue hour, its gondola windows lit, mooring ropes slipping off their cleats.
-2. `public/cutscenes/ch2c/panel_2.webp` (placeholder tone `sky`): The Radbro jumping for the gangway as the last rope snaps loose, one hand on the rail, the city dropping away beneath his shoes.
-3. `public/cutscenes/ch2c/panel_3.webp` (placeholder tone `airship`): The airship's promenade deck: long curved windows full of cloud tops, velvet banquettes, brass rails, a bar. Two Miladys in stewardess uniforms, pistols out, smiling.
+1. `public/cutscenes/ch2c/panel_1.webp` (fallback tone `sky`): Above the greenhouse, a private airship straining at a mooring mast in the blue hour, its gondola windows lit, mooring ropes slipping off their cleats.
+2. `public/cutscenes/ch2c/panel_2.webp` (fallback tone `sky`): The Radbro jumping for the gangway as the last rope snaps loose, one hand on the rail, the city dropping away beneath his shoes.
+3. `public/cutscenes/ch2c/panel_3.webp` (fallback tone `airship`): The airship's promenade deck: long curved windows full of cloud tops, velvet banquettes, brass rails, a bar. Two Miladys in stewardess uniforms, pistols out, smiling.
 
 ### ch2d: after room 8 (the airship), before room 9 (the counting floor)
 
-1. `public/cutscenes/ch2d/panel_1.webp` (placeholder tone `sky`): The airship nosing in to dock on the crown of the tallest tower, far above a sea of cloud; no city visible at all, only cloud and the first grey of morning.
-2. `public/cutscenes/ch2d/panel_2.webp` (placeholder tone `phone`): A trading floor: rows of desks and monitors, and one wall-sized board of names and numbers scrolling in green and red, girls at the desks looking up.
-3. `public/cutscenes/ch2d/panel_3.webp` (placeholder tone `phone`): Close on the board: a line near the bottom in red with a small Radbro icon, and beside it the word PENDING. His reflection faint in the glass.
+1. `public/cutscenes/ch2d/panel_1.webp` (fallback tone `sky`): The airship nosing in to dock on the crown of the tallest tower, far above a sea of cloud; no city visible at all, only cloud and the first grey of morning.
+2. `public/cutscenes/ch2d/panel_2.webp` (fallback tone `phone`): A trading floor: rows of desks and monitors, and one wall-sized board of names and numbers scrolling in green and red, girls at the desks looking up.
+3. `public/cutscenes/ch2d/panel_3.webp` (fallback tone `phone`): Close on the board: a line near the bottom in red with a small Radbro icon, and beside it the word PENDING. His reflection faint in the glass.
 
 ### ch2e: after room 9 (the counting floor), before room 10 (the vault: the Countess)
 
-1. `public/cutscenes/ch2e/panel_1.webp` (placeholder tone `vault`): A round vault door, a foot thick, standing wide open at the end of a steel corridor, gold light spilling out of it.
-2. `public/cutscenes/ch2e/panel_2.webp` (placeholder tone `vault`): Inside the vault under a glass dome: shelves of stolen bags and stacks of gold bars rising in rings; on the top stack sits the Countess, a Pockit Milady in a white fur stole and a thin gold crown, a long gold rifle across her knees, a ledger open beside her.
-3. `public/cutscenes/ch2e/panel_3.webp` (placeholder tone `dawn`): Sunrise breaking through the dome behind her, the gold blazing; she raises the rifle and a thin white laser line lands on the Radbro's chest.
+1. `public/cutscenes/ch2e/panel_1.webp` (fallback tone `vault`): A round vault door, a foot thick, standing wide open at the end of a steel corridor, gold light spilling out of it.
+2. `public/cutscenes/ch2e/panel_2.webp` (fallback tone `vault`): Inside the vault under a glass dome: shelves of stolen bags and stacks of gold bars rising in rings; on the top stack sits the Countess, a Pockit Milady in a white fur stole and a thin gold crown, a long gold rifle across her knees, a ledger open beside her.
+3. `public/cutscenes/ch2e/panel_3.webp` (fallback tone `dawn`): Sunrise breaking through the dome behind her, the gold blazing; she raises the rifle and a thin white laser line lands on the Radbro's chest.
 
 ### ch2f: after room 10 (the Countess), before TO BE CONTINUED and the chapter's results
 
-1. `public/cutscenes/ch2f/panel_1.webp` (placeholder tone `dawn`): The Countess fallen on the vault floor among spilled gold bars, her crown rolled away, the rifle out of reach; morning light across everything.
-2. `public/cutscenes/ch2f/panel_2.webp` (placeholder tone `vault`): The Radbro taking his own bag down from a shelf of a thousand bags, each tagged with a name card; he leaves the rest.
-3. `public/cutscenes/ch2f/panel_3.webp` (placeholder tone `phone`): Her ledger open on the desk: page after page in her neat gold hand, and the last page in a different, heavier handwriting with her own name at the top.
+1. `public/cutscenes/ch2f/panel_1.webp` (fallback tone `dawn`): The Countess fallen on the vault floor among spilled gold bars, her crown rolled away, the rifle out of reach; morning light across everything.
+2. `public/cutscenes/ch2f/panel_2.webp` (fallback tone `vault`): The Radbro taking his own bag down from a shelf of a thousand bags, each tagged with a name card; he leaves the rest.
+3. `public/cutscenes/ch2f/panel_3.webp` (fallback tone `phone`): Her ledger open on the desk: page after page in her neat gold hand, and the last page in a different, heavier handwriting with her own name at the top.
 
 ## Voice lines
 
@@ -149,7 +147,7 @@ Milady too: sweet, precise and cold, never loud.
 
 ## Models and textures
 
-- The Countess is Pockit #? at 1.3x with the sniper rifle and a procedural gold crown; a model of her own (white fur
+- The Countess is Pockit #1847 at 1.3x with the sniper rifle and a procedural gold crown; a model of her own (white fur
   stole, gold crown, gold rifle) would replace it.
 - The rooms reuse chapter 1's textures (the street, the back rooms, the elevator, the penthouse), tinted and lit
   for the storm, the garden, the ship, the trading floor and the sunrise. Wanted: roof gravel and HVAC panels, a

@@ -90,7 +90,7 @@ export const CS3A_FILES = ["cs3a_01", "cs3a_02", "cs3a_03", "cs3a_04"].map(k => 
 
 /** Files under public/audio (no extension). Keys are the paths. */
 export const FILES = [
-  ...CH2_VOICED, // chapter 2 (rooms 6-10, cutscenes ch2a-f): the lines recorded so far (the "end" group)
+  ...CH2_VOICED, // chapter 2 (rooms 6-10, cutscenes ch2a-f)
   ...ROUND3_FILES, // round 3: rooms 4-5, cutscenes 3-4 (the "end" group)
   ...CS3A_FILES, // the elevator cutscene after room 3 (the "cs3a" group)
   ...GUN_FILES, "sfx/dry_fire", "sfx/reload_mag_out", "sfx/reload_mag_in", "sfx/reload_slide",

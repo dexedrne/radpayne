@@ -4,13 +4,13 @@
   "music": "street",
   "panels": [
     {
-      "image": "",
+      "image": "/cutscenes/ch2a/panel_1.webp",
       "tone": "phone",
       "box": [
-        0.02,
-        0.03,
-        0.2,
-        0.08
+        0.015,
+        0.025,
+        0.225,
+        0.12
       ],
       "lines": [
         {
@@ -23,18 +23,18 @@
           "text": "\"one bag back? how cute. i keep a few thousand more. come up to the roof, little one. let's settle the score.\""
         }
       ],
-      "dur": 13.1,
+      "dur": 12.6,
       "size": 0.86,
       "maxW": 0.52
     },
     {
-      "image": "",
+      "image": "/cutscenes/ch2a/panel_2.webp",
       "tone": "storm",
       "box": [
-        0.02,
-        0.03,
-        0.2,
-        0.08
+        0.015,
+        0.025,
+        0.225,
+        0.12
       ],
       "lines": [
         {
@@ -42,16 +42,16 @@
           "text": "the stairs went on past where the building should end. the storm was waiting at the top, like an old friend."
         }
       ],
-      "dur": 7.4
+      "dur": 7.7
     },
     {
-      "image": "",
+      "image": "/cutscenes/ch2a/panel_3.webp",
       "tone": "storm",
       "box": [
-        0.02,
-        0.03,
-        0.2,
-        0.08
+        0.015,
+        0.025,
+        0.225,
+        0.12
       ],
       "lines": [
         {
@@ -69,18 +69,18 @@
           "text": "\"i said he'd come. i never said he was good.\""
         }
       ],
-      "dur": 13.6,
+      "dur": 15.2,
       "size": 0.86,
       "maxW": 0.52
     },
     {
-      "image": "",
+      "image": "/cutscenes/ch2a/panel_4.webp",
       "tone": "guns",
       "box": [
-        0.02,
-        0.03,
-        0.2,
-        0.08
+        0.015,
+        0.025,
+        0.225,
+        0.12
       ],
       "lines": [
         {
@@ -88,7 +88,7 @@
           "text": "nothing above me now but the weather and the fall. i'd come up here for one bag. now i wanted it all."
         }
       ],
-      "dur": 7
+      "dur": 7.9
     }
   ]
 }
