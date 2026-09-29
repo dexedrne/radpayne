@@ -189,11 +189,14 @@ export class Bot {
           if (d < nd) { nd = d; tx = e.x; tz = e.z; ty = e.y; key = e.idx; }
         }
         // a weapon or ammo lying within 20 m that it can use: fetch it first (chapter 2: one it set out
-        // for stays the target out to 32 m: the long way round to it must not turn it back at 20 m)
+        // for stays the target out to 32 m: the long way round to it must not turn it back at 20 m; a way
+        // round longer than that leaves it a while, or it walks back and forth: room 9's catwalk has a gun
+        // on the floor under it inside 20 m, and the stair down to it is past 32 m)
         let kd = 20 * 20;
         const cur = this.pathFor - 700, going = g.stage && cur >= 0 && cur < g.pickups.length ? g.pickups[cur] : null;
-        if (going && !going.taken && g.canTake(going.item) && (this.noWay.get(cur) ?? -1) <= g.time && (going.x - p.x) ** 2 + (going.z - p.z) ** 2 < 32 * 32) {
-          tx = going.x; tz = going.z; ty = going.y; key = this.pathFor; kd = -1;
+        if (going && !going.taken && g.canTake(going.item) && (this.noWay.get(cur) ?? -1) <= g.time) {
+          if ((going.x - p.x) ** 2 + (going.z - p.z) ** 2 < 32 * 32) { tx = going.x; tz = going.z; ty = going.y; key = this.pathFor; kd = -1; }
+          else this.noWay.set(cur, g.time + 20);
         }
         for (let i = 0; i < g.pickups.length; i++) {
           const k = g.pickups[i];

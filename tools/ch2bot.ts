@@ -28,12 +28,13 @@ export function runRoom(room: string, seed: number, difficulty: Difficulty = "no
   for (let tr = 0; tr < TRIES; tr++) {
     g = new Game(level(), { seed: seed + tr * 101, difficulty, ...(resume ? { resume } : {}) });
     const bot = new Bot(3.5, 0.3, demo);
-    const t0 = g.stats.time;
+    // stats carry over a checkpoint resume: count only this try's share
+    const t0 = g.stats.time, lost0 = g.stats.damageTaken;
     for (let i = 0; i < MAX_S / DT && g.phase !== "done" && g.phase !== "dead"; i++) {
       g.step(bot.next(g));
       for (const e of g.drain()) if (e.type === "stage") stage.add(e.what);
     }
-    lost += g.stats.damageTaken;
+    lost += g.stats.damageTaken - lost0;
     time += g.stats.time - t0;
     if (g.phase === "done") break;
     if (g.phase !== "dead") break; // out of time: no retry
