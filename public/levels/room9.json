@@ -14300,8 +14300,7 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon",
-          "minDiff": "hard"
+          "kind": "goon"
          }
         }
        }
@@ -14453,8 +14452,7 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveA",
-          "minDiff": "hard"
+          "group": "waveA"
          }
         }
        }

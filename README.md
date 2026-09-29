@@ -71,8 +71,8 @@ quarter faster and a kill refills a little more), **Hard** (all of it harder: ru
 spoils their aim less, two flank at once; you need cover) and **Hardcore** (no second chances: one can
 to start, half the cans, bullet time drains almost twice as fast). Madame Pockit keeps her own, gentler
 factor on every setting. Chapter 2's rooms are long and each has a set piece on top, so its Normal eases
-off: about a quarter fewer of the gang (Hard brings the rest), their aim and damage back to the first
-release's Normal, every can in the room, the snipers' laser and the vault's beams on a longer tell, the
+off: about a quarter fewer of the gang (Hard brings the rest), their frags and rushers a little less
+often, every can in the room, the snipers' laser and the vault's beams on a longer tell, the
 Countess's lifts two girls at a time; Hard and Hardcore keep theirs.
 
 | Input | Action |

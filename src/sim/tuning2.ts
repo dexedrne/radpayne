@@ -8,10 +8,13 @@ export const perDiff = (t: PerDiff, d: Difficulty | string): number => t[d] ?? (
 
 /** Chapter 2 against DIFFICULTY (tuning.ts), per difficulty: its rooms are long (20-30 of the gang each,
  *  where chapter 1's streets had 8-11) and every one has a set piece on top, so Normal eases off here:
- *  their aim and damage back to about the first release's Normal, frags and flankers less often, every
- *  copium can in the room, a checkpoint restores more. Chill, Hard and Hardcore keep their own. */
+ *  their aim and damage are chapter 1's Normal, but their frags, suppressing fire and rushers come a
+ *  little less often, every copium can is in the room and a checkpoint restores more (with the rooms'
+ *  lighter Normal rosters and the snipers' longer tell). On the balance bots it costs about 1.1x
+ *  chapter 1's health on Normal with no deaths (it was 1.5x before the ease, and 0.65x with their aim
+ *  and damage at 1.0 and frags rarer still). Chill, Hard and Hardcore keep their own. */
 export const CH2_DIFF: Partial<Record<Difficulty, Partial<DifficultyTuning>>> = {
-  normal: { damage: 1.0, accuracy: 1.0, keep: 1, checkpoint: 70, grenade: 18, camp: 7.5, rush: 11, suppress: 0.4 },
+  normal: { keep: 1, checkpoint: 70, grenade: 16, camp: 7, rush: 10, suppress: 0.45 },
 };
 
 /** A room's difficulty table: chapter 2's rooms (room.chapter 2) take CH2_DIFF over DIFFICULTY. */

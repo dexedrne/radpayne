@@ -107,10 +107,13 @@ test("chapter 2 on every difficulty: its roster (Normal leaves some of the gang 
     assert.ok(normal < hard && easy === normal && hardcore === hard, `${id}: ${counts[id].join(" / ")}`);
     if (id !== "room10") assert.ok(normal >= 20 && normal <= 28, `${id}: ${normal} on Normal`);
   }
-  // chapter 2's own Normal: softer than chapter 1's, the snipers' tell longer; Hard and Hardcore untouched
+  // chapter 2's own Normal: chapter 1's aim and damage, their frags and rushers less often, every can, a
+  // checkpoint restores more, the snipers' tell longer; Hard and Hardcore untouched
   const n2 = new Game(room("room6"), { seed: 1, difficulty: "normal" });
-  assert.equal(n2.diff.damage, CH2_DIFF.normal!.damage);
-  assert.ok(n2.diff.damage < DIFFICULTY.normal.damage && n2.diff.accuracy < DIFFICULTY.normal.accuracy);
+  assert.equal(n2.diff.keep, CH2_DIFF.normal!.keep);
+  assert.ok(n2.diff.damage === DIFFICULTY.normal.damage && n2.diff.accuracy === DIFFICULTY.normal.accuracy);
+  assert.ok(n2.diff.grenade > DIFFICULTY.normal.grenade && n2.diff.rush > DIFFICULTY.normal.rush && n2.diff.suppress < DIFFICULTY.normal.suppress);
+  assert.ok(n2.diff.keep > DIFFICULTY.normal.keep && n2.diff.checkpoint > DIFFICULTY.normal.checkpoint);
   assert.equal(n2.sniperArms.tell, perDiff(SNIPER2.tell, "normal"));
   assert.ok(n2.sniperArms.tell > ENEMY_ARMS.sniper.tell && n2.sniperArms.damage < ENEMY_ARMS.sniper.damage);
   for (const d of ["hard", "hardcore"] as const) {

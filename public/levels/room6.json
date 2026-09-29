@@ -11666,8 +11666,7 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon",
-          "minDiff": "hard"
+          "kind": "goon"
          }
         }
        }
@@ -11778,8 +11777,7 @@
           "marker": "enemy",
           "kind": "goon",
           "perch": true,
-          "weapon": "sniper",
-          "minDiff": "hard"
+          "weapon": "sniper"
          }
         }
        }
@@ -11863,8 +11861,7 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveA",
-          "minDiff": "hard"
+          "group": "waveA"
          }
         }
        }

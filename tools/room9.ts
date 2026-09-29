@@ -144,11 +144,11 @@ k.m(
   // at the desks
   E("t-1", -15, 0, -4, FACE_W), E("t-2", -15, 0, 4, FACE_W), E("t-3", -9, 0, -11, FACE_W), E("t-4", -9, 0, 11.5, FACE_W, { minDiff: "hard" }),
   E("t-5", -3, 0, -3, FACE_W), E("t-6", -3, 0, 4.5, FACE_W, { kind: "rusher" }), E("t-7", 3, 0, -12, FACE_W), E("t-8", 3, 0, 12, FACE_W, { minDiff: "hard" }),
-  E("t-9", -2, CY, -16.6, FACE_S, { perch: true, weapon: "sniper" }), E("t-10", 10, CY, -16.6, FACE_S, { minDiff: "hard" }),
+  E("t-9", -2, CY, -16.6, FACE_S, { perch: true, weapon: "sniper" }), E("t-10", 10, CY, -16.6, FACE_S),
   // the board room from the start (behind the partition)
   E("r-1", 20.4, 0, -6, FACE_W), E("r-2", 20.4, 0, 6, FACE_W), E("r-3", 24, 0, 0, FACE_W, { kind: "heavy", model: "rival652" }),
   // wave A (4 down): out of the offices
-  E("a-1", -22.4, 0, 15.4, FACE_N, { group: "waveA" }), E("a-2", -18, 0, 15.6, FACE_N, { group: "waveA", kind: "rusher" }), E("a-3", -23.6, 0, 11.4, FACE_N, { group: "waveA" }), E("a-4", -17.4, 0, 11.4, FACE_N, { group: "waveA", minDiff: "hard" }),
+  E("a-1", -22.4, 0, 15.4, FACE_N, { group: "waveA" }), E("a-2", -18, 0, 15.6, FACE_N, { group: "waveA", kind: "rusher" }), E("a-3", -23.6, 0, 11.4, FACE_N, { group: "waveA" }), E("a-4", -17.4, 0, 11.4, FACE_N, { group: "waveA" }),
   // wave B (8 down): the vault corridor into the board room, and up the east stair
   E("b-1", 28.4, 0, -0.6, FACE_W, { group: "waveB" }), E("b-2", 29.4, 0, 0.6, FACE_W, { group: "waveB", kind: "rusher" }), E("b-3", 23.4, CY, -16.8, FACE_W, { group: "waveB" }),
   E("b-4", 21.4, CY, -16.8, FACE_W, { group: "waveB", weapon: "sniper", perch: true, minDiff: "hard" }), E("b-5", 27.6, 0, 0.6, FACE_W, { group: "waveB", minDiff: "hard" }),

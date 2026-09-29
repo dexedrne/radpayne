@@ -180,13 +180,13 @@ k.wp("bridge", [34, 0, 0]);
 const E = (id: string, x: number, y: number, z: number, yaw: number, d: Record<string, unknown> = {}) => marker(id, "enemy", [x, y, z], { kind: "goon", ...d }, yaw);
 k.m(
   // on the roof when he comes out (the light's patrol has not seen him yet)
-  E("g-1", -9, 0, -2, FACE_W), E("g-2", -7.5, 0, 8, FACE_W), E("g-3", 1, 0, -3.8, FACE_W), E("g-4", 6.5, 0, 6.6, FACE_W, { minDiff: "hard" }),
+  E("g-1", -9, 0, -2, FACE_W), E("g-2", -7.5, 0, 8, FACE_W), E("g-3", 1, 0, -3.8, FACE_W), E("g-4", 6.5, 0, 6.6, FACE_W),
   E("g-5", 12, 0, 0, FACE_W, { kind: "rusher" }), E("g-6", 0, 1, -12, FACE_S),
   E("sn-1", -11, 4, 12.4, FACE_E, { perch: true, weapon: "sniper" }), E("sn-2", -14.2, 4, 9.6, FACE_N, { perch: true, weapon: "sniper", minDiff: "hard" }),
-  E("sn-3", 26.7, 3, -2, FACE_W, { perch: true, weapon: "sniper", minDiff: "hard" }),
+  E("sn-3", 26.7, 3, -2, FACE_W, { perch: true, weapon: "sniper" }),
   // wave A (5 down): out of the machine room
   E("a-1", 16.4, 0, -15.2, FACE_S, { group: "waveA" }), E("a-2", 21.6, 0, -15.2, FACE_S, { group: "waveA" }), E("a-3", 19, 0, -17.2, FACE_S, { group: "waveA", kind: "rusher" }),
-  E("a-4", 17, 0, -17.4, FACE_S, { group: "waveA", minDiff: "hard" }), E("a-5", 23.4, 0, -17.4, FACE_S, { group: "waveA", kind: "rusher", minDiff: "hard" }),
+  E("a-4", 17, 0, -17.4, FACE_S, { group: "waveA" }), E("a-5", 23.4, 0, -17.4, FACE_S, { group: "waveA", kind: "rusher", minDiff: "hard" }),
   // drop 1 (9 down): on ropes onto the pad
   E("d1-1", -2.5, 1, -15, FACE_S, { group: "drop1", kind: "rusher" }), E("d1-2", 2.5, 1, -15, FACE_S, { group: "drop1" }), E("d1-3", -2.5, 1, -12, FACE_S, { group: "drop1" }), E("d1-4", 2.5, 1, -12, FACE_S, { group: "drop1", kind: "rusher", minDiff: "hard" }),
   // wave B (14 down): up the south-east stair
