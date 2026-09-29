@@ -9,6 +9,7 @@ import { BufferAttribute, BufferGeometry, Color, LineSegments, type HemisphereLi
 import { LineBasicNodeMaterial } from "three/webgpu";
 import { float, materialColor, materialOpacity, positionWorld } from "three/tsl";
 import { SEARCH, inBeam, poolLight } from "./searchlight.ts";
+import { BLACKOUT, blackoutIntensity, newStrike, stepLightning, type Strike } from "./weather.ts";
 import type { LevelData } from "../../world/level.ts";
 import type { Session } from "../session.ts";
 import { TowerLook, type LookNumbers } from "./tower.tsx";
@@ -65,17 +66,14 @@ function Rain({ s }: { s?: Session }) {
   return n ? <primitive object={obj.l} /> : null;
 }
 
-/** Lightning: a cold flash over the roof now and then (a hemisphere light that spikes and decays). */
+/** Lightning: a cold flash over the roof now and then (a hemisphere light that spikes and decays, on the
+ *  world's clock: bullet time slows it; look/weather.ts has its numbers, frame-rate independent). */
 function Lightning({ s }: { s?: Session }) {
   const ref = useRef<HemisphereLight>(null);
-  const st = useRef({ next: 6, v: 0 });
+  const st = useRef<Strike>(newStrike());
   useFrame((_, dt) => {
-    const d = Math.min(dt, 0.1) * (s?.game.timeScale ?? 1);
-    const t = st.current;
-    t.next -= d;
-    if (t.next <= 0) { t.v = 2.4; t.next = 7 + Math.random() * 9; }
-    t.v = Math.max(0, t.v - d * 6 + (t.v > 1.8 && Math.random() < 0.1 ? 0.8 : 0));
-    if (ref.current) ref.current.intensity = t.v;
+    const v = stepLightning(st.current, Math.min(dt, 0.1) * (s?.game.timeScale ?? 1));
+    if (ref.current) ref.current.intensity = v;
   });
   return <hemisphereLight ref={ref} args={["#cfd8ff", "#202030", 0]} />;
 }
@@ -83,9 +81,10 @@ function Lightning({ s }: { s?: Session }) {
 /** The counting floor's blackout: while the stage says dark its lamps go out (the "light" markers with
  *  `dim`, userData.rpDim), the look's fill drops (userData.rpFill) and the camera key dims; the screens
  *  (glow materials) and every girl's rim and outline stay. The lights stay in the scene and only their
- *  intensity moves (no shader rebuilds); it eases over about a third of a second, both ways. */
-export const BLACKOUT = { lamps: 0.1, fill: 0.22, key: 0.55, rate: 7 } as const;
+ *  intensity moves (no shader rebuilds); it eases over about a third of a second, both ways. Each light's
+ *  own intensity is kept here, not on its userData (look/weather.ts: blackoutIntensity). */
 const blackoutKey = { value: SKY.counting.key as number };
+const blackoutBases = new WeakMap<object, number>(); // per light object: outlives a remount of the look
 function Blackout({ s }: { s?: Session }) {
   const scene = useThree(st => st.scene);
   const k = useRef(0);
@@ -99,11 +98,7 @@ function Blackout({ s }: { s?: Session }) {
       scene.traverse(o => { if ((o as Light).isLight && (o.userData.rpDim || o.userData.rpFill)) out.push(o as Light); });
       lights.current = out;
     }
-    for (const l of lights.current) {
-      if (typeof l.userData.rpBase !== "number") l.userData.rpBase = l.intensity;
-      const to = l.userData.rpDim ? BLACKOUT.lamps : BLACKOUT.fill;
-      l.intensity = (l.userData.rpBase as number) * (1 + (to - 1) * k.current);
-    }
+    for (const l of lights.current) l.intensity = blackoutIntensity(l, l.userData.rpDim === true, k.current, blackoutBases);
     blackoutKey.value = SKY.counting.key * (1 + (BLACKOUT.key - 1) * k.current);
   });
   return null;

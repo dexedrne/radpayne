@@ -229,7 +229,9 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
     is drawn by `src/app/look/searchlight.ts`: a soft beam, its pool lit on the level's surfaces (the
     roof look's materials) and one SpotLight that never leaves the scene (only its aim and intensity
     move, so no shader rebuilds while it sweeps). The counting floor's blackout dims the lights whose
-    marker has `dim` and the look's fill (`src/app/look/sky.tsx`).
+    marker has `dim` and the look's fill (`src/app/look/sky.tsx`). The storm's lightning and the
+    blackout's levels are `src/app/look/weather.ts`: per second of world time, so the flash is the same
+    at any frame rate and in bullet time, and each light's own level is kept off its userData.
   - Round 3: a room's `later: [groups]` makes those groups wait unseen until the room's own mechanism
     brings them in. Room 4 (`node tools/room4.ts`) has `ride` in its settings (`src/sim/ride.ts`): the
     car (`car`, `hatch`) and the steps, legs (`t` seconds; `roof` + `group`: the heavy through the
