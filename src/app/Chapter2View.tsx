@@ -1,7 +1,8 @@
 // Chapter 2's moving parts (views only; the set pieces are sim/stage.ts and sim/ch2/*). Nothing here in a
 // room without a stage. Every tell reads at a glance:
-//  - the roof: the helicopter off the edge (its rotor turning), the searchlight's cone and its spot on the
-//    roof (brighter when it has him), the ropes from the helicopter to the girls coming down them;
+//  - the roof: the helicopter off the edge (its rotor turning), the searchlight (look/searchlight.ts: a
+//    soft beam and a real light's pool on the roof, brighter when it has him), the ropes from the
+//    helicopter to the girls coming down them;
 //  - the garden: the glass walkway's crack lines spreading over the tell, then the glass gone;
 //  - the airship: the klaxon's red light, the cargo door torn off into the sky, wind streaks toward it;
 //  - the counting floor: the shutters rolled up in their boxes, their warning lamps, then down;
@@ -14,7 +15,7 @@ import { useFrame } from "@react-three/fiber";
 import { usePrefab } from "react-three-game";
 import {
   AdditiveBlending, BoxGeometry, BufferAttribute, BufferGeometry, Color, ConeGeometry, CylinderGeometry, DoubleSide, Group, LineBasicMaterial, LineSegments, Mesh,
-  MeshBasicMaterial, MeshStandardMaterial, PointLight, SphereGeometry, TorusGeometry, Vector3, type Object3D,
+  MeshBasicMaterial, MeshStandardMaterial, PointLight, SphereGeometry, SpotLight, TorusGeometry, Vector3, type Object3D,
 } from "three";
 import type { Session } from "./session.ts";
 import type { GameEvent } from "../sim/types.ts";
@@ -23,13 +24,15 @@ import type { Garden } from "../sim/ch2/garden.ts";
 import type { Airship } from "../sim/ch2/airship.ts";
 import type { Counting } from "../sim/ch2/counting.ts";
 import type { Vault } from "../sim/ch2/vault.ts";
-import { BEAM, COUNTESS } from "../sim/tuning2.ts";
+import { BEAM, COUNTESS, ROOF } from "../sim/tuning2.ts";
+import { SEARCH, beamU, cutoffAt, makeBeam, makeSearchLight, poolFx, searchFx } from "./look/searchlight.ts";
 import { FRAME } from "./frame.ts";
 import { sfxKey } from "../audio/sfx.ts";
 
 const own = <T extends { userData: Record<string, unknown> }>(m: T): T => { m.userData.rpOwn = true; return m; };
 const glowMat = (c: string, opacity = 1) => own(new MeshBasicMaterial({ color: new Color(c), transparent: opacity < 1, opacity, ...(opacity < 1 ? { blending: AdditiveBlending } : {}), depthWrite: opacity >= 1, toneMapped: false, side: DoubleSide }));
-const UP = new Vector3(0, 1, 0);
+const DOWN = new Vector3(0, -1, 0);
+const SL = { lamp: new Vector3(), dir: new Vector3(), end: new Vector3(), cam: new Vector3(), rel: new Vector3() };
 
 export function Chapter2View({ s }: { s: Session }) {
   const prefab = usePrefab();
@@ -61,7 +64,7 @@ export function Chapter2View({ s }: { s: Session }) {
     }
     const parts: Record<string, Object3D> = {};
     let rope: LineSegments | null = null, wind: LineSegments | null = null, cracks: Group | null = null;
-    let spotLight: PointLight | null = null, redLight: PointLight | null = null;
+    let search: SpotLight | null = null, redLight: PointLight | null = null;
     if (st?.kind === "roof") {
       const heli = new Group();
       const dark = own(new MeshStandardMaterial({ color: "#15171c", roughness: 0.4, metalness: 0.5 }));
@@ -73,15 +76,12 @@ export function Chapter2View({ s }: { s: Session }) {
       const nav = new Mesh(new SphereGeometry(0.1, 8, 6), glowMat("#ff3030")); nav.position.set(0, -0.3, 6.8);
       heli.add(body, tail, fin, rotor, lamp, nav);
       parts.heli = heli; parts.rotor = rotor; parts.lamp = lamp; parts.nav = nav;
-      const cone = new Mesh(new ConeGeometry(1, 1, 24, 1, true), glowMat("#e8f0ff", 0.09));
-      cone.geometry.translate(0, -0.5, 0);
-      parts.cone = cone;
-      const spot = new Mesh(new CylinderGeometry(1, 1, 0.02, 32), glowMat("#e8f0ff", 0.22));
-      parts.spot = spot;
-      spotLight = new PointLight("#e8f0ff", 0, 9, 2);
+      const beam = makeBeam(ROOF.radius);
+      parts.beam = beam;
+      search = makeSearchLight();
       rope = new LineSegments(new BufferGeometry().setAttribute("position", new BufferAttribute(new Float32Array(8 * 6), 3)), own(new LineBasicMaterial({ color: "#8a8f98" })));
       rope.frustumCulled = false;
-      group.add(heli, cone, spot, spotLight, rope);
+      group.add(heli, beam, search, search.target, rope);
     }
     if (st?.kind === "garden") {
       const gd = st as Garden;
@@ -148,7 +148,7 @@ export function Chapter2View({ s }: { s: Session }) {
       parts.crown = crown;
       group.add(gate, beam, crown);
     }
-    return { group, parts, rope, wind, cracks, spotLight, redLight, run: -1, doorT: 0, shutterY: new Map<string, number>(), hidden: [] as Object3D[] };
+    return { group, parts, rope, wind, cracks, search, redLight, run: -1, doorT: 0, shutterY: new Map<string, number>(), hidden: [] as Object3D[], beamK: 0, poolI: 0 };
   }, [s, prefab]);
 
   // the stage's sounds
@@ -164,7 +164,7 @@ export function Chapter2View({ s }: { s: Session }) {
     if (key[e.what]) sfxKey(key[e.what], d, 0, 0.8);
   }), [s]);
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock, camera }, rawDt) => {
     if (!v) return;
     const g = s.game, st = g.stage, P = v.parts;
     const t = clock.elapsedTime;
@@ -184,19 +184,8 @@ export function Chapter2View({ s }: { s: Session }) {
       P.rotor.rotation.y = t * 30;
       (P.nav as Mesh).visible = Math.sin(t * 6) > 0;
       const on = r.lightOn;
-      P.lamp.visible = on; P.cone.visible = on; P.spot.visible = on;
-      if (on) {
-        const lamp = new Vector3(); P.lamp.getWorldPosition(lamp);
-        const gy = 0.02, dir = new Vector3(r.lx - lamp.x, gy - lamp.y, r.lz - lamp.z), len = dir.length();
-        P.cone.position.copy(lamp);
-        P.cone.quaternion.setFromUnitVectors(UP.clone().negate(), dir.normalize());
-        P.cone.scale.set(3.2, len, 3.2);
-        P.spot.position.set(r.lx, 1.04 > 0 ? 0.03 : 0, r.lz);
-        P.spot.scale.set(3.2, 1, 3.2);
-        ((P.spot as Mesh).material as MeshBasicMaterial).opacity = r.lit ? 0.38 : 0.2;
-        v.spotLight!.position.set(r.lx, 2.5, r.lz);
-        v.spotLight!.intensity = r.lit ? 10 : 6;
-      } else v.spotLight!.intensity = 0;
+      P.lamp.visible = on;
+      searchlight(s, r, P.lamp, P.beam as Mesh, v.search!, v, camera, on, Math.min(rawDt, 0.1));
       // ropes to the girls coming down
       const pos = v.rope!.geometry.attributes.position as BufferAttribute;
       let k = 0;
@@ -276,4 +265,65 @@ export function Chapter2View({ s }: { s: Session }) {
   }, FRAME.fx);
 
   return v ? <primitive object={v.group} /> : null;
+}
+
+/** The searchlight this frame (look/searchlight.ts): the beam from the lamp to the roof under the sim's
+ *  spot (or the first thing in its way), the pool's light aimed there, both fading in and out. */
+function searchlight(s: Session, r: Roof, lampMesh: Object3D, beam: Mesh, light: SpotLight, st: { beamK: number; poolI: number }, camera: Object3D, on: boolean, dt: number): void {
+  const g = s.game;
+  const f = Math.min(1, dt * SEARCH.fade);
+  st.beamK += ((on ? 1 : 0) - st.beamK) * f;
+  const { lamp, dir, end, cam, rel } = SL;
+  lampMesh.getWorldPosition(lamp);
+  // the roof under the spot (the pad, a stairwell's roof: the highest top under the lamp)
+  const gy = g.world.groundBelow(r.lx, r.lz, 0.3, lamp.y - 1);
+  const floor = Number.isFinite(gy) ? gy : 0;
+  dir.set(r.lx - lamp.x, floor - lamp.y, r.lz - lamp.z);
+  const full = Math.max(0.5, dir.length());
+  dir.divideScalar(full);
+  // the first thing in the lamp's way (the fence on the parapet lets it through, like the sim's check)
+  const hit = g.world.raycast(lamp.x, lamp.y, lamp.z, dir.x, dir.y, dir.z, full - 0.05, true);
+  const len = hit ? Math.max(0.5, hit.t) : full;
+  end.copy(lamp).addScaledVector(dir, len);
+  const foot = ROOF.radius * (len / full);
+  beam.visible = st.beamK > 0.01;
+  beam.position.copy(lamp);
+  beam.quaternion.setFromUnitVectors(DOWN, dir);
+  beam.scale.set(foot, len, foot);
+  beamU.k.value = st.beamK;
+  beamU.floorY.value = end.y;
+  // the lens inside the beam: most of the haze goes (it would lie over the whole picture)
+  camera.getWorldPosition(cam);
+  const t = rel.subVectors(cam, lamp).dot(dir);
+  const off = rel.addScaledVector(dir, -t).length();
+  const rr = SEARCH.lampRadius + (foot - SEARCH.lampRadius) * Math.min(1, Math.max(0, t / len));
+  const inside = t > 0 && t < len + 1 && off < rr * 1.15 ? 1 : 0;
+  beamU.inside.value += (inside - beamU.inside.value) * f;
+  searchFx.a.value.copy(lamp);
+  searchFx.d.value.copy(dir);
+  searchFx.len.value = len;
+  searchFx.r0.value = SEARCH.lampRadius;
+  searchFx.r1.value = foot;
+  searchFx.k.value = st.beamK;
+  // the pool on the level's surfaces: the sim's circle, nothing under what the lamp hits first
+  poolFx.c.value.set(r.lx, r.lz);
+  poolFx.r.value = ROOF.radius;
+  poolFx.yMin.value = (hit ? end.y : floor) - 0.35;
+  poolFx.lamp.value.copy(lamp);
+  poolFx.k.value = st.beamK;
+  poolFx.lit.value += ((r.lit ? 1 : 0) - poolFx.lit.value) * f;
+  // the SpotLight (the girls, him, the props): aimed at the end, its edge at the sim's radius; blocked
+  // short of the roof, cut off just past what it hits and boosted back (no light under a roof)
+  light.position.copy(lamp);
+  light.target.position.copy(end);
+  light.target.updateMatrixWorld();
+  light.angle = Math.atan((ROOF.radius * SEARCH.spread) / full);
+  light.penumbra = SEARCH.penumbra;
+  let want = on ? (r.lit ? SEARCH.poolLit : SEARCH.pool) : 0;
+  if (hit) {
+    light.distance = len + SEARCH.cutoffPast;
+    want *= Math.min(SEARCH.boost, 1 / Math.max(1e-3, cutoffAt(len, light.distance)));
+  } else light.distance = 0;
+  st.poolI += (want - st.poolI) * f;
+  light.intensity = st.poolI < 0.005 ? 0 : st.poolI;
 }

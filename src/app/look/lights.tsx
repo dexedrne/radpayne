@@ -1,4 +1,5 @@
-// Point lights from the level's "light" markers: Data {marker: "light", color, intensity, distance}.
+// Point lights from the level's "light" markers: Data {marker: "light", color, intensity, distance, dim?}.
+// `dim: true`: a light the room's blackout puts out (look/sky.tsx: userData.rpDim).
 import type { LevelData } from "../../world/level.ts";
 
 export function MarkerLights({ level }: { level: LevelData }) {
@@ -12,6 +13,7 @@ export function MarkerLights({ level }: { level: LevelData }) {
           intensity={(m.data.intensity as number) ?? 20}
           distance={(m.data.distance as number) ?? 14}
           decay={2}
+          userData={{ rpDim: m.data.dim === true }}
         />
       ))}
     </>

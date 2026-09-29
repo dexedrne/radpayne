@@ -77,40 +77,43 @@ function isLevelMaterial(m: Material): m is MeshStandardNodeMaterial | MeshBasic
   return m.constructor === MeshStandardNodeMaterial || m.constructor === MeshBasicNodeMaterial;
 }
 
-function applyRules(m: Material): void {
+/** `lit`: a light of the room's own that every lit level surface takes as emissive (room 6's searchlight
+ *  pool: one node graph shared by all of them). */
+function applyRules(m: Material, lit: N): void {
   if (!isLevelMaterial(m) || m.userData.rpOwn) return;
   const map = (m as { map?: Texture | null }).map ?? null;
   const repeat = !!map && map.wrapS === RepeatWrapping;
   const t = readTokens(m.name ?? "");
-  if (!repeat && !t.kind && m.userData.rpLook === undefined) return;
-  const sig = `tower|${m.name}|${map ? map.uuid : ""}`;
+  const std = m.constructor === MeshStandardNodeMaterial ? (m as MeshStandardNodeMaterial) : null;
+  const litHere = !!lit && !!std && t.kind !== "glow";
+  if (!repeat && !t.kind && !litHere && m.userData.rpLook === undefined) return;
+  const sig = `tower|${m.name}|${map ? map.uuid : ""}${litHere ? "|lit" : ""}`;
   if (m.userData.rpLook === sig) return;
   m.userData.rpLook = sig;
   m.contextNode = repeat ? WORLD_UV : null;
   m.colorNode = null;
-  const std = m.constructor === MeshStandardNodeMaterial ? (m as MeshStandardNodeMaterial) : null;
-  if (std) { std.emissiveNode = null; std.roughnessNode = null; }
+  if (std) { std.emissiveNode = litHere ? lit : null; std.roughnessNode = null; }
   if (t.kind === "glow") m.colorNode = materialColor.mul(gain(t)).mul(neonDim("glow"));
   m.needsUpdate = true;
 }
 
-function walk(o: Object3D, hostile: boolean, actor: boolean, lift: number): void {
+function walk(o: Object3D, hostile: boolean, actor: boolean, lift: number, lit: N): void {
   const h = hostile || o.name.startsWith("goon-");
   const a = actor || isActor(o);
   const mm = (o as Mesh).material;
   if (mm) for (const m of Array.isArray(mm) ? mm : [mm]) {
     if (h) { if ((m.constructor as unknown) === MeshStandardNodeMaterial && m.userData.rpOwn && !m.userData.rpHeavy) hostileEmissive(m as MeshStandardNodeMaterial, lift); }
-    else if (!a) applyRules(m);
+    else if (!a) applyRules(m, lit);
   }
-  for (const c of o.children) walk(c, h, a, lift);
+  for (const c of o.children) walk(c, h, a, lift, lit);
 }
 
-function Materials({ lift }: { lift: number }) {
+function Materials({ lift, lit }: { lift: number; lit: N }) {
   const scene = useThree(s => s.scene);
   const n = useRef(0);
   useFrame(() => {
     if (n.current++ % 10) return;
-    walk(scene, false, false, lift);
+    walk(scene, false, false, lift, lit);
   });
   return null;
 }
@@ -166,8 +169,11 @@ function Post({ msaa, level, L }: { msaa: boolean; level: Bloom; L: LookNumbers 
   return null;
 }
 
-/** The tower look with a room's own numbers (chapter 2's looks, look/sky.tsx, pass theirs). */
-export function TowerLook({ level, s, which, numbers, children }: { level: LevelData; s?: Session; which: "elevator" | "penthouse"; numbers?: LookNumbers; children?: React.ReactNode }) {
+/** The tower look with a room's own numbers (chapter 2's looks, look/sky.tsx, pass theirs; `lit`: a
+ *  light every level surface takes as emissive, the roof's searchlight pool; `keyK`: the camera key's
+ *  intensity when a room drives it, the counting floor's blackout). Its hemisphere fill is tagged
+ *  userData.rpFill. */
+export function TowerLook({ level, s, which, numbers, lit = null, keyK, children }: { level: LevelData; s?: Session; which: "elevator" | "penthouse"; numbers?: LookNumbers; lit?: N; keyK?: { value: number }; children?: React.ReactNode }) {
   const scene = useThree(st => st.scene);
   const gfx = useGfx();
   const L = numbers ?? TOWER[which];
@@ -180,10 +186,10 @@ export function TowerLook({ level, s, which, numbers, children }: { level: Level
   }, [scene, L]);
   return (
     <>
-      <hemisphereLight args={[L.hemi.sky, L.hemi.ground, L.hemi.intensity]} />
-      <CameraKey color="#e8eaf2" intensity={L.key} />
+      <hemisphereLight args={[L.hemi.sky, L.hemi.ground, L.hemi.intensity]} userData={{ rpFill: true }} />
+      <CameraKey color="#e8eaf2" intensity={keyK ?? L.key} />
       <MarkerLights level={level} />
-      <Materials lift={L.hostileLift} />
+      <Materials lift={L.hostileLift} lit={lit} />
       {s && <CombatRead s={s} />}
       <Post msaa={gfx.msaa} level={gfx.bloom} L={L} />
       {children}

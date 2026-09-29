@@ -4,8 +4,11 @@
 // "garden" the blue hour under glass, "airship" moonlight over the cloud sea, "counting" cold screens
 // (the blackout drops the room's fill while the screens and the rims stay), "vault" the sunrise on gold.
 import { useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
-import { BufferAttribute, BufferGeometry, Color, LineBasicMaterial, LineSegments, type HemisphereLight } from "three";
+import { useFrame, useThree } from "@react-three/fiber";
+import { BufferAttribute, BufferGeometry, Color, LineSegments, type HemisphereLight, type Light } from "three";
+import { LineBasicNodeMaterial } from "three/webgpu";
+import { float, materialColor, materialOpacity, positionWorld } from "three/tsl";
+import { SEARCH, inBeam, poolLight } from "./searchlight.ts";
 import type { LevelData } from "../../world/level.ts";
 import type { Session } from "../session.ts";
 import { TowerLook, type LookNumbers } from "./tower.tsx";
@@ -25,7 +28,8 @@ export const SKY: Record<"roof" | "garden" | "airship" | "counting" | "vault", L
   vault: base({ exposure: 1.32, fog: { color: "#1c140c", density: 0.003 }, background: "#2a1810", hemi: { sky: "#e0b890", ground: "#2a1c14", intensity: 1.15 } }),
 };
 
-/** The storm's rain: streaks round the camera, falling at world speed (bullet time slows them). */
+/** The storm's rain: streaks round the camera, falling at world speed (bullet time slows them); the
+ *  streaks that fall through the searchlight's beam light up (look/searchlight.ts). */
 function Rain({ s }: { s?: Session }) {
   const gfx = useGfx();
   const n = gfx.rain === "off" ? 0 : gfx.rain === "light" ? 900 : 600;
@@ -33,8 +37,12 @@ function Rain({ s }: { s?: Session }) {
     const pos = new Float32Array(n * 6);
     const g = new BufferGeometry();
     g.setAttribute("position", new BufferAttribute(pos, 3));
-    const m = new LineBasicMaterial({ color: new Color("#9fb4d8"), transparent: true, opacity: 0.32, depthWrite: false, toneMapped: false });
+    const m = new LineBasicNodeMaterial({ color: new Color("#9fb4d8"), transparent: true, opacity: 0.32, depthWrite: false, toneMapped: false });
     m.userData.rpOwn = true;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const lit: any = inBeam(positionWorld);
+    m.colorNode = materialColor.mul(float(1).add(lit.mul(SEARCH.rainLift)));
+    m.opacityNode = materialOpacity.mul(float(1).add(lit.mul(1.2)));
     const l = new LineSegments(g, m);
     l.frustumCulled = false;
     l.name = "rp-rain";
@@ -72,20 +80,39 @@ function Lightning({ s }: { s?: Session }) {
   return <hemisphereLight ref={ref} args={["#cfd8ff", "#202030", 0]} />;
 }
 
-/** The counting floor's blackout: the room's fill goes down while the stage says dark. */
+/** The counting floor's blackout: while the stage says dark its lamps go out (the "light" markers with
+ *  `dim`, userData.rpDim), the look's fill drops (userData.rpFill) and the camera key dims; the screens
+ *  (glow materials) and every girl's rim and outline stay. The lights stay in the scene and only their
+ *  intensity moves (no shader rebuilds); it eases over about a third of a second, both ways. */
+export const BLACKOUT = { lamps: 0.1, fill: 0.22, key: 0.55, rate: 7 } as const;
+const blackoutKey = { value: SKY.counting.key as number };
 function Blackout({ s }: { s?: Session }) {
-  const ref = useRef<HemisphereLight>(null);
-  useFrame(() => {
+  const scene = useThree(st => st.scene);
+  const k = useRef(0);
+  const lights = useRef<Light[]>([]);
+  const n = useRef(0);
+  useFrame((_, dt) => {
     const dark = (s?.game.stage as { dark?: number } | null)?.dark === 1;
-    if (ref.current) ref.current.intensity += ((dark ? -0.85 : 0) - ref.current.intensity) * 0.1;
+    k.current += ((dark ? 1 : 0) - k.current) * Math.min(1, Math.min(dt, 0.1) * BLACKOUT.rate);
+    if (n.current++ % 30 === 0) { // the lights mount with the room; look again now and then
+      const out: Light[] = [];
+      scene.traverse(o => { if ((o as Light).isLight && (o.userData.rpDim || o.userData.rpFill)) out.push(o as Light); });
+      lights.current = out;
+    }
+    for (const l of lights.current) {
+      if (typeof l.userData.rpBase !== "number") l.userData.rpBase = l.intensity;
+      const to = l.userData.rpDim ? BLACKOUT.lamps : BLACKOUT.fill;
+      l.intensity = (l.userData.rpBase as number) * (1 + (to - 1) * k.current);
+    }
+    blackoutKey.value = SKY.counting.key * (1 + (BLACKOUT.key - 1) * k.current);
   });
-  return <hemisphereLight ref={ref} args={["#000000", "#000000", 0]} />;
+  return null;
 }
 
 function make(which: keyof typeof SKY) {
   return function SkyLook(p: { level: LevelData; s?: Session; lowQuality?: boolean }) {
     return (
-      <TowerLook level={p.level} s={p.s} which="penthouse" numbers={SKY[which]}>
+      <TowerLook level={p.level} s={p.s} which="penthouse" numbers={SKY[which]} lit={which === "roof" ? poolLight() : null} keyK={which === "counting" ? blackoutKey : undefined}>
         {which === "roof" && <Rain s={p.s} />}
         {which === "roof" && <Lightning s={p.s} />}
         {which === "counting" && <Blackout s={p.s} />}
