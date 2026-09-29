@@ -172,12 +172,12 @@ export class Vault implements Stage {
         w.lamp -= dt;
         if (w.lamp <= 0) {
           if (g.world.setEnabled(w.door, false)) g.emit({ type: "stage", what: "door", x: w.x, z: w.z });
-          if (alive) this.spawn(g, w, COUNTESS.doors.first);
-          w.next = COUNTESS.doors.every;
+          if (alive) this.spawn(g, w, perDiff(COUNTESS.doorFirst, g.difficulty));
+          w.next = COUNTESS.doors.every * perDiff(COUNTESS.doorPace, g.difficulty);
         }
       } else if (w.lit && w.queue.length && alive) {
         w.next -= dt;
-        if (w.next <= 0 && this.liveOf(g, w.group) < COUNTESS.doors.maxLive) { this.spawn(g, w, COUNTESS.doors.pair); w.next = COUNTESS.doors.every; }
+        if (w.next <= 0 && this.liveOf(g, w.group) < perDiff(COUNTESS.doorLive, g.difficulty)) { this.spawn(g, w, COUNTESS.doors.pair); w.next = COUNTESS.doors.every * perDiff(COUNTESS.doorPace, g.difficulty); }
       }
     }
     // her aim broken: enough damage during the tell and the round never comes (a stagger)
@@ -237,14 +237,14 @@ export class Vault implements Stage {
       const swept = Math.abs(b.a - prev);
       if (rel <= swept && pp.r >= this.column && pp.r <= this.radius && this.touches(g)) {
         b.hit = true;
-        g.hurtPlayer(BEAM.damage * g.diff.damage, -1);
+        g.hurtPlayer(perDiff(BEAM.damage, g.difficulty) * g.diff.damage, -1);
         g.emit({ type: "stage", what: "beamHit", x: p.x, z: p.z });
       }
     }
     if (u >= 1 || !alive) {
       b.state = 0;
       const [lo, hi] = this.phase >= 3 ? BEAM.every3 : BEAM.every;
-      this.beamNext = lo + (hi - lo) * g.rng.next();
+      this.beamNext = (lo + (hi - lo) * g.rng.next()) * perDiff(BEAM.pace, g.difficulty);
       g.emit({ type: "stage", what: "beamEnd" });
     }
   }

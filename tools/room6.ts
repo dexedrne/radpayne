@@ -180,23 +180,23 @@ k.wp("bridge", [34, 0, 0]);
 const E = (id: string, x: number, y: number, z: number, yaw: number, d: Record<string, unknown> = {}) => marker(id, "enemy", [x, y, z], { kind: "goon", ...d }, yaw);
 k.m(
   // on the roof when he comes out (the light's patrol has not seen him yet)
-  E("g-1", -9, 0, -2, FACE_W), E("g-2", -7.5, 0, 8, FACE_W), E("g-3", 1, 0, -3.8, FACE_W), E("g-4", 6.5, 0, 6.6, FACE_W),
+  E("g-1", -9, 0, -2, FACE_W), E("g-2", -7.5, 0, 8, FACE_W), E("g-3", 1, 0, -3.8, FACE_W), E("g-4", 6.5, 0, 6.6, FACE_W, { minDiff: "hard" }),
   E("g-5", 12, 0, 0, FACE_W, { kind: "rusher" }), E("g-6", 0, 1, -12, FACE_S),
   E("sn-1", -11, 4, 12.4, FACE_E, { perch: true, weapon: "sniper" }), E("sn-2", -14.2, 4, 9.6, FACE_N, { perch: true, weapon: "sniper", minDiff: "hard" }),
-  E("sn-3", 26.7, 3, -2, FACE_W, { perch: true, weapon: "sniper" }),
+  E("sn-3", 26.7, 3, -2, FACE_W, { perch: true, weapon: "sniper", minDiff: "hard" }),
   // wave A (5 down): out of the machine room
   E("a-1", 16.4, 0, -15.2, FACE_S, { group: "waveA" }), E("a-2", 21.6, 0, -15.2, FACE_S, { group: "waveA" }), E("a-3", 19, 0, -17.2, FACE_S, { group: "waveA", kind: "rusher" }),
-  E("a-4", 17, 0, -17.4, FACE_S, { group: "waveA" }), E("a-5", 23.4, 0, -17.4, FACE_S, { group: "waveA", kind: "rusher" }),
+  E("a-4", 17, 0, -17.4, FACE_S, { group: "waveA", minDiff: "hard" }), E("a-5", 23.4, 0, -17.4, FACE_S, { group: "waveA", kind: "rusher", minDiff: "hard" }),
   // drop 1 (9 down): on ropes onto the pad
-  E("d1-1", -2.5, 1, -15, FACE_S, { group: "drop1", kind: "rusher" }), E("d1-2", 2.5, 1, -15, FACE_S, { group: "drop1" }), E("d1-3", -2.5, 1, -12, FACE_S, { group: "drop1" }), E("d1-4", 2.5, 1, -12, FACE_S, { group: "drop1", kind: "rusher" }),
+  E("d1-1", -2.5, 1, -15, FACE_S, { group: "drop1", kind: "rusher" }), E("d1-2", 2.5, 1, -15, FACE_S, { group: "drop1" }), E("d1-3", -2.5, 1, -12, FACE_S, { group: "drop1" }), E("d1-4", 2.5, 1, -12, FACE_S, { group: "drop1", kind: "rusher", minDiff: "hard" }),
   // wave B (14 down): up the south-east stair
   E("b-1", 23, 0, 15, FACE_W, { group: "waveB" }), E("b-2", 25, 0, 16, FACE_W, { group: "waveB", kind: "rusher" }), E("b-3", 23, 0, 18, FACE_W, { group: "waveB" }),
-  E("b-4", 25.2, 0, 14.4, FACE_W, { group: "waveB", kind: "rusher" }), E("b-5", 22.4, 0, 20, FACE_W, { group: "waveB", kind: "heavy", model: "rival652" }),
+  E("b-4", 25.2, 0, 14.4, FACE_W, { group: "waveB", kind: "rusher", minDiff: "hard" }), E("b-5", 22.4, 0, 20, FACE_W, { group: "waveB", kind: "heavy", model: "rival652" }),
   // drop 2 (18 down)
   E("d2-1", -3, 1, -16, FACE_S, { group: "drop2" }), E("d2-2", 3, 1, -16, FACE_S, { group: "drop2", kind: "rusher", minDiff: "hard" }), E("d2-3", 0, 1, -11, FACE_S, { group: "drop2", kind: "rusher" }), E("d2-4", 0, 1, -18, FACE_S, { group: "drop2" }),
   // wave C (22 down): the machine room again, and up the west stairwell behind him
-  E("c-1", 19, 0, -18.6, FACE_S, { group: "waveC", kind: "heavy", model: "rival723", weapon: "handcannon" }), E("c-2", 16.4, 0, -15, FACE_S, { group: "waveC" }), E("c-3", 22, 0, -15, FACE_S, { group: "waveC" }),
-  E("c-4", -26.4, 0, -1.6, FACE_E, { group: "waveC2", kind: "rusher" }), E("c-5", -26.4, 0, 1.6, FACE_E, { group: "waveC2", kind: "rusher" }),
+  E("c-1", 19, 0, -18.6, FACE_S, { group: "waveC", kind: "heavy", model: "rival723", weapon: "handcannon" }), E("c-2", 16.4, 0, -15, FACE_S, { group: "waveC" }), E("c-3", 22, 0, -15, FACE_S, { group: "waveC", minDiff: "hard" }),
+  E("c-4", -26.4, 0, -1.6, FACE_E, { group: "waveC2", kind: "rusher" }), E("c-5", -26.4, 0, 1.6, FACE_E, { group: "waveC2", kind: "rusher", minDiff: "hard" }),
 );
 
 // ---------------------------------------------------------------- triggers, checkpoints, pickups, eggs
@@ -206,13 +206,13 @@ k.m(
   marker("cp-start", "checkpoint", [-22.4, 0, 0], {}, FACE_E),
   marker("cp-mid", "checkpoint", [-12, 0, 1], {}, FACE_E),
   T("t-alert", [-19, 1, 0], { action: "alert" }, [4, 3, 30]),
-  T("t-waveA", [0, 1, 0], { action: "spawn", group: "waveA", afterKills: 5 }),
-  T("t-drop1", [0, 1, 0], { action: "spawn", group: "drop1", afterKills: 9 }),
-  T("t-cp", [0, 1, 0], { action: "checkpoint", at: "cp-mid", afterKills: 14 }),
-  T("t-waveB", [0, 1, 0], { action: "spawn", group: "waveB", afterKills: 14 }),
-  T("t-drop2", [0, 1, 0], { action: "spawn", group: "drop2", afterKills: 18 }),
-  T("t-waveC", [0, 1, 0], { action: "spawn", group: "waveC", afterKills: 22 }),
-  T("t-waveC2", [0, 1, 0], { action: "spawn", group: "waveC2", afterKills: 24 }),
+  T("t-waveA", [0, 1, 0], { action: "spawn", group: "waveA", afterKills: { normal: 4, hard: 5 } }),
+  T("t-drop1", [0, 1, 0], { action: "spawn", group: "drop1", afterKills: { normal: 7, hard: 9 } }),
+  T("t-cp", [0, 1, 0], { action: "checkpoint", at: "cp-mid", afterKills: { normal: 10, hard: 14 } }),
+  T("t-waveB", [0, 1, 0], { action: "spawn", group: "waveB", afterKills: { normal: 10, hard: 14 } }),
+  T("t-drop2", [0, 1, 0], { action: "spawn", group: "drop2", afterKills: { normal: 13, hard: 18 } }),
+  T("t-waveC", [0, 1, 0], { action: "spawn", group: "waveC", afterKills: { normal: 16, hard: 22 } }),
+  T("t-waveC2", [0, 1, 0], { action: "spawn", group: "waveC2", afterKills: { normal: 18, hard: 24 } }),
   T("t-exit", [33, 1, 0], { action: "exit" }, [3, 3, 3.2]),
   marker("exit", "exit", [31, 0, 0]),
   // pickups: copium, the rifle on hvac-2's lee, the shotgun by the south-east stair, the sniper up the tower

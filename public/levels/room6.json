@@ -11666,7 +11666,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "minDiff": "hard"
          }
         }
        }
@@ -11777,7 +11778,8 @@
           "marker": "enemy",
           "kind": "goon",
           "perch": true,
-          "weapon": "sniper"
+          "weapon": "sniper",
+          "minDiff": "hard"
          }
         }
        }
@@ -11861,7 +11863,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveA"
+          "group": "waveA",
+          "minDiff": "hard"
          }
         }
        }
@@ -11882,7 +11885,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "group": "waveA"
+          "group": "waveA",
+          "minDiff": "hard"
          }
         }
        }
@@ -11966,7 +11970,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "group": "drop1"
+          "group": "drop1",
+          "minDiff": "hard"
          }
         }
        }
@@ -12054,7 +12059,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "group": "waveB"
+          "group": "waveB",
+          "minDiff": "hard"
          }
         }
        }
@@ -12227,7 +12233,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveC"
+          "group": "waveC",
+          "minDiff": "hard"
          }
         }
        }
@@ -12271,7 +12278,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "group": "waveC2"
+          "group": "waveC2",
+          "minDiff": "hard"
          }
         }
        }
@@ -12375,7 +12383,10 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "waveA",
-          "afterKills": 5
+          "afterKills": {
+           "normal": 4,
+           "hard": 5
+          }
          }
         }
        }
@@ -12398,7 +12409,10 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "drop1",
-          "afterKills": 9
+          "afterKills": {
+           "normal": 7,
+           "hard": 9
+          }
          }
         }
        }
@@ -12421,7 +12435,10 @@
           "marker": "trigger",
           "action": "checkpoint",
           "at": "cp-mid",
-          "afterKills": 14
+          "afterKills": {
+           "normal": 10,
+           "hard": 14
+          }
          }
         }
        }
@@ -12444,7 +12461,10 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "waveB",
-          "afterKills": 14
+          "afterKills": {
+           "normal": 10,
+           "hard": 14
+          }
          }
         }
        }
@@ -12467,7 +12487,10 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "drop2",
-          "afterKills": 18
+          "afterKills": {
+           "normal": 13,
+           "hard": 18
+          }
          }
         }
        }
@@ -12490,7 +12513,10 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "waveC",
-          "afterKills": 22
+          "afterKills": {
+           "normal": 16,
+           "hard": 22
+          }
          }
         }
        }
@@ -12513,7 +12539,10 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "waveC2",
-          "afterKills": 24
+          "afterKills": {
+           "normal": 18,
+           "hard": 24
+          }
          }
         }
        }

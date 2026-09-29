@@ -11816,7 +11816,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "minDiff": "hard"
          }
         }
        }
@@ -11880,7 +11881,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "minDiff": "hard"
          }
         }
        }
@@ -11965,7 +11967,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "minDiff": "hard"
          }
         }
        }
@@ -12007,7 +12010,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "rusher"
+          "kind": "rusher",
+          "minDiff": "hard"
          }
         }
        }
@@ -12070,7 +12074,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "group": "waveA"
+          "group": "waveA",
+          "minDiff": "hard"
          }
         }
        }
@@ -12154,7 +12159,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "minDiff": "hard"
          }
         }
        }
@@ -12312,7 +12318,8 @@
           "marker": "enemy",
           "kind": "rusher",
           "group": "hold",
-          "deaf": true
+          "deaf": true,
+          "minDiff": "hard"
          }
         }
        }
@@ -12424,7 +12431,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "group": "waveB"
+          "group": "waveB",
+          "minDiff": "hard"
          }
         }
        }
@@ -12446,7 +12454,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveB"
+          "group": "waveB",
+          "minDiff": "hard"
          }
         }
        }
@@ -12625,7 +12634,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "group": "waveD"
+          "group": "waveD",
+          "minDiff": "hard"
          }
         }
        }
@@ -12731,7 +12741,10 @@
           "marker": "trigger",
           "action": "alert",
           "group": "hold",
-          "afterKills": 20
+          "afterKills": {
+           "normal": 15,
+           "hard": 20
+          }
          }
         }
        }
@@ -12776,7 +12789,10 @@
           "marker": "trigger",
           "action": "setpiece",
           "cue": "blow",
-          "afterKills": 22
+          "afterKills": {
+           "normal": 17,
+           "hard": 22
+          }
          }
         }
        }
@@ -12822,7 +12838,10 @@
           "marker": "trigger",
           "action": "checkpoint",
           "at": "cp-mid",
-          "afterKills": 16
+          "afterKills": {
+           "normal": 12,
+           "hard": 16
+          }
          }
         }
        }
@@ -12845,7 +12864,10 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "waveB",
-          "afterKills": 16
+          "afterKills": {
+           "normal": 12,
+           "hard": 16
+          }
          }
         }
        }
@@ -12868,7 +12890,10 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "waveC",
-          "afterKills": 26
+          "afterKills": {
+           "normal": 19,
+           "hard": 26
+          }
          }
         }
        }
@@ -12891,7 +12916,10 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "waveC2",
-          "afterKills": 28
+          "afterKills": {
+           "normal": 21,
+           "hard": 28
+          }
          }
         }
        }
@@ -12914,7 +12942,10 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "waveD",
-          "afterKills": 31
+          "afterKills": {
+           "normal": 23,
+           "hard": 31
+          }
          }
         }
        }

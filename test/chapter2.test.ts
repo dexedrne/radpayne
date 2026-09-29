@@ -11,7 +11,8 @@ import { readLevel, type LevelData } from "../src/world/level.ts";
 import { Game } from "../src/sim/game.ts";
 import { Bot } from "../src/sim/bot.ts";
 import { DT } from "../src/sim/tuning.ts";
-import { BEAM, COUNTESS, ROOF, perDiff } from "../src/sim/tuning2.ts";
+import { BEAM, CH2_DIFF, COUNTESS, ROOF, SNIPER2, killsFor, perDiff } from "../src/sim/tuning2.ts";
+import { DIFFICULTY, ENEMY_ARMS, type Difficulty } from "../src/sim/tuning.ts";
 import { HB_HEAD, HB_TORSO } from "../src/combat/hitboxes.ts";
 import { emptyInput, type GameEvent, type InputFrame } from "../src/sim/types.ts";
 import type { Roof } from "../src/sim/ch2/roof.ts";
@@ -70,6 +71,62 @@ test("chapter 2's rooms: each a full room (25-40 of the gang in waves from sever
   assert.deepEqual([...pins].sort(), ["g250", "g2564", "g3171", "g4764", "g652", "g723"]);
 });
 
+test("chapter 2 on every difficulty: its roster (Normal leaves some of the gang out) and every wave still comes in (each afterKills count is reachable)", () => {
+  const DIFFS: Difficulty[] = ["easy", "normal", "hard", "hardcore"];
+  const counts: Record<string, number[]> = {};
+  for (const id of ROOMS) {
+    const lv = room(id);
+    counts[id] = [];
+    for (const d of DIFFS) {
+      const g = new Game(lv, { seed: 1, difficulty: d });
+      counts[id].push(g.enemies.length);
+      // the kills there are to be had: whoever is up from the start, then each group a trigger brings in
+      // once its count is reached (a group no trigger names comes in by the room's own mechanism)
+      const named = new Set(g.triggers.filter(t => t.data.action === "spawn").map(t => String(t.data.group)));
+      const inGroups = new Set<string>();
+      let avail = g.enemies.filter(e => e.state !== "inactive" || !named.has(e.group)).length;
+      for (let changed = true; changed;) {
+        changed = false;
+        for (const t of g.triggers) {
+          if (t.data.action !== "spawn" || inGroups.has(String(t.data.group))) continue;
+          const k = killsFor(t.data.afterKills, d);
+          if (k !== undefined && k > avail) continue;
+          inGroups.add(String(t.data.group));
+          avail += g.enemies.filter(e => e.group === t.data.group && e.state === "inactive").length;
+          changed = true;
+        }
+      }
+      assert.equal(avail, g.enemies.length, `${id} ${d}: some of the gang never comes in`);
+      for (const t of g.triggers) {
+        const k = killsFor(t.data.afterKills, d);
+        if (k !== undefined) assert.ok(k <= g.enemies.length, `${id} ${d}: ${t.id} waits for ${k} of ${g.enemies.length}`);
+      }
+    }
+    // Normal is lighter than Hard; Chill has what Normal has
+    const [easy, normal, hard, hardcore] = counts[id];
+    assert.ok(normal < hard && easy === normal && hardcore === hard, `${id}: ${counts[id].join(" / ")}`);
+    if (id !== "room10") assert.ok(normal >= 20 && normal <= 28, `${id}: ${normal} on Normal`);
+  }
+  // chapter 2's own Normal: softer than chapter 1's, the snipers' tell longer; Hard and Hardcore untouched
+  const n2 = new Game(room("room6"), { seed: 1, difficulty: "normal" });
+  assert.equal(n2.diff.damage, CH2_DIFF.normal!.damage);
+  assert.ok(n2.diff.damage < DIFFICULTY.normal.damage && n2.diff.accuracy < DIFFICULTY.normal.accuracy);
+  assert.equal(n2.sniperArms.tell, perDiff(SNIPER2.tell, "normal"));
+  assert.ok(n2.sniperArms.tell > ENEMY_ARMS.sniper.tell && n2.sniperArms.damage < ENEMY_ARMS.sniper.damage);
+  for (const d of ["hard", "hardcore"] as const) {
+    const g = new Game(room("room6"), { seed: 1, difficulty: d });
+    assert.deepEqual(g.diff, DIFFICULTY[d], `${d}: chapter 2 takes the table as it is`);
+    assert.equal(g.sniperArms.damage, ENEMY_ARMS.sniper.damage);
+  }
+  // Hardcore's chapter 2 numbers are at least Hard's (a table without a Hardcore entry takes Hard's)
+  assert.equal(perDiff(COUNTESS.hp, "hardcore"), perDiff(COUNTESS.hp, "hard"));
+  assert.equal(perDiff(ROOF.accuracy, "hardcore"), ROOF.accuracy.hard);
+  // chapter 1 keeps its own Normal
+  const g1 = new Game(room("room1"), { seed: 1, difficulty: "normal" });
+  assert.deepEqual(g1.diff, DIFFICULTY.normal);
+  assert.equal(g1.sniperArms, ENEMY_ARMS.sniper);
+});
+
 test("the bot clears every chapter 2 room on normal (seeds 1-3; the vault's boss on 1, 4, 5), each set piece on the way", () => {
   const want: Record<string, string[]> = { room6: ["lit", "drop", "landed"], room7: ["crack", "collapse"], room8: ["klaxon", "blow", "gone"], room9: ["shutterWarn", "shutters", "dark", "lights"], room10: ["intro", "door", "phase2", "beamGo", "phase3", "lastStand", "down"] };
   for (const id of ROOMS) for (const seed of id === "room10" ? [1, 4, 5] : [1, 2, 3]) {
@@ -123,7 +180,7 @@ test("roof: a drop group comes down the ropes onto the pad (hittable, not firing
   g.damageEnemy(girls[0], 999, HB_TORSO, 0, 1, null);
   assert.ok(Math.abs(girls[0].y - 1) < 1e-6, "shot off her rope: on the pad");
   const ev2 = idle(g, ROOF.ropeY / ROOF.ropeSpeed + 1.2);
-  assert.ok(stage(ev2).filter(w => w === "landed").length >= 3);
+  assert.ok(stage(ev2).filter(w => w === "landed").length >= girls.length - 1);
   assert.ok(girls.slice(1).every(e => Math.abs(e.y - 1) < 1e-6), "on the pad");
   assert.deepEqual(girls.slice(1).map(e => e.shots), shots.slice(1), "no shot from the rope");
   assert.equal(r.roping.size, 0);
@@ -164,7 +221,7 @@ test("airship: the klaxon, then the door is gone and the hold pulls: he can hold
   assert.ok(stage(ev2).includes("blow") && g.world.off.has("cargo-door") && a.wind);
   // standing still in the hold he drifts to the net but never through it
   g.player.x = 25; g.player.z = 4;
-  const girl = g.enemies.find(e => e.id === "h-5")!;
+  const girl = g.enemies.find(e => e.id === "h-4")!; // (h-5 is there on Hard and up only)
   girl.x = 26; girl.z = 5.8; girl.state = "cover";
   const kills = g.stats.kills;
   const ev3 = idle(g, 3);

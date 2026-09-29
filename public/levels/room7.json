@@ -14900,7 +14900,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "minDiff": "hard"
          }
         }
        }
@@ -14984,7 +14985,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "minDiff": "hard"
          }
         }
        }
@@ -15026,7 +15028,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "minDiff": "hard"
          }
         }
        }
@@ -15114,7 +15117,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveA"
+          "group": "waveA",
+          "minDiff": "hard"
          }
         }
        }
@@ -15136,7 +15140,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "group": "waveA"
+          "group": "waveA",
+          "minDiff": "hard"
          }
         }
        }
@@ -15222,7 +15227,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveB"
+          "group": "waveB",
+          "minDiff": "hard"
          }
         }
        }
@@ -15266,7 +15272,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "group": "waveC"
+          "group": "waveC",
+          "minDiff": "hard"
          }
         }
        }
@@ -15310,7 +15317,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "group": "waveC"
+          "group": "waveC",
+          "minDiff": "hard"
          }
         }
        }
@@ -15489,7 +15497,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "group": "waveE"
+          "group": "waveE",
+          "minDiff": "hard"
          }
         }
        }
@@ -15660,7 +15669,10 @@
           "marker": "trigger",
           "action": "setpiece",
           "cue": "crack",
-          "afterKills": 16
+          "afterKills": {
+           "normal": 12,
+           "hard": 16
+          }
          }
         }
        }
@@ -15683,7 +15695,10 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "waveA",
-          "afterKills": 5
+          "afterKills": {
+           "normal": 4,
+           "hard": 5
+          }
          }
         }
        }
@@ -15706,7 +15721,10 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "waveB",
-          "afterKills": 10
+          "afterKills": {
+           "normal": 7,
+           "hard": 10
+          }
          }
         }
        }
@@ -15729,7 +15747,10 @@
           "marker": "trigger",
           "action": "checkpoint",
           "at": "cp-mid",
-          "afterKills": 15
+          "afterKills": {
+           "normal": 10,
+           "hard": 15
+          }
          }
         }
        }
@@ -15752,7 +15773,10 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "waveC",
-          "afterKills": 15
+          "afterKills": {
+           "normal": 10,
+           "hard": 15
+          }
          }
         }
        }
@@ -15775,7 +15799,10 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "waveD",
-          "afterKills": 20
+          "afterKills": {
+           "normal": 13,
+           "hard": 20
+          }
          }
         }
        }
@@ -15798,7 +15825,10 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "waveE",
-          "afterKills": 25
+          "afterKills": {
+           "normal": 16,
+           "hard": 25
+          }
          }
         }
        }
@@ -15821,7 +15851,10 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "waveE2",
-          "afterKills": 27
+          "afterKills": {
+           "normal": 18,
+           "hard": 27
+          }
          }
         }
        }

@@ -187,23 +187,23 @@ k.wp("cw-w", [20, 3, -6.1], ["cw-top"]);
 const E = (id: string, x: number, y: number, z: number, yaw: number, d: Record<string, unknown> = {}) => marker(id, "enemy", [x, y, z], { kind: "goon", ...d }, yaw);
 k.m(
   // the observation lounge
-  E("o-1", -24, 0, -3, FACE_W), E("o-2", -23.5, 0, 3, FACE_W), E("o-3", -19.5, 0, -1.8, FACE_W), E("o-4", -19.5, 0, 2.2, FACE_W, { minDiff: "hard" }), E("o-5", -16.5, 0, -2.6, FACE_W, { kind: "rusher" }), E("o-6", -16, 0, 2.6, FACE_W),
+  E("o-1", -24, 0, -3, FACE_W), E("o-2", -23.5, 0, 3, FACE_W), E("o-3", -19.5, 0, -1.8, FACE_W, { minDiff: "hard" }), E("o-4", -19.5, 0, 2.2, FACE_W, { minDiff: "hard" }), E("o-5", -16.5, 0, -2.6, FACE_W, { kind: "rusher" }), E("o-6", -16, 0, 2.6, FACE_W, { minDiff: "hard" }),
   // the promenade
-  E("p-1", -9, 0, -1, FACE_W), E("p-2", -7.4, 0, 1.2, FACE_W, { minDiff: "hard" }), E("p-3", -3.8, 0, -3.8, FACE_W), E("p-4", -0.2, 0, 3.8, FACE_W), E("p-5", 2.6, 0, -1, FACE_W), E("p-6", 3.6, 0, 1.2, FACE_W, { kind: "rusher" }),
+  E("p-1", -9, 0, -1, FACE_W), E("p-2", -7.4, 0, 1.2, FACE_W, { minDiff: "hard" }), E("p-3", -3.8, 0, -3.8, FACE_W), E("p-4", -0.2, 0, 3.8, FACE_W, { minDiff: "hard" }), E("p-5", 2.6, 0, -1, FACE_W), E("p-6", 3.6, 0, 1.2, FACE_W, { kind: "rusher", minDiff: "hard" }),
   // wave A (5 down): the galley
-  E("a-1", -5, 0, -8.5, FACE_S, { group: "waveA" }), E("a-2", -3.8, 0, -7.6, FACE_S, { group: "waveA", kind: "rusher" }), E("a-3", -1.6, 0, -7.6, FACE_S, { group: "waveA", kind: "rusher" }), E("a-4", -0.4, 0, -8.5, FACE_S, { group: "waveA" }),
+  E("a-1", -5, 0, -8.5, FACE_S, { group: "waveA" }), E("a-2", -3.8, 0, -7.6, FACE_S, { group: "waveA", kind: "rusher" }), E("a-3", -1.6, 0, -7.6, FACE_S, { group: "waveA", kind: "rusher", minDiff: "hard" }), E("a-4", -0.4, 0, -8.5, FACE_S, { group: "waveA" }),
   // the lounge bar (asleep till they hear it)
-  E("l-1", 11, 0, -3.4, FACE_W), E("l-2", 13.6, 0, -2.4, FACE_W), E("l-3", 9.4, 0, 3.2, FACE_W), E("l-4", 14.6, 0, 2.8, FACE_W, { kind: "heavy", model: "rival652" }), E("l-5", 7.8, 0, -0.4, FACE_W, { kind: "rusher" }),
+  E("l-1", 11, 0, -3.4, FACE_W), E("l-2", 13.6, 0, -2.4, FACE_W), E("l-3", 9.4, 0, 3.2, FACE_W, { minDiff: "hard" }), E("l-4", 14.6, 0, 2.8, FACE_W, { kind: "heavy", model: "rival652" }), E("l-5", 7.8, 0, -0.4, FACE_W, { kind: "rusher" }),
   // the hold (behind the bulkhead: they wake when he walks in)
   E("h-1", 20.6, 0, -1.4, FACE_W, { group: "hold", deaf: true }), E("h-2", 24.5, 0, 2.4, FACE_W, { group: "hold", deaf: true }), E("h-3", 25.4, 0, -2.8, FACE_W, { group: "hold", deaf: true, kind: "rusher" }),
-  E("h-4", 29.4, 0, 0.4, FACE_W, { group: "hold", deaf: true }), E("h-5", 29.8, 0, 4.8, FACE_W, { group: "hold", deaf: true, kind: "rusher" }), E("h-6", 24, 3, -6.1, FACE_S, { group: "hold", deaf: true, perch: true, weapon: "sniper" }),
+  E("h-4", 29.4, 0, 0.4, FACE_W, { group: "hold", deaf: true }), E("h-5", 29.8, 0, 4.8, FACE_W, { group: "hold", deaf: true, kind: "rusher", minDiff: "hard" }), E("h-6", 24, 3, -6.1, FACE_S, { group: "hold", deaf: true, perch: true, weapon: "sniper" }),
   // wave B (16 down): up the aft stair
-  E("b-1", 35.2, 0, -1.8, FACE_W, { group: "waveB" }), E("b-2", 35.2, 0, 1.8, FACE_W, { group: "waveB", kind: "rusher" }), E("b-3", 36.6, 0, 0, FACE_W, { group: "waveB" }), E("b-4", 37.2, 0, -2, FACE_W, { group: "waveB", kind: "rusher" }), E("b-5", 37.2, 0, 2, FACE_W, { group: "waveB" }),
+  E("b-1", 35.2, 0, -1.8, FACE_W, { group: "waveB" }), E("b-2", 35.2, 0, 1.8, FACE_W, { group: "waveB", kind: "rusher" }), E("b-3", 36.6, 0, 0, FACE_W, { group: "waveB" }), E("b-4", 37.2, 0, -2, FACE_W, { group: "waveB", kind: "rusher", minDiff: "hard" }), E("b-5", 37.2, 0, 2, FACE_W, { group: "waveB", minDiff: "hard" }),
   // wave C (26 down): the aft stair again (the hand cannon) and the catwalk
   E("c-1", 36.4, 0, 0, FACE_W, { group: "waveC", kind: "heavy", model: "rival723", weapon: "handcannon" }), E("c-2", 35.2, 0, -2, FACE_W, { group: "waveC" }), E("c-3", 35.2, 0, 2, FACE_W, { group: "waveC", kind: "rusher" }),
   E("c-4", 30, 3, -6.1, FACE_S, { group: "waveC2", perch: true, weapon: "sniper", minDiff: "hard" }), E("c-5", 21, 3, -6.1, FACE_S, { group: "waveC2" }),
   // wave D (31 down): back from the bow, behind him
-  E("d-1", -30, 0, -2, FACE_E, { group: "waveD", kind: "rusher" }), E("d-2", -30, 0, 2, FACE_E, { group: "waveD", kind: "rusher" }), E("d-3", -28, 0, 0, FACE_E, { group: "waveD", kind: "rusher" }),
+  E("d-1", -30, 0, -2, FACE_E, { group: "waveD", kind: "rusher" }), E("d-2", -30, 0, 2, FACE_E, { group: "waveD", kind: "rusher" }), E("d-3", -28, 0, 0, FACE_E, { group: "waveD", kind: "rusher", minDiff: "hard" }),
 );
 
 // ---------------------------------------------------------------- triggers, pickups, eggs, lights
@@ -213,15 +213,15 @@ k.m(
   marker("cp-mid", "checkpoint", [8, 0, 0], {}, FACE_E),
   T("t-alert", [-27, 1, 0], { action: "alert" }, [3, 3, 12]),
   T("t-hold", [17.2, 1, 0], { action: "alert", group: "hold" }, [2, 3, 14]),
-  T("t-hold-kills", [0, 1, 0], { action: "alert", group: "hold", afterKills: 20 }),
+  T("t-hold-kills", [0, 1, 0], { action: "alert", group: "hold", afterKills: { normal: 15, hard: 20 } }),
   T("t-blow-step", [19.5, 1, 0], { action: "setpiece", cue: "blow" }, [1.5, 3, 14]),
-  T("t-blow-kills", [0, 1, 0], { action: "setpiece", cue: "blow", afterKills: 22 }),
+  T("t-blow-kills", [0, 1, 0], { action: "setpiece", cue: "blow", afterKills: { normal: 17, hard: 22 } }),
   T("t-waveA", [0, 1, 0], { action: "spawn", group: "waveA", afterKills: 5 }),
-  T("t-cp", [0, 1, 0], { action: "checkpoint", at: "cp-mid", afterKills: 16 }),
-  T("t-waveB", [0, 1, 0], { action: "spawn", group: "waveB", afterKills: 16 }),
-  T("t-waveC", [0, 1, 0], { action: "spawn", group: "waveC", afterKills: 26 }),
-  T("t-waveC2", [0, 1, 0], { action: "spawn", group: "waveC2", afterKills: 28 }),
-  T("t-waveD", [0, 1, 0], { action: "spawn", group: "waveD", afterKills: 31 }),
+  T("t-cp", [0, 1, 0], { action: "checkpoint", at: "cp-mid", afterKills: { normal: 12, hard: 16 } }),
+  T("t-waveB", [0, 1, 0], { action: "spawn", group: "waveB", afterKills: { normal: 12, hard: 16 } }),
+  T("t-waveC", [0, 1, 0], { action: "spawn", group: "waveC", afterKills: { normal: 19, hard: 26 } }),
+  T("t-waveC2", [0, 1, 0], { action: "spawn", group: "waveC2", afterKills: { normal: 21, hard: 28 } }),
+  T("t-waveD", [0, 1, 0], { action: "spawn", group: "waveD", afterKills: { normal: 23, hard: 31 } }),
   T("t-exit", [36.6, 1, 0], { action: "exit" }, [2.4, 3, 5]),
   marker("exit", "exit", [34.6, 0, 0]),
   marker("cop-1", "pickup", [-30.5, 0, -4.5], { item: "copium" }), marker("cop-2", "pickup", [-13, 0, -5], { item: "copium" }),

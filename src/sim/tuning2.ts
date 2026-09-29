@@ -1,10 +1,40 @@
 // Chapter 2's numbers (rooms 6-10: sim/stage.ts and sim/ch2/*, the Countess in ai/countess.ts), in one
 // place like tuning.ts. Times are world seconds unless "real"; distances metres. Per-difficulty tables
-// fall back to "normal" for a difficulty they do not name.
-import type { Difficulty } from "./tuning.ts";
+// fall back for a difficulty they do not name: Hardcore to Hard, then everything to Normal.
+import type { Difficulty, DifficultyTuning } from "./tuning.ts";
 
 type PerDiff = Partial<Record<Difficulty | string, number>> & { normal: number };
-export const perDiff = (t: PerDiff, d: Difficulty | string): number => t[d] ?? t.normal;
+export const perDiff = (t: PerDiff, d: Difficulty | string): number => t[d] ?? (d === "hardcore" ? t.hard : undefined) ?? t.normal;
+
+/** Chapter 2 against DIFFICULTY (tuning.ts), per difficulty: its rooms are long (20-30 of the gang each,
+ *  where chapter 1's streets had 8-11) and every one has a set piece on top, so Normal eases off here:
+ *  their aim and damage back to about the first release's Normal, frags and flankers less often, every
+ *  copium can in the room, a checkpoint restores more. Chill, Hard and Hardcore keep their own. */
+export const CH2_DIFF: Partial<Record<Difficulty, Partial<DifficultyTuning>>> = {
+  normal: { damage: 1.0, accuracy: 1.0, keep: 1, checkpoint: 70, grenade: 18, camp: 7.5, rush: 11, suppress: 0.4 },
+};
+
+/** A room's difficulty table: chapter 2's rooms (room.chapter 2) take CH2_DIFF over DIFFICULTY. */
+export function diffFor(base: DifficultyTuning, d: Difficulty, chapter: unknown): DifficultyTuning {
+  const o = chapter === 2 ? CH2_DIFF[d] : undefined;
+  return o ? { ...base, ...o } : base;
+}
+
+/** Chapter 2's snipers (a goon with the sniper rifle, not the Countess): her laser's tell (s) before the
+ *  round and the round's damage (x difficulty damage), per difficulty; chapter 1's is ENEMY_ARMS.sniper.
+ *  On Normal the tell is long enough to see it and step out of it. */
+export const SNIPER2 = {
+  tell: { easy: 1.3, normal: 1.25, hard: 0.8 } as PerDiff,
+  damage: { easy: 14, normal: 16, hard: 22 } as PerDiff,
+};
+
+/** Kills an `afterKills` trigger waits for on this difficulty: a number, or per difficulty ({normal: 8,
+ *  hard: 10}: a room that leaves some of the gang out on Normal counts its waves in on its own). */
+export function killsFor(after: unknown, d: Difficulty): number | undefined {
+  if (typeof after === "number") return after;
+  if (after && typeof after === "object" && typeof (after as PerDiff).normal === "number") return perDiff(after as PerDiff, d);
+  return undefined;
+}
 
 /** Room 6, the roof: the helicopter's searchlight, its rope drops. */
 export const ROOF = {
@@ -75,9 +105,9 @@ export const COUNTESS = {
   tell: { easy: 1.25, normal: 1.0, hard: 0.8 } as PerDiff,
   every: [1.6, 2.4] as const,
   /** Phase 3: a quicker tell, and she runs. */
-  tell3: { easy: 0.85, normal: 0.65, hard: 0.5 } as PerDiff,
+  tell3: { easy: 0.9, normal: 0.8, hard: 0.5 } as PerDiff,
   /** One round of hers: its damage (x difficulty) and its chance (x the usual falloffs: distance, his speed, a dive). */
-  damage: { easy: 18, normal: 15, hard: 18 } as PerDiff,
+  damage: { easy: 18, normal: 12, hard: 18 } as PerDiff,
   hit: 0.62,
   /** During her tell she takes this much more, and this much damage in one tell breaks her aim (a stagger). */
   tellOpen: 1.5,
@@ -91,26 +121,32 @@ export const COUNTESS = {
   lastStandSlow: 0.25,
   lastStandReal: 2,
   lastStandRun: 5.2,
-  /** The lift doors: the lamp before one opens, the first batch, then a pair every `every` while few stand. */
+  /** The lift doors: the lamp before one opens, the first batch, then a pair every `every` while fewer
+   *  than `maxLive` of that door's girls stand; per difficulty the batch, the pace (x every: Madame
+   *  Pockit's) and the most standing at once (Normal: her two a door). */
   doors: { lamp: 2, first: 3, pair: 2, every: 7, maxLive: 4 },
+  doorFirst: { easy: 2, normal: 2, hard: 3 } as PerDiff,
+  doorPace: { easy: 1.5, normal: 1.3, hard: 1, hardcore: 0.9 } as PerDiff,
+  doorLive: { easy: 2, normal: 2, hard: 4 } as PerDiff,
 } as const;
 
 /** Room 10's security lasers: a beam turns about the vault's column, high (dive under) or low (jump). */
 export const BEAM = {
   /** The tell: the beam shows dim and still at its start for this long. */
-  tell: { easy: 1.4, normal: 1.05, hard: 0.85 } as PerDiff,
+  tell: { easy: 1.5, normal: 1.35, hard: 0.85 } as PerDiff,
   /** One sweep turns it this far in this long. */
   arc: Math.PI,
-  dur: { easy: 3.8, normal: 3.2, hard: 2.8 } as PerDiff,
-  /** Between sweeps (phase 2 / phase 3). */
+  dur: { easy: 3.8, normal: 3.6, hard: 2.8 } as PerDiff,
+  /** Between sweeps (phase 2 / phase 3), x `pace` per difficulty. */
   every: [7.5, 9.5] as const,
   every3: [5.0, 6.5] as const,
+  pace: { easy: 1.4, normal: 1.25, hard: 1 } as PerDiff,
   /** Heights (above the vault floor): the high beam at the chest, the low one at the shins. */
   high: 1.25,
   low: 0.3,
   /** He is over the low beam with his feet this high, under the high one diving or prone. */
   clear: 0.4,
-  damage: 16,
+  damage: { easy: 10, normal: 10, hard: 16 } as PerDiff,
   /** The column's radius (no beam inside it). */
   column: 1.4,
 } as const;

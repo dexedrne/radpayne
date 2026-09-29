@@ -135,8 +135,8 @@ export class Bot {
       this.lost = 0;
     } else if (best >= 0) {
       const e = g.enemies[best];
-      // the shotgun spreads: aim at the chest with it
-      const part = bd < 14 * 14 && p.weapon.id !== "shotgun" ? HB_HEAD : HB_TORSO;
+      // the shotgun spreads: aim at the chest with it (and at the Countess's: her head counts for less)
+      const part = bd < 14 * 14 && p.weapon.id !== "shotgun" && e.kind !== "countess" ? HB_HEAD : HB_TORSO;
       aimPoint(e.hit.body, e.hit.pose, part, this.v, this.caps);
       const dx = this.v.x - piv.x, dy = this.v.y - piv.y, dz = this.v.z - piv.z;
       const l = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
@@ -188,8 +188,13 @@ export class Bot {
           const d = (e.x - p.x) ** 2 + (e.z - p.z) ** 2;
           if (d < nd) { nd = d; tx = e.x; tz = e.z; ty = e.y; key = e.idx; }
         }
-        // a weapon or ammo lying within 20 m that it can use: fetch it first
+        // a weapon or ammo lying within 20 m that it can use: fetch it first (chapter 2: one it set out
+        // for stays the target out to 32 m: the long way round to it must not turn it back at 20 m)
         let kd = 20 * 20;
+        const cur = this.pathFor - 700, going = g.stage && cur >= 0 && cur < g.pickups.length ? g.pickups[cur] : null;
+        if (going && !going.taken && g.canTake(going.item) && (this.noWay.get(cur) ?? -1) <= g.time && (going.x - p.x) ** 2 + (going.z - p.z) ** 2 < 32 * 32) {
+          tx = going.x; tz = going.z; ty = going.y; key = this.pathFor; kd = -1;
+        }
         for (let i = 0; i < g.pickups.length; i++) {
           const k = g.pickups[i];
           const d = PICKUPS[k.item];
@@ -202,7 +207,7 @@ export class Bot {
         if (g.ride?.wantsIn(g)) { const c = g.ride.car; tx = (c[0] + c[2]) / 2; tz = (c[1] + c[3]) / 2; key = 600; }
         if (key < 0) {
           // nothing alive and awake: walk to the next trigger we have not fired (not the fallbacks)
-          const t = g.triggers.find(tr => !tr.fired && tr.data.action !== "exit" && typeof tr.data.afterKills !== "number");
+          const t = g.triggers.find(tr => !tr.fired && tr.data.action !== "exit" && tr.data.afterKills === undefined);
           if (t) { tx = t.x; tz = t.z; ty = p.y; key = 500; }
         }
       }

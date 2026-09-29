@@ -70,7 +70,10 @@ frag at a spot you hold too long, fewer cans lie around and a can heals less, bu
 quarter faster and a kill refills a little more), **Hard** (all of it harder: running in the open
 spoils their aim less, two flank at once; you need cover) and **Hardcore** (no second chances: one can
 to start, half the cans, bullet time drains almost twice as fast). Madame Pockit keeps her own, gentler
-factor on every setting.
+factor on every setting. Chapter 2's rooms are long and each has a set piece on top, so its Normal eases
+off: about a quarter fewer of the gang (Hard brings the rest), their aim and damage back to the first
+release's Normal, every can in the room, the snipers' laser and the vault's beams on a longer tell, the
+Countess's lifts two girls at a time; Hard and Hardcore keep theirs.
 
 | Input | Action |
 |---|---|
@@ -219,7 +222,14 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
     moving parts `src/app/Chapter2View.tsx`, the lines `src/app/chapter2Lines.ts`, the cutscenes
     `node tools/chapter2-script.ts` (it writes `public/cutscenes/ch2a..ch2f.json` and the assets list).
     `node tools/ch2bot.ts [rooms] [seeds] [difficulty]`: the bot through each room (clear time, deaths,
-    health lost, the set pieces that fired).
+    health lost, the set pieces that fired). Per difficulty: an enemy's `minDiff: "hard"` leaves her out
+    below Hard, and an `afterKills` may be `{normal: N, hard: M}` (the waves still come in when Normal
+    has fewer of the gang: the chapter 2 test checks every count is reachable on every difficulty);
+    `CH2_DIFF` and `SNIPER2` in `src/sim/tuning2.ts` are chapter 2's own Normal. The roof's searchlight
+    is drawn by `src/app/look/searchlight.ts`: a soft beam, its pool lit on the level's surfaces (the
+    roof look's materials) and one SpotLight that never leaves the scene (only its aim and intensity
+    move, so no shader rebuilds while it sweeps). The counting floor's blackout dims the lights whose
+    marker has `dim` and the look's fill (`src/app/look/sky.tsx`).
   - Round 3: a room's `later: [groups]` makes those groups wait unseen until the room's own mechanism
     brings them in. Room 4 (`node tools/room4.ts`) has `ride` in its settings (`src/sim/ride.ts`): the
     car (`car`, `hatch`) and the steps, legs (`t` seconds; `roof` + `group`: the heavy through the

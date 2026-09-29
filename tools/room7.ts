@@ -196,23 +196,23 @@ k.wp("sh-out", [-16.6, 0, 13], ["sh-in"]);
 const E = (id: string, x: number, y: number, z: number, yaw: number, d: Record<string, unknown> = {}) => marker(id, "enemy", [x, y, z], { kind: "goon", ...d }, yaw);
 k.m(
   // at the garden party
-  E("g-1", -11, 0, -7, FACE_W), E("g-2", -11, 0, 8, FACE_W), E("g-3", 11, 0, -6.5, FACE_W), E("g-4", 16, 0, 5, FACE_W),
+  E("g-1", -11, 0, -7, FACE_W), E("g-2", -11, 0, 8, FACE_W), E("g-3", 11, 0, -6.5, FACE_W), E("g-4", 16, 0, 5, FACE_W, { minDiff: "hard" }),
   E("g-5", 2, 0, 0, FACE_W), E("g-6", -3, 0, 0.5, FACE_W, { kind: "rusher" }),
-  E("g-7", -8, GY, -15, FACE_S, { perch: true, weapon: "sniper" }), E("g-8", 8, GY, -15, FACE_S),
-  E("pond-1", -2, PIT, 5, FACE_N), E("pond-2", 4, PIT, -2.6, FACE_W),
+  E("g-7", -8, GY, -15, FACE_S, { perch: true, weapon: "sniper" }), E("g-8", 8, GY, -15, FACE_S, { minDiff: "hard" }),
+  E("pond-1", -2, PIT, 5, FACE_N), E("pond-2", 4, PIT, -2.6, FACE_W, { minDiff: "hard" }),
   // wave A (5 down): the service room, east
   E("a-1", 26, 0, 5, FACE_W, { group: "waveA" }), E("a-2", 26, 0, 9.6, FACE_W, { group: "waveA" }), E("a-3", 28.4, 0, 7, FACE_W, { group: "waveA", kind: "rusher" }),
-  E("a-4", 25.6, 0, 11, FACE_W, { group: "waveA" }), E("a-5", 28.6, 0, 10.6, FACE_W, { group: "waveA", kind: "rusher" }),
+  E("a-4", 25.6, 0, 11, FACE_W, { group: "waveA", minDiff: "hard" }), E("a-5", 28.6, 0, 10.6, FACE_W, { group: "waveA", kind: "rusher", minDiff: "hard" }),
   // wave B (10 down): the service landing, onto the gallery
-  E("b-1", -1.2, GY, -19.4, FACE_S, { group: "waveB", weapon: "sniper", minDiff: "hard" }), E("b-2", 1.2, GY, -19.4, FACE_S, { group: "waveB" }), E("b-3", -1.2, GY, -21, FACE_S, { group: "waveB", kind: "rusher" }), E("b-4", 1.2, GY, -21, FACE_S, { group: "waveB" }),
+  E("b-1", -1.2, GY, -19.4, FACE_S, { group: "waveB", weapon: "sniper", minDiff: "hard" }), E("b-2", 1.2, GY, -19.4, FACE_S, { group: "waveB" }), E("b-3", -1.2, GY, -21, FACE_S, { group: "waveB", kind: "rusher" }), E("b-4", 1.2, GY, -21, FACE_S, { group: "waveB", minDiff: "hard" }),
   // wave C (15 down): out of the pump corridor into the pit
-  E("c-1", -1, PIT, 8.4, FACE_N, { group: "waveC", kind: "rusher" }), E("c-2", 1, PIT, 8.4, FACE_N, { group: "waveC", kind: "rusher" }), E("c-3", -1, PIT, 9.6, FACE_N, { group: "waveC" }),
-  E("c-4", 1, PIT, 9.6, FACE_N, { group: "waveC", kind: "rusher" }), E("c-5", 0, PIT, 7.2, FACE_N, { group: "waveC" }),
+  E("c-1", -1, PIT, 8.4, FACE_N, { group: "waveC", kind: "rusher" }), E("c-2", 1, PIT, 8.4, FACE_N, { group: "waveC", kind: "rusher", minDiff: "hard" }), E("c-3", -1, PIT, 9.6, FACE_N, { group: "waveC" }),
+  E("c-4", 1, PIT, 9.6, FACE_N, { group: "waveC", kind: "rusher", minDiff: "hard" }), E("c-5", 0, PIT, 7.2, FACE_N, { group: "waveC" }),
   // wave D (20 down): the mast stair (the heavy) and the service room
   E("d-1", 0, 0, 22, FACE_N, { group: "waveD", kind: "heavy", model: "rival723" }), E("d-2", -1.6, 0, 24, FACE_N, { group: "waveD" }), E("d-3", 1.6, 0, 24, FACE_N, { group: "waveD", minDiff: "hard" }),
   E("d-4", 27.6, 0, 6, FACE_W, { group: "waveD", kind: "rusher" }), E("d-5", 27.6, 0, 8.6, FACE_W, { group: "waveD", minDiff: "hard" }),
   // wave E (25 down): up the bridge behind him, and the gallery
-  E("e-1", -32, 0, -0.6, FACE_E, { group: "waveE", kind: "rusher" }), E("e-2", -33.5, 0, 0.6, FACE_E, { group: "waveE", kind: "rusher" }), E("e-3", -30.5, 0, 0.6, FACE_E, { group: "waveE" }),
+  E("e-1", -32, 0, -0.6, FACE_E, { group: "waveE", kind: "rusher" }), E("e-2", -33.5, 0, 0.6, FACE_E, { group: "waveE", kind: "rusher", minDiff: "hard" }), E("e-3", -30.5, 0, 0.6, FACE_E, { group: "waveE" }),
   E("e-4", -1.2, GY, -20.4, FACE_S, { group: "waveE2", kind: "heavy", model: "rival652" }), E("e-5", 1.2, GY, -20.4, FACE_S, { group: "waveE2" }),
 );
 
@@ -223,14 +223,14 @@ k.m(
   marker("cp-mid", "checkpoint", [-17, 0, 0], {}, FACE_E),
   T("t-alert", [-20, 1, 0], { action: "alert" }, [3, 3, 34]),
   T("t-crack-step", [0, 1, 0], { action: "setpiece", cue: "crack" }, [4, 3, 3.2]),
-  T("t-crack-kills", [0, 1, 0], { action: "setpiece", cue: "crack", afterKills: 16 }),
-  T("t-waveA", [0, 1, 0], { action: "spawn", group: "waveA", afterKills: 5 }),
-  T("t-waveB", [0, 1, 0], { action: "spawn", group: "waveB", afterKills: 10 }),
-  T("t-cp", [0, 1, 0], { action: "checkpoint", at: "cp-mid", afterKills: 15 }),
-  T("t-waveC", [0, 1, 0], { action: "spawn", group: "waveC", afterKills: 15 }),
-  T("t-waveD", [0, 1, 0], { action: "spawn", group: "waveD", afterKills: 20 }),
-  T("t-waveE", [0, 1, 0], { action: "spawn", group: "waveE", afterKills: 25 }),
-  T("t-waveE2", [0, 1, 0], { action: "spawn", group: "waveE2", afterKills: 27 }),
+  T("t-crack-kills", [0, 1, 0], { action: "setpiece", cue: "crack", afterKills: { normal: 12, hard: 16 } }),
+  T("t-waveA", [0, 1, 0], { action: "spawn", group: "waveA", afterKills: { normal: 4, hard: 5 } }),
+  T("t-waveB", [0, 1, 0], { action: "spawn", group: "waveB", afterKills: { normal: 7, hard: 10 } }),
+  T("t-cp", [0, 1, 0], { action: "checkpoint", at: "cp-mid", afterKills: { normal: 10, hard: 15 } }),
+  T("t-waveC", [0, 1, 0], { action: "spawn", group: "waveC", afterKills: { normal: 10, hard: 15 } }),
+  T("t-waveD", [0, 1, 0], { action: "spawn", group: "waveD", afterKills: { normal: 13, hard: 20 } }),
+  T("t-waveE", [0, 1, 0], { action: "spawn", group: "waveE", afterKills: { normal: 16, hard: 25 } }),
+  T("t-waveE2", [0, 1, 0], { action: "spawn", group: "waveE2", afterKills: { normal: 18, hard: 27 } }),
   T("t-exit", [0, 1, 22.5], { action: "exit" }, [5, 3, 5]),
   marker("exit", "exit", [0, 0, 19]),
   marker("cop-1", "pickup", [-22.5, 0, -8], { item: "copium" }), marker("cop-2", "pickup", [0, PIT, 3], { item: "copium" }),

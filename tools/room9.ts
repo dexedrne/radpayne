@@ -144,22 +144,22 @@ k.m(
   // at the desks
   E("t-1", -15, 0, -4, FACE_W), E("t-2", -15, 0, 4, FACE_W), E("t-3", -9, 0, -11, FACE_W), E("t-4", -9, 0, 11.5, FACE_W, { minDiff: "hard" }),
   E("t-5", -3, 0, -3, FACE_W), E("t-6", -3, 0, 4.5, FACE_W, { kind: "rusher" }), E("t-7", 3, 0, -12, FACE_W), E("t-8", 3, 0, 12, FACE_W, { minDiff: "hard" }),
-  E("t-9", -2, CY, -16.6, FACE_S, { perch: true, weapon: "sniper" }), E("t-10", 10, CY, -16.6, FACE_S),
+  E("t-9", -2, CY, -16.6, FACE_S, { perch: true, weapon: "sniper" }), E("t-10", 10, CY, -16.6, FACE_S, { minDiff: "hard" }),
   // the board room from the start (behind the partition)
   E("r-1", 20.4, 0, -6, FACE_W), E("r-2", 20.4, 0, 6, FACE_W), E("r-3", 24, 0, 0, FACE_W, { kind: "heavy", model: "rival652" }),
   // wave A (4 down): out of the offices
-  E("a-1", -22.4, 0, 15.4, FACE_N, { group: "waveA" }), E("a-2", -18, 0, 15.6, FACE_N, { group: "waveA", kind: "rusher" }), E("a-3", -23.6, 0, 11.4, FACE_N, { group: "waveA" }), E("a-4", -17.4, 0, 11.4, FACE_N, { group: "waveA" }),
+  E("a-1", -22.4, 0, 15.4, FACE_N, { group: "waveA" }), E("a-2", -18, 0, 15.6, FACE_N, { group: "waveA", kind: "rusher" }), E("a-3", -23.6, 0, 11.4, FACE_N, { group: "waveA" }), E("a-4", -17.4, 0, 11.4, FACE_N, { group: "waveA", minDiff: "hard" }),
   // wave B (8 down): the vault corridor into the board room, and up the east stair
   E("b-1", 28.4, 0, -0.6, FACE_W, { group: "waveB" }), E("b-2", 29.4, 0, 0.6, FACE_W, { group: "waveB", kind: "rusher" }), E("b-3", 23.4, CY, -16.8, FACE_W, { group: "waveB" }),
-  E("b-4", 21.4, CY, -16.8, FACE_W, { group: "waveB", weapon: "sniper", perch: true }), E("b-5", 27.6, 0, 0.6, FACE_W, { group: "waveB" }),
+  E("b-4", 21.4, CY, -16.8, FACE_W, { group: "waveB", weapon: "sniper", perch: true, minDiff: "hard" }), E("b-5", 27.6, 0, 0.6, FACE_W, { group: "waveB", minDiff: "hard" }),
   // wave C (14 down): off the gangway behind him
-  E("c-1", -31, 0, -1.4, FACE_E, { group: "waveC", kind: "rusher" }), E("c-2", -31, 0, 1.4, FACE_E, { group: "waveC", kind: "rusher" }), E("c-3", -33, 0, 0, FACE_E, { group: "waveC", kind: "rusher" }), E("c-4", -29.4, 0, 0, FACE_E, { group: "waveC" }),
+  E("c-1", -31, 0, -1.4, FACE_E, { group: "waveC", kind: "rusher" }), E("c-2", -31, 0, 1.4, FACE_E, { group: "waveC", kind: "rusher" }), E("c-3", -33, 0, 0, FACE_E, { group: "waveC", kind: "rusher", minDiff: "hard" }), E("c-4", -29.4, 0, 0, FACE_E, { group: "waveC" }),
   // wave D (19 down): the vault corridor
   E("d-1", 28.2, 0, 0, FACE_W, { group: "waveD", kind: "heavy", model: "rival723", weapon: "handcannon" }), E("d-2", 29.4, 0, -0.8, FACE_W, { group: "waveD" }), E("d-3", 29.4, 0, 0.8, FACE_W, { group: "waveD" }),
-  E("d-4", 27, 0, -0.8, FACE_W, { group: "waveD", kind: "rusher" }), E("d-5", 27, 0, 0.8, FACE_W, { group: "waveD", kind: "rusher" }),
+  E("d-4", 27, 0, -0.8, FACE_W, { group: "waveD", kind: "rusher", minDiff: "hard" }), E("d-5", 27, 0, 0.8, FACE_W, { group: "waveD", kind: "rusher", minDiff: "hard" }),
   // wave E (25 down): the catwalk (both ends) and the offices
-  E("e-1", -20.6, CY, -16.8, FACE_E, { group: "waveE" }), E("e-2", 23.4, CY, -17.2, FACE_W, { group: "waveE", kind: "rusher" }), E("e-3", -22.4, 0, 15.4, FACE_N, { group: "waveE", kind: "rusher" }),
-  E("e-4", -18, 0, 15.6, FACE_N, { group: "waveE" }), E("e-5", 28.4, 0, 0, FACE_W, { group: "waveE", kind: "heavy", model: "rival652" }),
+  E("e-1", -20.6, CY, -16.8, FACE_E, { group: "waveE" }), E("e-2", 23.4, CY, -17.2, FACE_W, { group: "waveE", kind: "rusher" }), E("e-3", -22.4, 0, 15.4, FACE_N, { group: "waveE", kind: "rusher", minDiff: "hard" }),
+  E("e-4", -18, 0, 15.6, FACE_N, { group: "waveE", minDiff: "hard" }), E("e-5", 28.4, 0, 0, FACE_W, { group: "waveE", kind: "heavy", model: "rival652" }),
 );
 
 // ---------------------------------------------------------------- triggers, pickups, eggs, lights
@@ -169,13 +169,13 @@ k.m(
   marker("cp-mid", "checkpoint", [-20.4, 0, -3], {}, FACE_E),
   T("t-alert", [-24, 1, 0], { action: "alert" }, [3, 3, 34]),
   T("t-shutters", [0, 1, 0], { action: "setpiece", cue: "shutters", afterKills: 8 }),
-  T("t-dark", [0, 1, 0], { action: "setpiece", cue: "dark", afterKills: 12 }),
+  T("t-dark", [0, 1, 0], { action: "setpiece", cue: "dark", afterKills: { normal: 11, hard: 12 } }),
   T("t-waveA", [0, 1, 0], { action: "spawn", group: "waveA", afterKills: 4 }),
   T("t-waveB", [0, 1, 0], { action: "spawn", group: "waveB", afterKills: 8 }),
-  T("t-cp", [0, 1, 0], { action: "checkpoint", at: "cp-mid", afterKills: 14 }),
-  T("t-waveC", [0, 1, 0], { action: "spawn", group: "waveC", afterKills: 14 }),
-  T("t-waveD", [0, 1, 0], { action: "spawn", group: "waveD", afterKills: 19 }),
-  T("t-waveE", [0, 1, 0], { action: "spawn", group: "waveE", afterKills: 25 }),
+  T("t-cp", [0, 1, 0], { action: "checkpoint", at: "cp-mid", afterKills: { normal: 13, hard: 14 } }),
+  T("t-waveC", [0, 1, 0], { action: "spawn", group: "waveC", afterKills: { normal: 13, hard: 14 } }),
+  T("t-waveD", [0, 1, 0], { action: "spawn", group: "waveD", afterKills: { normal: 16, hard: 19 } }),
+  T("t-waveE", [0, 1, 0], { action: "spawn", group: "waveE", afterKills: { normal: 20, hard: 25 } }),
   T("t-exit", [28.6, 1, 0], { action: "exit" }, [2.6, 3, 2.8]),
   marker("exit", "exit", [26.6, 0, 0]),
   marker("cop-1", "pickup", [-24.5, 0, -6], { item: "copium" }), marker("cop-2", "pickup", [-9, 0, 8.1], { item: "copium" }),

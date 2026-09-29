@@ -6976,7 +6976,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "minDiff": "hard"
          }
         }
        }
@@ -7089,7 +7090,8 @@
           "marker": "enemy",
           "kind": "rusher",
           "group": "liftE",
-          "deaf": true
+          "deaf": true,
+          "minDiff": "hard"
          }
         }
        }
@@ -7112,7 +7114,8 @@
           "marker": "enemy",
           "kind": "rusher",
           "group": "liftW",
-          "deaf": true
+          "deaf": true,
+          "minDiff": "hard"
          }
         }
        }
@@ -7205,7 +7208,8 @@
           "marker": "enemy",
           "kind": "rusher",
           "group": "liftE2",
-          "deaf": true
+          "deaf": true,
+          "minDiff": "hard"
          }
         }
        }
@@ -7297,7 +7301,8 @@
           "marker": "enemy",
           "kind": "rusher",
           "group": "liftW2",
-          "deaf": true
+          "deaf": true,
+          "minDiff": "hard"
          }
         }
        }

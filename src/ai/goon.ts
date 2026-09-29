@@ -7,7 +7,7 @@
 // the heavy (ai/rusher.ts, ai/heavy.ts); ai/enemies.ts picks the brain per kind.
 import type { Enemy } from "../sim/actors.ts";
 import type { Game } from "../sim/game.ts";
-import { AI, ENEMY, ENEMY_ARMS, MADAME, RUSHER } from "../sim/tuning.ts";
+import { AI, ENEMY, MADAME, RUSHER } from "../sim/tuning.ts";
 import { TACTICS, suppresses } from "./tactics.ts";
 import { COUNTESS } from "../sim/tuning2.ts";
 
@@ -288,7 +288,7 @@ export function tryFire(g: Game, e: Enemy, dt: number, moving: boolean): void {
   const T = ENEMY[e.kind];
   if (e.weapon === "sniper") {
     // the sniper: a cold laser on him for the tell (she holds her slot through it), then one round
-    const A = ENEMY_ARMS.sniper;
+    const A = g.sniperArms;
     if (e.tell > 0) {
       e.lastShotT = g.time;
       e.tell -= dt;

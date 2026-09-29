@@ -14300,7 +14300,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "minDiff": "hard"
          }
         }
        }
@@ -14452,7 +14453,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveA"
+          "group": "waveA",
+          "minDiff": "hard"
          }
         }
        }
@@ -14542,7 +14544,8 @@
           "kind": "goon",
           "group": "waveB",
           "weapon": "sniper",
-          "perch": true
+          "perch": true,
+          "minDiff": "hard"
          }
         }
        }
@@ -14564,7 +14567,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveB"
+          "group": "waveB",
+          "minDiff": "hard"
          }
         }
        }
@@ -14630,7 +14634,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "group": "waveC"
+          "group": "waveC",
+          "minDiff": "hard"
          }
         }
        }
@@ -14742,7 +14747,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "group": "waveD"
+          "group": "waveD",
+          "minDiff": "hard"
          }
         }
        }
@@ -14764,7 +14770,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "group": "waveD"
+          "group": "waveD",
+          "minDiff": "hard"
          }
         }
        }
@@ -14830,7 +14837,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "group": "waveE"
+          "group": "waveE",
+          "minDiff": "hard"
          }
         }
        }
@@ -14852,7 +14860,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveE"
+          "group": "waveE",
+          "minDiff": "hard"
          }
         }
        }
@@ -14982,7 +14991,10 @@
           "marker": "trigger",
           "action": "setpiece",
           "cue": "dark",
-          "afterKills": 12
+          "afterKills": {
+           "normal": 11,
+           "hard": 12
+          }
          }
         }
        }
@@ -15051,7 +15063,10 @@
           "marker": "trigger",
           "action": "checkpoint",
           "at": "cp-mid",
-          "afterKills": 14
+          "afterKills": {
+           "normal": 13,
+           "hard": 14
+          }
          }
         }
        }
@@ -15074,7 +15089,10 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "waveC",
-          "afterKills": 14
+          "afterKills": {
+           "normal": 13,
+           "hard": 14
+          }
          }
         }
        }
@@ -15097,7 +15115,10 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "waveD",
-          "afterKills": 19
+          "afterKills": {
+           "normal": 16,
+           "hard": 19
+          }
          }
         }
        }
@@ -15120,7 +15141,10 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "waveE",
-          "afterKills": 25
+          "afterKills": {
+           "normal": 20,
+           "hard": 25
+          }
          }
         }
        }

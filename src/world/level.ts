@@ -17,7 +17,7 @@ export type MarkerKind =
   | "cover" // a cover point: { height?: "low" | "high" (default low), side?: "left" | "right" (high cover lean side) }; facing = the direction it protects toward
   | "waypoint" // an AI path node: { links?: string[] } (else auto-linked to waypoints in line of sight within 14 m)
   | "pickup" // { item: "copium" | a PICKUPS key (weapons, ammo, "grenade") | "pin", amount?: number, pin?: "<radbro id>" }
-  | "trigger" // volume = the node's scale: { action: "alert" | "spawn" | "exit" | "checkpoint" | "cutscene" | "breach", group?: string, once?: boolean, afterKills?: number (fires once this many hostiles are down, wherever he is), whenClear?: string (fires once every hostile of that group is down), door?: string (breach: the door box's node id), at?: string (checkpoint: a checkpoint marker's id) }
+  | "trigger" // volume = the node's scale: { action: "alert" | "spawn" | "exit" | "checkpoint" | "cutscene" | "breach", group?: string, once?: boolean, afterKills?: number | {normal, hard?, ...} (fires once this many hostiles are down, wherever he is; per difficulty: sim/tuning2.ts killsFor), whenClear?: string (fires once every hostile of that group is down), door?: string (breach: the door box's node id), at?: string (checkpoint: a checkpoint marker's id) }
   | "crowd" // non-hostile dancers in an area (the node's scale): { count, clips: string[], milady?: number, role?: string, flee?: crowdExit id }
   | "crowdExit" // where the crowd runs to and vanishes (the entrance, the staff door, the fire exit)
   | "checkpoint" // respawn point (facing = yaw)

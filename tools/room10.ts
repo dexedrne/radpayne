@@ -136,17 +136,19 @@ for (const [side, sx] of [["e", 1], ["w", -1]] as const) {
 
 // ---------------------------------------------------------------- the Countess and her girls
 const E = (id: string, x: number, y: number, z: number, yaw: number, d: Record<string, unknown> = {}) => marker(id, "enemy", [x, y, z], { kind: "goon", ...d }, yaw);
-const adds = (side: "e" | "w", group: string, kinds: string[]) => kinds.map((kd, i) => {
+// (a kind ending in "+" is there on Hard and up only: Normal's lifts bring fewer)
+const adds = (side: "e" | "w", group: string, kinds: string[]) => kinds.map((kd0, i) => {
   const sx = side === "e" ? 1 : -1;
-  return E(`${group}-${i + 1}`, sx * (16.2 + (i % 2) * 1.4), 0, -1.6 + Math.floor(i / 2) * 1.4, side === "e" ? FACE_W : FACE_E, { kind: kd, group, deaf: true, ...(kd === "heavy" ? { model: side === "e" ? "rival652" : "rival723" } : {}) });
+  const kd = kd0.replace("+", "");
+  return E(`${group}-${i + 1}`, sx * (16.2 + (i % 2) * 1.4), 0, -1.6 + Math.floor(i / 2) * 1.4, side === "e" ? FACE_W : FACE_E, { kind: kd, group, deaf: true, ...(kd === "heavy" ? { model: side === "e" ? "rival652" : "rival723" } : {}), ...(kd0.endsWith("+") ? { minDiff: "hard" } : {}) });
 });
 k.m(
   E("countess", 0, DESK, -1.7, FACE_N, { kind: "countess", drop: false }),
-  E("guard-1", -6.5, 0, 3, FACE_W), E("guard-2", 6, 0, 2.6, FACE_E), E("guard-3", 0, 0, -9.4, FACE_N, { kind: "rusher" }),
-  ...adds("e", "liftE", ["goon", "rusher", "goon", "rusher"]),
-  ...adds("w", "liftW", ["rusher", "goon", "heavy", "goon"]),
-  ...adds("e", "liftE2", ["rusher", "goon", "goon"]).map(n => { const t = (n.components!.transform as { properties: { position: number[] } }).properties; t.position = [t.position[0], t.position[1], t.position[2] + 0.7]; return n; }),
-  ...adds("w", "liftW2", ["goon", "rusher", "goon"]).map(n => { const t = (n.components!.transform as { properties: { position: number[] } }).properties; t.position = [t.position[0], t.position[1], t.position[2] + 0.7]; return n; }),
+  E("guard-1", -6.5, 0, 3, FACE_W), E("guard-2", 6, 0, 2.6, FACE_E, { minDiff: "hard" }), E("guard-3", 0, 0, -9.4, FACE_N, { kind: "rusher" }),
+  ...adds("e", "liftE", ["goon", "rusher", "goon", "rusher+"]),
+  ...adds("w", "liftW", ["rusher+", "goon", "heavy", "goon"]),
+  ...adds("e", "liftE2", ["rusher+", "goon", "goon"]).map(n => { const t = (n.components!.transform as { properties: { position: number[] } }).properties; t.position = [t.position[0], t.position[1], t.position[2] + 0.7]; return n; }),
+  ...adds("w", "liftW2", ["goon", "rusher+", "goon"]).map(n => { const t = (n.components!.transform as { properties: { position: number[] } }).properties; t.position = [t.position[0], t.position[1], t.position[2] + 0.7]; return n; }),
 );
 
 // ---------------------------------------------------------------- triggers, pickups, eggs, lights

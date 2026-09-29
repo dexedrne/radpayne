@@ -23,7 +23,7 @@ import { World, circleRectOverlap, type Box } from "./world.ts";
 import { Ride } from "./ride.ts";
 import { Boss } from "./boss.ts";
 import { makeStage, type Stage } from "./stage.ts";
-import { COUNTESS, perDiff } from "./tuning2.ts";
+import { COUNTESS, SNIPER2, diffFor, killsFor, perDiff } from "./tuning2.ts";
 
 const DIFF_RANK: Difficulty[] = ["easy", "normal", "hard", "hardcore"];
 
@@ -136,6 +136,8 @@ export class Game {
   readonly seed: number;
   readonly difficulty: Difficulty;
   readonly diff: (typeof DIFFICULTY)[Difficulty];
+  /** The gang's sniper rifle in this room (chapter 2's has its own tell and damage per difficulty). */
+  readonly sniperArms: { tell: number; damage: number; hit: number; range: number; interval: number; sight: number };
   readonly rng: Rand;
   readonly player: Player;
   readonly enemies: Enemy[] = [];
@@ -226,7 +228,11 @@ export class Game {
     this.level = level;
     this.seed = (opts.seed ?? 1) >>> 0;
     this.difficulty = opts.difficulty ?? "normal";
-    this.diff = DIFFICULTY[this.difficulty];
+    // (chapter 2's rooms take their own Normal: tuning2.ts CH2_DIFF)
+    this.diff = diffFor(DIFFICULTY[this.difficulty], this.difficulty, level.room.chapter);
+    this.sniperArms = level.room.chapter === 2
+      ? { ...ENEMY_ARMS.sniper, tell: perDiff(SNIPER2.tell, this.difficulty), damage: perDiff(SNIPER2.damage, this.difficulty) }
+      : ENEMY_ARMS.sniper;
     this.aiOn = opts.ai ?? true;
     this.katana = opts.katana ?? false;
     this.secrets = level.markers.filter(m => m.kind === "secret");
@@ -586,19 +592,19 @@ export class Game {
       for (const t of this.triggers) {
         if (t.fired && t.data.once !== false) continue;
         // conditional triggers fire on their condition only; the breach door has its own rules
-        if (typeof t.data.afterKills === "number" || typeof t.data.whenClear === "string") continue;
+        if (t.data.afterKills !== undefined || typeof t.data.whenClear === "string") continue;
         if (!insideTrigger(t, p.x, p.y + 0.9, p.z)) continue;
         if (t.data.action === "breach") { this.standAtDoor(t); continue; }
         this.fireTrigger(t);
       }
     }
 
-    // conditional triggers, wherever the player is: {afterKills: N} once N hostiles are down,
-    // {whenClear: group} once every hostile of that group is down
+    // conditional triggers, wherever the player is: {afterKills: N} once N hostiles are down (N may be
+    // per difficulty: tuning2.ts killsFor), {whenClear: group} once every hostile of that group is down
     for (const t of this.triggers) {
       if (t.fired || this.phase !== "play") continue;
-      const after = t.data.afterKills, clear = t.data.whenClear;
-      if (typeof after === "number") {
+      const after = killsFor(t.data.afterKills, this.difficulty), clear = t.data.whenClear;
+      if (after !== undefined) {
         let down = 0;
         for (const e of this.enemies) if (e.state === "dead") down++;
         if (down >= after) this.fireTrigger(t);
@@ -1349,10 +1355,10 @@ export class Game {
     const sniper = e.weapon === "sniper", cannon = e.weapon === "handcannon";
     // the sniper keeps her aim out to her range
     const D = this.diff;
-    const distF = sniper ? (dist <= ENEMY_ARMS.sniper.range ? 1 : D.farFloor) : dist <= AI.near ? 1 : dist >= D.far ? D.farFloor : 1 - ((1 - D.farFloor) * (dist - AI.near)) / (D.far - AI.near);
+    const distF = sniper ? (dist <= this.sniperArms.range ? 1 : D.farFloor) : dist <= AI.near ? 1 : dist >= D.far ? D.farFloor : 1 - ((1 - D.farFloor) * (dist - AI.near)) / (D.far - AI.near);
     const fast = p.mode === "dive" || p.mode === "roll";
     const speedF = fast ? AI.dodgeMul : 1 - D.speedK * Math.min(1, p.speed / PLAYER.runSpeed);
-    const chance = (e.kind === "countess" ? COUNTESS.hit : sniper ? ENEMY_ARMS.sniper.hit : AI.baseHit) * distF * speedF * this.diff.accuracy * (moving ? 0.55 : 1) * (this.stage?.accuracy?.(this, e) ?? 1);
+    const chance = (e.kind === "countess" ? COUNTESS.hit : sniper ? this.sniperArms.hit : AI.baseHit) * distF * speedF * this.diff.accuracy * (moving ? 0.55 : 1) * (this.stage?.accuracy?.(this, e) ?? 1);
     const hitRoll = this.rng.next() < chance;
     // aim offset in the plane across the line of fire
     let ox = 0, oy = 0, oz = 0;
@@ -1378,7 +1384,7 @@ export class Game {
       }
       return;
     }
-    const dmg = e.kind === "countess" ? perDiff(COUNTESS.damage, this.difficulty) : sniper ? ENEMY_ARMS.sniper.damage : cannon ? ENEMY_ARMS.handcannon.damage : T.damage;
+    const dmg = e.kind === "countess" ? perDiff(COUNTESS.damage, this.difficulty) : sniper ? this.sniperArms.damage : cannon ? ENEMY_ARMS.handcannon.damage : T.damage;
     // (the bosses, Madame Pockit and the Countess, have their own factor: they stay fair on every setting)
     this.shoot(1, e.idx, 0, mx, my, mz, dx / l, dy / l, dz / l, dmg * (e.kind === "madame" || e.kind === "countess" ? this.diff.boss : this.diff.damage), e.weapon, 0);
   }
@@ -1406,7 +1412,7 @@ export class Game {
     const dx = p.x - e.x, dz = p.z - e.z;
     const d2 = dx * dx + dz * dz;
     const G = ENEMY[e.kind];
-    const sight = e.weapon === "sniper" ? ENEMY_ARMS.sniper.sight : G.sight;
+    const sight = e.weapon === "sniper" ? this.sniperArms.sight : G.sight;
     if (d2 > sight * sight) return false;
     if (e.state === "idle") {
       // not yet alerted: only a close player is noticed (the room's alert trigger wakes the rest)
