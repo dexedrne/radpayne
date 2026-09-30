@@ -19,6 +19,7 @@ import { FxView } from "./FxView.tsx";
 import { PickupsView } from "./PickupsView.tsx";
 import { CoverView } from "./CoverView.tsx";
 import { ArsenalFx } from "./ArsenalFx.tsx";
+import { FragArcView } from "./FragArcView.tsx";
 import { HitFeelView } from "./HitFeelView.tsx";
 import { HitBurstFx } from "./HitBurstFx.tsx";
 import { EggsView } from "./EggsView.tsx";
@@ -103,6 +104,7 @@ export function Scene({ s, onPhase, bootRef }: { s: Session; onPhase: (p: string
         <PickupsView s={s} />
         <CoverView s={s} />
         <ArsenalFx s={s} />
+        <FragArcView s={s} />
         <HitBurstFx s={s} />
         <EggsView s={s} />
         <SecretsView s={s} />

@@ -1036,14 +1036,15 @@ export const sfxArsenal = {
       at("sniper_bolt", 0.86, "sfx/reload_slide", 0.5);
     }
   },
-  /** Grenades: the pin + throw, a bounce, the blast (by distance), a pickup. */
-  grenade(kind: "throw" | "bounce" | "explode" | "pickup", dist = 0, pan = 0, speed = 3): void {
+  /** Grenades: the pin + throw (a tap), the pin alone (his frag held up) and the lob alone (let go from
+   *  there), a bounce, the blast (by distance), a pickup. */
+  grenade(kind: "throw" | "pin" | "lob" | "bounce" | "explode" | "pickup", dist = 0, pan = 0, speed = 3): void {
     const e = sfxOn();
     if (!e) return;
     const t = e.ac.currentTime;
-    if (kind === "throw") {
-      play(e, variant(pick("grenade_pin", ["sfx/dry_fire"]).keys), { gain: 0.6 });
-      play(e, variant(pick("grenade_throw", ["sfx/dive_whoosh"]).keys), { gain: 0.5, at: t + 0.12 / rate });
+    if (kind === "throw" || kind === "pin" || kind === "lob") {
+      if (kind !== "lob") play(e, variant(pick("grenade_pin", ["sfx/dry_fire"]).keys), { gain: 0.6 });
+      if (kind !== "pin") play(e, variant(pick("grenade_throw", ["sfx/dive_whoosh"]).keys), { gain: 0.5, at: kind === "lob" ? t : t + 0.12 / rate });
     } else if (kind === "bounce") {
       play(e, variant(pick("grenade_bounce", ["sfx/impact_metal", "sfx/impact_metal_2"]).keys), { gain: Math.min(0.7, 0.2 + speed * 0.08) * att(dist), pan });
     } else if (kind === "explode") {

@@ -23,6 +23,24 @@ function runBot(g: Game, maxS: number, bot = new Bot(), rec?: InputFrame[]): Gam
   }
   return out;
 }
+/** runBot on the ride, noting how each drop through the hatch ended: landed in the car, or shot dead in
+ *  the air by the bot first (no "land" for that one). */
+function runRide(g: Game, maxS: number): { ev: GameEvent[]; landed: boolean[] } {
+  const ev: GameEvent[] = [], landed: boolean[] = [];
+  const bot = new Bot();
+  for (let i = 0; i < maxS / DT && g.phase !== "done" && g.phase !== "dead"; i++) {
+    const was = g.ride!.dropping;
+    g.step(bot.next(g));
+    const got = g.drain();
+    ev.push(...got);
+    if (was >= 0 && g.ride!.dropping < 0) {
+      const land = got.some(e => e.type === "ride" && e.what === "land");
+      if (!land) assert.equal(g.enemies[was].state, "dead", "a drop that never landed was shot in the air");
+      landed.push(land);
+    }
+  }
+  return { ev, landed };
+}
 function idle(g: Game, s: number, out: GameEvent[] = [], inp: InputFrame = emptyInput()): GameEvent[] {
   inp.yaw = g.player.yaw;
   for (let i = 0; i < s / DT; i++) { g.step(inp); out.push(...g.drain()); }
@@ -37,11 +55,14 @@ test("elevator: the ride runs its stops in order (doors, the roof heavy, the wav
     assert.equal(g.enemies.length, 30);
     assert.ok(g.enemies.every(e => e.state === "inactive"), "every group waits for its stop (or the roof)");
     assert.ok(g.world.off.size === 0, "all three doors shut");
-    const ev = runBot(g, 480);
+    const { ev, landed } = runRide(g, 480);
     assert.equal(g.phase, "done", `seed ${seed}: ${g.phase}, ${g.alive} alive, ride ${g.ride!.i}/${g.ride!.phase}, hp ${g.player.health}`);
+    // (a drop the bot shoots dead in the air never lands)
+    assert.equal(landed.length, 2, "two drops through the hatch");
+    const land = (k: number) => (landed[k] ? ["land"] : []);
     assert.deepEqual(ride(ev).filter(w => w !== "back"), [
-      "start", "arrive:S1", "open:S1", "close:S1", "depart", "roof", "hatch", "land",
-      "arrive:S2", "open:S2", "close:S2", "depart", "cables", "drop", "brake", "arrive:S3", "open:S3", "roof", "hatch", "land",
+      "start", "arrive:S1", "open:S1", "close:S1", "depart", "roof", "hatch", ...land(0),
+      "arrive:S2", "open:S2", "close:S2", "depart", "cables", "drop", "brake", "arrive:S3", "open:S3", "roof", "hatch", ...land(1),
     ]);
     assert.equal(g.stats.kills, 30, `seed ${seed}: every one of them`);
     // each stop's waves came in, one after another (never all at once)

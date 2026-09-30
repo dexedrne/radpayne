@@ -27,6 +27,13 @@ export type InputFrame = {
   melee?: boolean;
   throw?: boolean;
   interact?: boolean;
+  /** The grenade button held (G / Triangle): the frag comes up and the aim preview shows its flight; it
+   *  goes on the release. A press that came and went between two steps (`throw` without `nade`) throws
+   *  at once. */
+  nade?: boolean;
+  /** The keys were lost (the window lost focus, the pointer was let go for the pause): a frag held up
+   *  goes back in the pouch instead of flying on the release. */
+  stow?: boolean;
   /** The sniper's scope (right mouse / LT held while the sniper is in hand). */
   zoom?: boolean;
   /** The melee button held (F / Circle): #4764 raises his katana's guard while it is down; let go within
@@ -41,7 +48,7 @@ export type InputFrame = {
 };
 
 export function emptyInput(): InputFrame {
-  return { moveX: 0, moveY: 0, yaw: 0, pitch: 0, fire: false, bt: false, dodge: false, jump: false, reload: false, copium: false, slot: 0, skip: false, melee: false, throw: false, interact: false, zoom: false, guard: false, cover: false, aim: false };
+  return { moveX: 0, moveY: 0, yaw: 0, pitch: 0, fire: false, bt: false, dodge: false, jump: false, reload: false, copium: false, slot: 0, skip: false, melee: false, throw: false, interact: false, zoom: false, guard: false, cover: false, aim: false, nade: false };
 }
 
 export type V3 = { x: number; y: number; z: number };
@@ -91,7 +98,9 @@ export type GameEvent =
   /** Bullet time asked for with too little meter (the HUD flashes the hourglass). */
   | { type: "btRefused" }
   // the arsenal: a grenade leaves his left hand (id), bounces, goes off (x, y, z; kills in it)
-  | { type: "throw"; id: number; x: number; y: number; z: number; /** a goon's frag (ai/tactics.ts): her index */ by?: number }
+  | { type: "throw"; id: number; x: number; y: number; z: number; /** a goon's frag (ai/tactics.ts): her index */ by?: number; /** his, let go from the frag held up */ raised?: boolean }
+  /** His frag comes up in his hand (the button held: the aim preview) or goes back in the pouch. */
+  | { type: "nade"; up: boolean }
   | { type: "bounce"; id: number; x: number; y: number; z: number; speed: number }
   | { type: "explode"; id: number; x: number; y: number; z: number }
   /** A melee: `phase` start (the swing begins) / hit (it resolved: `hits` bodies); kind katana | strike. */

@@ -1,7 +1,7 @@
 // The gamepad's layout, shared by the input (what each button does), the prompts (which glyph a hint
 // shows) and the controls lists. The Gamepad API's standard mapping; the layout follows the console
 // shooters of the genre: L2 aims, R2 fires, R1 dives, a stick click is bullet time, L1 takes cover (in
-// cover L2 pops out and Cross vaults), the d-pad's left-right change the gun, Square reloads (or uses what is in reach), Triangle throws, Circle strikes (#4764: a
+// cover L2 pops out and Cross vaults), the d-pad's left-right change the gun, Square reloads (or uses what is in reach), Triangle throws (held: the arc; the throw on the release), Circle strikes (#4764: a
 // tap cuts with the katana, held it is his guard).
 // Pure: no DOM, no store (the tests import it).
 
@@ -65,7 +65,7 @@ export const PAD_CONTROLS: Array<[Glyph[], string]> = [
   [["ls"], "move"], [["rs"], "aim"], [["r2"], "fire"], [["l2"], "aim (sniper: scope)"],
   [["r3", "l3"], "bullet time"], [["r1"], "shootdodge"], [["l1"], "cover (again: dash to the marked cover)"], [["l2"], "in cover: hold to pop out and aim"],
   [["cross"], "jump (in cover: vault)"], [["square"], "reload / use"],
-  [["dup"], "copium"], [["dpadH"], "weapon"], [["circle"], "melee (#4764: tap cut, hold guard)"], [["triangle"], "grenade"], [["ddown"], "use"],
+  [["dup"], "copium"], [["dpadH"], "weapon"], [["circle"], "melee (#4764: tap cut, hold guard)"], [["triangle"], "grenade (hold: the arc; let go: throw)"], [["ddown"], "use"],
   [["options"], "pause"],
 ];
 

@@ -61,10 +61,10 @@ export function useNudge(h: Hud, now: number): Nudge | null {
   s.owned = h.owned;
   // the sniper's first draw: how to scope
   if (h.weaponId === "sniper" && !s.zoomHint) { s.zoomHint = true; fire("pickup", "hold right mouse: scope."); }
-  // the first frag in the pouch: how to throw it; #4764's katana, in the first fight after its first kill
+  // the first frag in the pouch: how to aim and throw it; #4764's katana, in the first fight after its first kill
   // (the opening lines are said). Once a session each, and they wait for a free slot (frags found in a
   // secret: the secret's line goes first)
-  if (h.grenades > s.nades && !s.nadeHint) { s.nadeHint = true; s.pending.push("a frag. throw it. [G]"); }
+  if (h.grenades > s.nades && !s.nadeHint) { s.nadeHint = true; s.pending.push("a frag. hold [G] to see where it goes. let go to throw."); }
   s.nades = h.grenades;
   if (h.awake && alive && h.alive < h.total && !s.meleeHint && h.katana) { s.meleeHint = true; s.pending.push(GUARD_HINT); }
   if (h.katana && h.bt && s.meleeHint && !s.returnHint && alive) { s.returnHint = true; s.pending.push(RETURN_HINT); }

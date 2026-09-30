@@ -20,6 +20,7 @@ import { COVER_MOVE, aiCovers, attachCover, coverOf, findTarget, leaveCover, tuc
 import { AI, BREACH, CHECKPOINT_MIN_HEALTH, DIFFICULTY, DODGE, DT, ENEMY, ENEMY_ARMS, GRENADE, GUARD, HEAVY, HEAVY_SCALE, KILLCAM, MADAME, MAX_RANGE, MELEE, METER, PLAYER, PROJECTILE_SPEED, RUSHER, TIME, USE, type Difficulty } from "./tuning.ts";
 import { PLAYER_ID, type GameEvent, type InputFrame, type V3 } from "./types.ts";
 import { World, circleRectOverlap, type Box } from "./world.ts";
+import { FRAG_STEP, fragLaunch, fragLegacy, fragSubstep, fuseOut, fuseTick, predictFrag, type FragLaunch, type FragPath } from "./frag.ts";
 import { Ride } from "./ride.ts";
 import { Boss } from "./boss.ts";
 import { makeStage, type Stage } from "./stage.ts";
@@ -58,7 +59,9 @@ export type Projectile = {
 
 /** A live frag: world-time flight, bounces, the fuse. `landed` once it first touched something. */
 /** by: -1 his, else the goon who threw it (ai/tactics.ts). */
-export type Grenade = { id: number; x: number; y: number; z: number; vx: number; vy: number; vz: number; fuse: number; landed: boolean; resting: boolean; bounces: number; by?: number };
+export type Grenade = { id: number; x: number; y: number; z: number; vx: number; vy: number; vz: number; fuse: number; landed: boolean; resting: boolean; bounces: number; by?: number;
+  /** World time owed to its flight (sim/frag.ts steps it in FRAG_STEP sub-steps). */
+  acc?: number };
 
 export type KillCam = {
   /** Real seconds since it started. */
@@ -210,6 +213,7 @@ export class Game {
   /** Live grenades. */
   readonly grenadesLive: Grenade[] = [];
   private nextGrenade = 1;
+  private readonly fragL: FragLaunch = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0 };
   /** Secret markers, the ones found (ids), secret doors opened and breakables broken (node ids). */
   readonly secrets: Marker[];
   readonly found: string[] = [];
@@ -474,7 +478,7 @@ export class Game {
     const inControl = this.phase === "play" || this.phase === "clear";
     const pin = inControl ? inp : FROZEN_INPUT(inp, p);
     if (inControl && p.mode !== "dead") {
-      if (inp.slot > 0) this.switchWeapon(inp.slot);
+      if (inp.slot > 0) { if (p.nadeUp) this.lowerFrag(true); this.switchWeapon(inp.slot); }
       if (inp.reload && p.meleeT <= 0 && !p.guard && startReload(p.weapon)) this.emit({ type: "reload", hand: 0 });
       if (inp.copium) this.useCopium();
       if (inp.cover && p.mode === "normal") this.pressCover();
@@ -489,7 +493,7 @@ export class Game {
     // drops it until the button is let go
     if (!pin.zoom) p.zoomBlock = false;
     if (p.zoom && (p.weapon.reloadT > 0 || p.mode !== "normal" || p.weapon.id !== "sniper")) p.zoomBlock = true;
-    const zoom = inControl && !!pin.zoom && !p.zoomBlock && p.weapon.id === "sniper" && p.mode === "normal" && p.weapon.reloadT <= 0 && p.meleeT <= 0 && !p.guard;
+    const zoom = inControl && !!pin.zoom && !p.zoomBlock && p.weapon.id === "sniper" && p.mode === "normal" && p.weapon.reloadT <= 0 && p.meleeT <= 0 && !p.guard && !p.nadeUp;
     if (zoom !== p.zoom) { p.zoom = zoom; this.emit({ type: "zoom", on: zoom }); }
     const pm = stepPlayer(this.world, p, pin, DT, pdt, this.cover);
     if (pm & (PM_COVER_IN | PM_COVER_OUT | PM_POP | PM_DUCK | PM_VAULT)) {
@@ -524,8 +528,8 @@ export class Game {
       // #4764's melee button is the guard while held (stepGuard: a tap cuts on the release); a press that
       // came and went between two steps cuts now, like everyone else's strike
       if (inp.melee && !(this.katana && inp.guard)) this.startMelee();
-      if (inp.throw) this.throwGrenade();
-    }
+      this.stepFrag(inp);
+    } else if (p.nadeUp) this.lowerFrag(false);
     if (this.katana) this.stepGuard(inp, inControl, pdt);
     const w = p.weapon;
     if (stepWeapon(w, pdt)) this.emit({ type: "reloaded" });
@@ -537,7 +541,8 @@ export class Game {
       if (!p.meleeDone && M.time - p.meleeT >= MELEE.windup) { p.meleeDone = true; if (p.mode !== "dead") this.resolveMelee(); }
     }
     const canFire = inControl && p.mode !== "dead" && p.mode !== "getup" && p.meleeT <= 0 && !p.guard;
-    const hand = triggerWeapon(w, canFire && inp.fire);
+    // (his frag held up: a pair fires from the right hand alone)
+    const hand = triggerWeapon(w, canFire && inp.fire, p.nadeUp);
     if (hand >= 0) this.firePlayer(hand);
     else if (canFire && inp.fire && !w.wasDown && w.reloadT > 0) this.emit({ type: "dryfire" });
 
@@ -1004,28 +1009,56 @@ export class Game {
     return x * x + y * y + z * z <= GUARD.disc.r * GUARD.disc.r ? t : -1;
   }
 
-  /** G: a frag from his left hand on a 35 deg loft onto the aim point (3-20 m out). */
-  private throwGrenade(): void {
+  /** G / Triangle held: the frag comes up in his left hand and the aim preview shows where it goes; let go
+   *  and it goes (a press that came and went between two steps throws at once). A weapon switch, a
+   *  melee or the guard put it back (down until the button is let go); a dive, a roll or a vault take it
+   *  down until he is back on his feet with the button still held. Up, he can still shoot one-handed. */
+  private stepFrag(inp: InputFrame): void {
+    const p = this.player;
+    const held = !!inp.nade;
+    if (!held) p.nadeBlock = false;
+    // the game lost the keys (the window's focus, the pointer let go for the pause): back in the pouch,
+    // not thrown
+    if (inp.stow && p.nadeUp) { this.lowerFrag(false); return; }
+    if (p.nadeUp) {
+      if (p.meleeT > 0 || p.guard) this.lowerFrag(true);
+      else if (p.mode !== "normal" || p.grenades <= 0) this.lowerFrag(false);
+      else if (!held) { p.nadeUp = false; this.throwGrenade(true); return; }
+    }
+    if (held && !p.nadeUp && !p.nadeBlock && p.grenades > 0 && p.throwT <= 0 && p.mode === "normal" && p.meleeT <= 0 && !p.guard) {
+      p.nadeUp = true;
+      this.emit({ type: "nade", up: true });
+    } else if (inp.throw && !held && !p.nadeUp) this.throwGrenade();
+  }
+
+  /** The raised frag goes back in the pouch (block: it stays down until the button is let go). */
+  private lowerFrag(block: boolean): void {
+    const p = this.player;
+    if (block) p.nadeBlock = true;
+    if (!p.nadeUp) return;
+    p.nadeUp = false;
+    this.emit({ type: "nade", up: false });
+  }
+
+  /** Where a throw now would go (his frag held up: the view draws it): the sim's own flight, bounces and
+   *  the blast point (sim/frag.ts). */
+  fragPreview(out?: FragPath): FragPath {
+    const p = this.player;
+    return predictFrag(this.world, fragLaunch(p.x, p.y, p.z, p.yaw, this.aimPoint, this.fragL), out);
+  }
+
+  /** A frag from his left hand on a 35 deg loft onto the aim point (3-20 m out; sim/frag.ts fragLaunch);
+   *  raised: let go from the frag held up. */
+  private throwGrenade(raised = false): void {
     const p = this.player;
     if (p.grenades <= 0 || p.throwT > 0 || p.mode !== "normal" || p.meleeT > 0 || p.guard) return;
     p.grenades--;
     p.throwT = GRENADE.cooldown;
-    const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw), rx = Math.cos(p.yaw), rz = -Math.sin(p.yaw);
-    const ox = p.x + fx * 0.3 - rx * 0.25, oy = p.y + 1.5, oz = p.z + fz * 0.3 - rz * 0.25;
-    const ap = this.aimPoint;
-    let hx = ap.x - ox, hz = ap.z - oz;
-    let R = Math.hypot(hx, hz);
-    if (R < 1e-3) { hx = fx; hz = fz; R = GRENADE.minRange; } else { hx /= R; hz /= R; }
-    // past the far clamp it lands on the ground at 20 m, not up the aim line
-    const dy = R > GRENADE.maxRange ? p.y - oy : ap.y - oy;
-    R = Math.max(GRENADE.minRange, Math.min(GRENADE.maxRange, R));
-    const th = GRENADE.loft, c = Math.cos(th), t = Math.tan(th);
-    const den = 2 * c * c * (R * t - dy);
-    let v = den > 0.05 ? Math.sqrt((GRENADE.gravity * R * R) / den) : GRENADE.maxSpeed;
-    v = Math.max(GRENADE.minSpeed, Math.min(GRENADE.maxSpeed, v));
-    const gr: Grenade = { id: this.nextGrenade++, x: ox, y: oy, z: oz, vx: hx * v * c, vy: v * Math.sin(th), vz: hz * v * c, fuse: GRENADE.fuse, landed: false, resting: false, bounces: 0, by: -1 };
+    const l = fragLaunch(p.x, p.y, p.z, p.yaw, this.aimPoint, this.fragL);
+    const ox = l.x, oy = l.y, oz = l.z;
+    const gr: Grenade = { id: this.nextGrenade++, x: ox, y: oy, z: oz, vx: l.vx, vy: l.vy, vz: l.vz, fuse: GRENADE.fuse, landed: false, resting: false, bounces: 0, by: -1, acc: 0 };
     this.grenadesLive.push(gr);
-    this.emit({ type: "throw", id: gr.id, x: ox, y: oy, z: oz });
+    this.emit({ type: "throw", id: gr.id, x: ox, y: oy, z: oz, ...(raised ? { raised: true } : {}) });
     // they hear the pin
     for (const e of this.enemies) if (e.state === "idle" && !e.deaf && (e.x - p.x) ** 2 + (e.z - p.z) ** 2 < 12 * 12) alertGoon(this, e, 0.3);
   }
@@ -1041,33 +1074,26 @@ export class Game {
   private stepGrenades(wdt: number): void {
     for (let i = 0; i < this.grenadesLive.length; i++) {
       const gr = this.grenadesLive[i];
-      if (!gr.resting) {
-        const sp = Math.hypot(gr.vx, gr.vy, gr.vz);
-        const n = Math.min(8, Math.max(1, Math.ceil((sp * wdt) / 0.1)));
-        const dt = wdt / n;
-        for (let k = 0; k < n && !gr.resting; k++) {
-          gr.vy -= GRENADE.gravity * dt;
-          const len = Math.hypot(gr.vx, gr.vy, gr.vz) * dt;
-          if (len < 1e-7) continue;
-          const dx = (gr.vx * dt) / len, dy = (gr.vy * dt) / len, dz = (gr.vz * dt) / len;
-          const h = this.world.raycast(gr.x, gr.y, gr.z, dx, dy, dz, len + 0.06, false);
-          if (!h) { gr.x += dx * len; gr.y += dy * len; gr.z += dz * len; continue; }
-          const back = Math.max(0, h.t - 0.06);
-          gr.x += dx * back; gr.y += dy * back; gr.z += dz * back;
-          // bounce: the normal part reverses x restitution, the rest keeps a share
-          const vn = gr.vx * h.nx + gr.vy * h.ny + gr.vz * h.nz;
-          const tx = gr.vx - vn * h.nx, ty = gr.vy - vn * h.ny, tz = gr.vz - vn * h.nz;
-          const r = GRENADE.restitution, tk = GRENADE.tangential;
-          gr.vx = tx * tk - r * vn * h.nx; gr.vy = ty * tk - r * vn * h.ny; gr.vz = tz * tk - r * vn * h.nz;
-          gr.landed = true;
-          gr.bounces++;
-          const after = Math.hypot(gr.vx, gr.vy, gr.vz);
-          if (Math.abs(vn) > 1) this.emit({ type: "bounce", id: gr.id, x: gr.x, y: gr.y, z: gr.z, speed: Math.abs(vn) });
-          if (after < GRENADE.restSpeed && h.ny > 0.7) { gr.resting = true; gr.vx = gr.vy = gr.vz = 0; }
+      let boom = false;
+      if ((gr.by ?? -1) < 0) {
+        // his: fixed sub-steps of world time (sim/frag.ts: the aim preview's own flight), the fuse
+        // counting the same sub-steps
+        let acc = (gr.acc ?? 0) + wdt;
+        while (acc >= FRAG_STEP - 1e-12) {
+          acc -= FRAG_STEP;
+          const vn = fragSubstep(this.world, gr);
+          if (vn > 1) this.emit({ type: "bounce", id: gr.id, x: gr.x, y: gr.y, z: gr.z, speed: vn });
+          gr.fuse = fuseTick(gr.fuse);
+          if (fuseOut(gr.fuse)) { boom = true; break; }
         }
+        gr.acc = acc;
+      } else {
+        // the gang's: the per-step sub-steps, the fuse on world time
+        fragLegacy(this.world, gr, wdt, vn => { if (vn > 1) this.emit({ type: "bounce", id: gr.id, x: gr.x, y: gr.y, z: gr.z, speed: vn }); });
+        gr.fuse -= wdt;
+        boom = gr.fuse <= 0;
       }
-      gr.fuse -= wdt;
-      if (gr.fuse <= 0) {
+      if (boom) {
         this.grenadesLive.splice(i--, 1);
         this.explode(gr);
         continue;
@@ -1789,7 +1815,7 @@ export class Game {
     for (const b of this.projectiles) h.f64(b.x).f64(b.y).f64(b.z);
     h.i32(p.guard ? 1 : 0).i32(p.guardLock ? 1 : 0).f64(p.guardT).f64(p.guardMeter).f64(p.guardBroken).f64(p.shoveT).f64(this.guardHoldUntil);
     h.i32(p.cover).f64(p.coverU).f64(p.coverPop).i32(p.coverEnd).i32(p.dashSeg).f64(p.shoulder).f64(p.pivotUp);
-    h.i32(p.grenades).i32(p.banked).f64(p.meleeT).i32(p.zoom ? 1 : 0).i32(this.found.length).i32(this.opened.length).i32(this.broken.length).i32(this.grenadesLive.length);
+    h.i32(p.grenades).i32(p.nadeUp ? 1 : 0).i32(p.banked).f64(p.meleeT).i32(p.zoom ? 1 : 0).i32(this.found.length).i32(this.opened.length).i32(this.broken.length).i32(this.grenadesLive.length);
     for (const gr of this.grenadesLive) h.f64(gr.x).f64(gr.y).f64(gr.z).f64(gr.fuse);
     this.ride?.hashInto(h);
     this.boss?.hashInto(h);
@@ -1827,7 +1853,7 @@ export function insideTrigger(t: Marker, x: number, y: number, z: number): boole
   return Math.abs(lx) <= t.hx && Math.abs(lz) <= t.hz && Math.abs(y - t.y) <= Math.max(t.hy, 1.5);
 }
 
-const frozen: InputFrame = { moveX: 0, moveY: 0, yaw: 0, pitch: 0, fire: false, bt: false, dodge: false, jump: false, reload: false, copium: false, slot: 0, skip: false, melee: false, throw: false, interact: false, zoom: false, guard: false, cover: false, aim: false };
+const frozen: InputFrame = { moveX: 0, moveY: 0, yaw: 0, pitch: 0, fire: false, bt: false, dodge: false, jump: false, reload: false, copium: false, slot: 0, skip: false, melee: false, throw: false, interact: false, zoom: false, guard: false, cover: false, aim: false, nade: false };
 /** Outside control (kill cam, results) the player keeps the aim but does nothing else. */
 function FROZEN_INPUT(_inp: InputFrame, p: Player): InputFrame {
   frozen.yaw = p.yaw;
