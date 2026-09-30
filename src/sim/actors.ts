@@ -48,6 +48,10 @@ export type Player = {
   /** Frag grenades in the pouch (at most GRENADE.carry); seconds (his clock) before the next throw. */
   grenades: number;
   throwT: number;
+  /** A frag held up in his left hand (the button held: the aim preview shows where it goes); put back
+   *  by a weapon switch, a melee or the guard, it stays down until the button is let go (nadeBlock). */
+  nadeUp: boolean;
+  nadeBlock: boolean;
   /** The melee in progress: seconds left of it (his clock; 0 = none), whether its hit has resolved. */
   meleeT: number;
   meleeDone: boolean;
@@ -103,7 +107,7 @@ export function makePlayer(x: number, y: number, z: number, facing: number, base
     yaw, pitch: 0, facing, health: PLAYER.maxHealth, copium: PLAYER.startCopium, healLeft: 0,
     weapon: gun, owned: [base], arsenal: { [base]: gun }, pivotUp: 1.55, speed: 0,
     hit: makeHitActor("radbro", 0), moveWX: 0, moveWZ: 0,
-    grenades: 0, throwT: 0, meleeT: 0, meleeDone: true, zoom: false, zoomBlock: false, banked: 0, lastInSlot: {},
+    grenades: 0, throwT: 0, nadeUp: false, nadeBlock: false, meleeT: 0, meleeDone: true, zoom: false, zoomBlock: false, banked: 0, lastInSlot: {},
     guard: false, guardT: 0, guardIdle: 99, guardMeter: GUARD.max, guardBroken: 0, guardLock: false, parryOk: false, guardHeld: false, guardPress: -1, shoveT: 0, shoveX: 0, shoveZ: 0,
     cover: -1, coverU: 0, coverPop: 0, coverEnd: 0, coverAway: 0, dashSeg: -1, dashU: 0, dashT: 0,
     vault: { x0: 0, y0: 0, z0: 0, x1: 0, y1: 0, z1: 0, top: 0 }, shoulder: 1,

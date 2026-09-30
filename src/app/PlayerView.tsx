@@ -23,7 +23,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useAssetRuntime } from "react-three-game";
-import { AnimationMixer, AnimationUtils, Box3, BufferGeometry, Euler, Group, LoopOnce, Matrix4, Mesh, MeshBasicMaterial, Quaternion, Vector3, type AnimationAction, type Camera, type PerspectiveCamera, type AnimationClip, type Bone, type Material, type Object3D } from "three";
+import { AdditiveBlending, AnimationMixer, AnimationUtils, BackSide, Box3, BufferGeometry, Euler, Group, LoopOnce, Matrix4, Mesh, MeshBasicMaterial, Quaternion, Vector3, type AnimationAction, type Camera, type PerspectiveCamera, type AnimationClip, type Bone, type Material, type Object3D } from "three";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 import type { Session } from "./session.ts";
 import { AnimPlayer } from "../anim/animPlayer.ts";
@@ -66,6 +66,12 @@ const SWING = {
 } as const;
 /** The throw's left-hand arc (his frame, from the chest): back and up, then out forward; seconds. */
 const THROW = { from: [-0.35, 0.5, -0.25], to: [-0.1, 0.55, 0.75], time: 0.4 } as const;
+/** The frag held up (the grenade button held, the aim preview on): the left hand up and back beside his
+ *  head, where the lob starts (THROW.from), with the frag in it; in / out (s). A release goes straight
+ *  into the lob from there. */
+const RAISE = { in: 0.12, out: 0.1 } as const;
+/** The left hand's place for the throw this frame (his frame off the chest). */
+const THROW_AT = [0, 0, 0];
 /** #4764's guard (his frame off the chest bone: right, up, forward): the drawn katana's grip, the way the
  *  blade points (across him from his left hip up past his right shoulder, a little out: from the camera
  *  over that shoulder it shows beside his head), how far below the right hand the left grips the
@@ -124,6 +130,9 @@ const AK_RELOAD: readonly (readonly [number, readonly [number, number, number] |
 /** The mag's place on the AK and where the palm holds it (gun units). */
 const AK_MAG_AT = new Vector3(0, -0.005, 0.15);
 const AK_MAG_GRAB = new Vector3(0.02, -0.09, 0.17);
+/** The rim round the frag in his hand (additive, unlit: ArsenalFx's live frags have the same). */
+const HELD_HULL = new MeshBasicMaterial({ color: "#ffc46b", side: BackSide, transparent: true, opacity: 0.4, blending: AdditiveBlending, depthWrite: false, toneMapped: false });
+HELD_HULL.userData.rpOwn = true;
 /** A gun drawn flat for the hold check's pixel count. */
 const MASK = new MeshBasicMaterial({ color: "#ff00ff", toneMapped: false });
 /** Lying with a long gun (dive / prone): the roll onto his left side (rad, about his forward axis; on the
@@ -293,6 +302,10 @@ function makeRig(id: RadbroId, src: Object3D, pack: Object3D | null, gunPack: Ob
     katana.userData.grip = katana.quaternion.clone();
   }
   if (bones.lHand) attachGun(grenade, bones.lHand, grips.left, 1, 1.3);
+  // the frag in his hand reads from the shoulder camera: a warm rim round it, as a live one has
+  const fragParts: Mesh[] = [];
+  grenade.traverse(o => { if ((o as Mesh).isMesh) fragParts.push(o as Mesh); });
+  for (const o of fragParts) { const h = new Mesh(o.geometry, HELD_HULL); h.scale.setScalar(1.22); h.frustumCulled = false; o.add(h); }
   const katanaLeft = { p: new Vector3(...grips.left.p), q: new Quaternion(...grips.left.q).normalize().multiply(new Quaternion().setFromEuler(KATANA_TIP_LEFT)) };
   const hipHilt = splitHipKatana(model);
   // the drawn blade takes the hip katana's own hilt and guard (the same wrap and tsuba he wears)
@@ -487,6 +500,8 @@ export function PlayerView({ s }: { s: Session }) {
     lieW: 0,
     /** Seconds since the last throw (the left hand's lob), the melee swing's twist this frame. */
     throwT: 99,
+    /** The frag held up (eased), and whether the last lob started from there. */
+    nadeW: 0, fromUp: false,
     /** #4764's guard pose weight (eased). */
     guardW: 0 });
   const tmp = useMemo(() => ({ aim: new Vector3(), side: new Vector3(), a: new Vector3(), q: new Quaternion() }), []);
@@ -506,7 +521,7 @@ export function PlayerView({ s }: { s: Session }) {
         else r.recoil[e.hand] = 1;
       }
       if (e.type === "hurt" && e.target === -1 && e.hp > 0 && rig.hit) rig.hit.reset().setEffectiveWeight(0.9).play();
-      if (e.type === "throw" && e.by === undefined) r.throwT = 0;
+      if (e.type === "throw" && e.by === undefined) { r.fromUp = !!e.raised && r.nadeW > 0.3; r.nadeW = 0; r.throwT = 0; }
       if (e.type === "reload") {
         // the shotgun's authored feed (the sniper's rounds go in the same way); the AK's (and the rifle's)
         // mag change is a left-hand path on the hold (no layer)
@@ -543,7 +558,7 @@ export function PlayerView({ s }: { s: Session }) {
     const pos = s.renderP;
     if (r.run !== s.run) {
       r.run = s.run; r.clip = ""; r.mode = ""; r.legYaw = p.facing; r.bodyYaw = p.facing; r.jumpHold = false; r.reloadW = 0; r.back = false;
-      r.shown = p.weapon.id; r.swapTo = ""; r.swapT = -1; r.swapW = 0; r.fireW = 0; r.ikW = 1; r.readyW = 1; r.sinceShot = 99; r.lgRecoil = 0; r.throwT = 99; r.guardW = 0;
+      r.shown = p.weapon.id; r.swapTo = ""; r.swapT = -1; r.swapW = 0; r.fireW = 0; r.ikW = 1; r.readyW = 1; r.sinceShot = 99; r.lgRecoil = 0; r.throwT = 99; r.nadeW = 0; r.fromUp = false; r.guardW = 0;
       pl.force(pick(pl, (isLongGun(p.weapon.id) ? SHOTGUN_CLIPS : CLIPS).idle), 0);
       rig.hit?.stop();
       rig.reload?.stop();
@@ -738,7 +753,15 @@ export function PlayerView({ s }: { s: Session }) {
     if (r.guardW < 1e-3) r.guardW = 0;
     r.throwT += dt * s.playerScale;
     const tu = r.throwT / THROW.time;
-    const throwW = tu < 1 && alive ? Math.sin(Math.PI * tu) : 0;
+    // the lob with the left hand (from the frag held up it starts at full weight), else the frag held up
+    const upWant = p.nadeUp && alive && normal ? 1 : 0;
+    r.nadeW += (upWant - r.nadeW) * Math.min(1, dt / (upWant ? RAISE.in : RAISE.out));
+    if (r.nadeW < 1e-3) r.nadeW = 0;
+    const lobbing = tu < 1 && alive;
+    const throwW = lobbing ? (r.fromUp && tu < 0.5 ? 1 : Math.sin(Math.PI * tu)) : r.nadeW;
+    const lobK = lobbing ? smooth(Math.min(1, tu / 0.6)) : 0;
+    const throwAt = THROW_AT;
+    for (let k = 0; k < 3; k++) throwAt[k] = THROW.from[k] + (THROW.to[k] - THROW.from[k]) * lobK;
     const fwdX = Math.sin(p.facing), fwdZ = Math.cos(p.facing), rtX = -Math.cos(p.facing), rtZ = Math.sin(p.facing);
     /** A point in his frame off the chest bone (right, up, forward). */
     const offChest = (o: readonly number[], out: Vector3) => {
@@ -819,9 +842,8 @@ export function PlayerView({ s }: { s: Session }) {
           magRide = (u >= 0.12 && u < 0.3) || (u >= 0.55 && u < 0.85);
         }
       } else if (throwW > 0) {
-        // the grenade: the left hand leaves the gun for the lob and comes back (the right keeps it)
-        const k = smooth(Math.min(1, tu / 0.6));
-        offChest([THROW.from[0] + (THROW.to[0] - THROW.from[0]) * k, THROW.from[1] + (THROW.to[1] - THROW.from[1]) * k, THROW.from[2] + (THROW.to[2] - THROW.from[2]) * k], vB);
+        // the grenade: the left hand leaves the gun (held up, then the lob) and comes back (the right keeps it)
+        offChest(throwAt, vB);
         leftPath = { local: vPath.set(0, 0, 0.37), world: vB, mix: 1, w: throwW };
       }
       if (r.shown === "sniper") {
@@ -888,10 +910,7 @@ export function PlayerView({ s }: { s: Session }) {
         vA.set(vA.x + fwdX * 0.15, vA.y - 0.25, vA.z + fwdZ * 0.15);
         aimLimb(B.lArm, B.lHand, vA, armK * (1 - 0.95 * r.reloadW));
       } else aimLimb(B.lArm, B.lHand, lOff, armK * (1 - 0.95 * r.reloadW) * (1 - throwW));
-      if (throwW > 0) {
-        const k = smooth(Math.min(1, tu / 0.6));
-        aimLimb(B.lArm, B.lHand, offChest([THROW.from[0] + (THROW.to[0] - THROW.from[0]) * k, THROW.from[1] + (THROW.to[1] - THROW.from[1]) * k, THROW.from[2] + (THROW.to[2] - THROW.from[2]) * k], vB), throwW);
-      }
+      if (throwW > 0) aimLimb(B.lArm, B.lHand, offChest(throwAt, vB), throwW);
       // recoil: a quick kick up at the elbow (the SMGs kick a little less, but faster; the hand cannon hard)
       const kick = r.shown === "smgs" ? 0.16 : oneHand ? ONE_HAND[r.shown as keyof typeof ONE_HAND].kick : 0.3;
       for (const h of [0, 1] as const) {
@@ -928,7 +947,7 @@ export function PlayerView({ s }: { s: Session }) {
       if (rig.katana.visible) aimHand(undefined, rig.katana, null, 0);
     }
     if (r.guardW > 0) guardPose(rig, r.guardW * (1 - meleeW), p.facing, offChest);
-    rig.grenade.visible = throwW > 0 && tu < 0.3;
+    rig.grenade.visible = lobbing ? throwW > 0 && tu < 0.3 : r.nadeW > 0.05;
     held.forEach((gun, h) => muzzleWorld(gun, playerMuzzles[h]));
     B.head?.getWorldPosition(playerHead);
     B.spine?.getWorldPosition(playerChest);

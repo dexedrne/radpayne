@@ -42,6 +42,18 @@ on: the hand cannon, a sawed-off, an assault rifle, a sniper rifle with a scope,
 katana (a strike with the gun for everyone else). Rooms 1-3 each hide three secrets, two of the six Radbro
 Webring pins among them, and a few easter eggs; the results count what you found.
 
+**Frags: hold to aim.** Hold G (Triangle) and he raises the frag in his left hand, and the throw shows
+before it happens: a gold dashed arc from his hand, a small ring wherever it will bounce, and where it
+will go off, the blast's reach as a gold ring on the floor (hot red while you stand inside it yourself).
+Aim with the crosshair (it lands where you aim, 3-20 m out, then bounces and rolls on), let go and it
+goes. The arc is the frag's real flight, bounces and all, and it holds in bullet time: the frag flies the
+same path slowed down. After the throw the ring stays on the spot until it goes off. A quick tap still
+throws at once; a weapon switch (1-5, the wheel, the d-pad) or a melee puts it back in the pouch, and so
+does the pause (it never flies on its own when the game loses the keys). You can keep shooting one-handed
+while it is up (the pistols and the SMGs fire from the right hand alone, at that gun's own pace); the
+scope and the reload wait (raising it drops a reload under way; a gun that runs dry reloads as the frag
+goes).
+
 **#4764's katana:** he wears it on his left hip in every room and draws it for the melee: tap F (Circle)
 for a cut with reach that takes up to three in its arc (no blood: ink and sparks). Hold F (Circle) and
 it is his guard, the blade across his body in both hands: he moves at half speed and cannot shoot, and
@@ -89,7 +101,7 @@ Countess's lifts two girls at a time; Hard and Hardcore keep theirs.
 | 1-5 / wheel | weapon by kind: 1 the dual pistols (#250: his AK), 2 the shotgun / sawed-off, 3 the dual SMGs, 4 the hand cannon, 5 the rifle / sniper. Press a key again for its twin |
 | Right button (sniper in hand) | hold to scope (Q stays bullet time) |
 | F | melee: everyone strikes with the gun; #4764 taps it for a katana cut and holds it to guard (in bullet time the guard sends rounds back) |
-| G | throw a grenade (it lands where you aim, 3-20 m) |
+| G | grenade: hold to raise it and see the arc, the bounces and the blast ring; let go to throw (it lands where you aim, 3-20 m). A tap throws at once; 1-5 / the wheel puts it back |
 | E | use: secret doors, the cat, the arcade cabinet |
 | Esc | pause |
 
@@ -107,7 +119,7 @@ shooters' (PlayStation names, Xbox in brackets):
 | L2 (LT), in cover | hold: pop out and aim; let go: back down |
 | Cross (A) | jump; in cover: vault over it |
 | Square (X) | reload, or use what is in reach (a secret door, the cat, the cabinet) |
-| Triangle (Y) | throw a grenade |
+| Triangle (Y) | grenade: hold to see the arc and the blast ring, let go to throw (a tap throws at once; the d-pad's weapon change puts it back) |
 | Circle (B) | melee (#4764: tap for the katana cut, hold to guard) |
 | D-pad left-right | weapon (next / previous, twins included; the weapon tabs show which way reaches which) |
 | D-pad up / down | copium / use |
@@ -338,6 +350,20 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
 The simulation runs at a fixed 120 Hz and is deterministic for a given level, seed, difficulty and
 input log. Bullet time is a time scale on it.
 
+- **The frag's flight is one function** (`src/sim/frag.ts`): his frags fly in fixed sub-steps of world
+  time (`FRAG_STEP`, two per step at full speed) and the fuse counts the same sub-steps, so bullet time
+  slows a frag along the very same path. The aim preview (`Game.fragPreview`, drawn by
+  `src/app/FragArcView.tsx`) replays that flight from the throw he would make now, so the arc, its
+  bounces and the blast ring are exactly where the frag goes; `test/fragarc.test.ts` throws 180 of them
+  (angles, pitches, walls, a crate, a step, in bullet time and with bullet time switched on and off in
+  flight) and checks every bounce and the blast point against the sim. The input carries the button's
+  held level (`nade`) next to its press edge (`throw`): held, the frag is up (`Player.nadeUp`); a press
+  that came and went between two steps throws at once; the keys lost (focus, the pointer let go) send
+  `stow`, which puts it back instead (the pause sends it too, so a pad's held Triangle cannot throw on
+  the resume). In bullet time a step owes less world time than a sub-step, so the view draws his frag
+  with that owed time on top (`fragDrawAt`): it glides instead of hopping. The gang's frags (aimed by
+  `src/ai/tactics.ts`) keep the per-step sub-steps they always had.
+
 - **The kill cam** is presentation only (`src/app/cine.ts`: which kills, the timeline, `CINE` at the
   top). It holds the fight with `Session.hold`: no steps run while it plays, so the sim never sees it
   and a recorded input log replays the same with or without it; the views crawl at `CINE.crawl`
@@ -445,6 +471,11 @@ input log. Bullet time is a time scale on it.
   tools/katanasmoke.ts "http://localhost:4880/?bot&blade&radbro=4764&seed=1&webgl2" .local/shots/katana`
   plays room 1 as #4764 with the blade bot and shoots the guard, the rounds off the blade, the rounds
   sent back and the RETURN TO SENDER kill cam; it fails when no round went back.
+- **Arc check:** with the dev server up, `RADPAYNE_CHROME_PROFILE=<throwaway dir> RADPAYNE_GPU=1 node
+  tools/arcshot.ts "http://localhost:4880/" .local/shots/arc [room1,room6]` opens each room (all ten by
+  default) with the gang holding still, aims where the preview shows the most, holds G and shoots the
+  raised frag with its arc and blast ring, the same in bullet time, and the frag on its way after the
+  release; it fails unless the frag went off within 5 cm of where the preview said.
 - **Arsenal tour:** with the dev server up, `RADPAYNE_CHROME_PROFILE=<throwaway dir> node tools/tour.ts
   "http://localhost:4880/?bot&tour&seed=1&webgl2&room=room1&loadout=handcannon,sawedoff,rifle&grenades=3"
   .local/shots/tour1` shoots the first shot with each gun, a melee, a grenade, the scope, the drops

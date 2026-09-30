@@ -216,7 +216,7 @@ test("nudges: the first frag's G hint waits for a secret found with it, then sho
   assert.equal(useNudge(h({}), 0), null);
   // the frags lie in the secret: both in one HUD update, the secret's line first
   assert.equal(useNudge(h({ grenades: 2, secrets: 1 }), 100)?.text, "a secret. 1 of 3.");
-  assert.equal(useNudge(h({ grenades: 2, secrets: 1 }), 100 + NUDGE_HOLD)?.text, "a frag. throw it. [G]");
+  assert.equal(useNudge(h({ grenades: 2, secrets: 1 }), 100 + NUDGE_HOLD)?.text, "a frag. hold [G] to see where it goes. let go to throw.");
   assert.equal(useNudge(h({ grenades: 1, secrets: 1 }), 100 + 2 * NUDGE_HOLD), null);
   // once a session: the next frags say nothing
   assert.equal(useNudge(h({ grenades: 3, secrets: 1 }), 100 + 3 * NUDGE_HOLD), null);

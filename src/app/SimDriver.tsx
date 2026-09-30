@@ -191,7 +191,9 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
         break;
       case "roomClear": setHeartbeat(false); break;
       // the arsenal and the secrets
-      case "throw": sfxArsenal.grenade("throw"); break;
+      // his frag held up: the pin now, the lob alone when he lets go
+      case "nade": if (e.up) sfxArsenal.grenade("pin"); break;
+      case "throw": sfxArsenal.grenade(e.raised ? "lob" : "throw"); break;
       case "bounce": { const w = where(e.x, e.z); sfxArsenal.grenade("bounce", w.dist, w.pan, e.speed); break; }
       case "explode": { const w = where(e.x, e.z); sfxArsenal.grenade("explode", w.dist, w.pan); break; }
       case "melee":

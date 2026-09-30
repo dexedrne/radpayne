@@ -53,7 +53,7 @@ export const RADPAYNE: GameInfo = {
     "Hold right button with the sniper: scope",
     "F: melee (#4764: tap = katana cut; hold = guard)",
     "#4764: hold F in bullet time to send rounds back",
-    "G: grenade",
+    "G: grenade (hold to see the arc; let go to throw)",
     "E: use / open",
     "Esc: pause",
   ],
