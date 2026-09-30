@@ -12,7 +12,7 @@
 import { useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import {
-  type Blending, BufferAttribute, BufferGeometry, CircleGeometry, CylinderGeometry, DataTexture, DoubleSide, Group, Mesh, MeshBasicMaterial, NormalBlending, RingGeometry, Vector3,
+  type Blending, type Camera, BufferAttribute, BufferGeometry, CircleGeometry, CylinderGeometry, DataTexture, DoubleSide, Group, Mesh, MeshBasicMaterial, NormalBlending, RingGeometry, Vector3,
 } from "three";
 import type { Session } from "./session.ts";
 import { FRAME } from "./frame.ts";
@@ -57,7 +57,9 @@ export const ARC = {
 const MAX_DASH = 160;
 /** The blast ring's segments. */
 const SEG = 96;
-const Z = new Vector3(0, 0, 1), NRM = new Vector3(), CAM = new Vector3();
+const Z = new Vector3(0, 0, 1), NRM = new Vector3(), CAM = new Vector3(), SIDE = new Vector3(), P = new Vector3();
+/** His figure on screen (the ring's ghost leaves it out): half his width and his height, metres. */
+const HIM = { half: 0.5, top: 2.0 } as const;
 /** Cross-sections per dash (3 segments: the dash follows the curve). */
 const SECT = 4;
 
@@ -89,6 +91,35 @@ function setAnnulus(g: BufferGeometry, r0: number, r1: number): void {
 }
 
 /** The rim wall's fade: opaque at the floor, gone at its top (an alpha map; three reads its green). */
+/** The ring's ghost (what cover hides of it shows faintly through) never over him: the stretch of the
+ *  ring that runs behind him on screen (inside his figure's box there, farther than he is) is left out,
+ *  so no faint line crosses him when the ring passes behind his head. */
+function ghostAround(g: BufferGeometry, at: Vector3, r: number, camera: Camera, him: { x: number; y: number; z: number }): void {
+  SIDE.setFromMatrixColumn(camera.matrixWorld, 0);
+  CAM.setFromMatrixPosition(camera.matrixWorld);
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (let k = 0; k < 4; k++) {
+    const side = k & 1 ? HIM.half : -HIM.half, up = k & 2 ? HIM.top : 0;
+    P.set(him.x + SIDE.x * side, him.y + up, him.z + SIDE.z * side).project(camera);
+    x0 = Math.min(x0, P.x); x1 = Math.max(x1, P.x); y0 = Math.min(y0, P.y); y1 = Math.max(y1, P.y);
+  }
+  const dHim = Math.hypot(him.x - CAM.x, him.y + 1 - CAM.y, him.z - CAM.z);
+  const idx = g.getIndex() as BufferAttribute, a = idx.array as Uint16Array;
+  let n = 0;
+  for (let i = 0; i < SEG; i++) {
+    const t = ((i + 0.5) / SEG) * Math.PI * 2;
+    const wx = at.x + Math.cos(t) * r, wy = at.y, wz = at.z + Math.sin(t) * r;
+    const d = Math.hypot(wx - CAM.x, wy - CAM.y, wz - CAM.z);
+    P.set(wx, wy, wz).project(camera);
+    if (d > dHim - 0.3 && P.z < 1 && P.x > x0 && P.x < x1 && P.y > y0 && P.y < y1) continue;
+    const q = i * 2;
+    a[n++] = q; a[n++] = q + 2; a[n++] = q + 1;
+    a[n++] = q + 1; a[n++] = q + 2; a[n++] = q + 3;
+  }
+  idx.needsUpdate = true;
+  g.setDrawRange(0, n);
+}
+
 function fadeUp(): DataTexture {
   const n = 32, d = new Uint8Array(n * 4);
   for (let i = 0; i < n; i++) { const k = Math.round(255 * Math.pow(1 - i / (n - 1), 1.6)); d.set([k, k, k, 255], i * 4); }
@@ -136,7 +167,11 @@ export function FragArcView({ s }: { s: Session }) {
     const R = GRENADE.radius;
     const ringGeo = annulus(), keyGeo = annulus();
     const blast = new Group();
-    const ringKey = new Mesh(keyGeo, mats.ringKey), ring = new Mesh(ringGeo, mats.ring), ringGhost = new Mesh(ringGeo, mats.ringGhost);
+    // (the ghost: the ring's own points, its own triangles: the stretch that runs behind him is left out)
+    const ghostGeo = new BufferGeometry();
+    ghostGeo.setAttribute("position", ringGeo.getAttribute("position"));
+    ghostGeo.setIndex(new BufferAttribute(new Uint16Array(SEG * 6), 1));
+    const ringKey = new Mesh(keyGeo, mats.ringKey), ring = new Mesh(ringGeo, mats.ring), ringGhost = new Mesh(ghostGeo, mats.ringGhost);
     const fill = new Mesh(new CircleGeometry(1, 64), mats.fill);
     fill.rotation.x = -Math.PI / 2;
     fill.scale.setScalar(R);
@@ -165,7 +200,7 @@ export function FragArcView({ s }: { s: Session }) {
     group.name = "frag-arc"; line.name = "frag-arc-line"; lineKey.name = "frag-arc-linekey"; lineGhost.name = "frag-arc-lineghost";
     group.traverse(o => { o.frustumCulled = false; o.userData.rpWarm = true; });
     group.visible = false;
-    return { group, core, key, mats, blast, ticks, ringGeo, keyGeo, wall, fill, marks: [markKey, mark, dot], path: emptyPath(), a: 0, held: 0, run: -1, cum: [] as number[],
+    return { group, core, key, mats, blast, ticks, ringGeo, keyGeo, ghostGeo, wall, fill, marks: [markKey, mark, dot], path: emptyPath(), a: 0, held: 0, run: -1, cum: [] as number[],
       /** His last frag in the air (its id, -1 none), where it goes off (its own flight from where it is), the ring's weight. */
       thrown: -1, tpath: emptyPath(), b: 0,
       /** What the last preview was made from (his place, his aim, the world's open doors, the run). */
@@ -283,6 +318,7 @@ export function FragArcView({ s }: { s: Session }) {
     const R = GRENADE.radius, tw = ARC.ring * far;
     setAnnulus(v.ringGeo, R - tw, R);
     setAnnulus(v.keyGeo, R - tw * 2.2, R + tw * 0.7);
+    ghostAround(v.ghostGeo, v.blast.position, R - tw / 2, camera, s.renderP);
     for (const m of v.marks) m.scale.setScalar(far);
     const wh = ARC.wall * Math.max(1, dm / 12);
     v.wall.scale.set(R, wh, R);
