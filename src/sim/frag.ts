@@ -77,6 +77,17 @@ export function fragLegacy(world: World, gr: FragBody, wdt: number, bounce: (spe
   }
 }
 
+/** Where his frag shows (the view): its place plus the world time owed to it (`acc`, under one sub-step),
+ *  along the line to its next sub-step. The sim moves it in whole sub-steps, so in bullet time a sim step
+ *  may move it none or one; drawn at its own place it would hop every few frames. Read-only. */
+export function fragDrawAt(gr: FragBody & { acc?: number }, out: V3): V3 {
+  const t = gr.resting ? 0 : Math.max(0, Math.min(FRAG_STEP, gr.acc ?? 0));
+  out.x = gr.x + gr.vx * t;
+  out.y = gr.y + (gr.vy - GRENADE.gravity * FRAG_STEP) * t;
+  out.z = gr.z + gr.vz * t;
+  return out;
+}
+
 /** The fuse after one more sub-step, and whether that ends it (it goes off once less than half a
  *  sub-step is left: the same count of sub-steps in the sim and in the preview). */
 export function fuseTick(fuse: number): number {

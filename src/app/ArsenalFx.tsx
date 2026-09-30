@@ -18,10 +18,13 @@ import { FRAME } from "./frame.ts";
 import { makeGrenade } from "./guns.ts";
 import { playerChest } from "./PlayerView.tsx";
 import { GRENADE } from "../sim/tuning.ts";
+import { fragDrawAt } from "../sim/frag.ts";
 
 /** The camera shake a blast leaves (CameraView reads it): 0..1, decays over real time. */
 export const blastShake = { k: 0 };
 
+/** A live frag's drawn place (sim/frag.ts fragDrawAt: his fly in whole sub-steps). */
+const AT = { x: 0, y: 0, z: 0 };
 const own = <T extends { userData: Record<string, unknown> }>(m: T): T => { m.userData.rpOwn = true; return m; };
 const add = (color: string, opacity: number) => own(new MeshBasicMaterial({ color, transparent: true, opacity, blending: AdditiveBlending, depthWrite: false, toneMapped: false, side: DoubleSide }));
 
@@ -186,10 +189,12 @@ export function ArsenalFx({ s }: { s: Session }) {
       const r = fx.rings[i];
       f.visible = r.visible = !!gr;
       if (!gr) return;
-      f.position.set(gr.x, gr.y + 0.02, gr.z);
+      // (his between two of its sub-steps, so it glides in bullet time instead of hopping)
+      const at = fragDrawAt(gr, AT);
+      f.position.set(at.x, at.y + 0.02, at.z);
       if (!gr.resting) f.rotation.set(g.time * 9 + i, g.time * 5, 0);
-      const gy = g.world.groundBelow(gr.x, gr.z, 0.1, gr.y + 0.05);
-      r.position.set(gr.x, (Number.isFinite(gy) ? gy : 0) + 0.02, gr.z);
+      const gy = g.world.groundBelow(at.x, at.z, 0.1, at.y + 0.05);
+      r.position.set(at.x, (Number.isFinite(gy) ? gy : 0) + 0.02, at.z);
       (r.material as MeshBasicMaterial).opacity = 0.35 + 0.3 * Math.abs(Math.sin(g.realTime * 8));
     });
     // blasts on world time

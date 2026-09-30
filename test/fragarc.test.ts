@@ -4,7 +4,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Game } from "../src/sim/game.ts";
-import { FRAG_STEP, emptyPath, fragLaunch, predictFrag } from "../src/sim/frag.ts";
+import { FRAG_STEP, emptyPath, fragDrawAt, fragLaunch, predictFrag } from "../src/sim/frag.ts";
 import { DT, GRENADE } from "../src/sim/tuning.ts";
 import { InputLatch } from "../src/input/input.ts";
 import { ammoIn } from "../src/combat/weapons.ts";
@@ -373,4 +373,80 @@ test("hold to aim: no reload with the frag up (one in progress is dropped); a gu
   const out = run(1);
   assert.ok(out.some(e => e.type === "throw") && out.some(e => e.type === "reload"), "the throw, then the reload");
   assert.ok(w.reloadT > 0);
+});
+
+test("in bullet time his frag glides where it is drawn: whole sub-steps in the sim, the owed time on top for the eye", () => {
+  const g = new Game(level([spawn]), { ai: false, seed: 1, grenades: 1 });
+  const inp = emptyInput();
+  inp.yaw = g.player.yaw; inp.pitch = 0.1;
+  g.meter = 10; g.setBulletTime(true);
+  for (let i = 0; i < 120; i++) { g.step(inp); g.meter = 10; }
+  assert.ok(g.timeScale < 0.35, "slowed");
+  inp.throw = true; g.step(inp); inp.throw = false;
+  const gr = g.grenadesLive[0];
+  const at = { x: 0, y: 0, z: 0 };
+  let raw = { x: gr.x, z: gr.z }, drawn = { ...fragDrawAt(gr, at) };
+  const rawD: number[] = [], drawnD: number[] = [];
+  for (let i = 0; i < 40 && !gr.landed; i++) {
+    g.step(inp); g.meter = 10;
+    fragDrawAt(gr, at);
+    rawD.push(Math.hypot(gr.x - raw.x, gr.z - raw.z));
+    drawnD.push(Math.hypot(at.x - drawn.x, at.z - drawn.z));
+    raw = { x: gr.x, z: gr.z }; drawn = { ...at };
+  }
+  assert.ok(drawnD.length > 20, "in the air long enough");
+  // the sim's own place stands still on some steps and jumps on others; the drawn one moves every step alike
+  assert.ok(Math.min(...rawD) < 1e-9, "the raw place hops");
+  const lo = Math.min(...drawnD), hi = Math.max(...drawnD);
+  assert.ok(lo > 0 && hi / lo < 1.05, `drawn: even steps (${lo.toFixed(4)}..${hi.toFixed(4)} m)`);
+  // at full speed (nothing owed) it is the sim's own place
+  const h = new Game(level([spawn]), { ai: false, seed: 1, grenades: 1 });
+  inp.yaw = h.player.yaw; inp.throw = true; h.step(inp); inp.throw = false;
+  for (let i = 0; i < 10; i++) h.step(inp);
+  const q = h.grenadesLive[0];
+  fragDrawAt(q, at);
+  assert.ok(Math.abs(at.x - q.x) < 1e-9 && Math.abs(at.y - q.y) < 1e-9 && Math.abs(at.z - q.z) < 1e-9);
+});
+
+test("pad: the pause puts a held frag back (let go in the menu: nothing flies on the resume; still held: it stays down until let go)", () => {
+  type Btn = { pressed: boolean; value: number };
+  const buttons: Btn[] = Array.from({ length: 18 }, () => ({ pressed: false, value: 0 }));
+  const pad = { id: "DualSense Wireless Controller (STANDARD GAMEPAD Vendor: 054c Product: 0ce6)", index: 0, mapping: "standard", connected: true, axes: [0, 0, 0, 0], buttons, timestamp: 0 };
+  const nav = globalThis.navigator as unknown as Record<string, unknown>;
+  const had = Object.getOwnPropertyDescriptor(nav, "getGamepads");
+  Object.defineProperty(nav, "getGamepads", { value: () => [pad], configurable: true });
+  resetDevices();
+  try {
+    const l = new InputLatch();
+    const g = new Game(level([spawn]), { ai: false, seed: 1, grenades: 2 });
+    const p = g.player;
+    const step = (n: number) => { for (let i = 0; i < n; i++) { l.poll(DT); const f = l.consume(); f.yaw = p.yaw; g.step(f); } };
+    step(30);
+    const hold = (on: boolean) => { buttons[BTN.triangle] = { pressed: on, value: on ? 1 : 0 }; };
+    // held, then the pause (PlayPage's pause clears the latch), let go in the menu, the resume flushes it
+    hold(true); step(20);
+    assert.ok(p.nadeUp);
+    g.drain();
+    l.clear();
+    hold(false); l.poll(DT);
+    l.flush();
+    step(60);
+    assert.ok(!p.nadeUp && p.grenades === 2 && !g.drain().some(e => e.type === "throw"), "let go in the pause: back in the pouch");
+    // held through the pause: it goes back and stays down until let go, then a new press raises it
+    hold(true); step(20);
+    assert.ok(p.nadeUp);
+    l.clear(); l.flush();
+    step(60);
+    assert.ok(!p.nadeUp && p.grenades === 2, "still held on the resume: it stays down");
+    hold(false); step(2);
+    assert.equal(p.grenades, 2, "the release after it throws nothing");
+    hold(true); step(20);
+    assert.ok(p.nadeUp, "a new press raises it");
+    hold(false); step(2);
+    assert.equal(p.grenades, 1);
+  } finally {
+    if (had) Object.defineProperty(nav, "getGamepads", had);
+    else delete nav.getGamepads;
+    resetDevices();
+  }
 });

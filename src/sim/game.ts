@@ -1019,9 +1019,9 @@ export class Game {
     const p = this.player;
     const held = !!inp.nade;
     if (!held) p.nadeBlock = false;
-    // the game lost the keys (the window's focus, the pointer let go for the pause): back in the pouch,
-    // not thrown
-    if (inp.stow && p.nadeUp) { this.lowerFrag(false); return; }
+    // the game lost the keys (the window's focus, the pause): back in the pouch, not thrown, and down
+    // until the button is let go (a pad's Triangle still held on the resume does not raise it again)
+    if (inp.stow && p.nadeUp) { this.lowerFrag(true); return; }
     if (p.nadeUp) {
       if (p.meleeT > 0 || p.guard) this.lowerFrag(true);
       else if (p.mode !== "normal" || p.grenades <= 0) this.lowerFrag(false);

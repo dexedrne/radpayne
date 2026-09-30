@@ -359,8 +359,10 @@ input log. Bullet time is a time scale on it.
   flight) and checks every bounce and the blast point against the sim. The input carries the button's
   held level (`nade`) next to its press edge (`throw`): held, the frag is up (`Player.nadeUp`); a press
   that came and went between two steps throws at once; the keys lost (focus, the pointer let go) send
-  `stow`, which puts it back instead. The gang's frags (aimed by `src/ai/tactics.ts`)
-  keep the per-step sub-steps they always had.
+  `stow`, which puts it back instead (the pause sends it too, so a pad's held Triangle cannot throw on
+  the resume). In bullet time a step owes less world time than a sub-step, so the view draws his frag
+  with that owed time on top (`fragDrawAt`): it glides instead of hopping. The gang's frags (aimed by
+  `src/ai/tactics.ts`) keep the per-step sub-steps they always had.
 
 - **The kill cam** is presentation only (`src/app/cine.ts`: which kills, the timeline, `CINE` at the
   top). It holds the fight with `Session.hold`: no steps run while it plays, so the sim never sees it

@@ -108,8 +108,9 @@ export class InputLatch {
     this.edges.slot = dy > 0 ? 9 : 8; // 8 = previous, 9 = next (the game maps them)
   }
   clear(): void {
-    // G let go by the focus loss, not by him: the frag goes back instead of flying (kept through flush)
-    if (this.keys.has("KeyG")) this.edges.stow = true;
+    // G (or Triangle) let go by the focus loss or the pause, not by him: the frag goes back instead of
+    // flying (kept through flush)
+    if (this.keys.has("KeyG") || this.pad.triangle) this.edges.stow = true;
     this.keys.clear();
     this.lmb = false;
     this.rmb = false;

@@ -504,6 +504,8 @@ export default function PlayPage() {
   function pause() {
     if (!session) return;
     session.paused = true;
+    // (the pad plays without the lock: its held frag goes back too, not thrown on the resume)
+    session.input.clear();
     useUi.setState({ screen: "paused" });
     // free the cursor so Resume can be clicked (P / gamepad Start keep the lock otherwise)
     if (document.pointerLockElement) document.exitPointerLock();
