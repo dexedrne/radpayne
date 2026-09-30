@@ -7,8 +7,9 @@
 // hot red while he stands inside it himself (his share of his own blast).
 // Read in every room: unlit, no fog, no tone mapping, a dark keyline under the gold (the rain, the neon,
 // the club's dark, the roof's storm and its lightning), and whatever part of it cover hides still shows
-// faintly through. It waits a beat before it fades in, so a quick tap (a throw at once) never flashes it. Once he
-// lets go, the ring (fainter, without the arc) stays where that frag goes off until it does.
+// faintly through (the ring only where the blast reaches: not past a wall it stops at). It waits a beat
+// before it fades in, so a quick tap (a throw at once) never flashes it. Once he lets go, the ring
+// (fainter, without the arc) stays where that frag goes off until it does.
 import { useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import {
@@ -90,11 +91,22 @@ function setAnnulus(g: BufferGeometry, r0: number, r1: number): void {
   pos.needsUpdate = true;
 }
 
-/** The rim wall's fade: opaque at the floor, gone at its top (an alpha map; three reads its green). */
-/** The ring's ghost (what cover hides of it shows faintly through) never over him: the stretch of the
- *  ring that runs behind him on screen (inside his figure's box there, farther than he is) is left out,
- *  so no faint line crosses him when the ring passes behind his head. */
-function ghostAround(g: BufferGeometry, at: Vector3, r: number, camera: Camera, him: { x: number; y: number; z: number }): void {
+/** Which stretches of the blast ring the blast reaches (Game.explode: a clear line from the blast point,
+ *  0.25 m over the frag, to a body's middle; shoot-through boxes let it by): 1 per ring segment. The
+ *  ring's ghost shows only those, so it never hangs past a wall the blast stops at (in a narrow hall the
+ *  ring's far end behind the wall read as a gold crescent floating on it). */
+function reachAround(world: Session["game"]["world"], e: { x: number; y: number; z: number }, floor: number, r: number, out: Uint8Array): void {
+  for (let i = 0; i < SEG; i++) {
+    const t = ((i + 0.5) / SEG) * Math.PI * 2;
+    out[i] = world.clear(e.x, e.y + 0.25, e.z, e.x + Math.cos(t) * r, floor + 1.1, e.z + Math.sin(t) * r, true) ? 1 : 0;
+  }
+}
+
+/** The ring's ghost (what cover hides of it shows faintly through, where the blast reaches: `reach`)
+ *  never over him: the stretch of the ring that runs behind him on screen (inside his figure's box
+ *  there, farther than he is) is left out, so no faint line crosses him when the ring passes behind his
+ *  head. */
+function ghostAround(g: BufferGeometry, at: Vector3, r: number, camera: Camera, him: { x: number; y: number; z: number }, reach: Uint8Array): void {
   SIDE.setFromMatrixColumn(camera.matrixWorld, 0);
   CAM.setFromMatrixPosition(camera.matrixWorld);
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
@@ -107,6 +119,7 @@ function ghostAround(g: BufferGeometry, at: Vector3, r: number, camera: Camera, 
   const idx = g.getIndex() as BufferAttribute, a = idx.array as Uint16Array;
   let n = 0;
   for (let i = 0; i < SEG; i++) {
+    if (!reach[i]) continue;
     const t = ((i + 0.5) / SEG) * Math.PI * 2;
     const wx = at.x + Math.cos(t) * r, wy = at.y, wz = at.z + Math.sin(t) * r;
     const d = Math.hypot(wx - CAM.x, wy - CAM.y, wz - CAM.z);
@@ -120,6 +133,7 @@ function ghostAround(g: BufferGeometry, at: Vector3, r: number, camera: Camera, 
   g.setDrawRange(0, n);
 }
 
+/** The rim wall's fade: opaque at the floor, gone at its top (an alpha map; three reads its green). */
 function fadeUp(): DataTexture {
   const n = 32, d = new Uint8Array(n * 4);
   for (let i = 0; i < n; i++) { const k = Math.round(255 * Math.pow(1 - i / (n - 1), 1.6)); d.set([k, k, k, 255], i * 4); }
@@ -204,7 +218,10 @@ export function FragArcView({ s }: { s: Session }) {
       /** His last frag in the air (its id, -1 none), where it goes off (its own flight from where it is), the ring's weight. */
       thrown: -1, tpath: emptyPath(), b: 0,
       /** What the last preview was made from (his place, his aim, the world's open doors, the run). */
-      last: [NaN, 0, 0, 0, 0, 0, 0, 0, 0] };
+      last: [NaN, 0, 0, 0, 0, 0, 0, 0, 0],
+      /** The ring's stretches the blast reaches (reachAround), and the blast point, the floor, the open
+       *  doors and the run it was worked out for. */
+      reach: new Uint8Array(SEG), reachAt: [NaN, 0, 0, 0, 0, 0] };
   }, []);
 
   // his frag let go: the ring stays where it goes off (its own flight, replayed from where it is now)
@@ -312,13 +329,19 @@ export function FragArcView({ s }: { s: Session }) {
     // the blast: on the floor under where it goes off
     const e = path.end;
     const gy = g.world.groundBelow(e.x, e.z, 0.1, e.y + 0.3);
-    v.blast.position.set(e.x, (Number.isFinite(gy) ? gy : e.y) + 0.03, e.z);
+    const floor = Number.isFinite(gy) ? gy : e.y;
+    v.blast.position.set(e.x, floor + 0.03, e.z);
+    const rk = v.reachAt;
+    if (rk[0] !== e.x || rk[1] !== e.y || rk[2] !== e.z || rk[3] !== floor || rk[4] !== g.world.off.size || rk[5] !== s.run) {
+      reachAround(g.world, e, floor, GRENADE.radius * 0.97, v.reach);
+      rk[0] = e.x; rk[1] = e.y; rk[2] = e.z; rk[3] = floor; rk[4] = g.world.off.size; rk[5] = s.run;
+    }
     const dm = Math.hypot(e.x - cp.x, e.y - cp.y, e.z - cp.z);
     const far = Math.max(1, dm / 7);
     const R = GRENADE.radius, tw = ARC.ring * far;
     setAnnulus(v.ringGeo, R - tw, R);
     setAnnulus(v.keyGeo, R - tw * 2.2, R + tw * 0.7);
-    ghostAround(v.ghostGeo, v.blast.position, R - tw / 2, camera, s.renderP);
+    ghostAround(v.ghostGeo, v.blast.position, R - tw / 2, camera, s.renderP, v.reach);
     for (const m of v.marks) m.scale.setScalar(far);
     const wh = ARC.wall * Math.max(1, dm / 12);
     v.wall.scale.set(R, wh, R);
