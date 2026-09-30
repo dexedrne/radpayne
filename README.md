@@ -51,7 +51,8 @@ same path slowed down. After the throw the ring stays on the spot until it goes 
 throws at once; a weapon switch (1-5, the wheel, the d-pad) or a melee puts it back in the pouch, and so
 does the pause (it never flies on its own when the game loses the keys). You can keep shooting one-handed
 while it is up (the pistols and the SMGs fire from the right hand alone, at that gun's own pace); the
-scope waits.
+scope and the reload wait (raising it drops a reload under way; a gun that runs dry reloads as the frag
+goes).
 
 **#4764's katana:** he wears it on his left hip in every room and draws it for the melee: tap F (Circle)
 for a cut with reach that takes up to three in its arc (no blood: ink and sparks). Hold F (Circle) and

@@ -7,6 +7,7 @@ import { Game } from "../src/sim/game.ts";
 import { FRAG_STEP, emptyPath, fragLaunch, predictFrag } from "../src/sim/frag.ts";
 import { DT, GRENADE } from "../src/sim/tuning.ts";
 import { InputLatch } from "../src/input/input.ts";
+import { ammoIn } from "../src/combat/weapons.ts";
 import { BTN } from "../src/input/pad.ts";
 import { resetDevices } from "../src/input/device.ts";
 import { PLAYER_ID, emptyInput, type GameEvent, type InputFrame } from "../src/sim/types.ts";
@@ -340,4 +341,36 @@ test("hold to aim: the keys lost (focus, the pause) put the frag back instead of
   assert.equal(p.grenades, 2, "nothing thrown");
   assert.ok(!g.drain().some(e => e.type === "throw"));
   assert.ok(!l.consume().stow, "once");
+});
+
+test("hold to aim: no reload with the frag up (one in progress is dropped); a gun run dry reloads once the frag has gone", () => {
+  const g = new Game(level([spawn]), { ai: false, seed: 1, grenades: 2, loadout: ["shotgun"] });
+  const p = g.player, w = p.weapon;
+  assert.equal(w.id, "shotgun");
+  const inp = emptyInput();
+  inp.yaw = p.yaw;
+  const run = (n: number) => { const ev: GameEvent[] = []; for (let i = 0; i < n; i++) { g.step(inp); ev.push(...g.drain()); } return ev; };
+  const shoot = () => { inp.fire = true; run(1); inp.fire = false; run(Math.ceil(0.85 / DT)); };
+  run(120);
+  // a round out, a reload under way, then the frag up: the reload is dropped
+  shoot();
+  inp.reload = true; run(1); inp.reload = false;
+  assert.ok(w.reloadT > 0, "reloading");
+  inp.throw = true; inp.nade = true; run(1); inp.throw = false;
+  assert.ok(p.nadeUp && w.reloadT === 0, "the frag up drops the reload");
+  // R waits while it is up
+  inp.reload = true;
+  const ev = run(1);
+  inp.reload = false;
+  assert.ok(w.reloadT === 0 && !ev.some(e => e.type === "reload"), "no reload with the frag up");
+  // fired dry one-handed: it waits
+  for (let k = 0; k < 8; k++) shoot();
+  assert.equal(ammoIn(w), 0);
+  assert.equal(w.reloadT, 0, "dry with the frag up: no reload");
+  assert.ok(p.nadeUp);
+  // let go: the frag goes and the reload starts
+  inp.nade = false;
+  const out = run(1);
+  assert.ok(out.some(e => e.type === "throw") && out.some(e => e.type === "reload"), "the throw, then the reload");
+  assert.ok(w.reloadT > 0);
 });

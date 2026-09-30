@@ -161,7 +161,8 @@ export function stepWeapon(w: WeaponState, dt: number): boolean {
  * One step of trigger logic. Returns the hand that fired (0 / 1) or -1. The cooldown carries its
  * remainder, so a held trigger fires exactly every `interval` on average at any step size.
  * `solo`: the left hand is busy (his frag held up): a pair fires from the right hand alone, at its own
- * pace (every two intervals); dry there, it waits (no reload with the frag in his other hand).
+ * pace (every two intervals); dry, any gun waits (no reload with the frag in his other hand: the game
+ * starts it once the frag has gone).
  */
 export function triggerWeapon(w: WeaponState, down: boolean, solo = false): number {
   const d = WEAPONS[w.id];
@@ -174,13 +175,13 @@ export function triggerWeapon(w: WeaponState, down: boolean, solo = false): numb
   let hand: 0 | 1 = alone ? 0 : w.hand;
   if (w.mags[hand] <= 0 && d.hands === 2 && !alone) hand = hand === 0 ? 1 : 0;
   if (w.mags[hand] <= 0) {
-    if (!alone) startReload(w);
+    if (!solo) startReload(w);
     return -1;
   }
   w.mags[hand]--;
   w.shots++;
   w.cooldown += alone ? d.interval * 2 : d.interval; // cooldown is in (-dt, 0] here
   w.hand = d.hands === 2 && !alone ? (hand === 0 ? 1 : 0) : 0;
-  if (ammoIn(w) === 0) startReload(w);
+  if (ammoIn(w) === 0 && !solo) startReload(w);
   return hand;
 }

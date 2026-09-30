@@ -9,7 +9,7 @@ import { stepEnemy } from "../ai/enemies.ts";
 import { TACTICS, makeTactics, stepTactics, type Tactics } from "../ai/tactics.ts";
 import { HB_HEAD, HB_MULT, HB_TORSO, aimPoint, makeCapsules } from "../combat/hitboxes.ts";
 import { HIT_ACTOR, HIT_NONE, HIT_WORLD, makeTraceHit, trace, type HitActor, type TraceHit } from "../combat/trace.ts";
-import { PICKUPS, PIERCE_K, SLOT_ORDER, SWAP_TIME, WEAPONS, makeWeapon, slotOf, startReload, stepWeapon, triggerWeapon, type BaseWeapon, type WeaponId } from "../combat/weapons.ts";
+import { PICKUPS, PIERCE_K, SLOT_ORDER, SWAP_TIME, WEAPONS, ammoIn, makeWeapon, slotOf, startReload, stepWeapon, triggerWeapon, type BaseWeapon, type WeaponId } from "../combat/weapons.ts";
 import type { LevelData, Marker } from "../world/level.ts";
 import { makeEnemy, makePlayer, type Enemy, type EnemyKind, type EnemyWeapon, type Player } from "./actors.ts";
 import { aimDir } from "./aim.ts";
@@ -479,7 +479,8 @@ export class Game {
     const pin = inControl ? inp : FROZEN_INPUT(inp, p);
     if (inControl && p.mode !== "dead") {
       if (inp.slot > 0) { if (p.nadeUp) this.lowerFrag(true); this.switchWeapon(inp.slot); }
-      if (inp.reload && p.meleeT <= 0 && !p.guard && startReload(p.weapon)) this.emit({ type: "reload", hand: 0 });
+      // (not with his frag held up: the left hand is busy; an empty gun reloads once it has gone)
+      if (inp.reload && p.meleeT <= 0 && !p.guard && !p.nadeUp && startReload(p.weapon)) this.emit({ type: "reload", hand: 0 });
       if (inp.copium) this.useCopium();
       if (inp.cover && p.mode === "normal") this.pressCover();
       if (inp.dodge && p.mode === "normal" && p.dodgeCooldown <= 0) {
@@ -1012,7 +1013,8 @@ export class Game {
   /** G / Triangle held: the frag comes up in his left hand and the aim preview shows where it goes; let go
    *  and it goes (a press that came and went between two steps throws at once). A weapon switch, a
    *  melee or the guard put it back (down until the button is let go); a dive, a roll or a vault take it
-   *  down until he is back on his feet with the button still held. Up, he can still shoot one-handed. */
+   *  down until he is back on his feet with the button still held. Up, he can still shoot one-handed, but
+   *  no reload: raising it drops one under way, and a gun that runs dry waits until the frag has gone. */
   private stepFrag(inp: InputFrame): void {
     const p = this.player;
     const held = !!inp.nade;
@@ -1023,10 +1025,18 @@ export class Game {
     if (p.nadeUp) {
       if (p.meleeT > 0 || p.guard) this.lowerFrag(true);
       else if (p.mode !== "normal" || p.grenades <= 0) this.lowerFrag(false);
-      else if (!held) { p.nadeUp = false; this.throwGrenade(true); return; }
+      else if (!held) {
+        p.nadeUp = false;
+        this.throwGrenade(true);
+        // the gun ran dry while the frag was up: its reload now the left hand is free
+        if (ammoIn(p.weapon) === 0 && startReload(p.weapon)) this.emit({ type: "reload", hand: 0 });
+        return;
+      }
     }
     if (held && !p.nadeUp && !p.nadeBlock && p.grenades > 0 && p.throwT <= 0 && p.mode === "normal" && p.meleeT <= 0 && !p.guard) {
       p.nadeUp = true;
+      // the left hand takes the frag: a reload in progress is dropped (as the melee and the guard drop it)
+      p.weapon.reloadT = 0;
       this.emit({ type: "nade", up: true });
     } else if (inp.throw && !held && !p.nadeUp) this.throwGrenade();
   }
