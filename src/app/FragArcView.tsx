@@ -7,7 +7,7 @@
 // hot red while he stands inside it himself (his share of his own blast).
 // Read in every room: unlit, no fog, no tone mapping, a dark keyline under the gold (the rain, the neon,
 // the club's dark, the roof's storm and its lightning), and whatever part of it cover hides still shows
-// faintly through. It fades in over a beat, so a quick tap (a throw at once) never flashes it. Once he
+// faintly through. It waits a beat before it fades in, so a quick tap (a throw at once) never flashes it. Once he
 // lets go, the ring (fainter, without the arc) stays where that frag goes off until it does.
 import { useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
@@ -34,7 +34,9 @@ export const ARC = {
   keyline: 2.1,
   /** The first 0.7 m by his hand is left out (it would cover him from the shoulder camera). */
   skip: 0.7,
-  /** Seconds (real) to fade in after it comes up / out after it goes. */
+  /** Seconds (real) held before it shows (a tap on a key lasts about this long: it never flashes the
+   *  arc), then to fade in / out after it goes. */
+  wait: 0.1,
   fadeIn: 0.14,
   fadeOut: 0.08,
   /** What shows through cover (x the full opacity): the arc, and the ring (less: it also crosses him). */
@@ -163,7 +165,7 @@ export function FragArcView({ s }: { s: Session }) {
     group.name = "frag-arc"; line.name = "frag-arc-line"; lineKey.name = "frag-arc-linekey"; lineGhost.name = "frag-arc-lineghost";
     group.traverse(o => { o.frustumCulled = false; o.userData.rpWarm = true; });
     group.visible = false;
-    return { group, core, key, mats, blast, ticks, ringGeo, keyGeo, wall, fill, marks: [markKey, mark, dot], path: emptyPath(), a: 0, run: -1, cum: [] as number[],
+    return { group, core, key, mats, blast, ticks, ringGeo, keyGeo, wall, fill, marks: [markKey, mark, dot], path: emptyPath(), a: 0, held: 0, run: -1, cum: [] as number[],
       /** His last frag in the air (its id, -1 none), where it goes off (its own flight from where it is), the ring's weight. */
       thrown: -1, tpath: emptyPath(), b: 0,
       /** What the last preview was made from (his place, his aim, the world's open doors, the run). */
@@ -183,14 +185,16 @@ export function FragArcView({ s }: { s: Session }) {
   useFrame(({ camera }, rawDelta) => {
     const g = s.game, p = g.player;
     const dt = Math.min(rawDelta, 0.1);
-    if (v.run !== s.run) { v.run = s.run; v.a = 0; v.b = 0; v.thrown = -1; }
+    if (v.run !== s.run) { v.run = s.run; v.a = 0; v.held = 0; v.b = 0; v.thrown = -1; }
     const up = p.nadeUp && p.mode !== "dead" && !s.hold;
-    v.a = up ? Math.min(1, v.a + dt / ARC.fadeIn) : Math.max(0, v.a - dt / ARC.fadeOut);
+    v.held = up ? v.held + dt : 0;
+    if (!up) v.a = Math.max(0, v.a - dt / ARC.fadeOut);
+    else if (v.held > ARC.wait) v.a = Math.min(1, v.a + dt / ARC.fadeIn);
     const flying = v.thrown >= 0 && g.grenadesLive.some(k => k.id === v.thrown);
     if (!flying) v.thrown = -1;
     v.b = flying ? Math.min(1, v.b + dt / ARC.fadeIn) : Math.max(0, v.b - dt / ARC.fadeOut);
     // (the first beat of a hold stays hidden: a tap throws before it shows)
-    const a = Math.max(0, Math.min(1, v.a * 1.35 - 0.35));
+    const a = v.a;
     // the aim preview, else the ring of the one in the air (fainter, no arc)
     const aim = a > 0.01;
     const b = aim ? 0 : v.b * ARC.inFlight;
