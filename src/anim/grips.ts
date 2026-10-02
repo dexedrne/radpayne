@@ -2,12 +2,12 @@
 // of the hand bone). Gun frame: +Z = barrel, +Y = top of the slide, origin = middle of the grip.
 // Measured on each Radbro's Aim_Idle first frame (arms level, grips canted 10 deg inward); the Milady
 // grip is for VRM1 normalized hands on a 0.217 m forearm (scale by the model's own forearm).
-import type { RadbroId } from "../ui/store.ts";
+import type { HeroId } from "../ui/store.ts";
 
 export type Grip = { p: [number, number, number]; q: [number, number, number, number] };
 export type HandGrips = { right: Grip; left: Grip };
 
-export const RADBRO_GRIPS: Record<RadbroId, HandGrips> = {
+export const RADBRO_GRIPS: Record<HeroId, HandGrips> = {
   "652": {
     right: { p: [0.0074, 0.0641, 0.0128], q: [-0.6938, -0.18709, -0.20937, 0.66317] },
     left: { p: [-0.0059, 0.064, 0.0114], q: [-0.69979, 0.19135, 0.1905, 0.66136] },
@@ -32,6 +32,19 @@ export const RADBRO_GRIPS: Record<RadbroId, HandGrips> = {
     right: { p: [-0.0031, 0.0657, 0.0168], q: [-0.652, -0.2489, -0.18213, 0.69266] },
     left: { p: [0.0021, 0.0642, 0.0169], q: [-0.65307, 0.24427, 0.18762, 0.69183] },
   },
+  // The Retardios (#555, #85): their hand bones are rolled ~150-160 deg about the hand against #723's,
+  // and that offset is the same in every clip (their clips are #723's, retargeted through the bind
+  // poses). The grip turns by that offset, so the gun sits in the same world frame #723's does in every
+  // clip (Shotgun_Aim_Idle: barrel straight ahead, the left hand on the pump); the grip point is their
+  // own palm (measured on their hands). Never a Radbro's numbers as they are.
+  retardio555: {
+    right: { p: [-0.0099, 0.0764, 0.0094], q: [0.02949, -0.70431, -0.68672, -0.17746] },
+    left: { p: [0.01, 0.0685, -0.0027], q: [-0.03351, -0.6694, -0.72364, 0.16472] },
+  },
+  retardio85: {
+    right: { p: [-0.0014, 0.0663, -0.0104], q: [0.02775, -0.69673, -0.67373, -0.24471] },
+    left: { p: [0.0031, 0.0646, -0.0041], q: [-0.0301, -0.67412, -0.68681, 0.2701] },
+  },
 };
 
 export const MILADY_GRIP: HandGrips & { forearm: number } = {
@@ -42,4 +55,4 @@ export const MILADY_GRIP: HandGrips & { forearm: number } = {
 
 /** The shotgun's attach scale per Radbro (round-2 clip manifest grips.shotgun.RightHand.scale): the
  *  shouldered pump gun at the reach of each chibi's arms. The right-hand grip is the pistol's. */
-export const SHOTGUN_SCALE: Record<RadbroId, number> = { "652": 0.72, "723": 0.72, "2564": 0.64, "4764": 0.72, "3171": 0.7, "250": 0.72 };
+export const SHOTGUN_SCALE: Record<HeroId, number> = { "652": 0.72, "723": 0.72, "2564": 0.64, "4764": 0.72, "3171": 0.7, "250": 0.72, retardio555: 0.72, retardio85: 0.72 };

@@ -6,11 +6,11 @@
 // Every direction runs on the forward cycle: the legs yaw toward the move and the spine twists back
 // onto the aim; moving against the aim plays the same cycle backwards with the legs facing the aim.
 // (The walk-strafe clips move at ~0.4 m/s: any faster and their feet skate.)
-import type { RadbroId } from "../ui/store.ts";
+import type { HeroId } from "../ui/store.ts";
 
 export type Gait = { run: number; walk: number };
 
-export const RADBRO_GAIT: Record<RadbroId, Gait> = {
+export const RADBRO_GAIT: Record<HeroId, Gait> = {
   "652": { run: 3.25, walk: 0.57 },
   "4764": { run: 3.07, walk: 0.54 },
   "2564": { run: 2.79, walk: 0.51 },
@@ -19,6 +19,10 @@ export const RADBRO_GAIT: Record<RadbroId, Gait> = {
   // scaled by the other four's mean ratio to these numbers (run x2.18, walk x1.08; each within 4%)
   "3171": { run: 2.89, walk: 0.52 },
   "250": { run: 3.28, walk: 0.59 },
+  // the Retardios: #723's own cycles retargeted onto their legs, so #723's numbers times their measured
+  // stride against his (#555: run x1.13, walk x1.03; #85: run x1.03, walk x0.96)
+  retardio555: { run: 3.53, walk: 0.59 },
+  retardio85: { run: 3.21, walk: 0.55 },
 };
 
 /** The Miladys' clips come from #723's rig; scale by her leg length (hips height) against #723's. */

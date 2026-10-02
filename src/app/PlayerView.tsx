@@ -34,7 +34,7 @@ import { setWorldQuaternion, solveTwoBone } from "../anim/ik.ts";
 import { RADBRO_GAIT, RUN_FROM, clipSpeed, legsFor } from "../anim/gait.ts";
 import { clipsPath, gunClipsPath, lightUp, modelPath, r2ClipsPath } from "./characters.ts";
 import { SHOTGUN_PUMP, SHOTGUN_RACK, aimHand, attachGun, makeAk, makeGrenade, makeHandCannon, makeKatana, makePistol, makeSawedOff, makeShotgun, makeSmg, makeSniper, muzzleWorld } from "./guns.ts";
-import { useUi, type RadbroId } from "../ui/store.ts";
+import { useUi, type HeroId } from "../ui/store.ts";
 import { FRAME } from "./frame.ts";
 import { MELEE, TIME } from "../sim/tuning.ts";
 import { WEAPONS, isLongGun, isOneHand } from "../combat/weapons.ts";
@@ -174,7 +174,7 @@ function crosshairOverlap(cam: Camera, head: Vector3): number {
 }
 
 type Rig = {
-  id: RadbroId;
+  id: HeroId;
   root: Group;
   model: Object3D;
   player: AnimPlayer;
@@ -255,7 +255,7 @@ function fadeTree(o: Object3D, fade: number): void {
 
 const clipsOf = (o: Object3D | null) => ((o as unknown as { animations?: AnimationClip[] } | null)?.animations ?? []) as AnimationClip[];
 
-function makeRig(id: RadbroId, src: Object3D, pack: Object3D | null, gunPack: Object3D | null, r2Pack: Object3D | null): Rig {
+function makeRig(id: HeroId, src: Object3D, pack: Object3D | null, gunPack: Object3D | null, r2Pack: Object3D | null): Rig {
   const model = cloneSkeleton(src);
   const materials = lightUp(model);
   // screen-door fade when a wall pulls the camera into his back (no transparency sorting, no recompiles)

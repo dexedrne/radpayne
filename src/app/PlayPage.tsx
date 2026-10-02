@@ -33,7 +33,7 @@ import { warmLook } from "./look/compile.ts";
 import { useGfx } from "./look/gfx.ts";
 import { scenePending } from "./Scene.tsx";
 import { readLevel } from "../world/level.ts";
-import { baseWeaponOf, startLoadoutOf, useUi, type RadbroId } from "../ui/store.ts";
+import { baseWeaponOf, startLoadoutOf, useUi, type HeroId } from "../ui/store.ts";
 import { WEAPONS } from "../combat/weapons.ts";
 import { Hud, canvasFx } from "../ui/Hud.tsx";
 import { UiEffects } from "../ui/hud/UiEffects.tsx";
@@ -50,7 +50,7 @@ import { frames, prefetchGoons, roomWarm, warmRoom } from "./warmup.ts";
 import { renderGate } from "./frame.ts";
 import { HOLDCHECK, HoldScript, holdDev } from "./dev/holdcheck.ts";
 import { TOUR, TourDriver } from "./dev/tour.ts";
-import { RADBROS } from "../ui/store.ts";
+import { HEROES } from "../ui/store.ts";
 import { roomText } from "../ui/rooms.ts";
 import { bridge, roomResult } from "../radbro/bridge.ts";
 import { BossBar } from "../ui/hud/BossBar.tsx";
@@ -66,7 +66,7 @@ const BOT = DEV && params.has("bot");
 const BOT_DEMO = params.get("bot") === "demo";
 const SKIP = DEV && (params.has("skip") || BOT || !!HOLDCHECK);
 /** Dev: ?radbro=<id> plays that Radbro for this page load (the hold check loops over them). */
-const RADBRO_PARAM = DEV ? RADBROS.find(r => r.id === params.get("radbro"))?.id : undefined;
+const RADBRO_PARAM = DEV ? HEROES.find(r => r.id === params.get("radbro"))?.id : undefined;
 if (RADBRO_PARAM) useUi.setState({ radbro: RADBRO_PARAM });
 /** ?ending: play the ending cutscene even with ?skip / ?bot (it plays anyway with ?bot=demo);
  *  ?cutscene: play cutscene 1 even with ?bot (the headless run: cutscene, fight, ending, results). */
@@ -152,7 +152,7 @@ async function levelTextures(s: Session): Promise<void> {
 
 /** The picked Radbro's files into the HTTP cache from the first moment (versioned URLs, cached for good),
  *  and the Draco decoder they need: the asset runtime only asks once the canvas is up. */
-function preloadRadbro(id: RadbroId): void {
+function preloadRadbro(id: HeroId): void {
   for (const p of [...manifestFor(id), gunClipsPath(id), r2ClipsPath(id), MILADY_CLIPS]) if (p.includes("?v=")) void fetch(p, { priority: "high" }).then(r => r.blob(), () => undefined).catch(() => undefined);
   for (const f of ["draco_wasm_wrapper.js", "draco_decoder.wasm"]) void fetch(`https://www.gstatic.com/draco/v1/decoders/${f}`).then(r => r.blob(), () => undefined).catch(() => undefined);
 }

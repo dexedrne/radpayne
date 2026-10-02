@@ -5,7 +5,7 @@
 import "./hud/tokens.css";
 import { useEffect, useMemo, useState } from "react";
 import { loadPins } from "./pins.ts";
-import { RADBROS, setSetting, setVolume, store, useUi, type AimAssist, type DmgColour, type HudSize, type RadbroId, type Results, type ThreatMode, type Chatter, type KillcamMode } from "./store.ts";
+import { HEROES, RADBROS, heroFile, heroOf, setSetting, setVolume, store, useUi, type AimAssist, type DmgColour, type HudSize, type HeroId, type Results, type ThreatMode, type Chatter, type KillcamMode } from "./store.ts";
 import { DIFFICULTY, type Difficulty } from "../sim/tuning.ts";
 import { setGfx, setPreset, useGfx, type Bloom, type Preset, type Rain, type Reflections, type Res } from "../app/look/gfx.ts";
 import type { Session } from "../app/session.ts";
@@ -118,6 +118,9 @@ function useFontsReady(): boolean {
   return ok;
 }
 
+/** A hero's card portrait (public/ui/radbro652.webp, retardio555.webp). */
+const portraitPath = (id: HeroId) => assetUrl(`/ui/${heroFile(id)}.webp`);
+
 // ---- title ---------------------------------------------------------------------------------------
 
 /** The title's focus rows, top to bottom (↑↓ / Tab / D-pad move, ←→ change, Enter / A plays from any). */
@@ -135,7 +138,7 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
   const chapterOpen = useMemo(() => clearedChapters().includes(1), []);
   const chapter = useUi(s => s.chapter);
   const rows = TITLE_ROWS.filter(r => r !== "chapter" || chapterOpen);
-  const pick = (id: RadbroId) => { useUi.setState({ radbro: id }); store("radbro", id); };
+  const pick = (id: HeroId) => { useUi.setState({ radbro: id }); store("radbro", id); };
   const move = (d: number) => setRow(r => rows[(rows.indexOf(r) + d + rows.length) % rows.length]);
   useMenuInput(a => {
     if (a === "enter") { if (go) onPlay(); return; }
@@ -145,8 +148,8 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
       const d = a === "right" ? 1 : -1;
       if (row === "chapter") { useUi.setState({ chapter: (chapter === 1 ? 2 : 1) as ChapterId }); return; }
       if (row === "radbro") {
-        const i = RADBROS.findIndex(r => r.id === radbro);
-        pick(RADBROS[(i + d + RADBROS.length) % RADBROS.length].id);
+        const i = HEROES.findIndex(r => r.id === radbro);
+        pick(HEROES[(i + d + HEROES.length) % HEROES.length].id);
       } else if (row === "difficulty") setSetting("difficulty", stepOption(DIFFS, diff, d));
       else if (row === "graphics") setPreset(stepOption(PRESETS, preset === "custom" ? "high" : preset, d));
       return;
@@ -166,11 +169,11 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
           </div>
         ) : <div className="rp-chapter">CHAPTER 1: RUGGED</div>}
         <div className={`rp-cards rp-focusrow${row === "radbro" ? " focus" : ""}`} {...focus("radbro")}>
-          {RADBROS.map(r => (
+          {HEROES.map(r => (
             <button key={r.id} type="button" onClick={() => pick(r.id)} data-testid={`pick-${r.id}`} className={`rp-panel rp-card${radbro === r.id ? " on" : ""}`} style={radbro === r.id ? { borderColor: r.color } : undefined}>
-              <img src={assetUrl(`/ui/radbro${r.id}.webp`)} alt="" style={radbro === r.id ? { borderBottomColor: r.color } : undefined} />
+              <img src={portraitPath(r.id)} alt="" style={radbro === r.id ? { borderRightColor: r.color } : undefined} />
               <div className="who">
-                <div className="id" style={{ color: r.color }}>RADBRO {r.name}</div>
+                <div className="id" style={{ color: r.color }}><span className="kind">{r.kind}</span>{r.name}</div>
                 <div className="d">{r.blurb}</div>
               </div>
             </button>
@@ -487,7 +490,7 @@ export function ResultsScreen({ onRetry, onTitle, onNext }: { onRetry: () => voi
   const s = chapter ? chapter.stats : r.stats;
   const best = bestFor(r);
   const acc = s.shots ? Math.round((s.hits / s.shots) * 100) : 0;
-  const bro = RADBROS.find(b => b.id === r.radbro) ?? RADBROS[1];
+  const bro = heroOf(r.radbro);
   const text = roomText(r.room);
   const where = chapter ? `${chapter.rooms} room${chapter.rooms === 1 ? "" : "s"}, the whole chapter` : `room ${text.number} of ${text.of}`;
   const stats: Array<[string, string, boolean?]> = [
@@ -501,9 +504,9 @@ export function ResultsScreen({ onRetry, onTitle, onNext }: { onRetry: () => voi
       <div className="rp-dim" style={{ background: "rgba(5,6,12,0.45)" }} />
       <div className="rp-page rp-z">
         <div className="rp-panel rp-portrait" style={{ borderColor: bro.color }}>
-          <img src={assetUrl(`/ui/radbro${bro.id}.webp`)} alt="" />
+          <img src={portraitPath(bro.id)} alt="" />
           <div className="who">
-            <div className="id" style={{ color: bro.color }}>RADBRO {bro.name}</div>
+            <div className="id" style={{ color: bro.color }}>{bro.kind} {bro.name}</div>
             <div className="d">{bro.blurb}</div>
             <div className="d" style={{ marginTop: 10, opacity: 0.7 }}>{DIFFICULTY[r.difficulty].label.toUpperCase()} · {where}</div>
           </div>
