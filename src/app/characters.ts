@@ -1,19 +1,19 @@
-// Radbro assets (RadRun's four game characters + clip packs) and a bridge to r3g's asset runtime so
+// Radbro and Retardio assets (RadRun's game characters + clip packs) and a bridge to r3g's asset runtime so
 // the page can preload outside the canvas tree.
 import { useAssetRuntime, type AssetRuntime } from "react-three-game";
 import { Material, MeshBasicMaterial, MeshStandardMaterial, type Mesh, type Object3D } from "three";
-import type { RadbroId } from "../ui/store.ts";
+import { heroFile, type HeroId, type RadbroId } from "../ui/store.ts";
 import { assetExists, assetUrl } from "./assets.ts";
 
 // Every model path is its versioned URL (assets.ts): the asset runtime's keys, the fetch and the cache
 // all see the same string.
-export const modelPath = (id: RadbroId) => assetUrl(`/models/radbro${id}.glb`);
-export const clipsPath = (id: RadbroId) => assetUrl(`/models/radbro${id}.clips.glb`);
+export const modelPath = (id: HeroId) => assetUrl(`/models/${heroFile(id)}.glb`);
+export const clipsPath = (id: HeroId) => assetUrl(`/models/${heroFile(id)}.clips.glb`);
 /** Optional pistol clip pack (same rig, copied onto every Radbro by bone name). */
-export const gunClipsPath = (id: RadbroId) => assetUrl(`/models/radbro${id}.gun.glb`);
+export const gunClipsPath = (id: HeroId) => assetUrl(`/models/${heroFile(id)}.gun.glb`);
 
 /** Round-2 clip pack (same rig): the shotgun set, the heavy's stagger, the weapon swap. Optional. */
-export const r2ClipsPath = (id: RadbroId) => assetUrl(`/models/radbro${id}.r2.glb`);
+export const r2ClipsPath = (id: HeroId) => assetUrl(`/models/${heroFile(id)}.r2.glb`);
 
 /** The shooter clip set on the Radbro rig: the Miladys' retarget source (optional, loaded with the Radbro). */
 export const MILADY_CLIPS = assetUrl("/models/milady.gun.glb");
@@ -28,7 +28,7 @@ export const rivalBase = (model: string): RadbroId => (model === "rival723" ? "7
 /** The Miladys' clips are retargeted from this Radbro's rig. */
 export const RETARGET_SOURCE: RadbroId = "652";
 
-export function manifestFor(id: RadbroId): string[] {
+export function manifestFor(id: HeroId): string[] {
   const out = [modelPath(id), clipsPath(id)];
   if (id !== RETARGET_SOURCE) out.push(modelPath(RETARGET_SOURCE), clipsPath(RETARGET_SOURCE));
   return out;

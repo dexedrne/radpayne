@@ -5,20 +5,35 @@ import assert from "node:assert/strict";
 import { Game } from "../src/sim/game.ts";
 import { Bot } from "../src/sim/bot.ts";
 import { WEAPONS, isLongGun, makeWeapon, slotOf, triggerWeapon, stepWeapon } from "../src/combat/weapons.ts";
-import { RADBROS, baseWeaponOf } from "../src/ui/store.ts";
+import { HEROES, RADBROS, RETARDIOS, baseWeaponOf, heroFile } from "../src/ui/store.ts";
+import fs from "node:fs";
 import { RADBRO_GAIT } from "../src/anim/gait.ts";
 import { RADBRO_GRIPS, SHOTGUN_SCALE } from "../src/anim/grips.ts";
 import { emptyInput } from "../src/sim/types.ts";
 import { greybox, room1 } from "./helpers.ts";
 
-test("roster: #250 carries the AK, everyone else the pistols; every Radbro has a gait, grips and a shotgun scale", () => {
+test("roster: #250 carries the AK, everyone else the pistols; every hero has a gait, grips and a shotgun scale", () => {
   assert.equal(baseWeaponOf("250"), "ak");
-  for (const r of RADBROS) {
+  for (const r of HEROES) {
     if (r.id !== "250") assert.equal(baseWeaponOf(r.id), "pistols", `#${r.id}`);
     assert.ok(RADBRO_GAIT[r.id].run > 2 && RADBRO_GAIT[r.id].walk > 0.4, `#${r.id} gait`);
     assert.ok(RADBRO_GRIPS[r.id].right.p.length === 3 && RADBRO_GRIPS[r.id].left.q.length === 4, `#${r.id} grips`);
     assert.ok(SHOTGUN_SCALE[r.id] > 0.5 && SHOTGUN_SCALE[r.id] < 0.9, `#${r.id} shotgun scale`);
   }
+});
+
+test("roster: the two Retardios follow the six Radbros, with their own files and their own grips", () => {
+  assert.deepEqual(HEROES.map(h => h.id), [...RADBROS.map(r => r.id), "retardio555", "retardio85"]);
+  assert.deepEqual(RETARDIOS.map(r => `${r.kind} ${r.name}`), ["RETARDIO #555", "RETARDIO #85"]);
+  assert.equal(heroFile("652"), "radbro652");
+  assert.equal(heroFile("retardio85"), "retardio85");
+  for (const h of HEROES) {
+    for (const f of [`models/${heroFile(h.id)}.glb`, `models/${heroFile(h.id)}.clips.glb`, `models/${heroFile(h.id)}.gun.glb`, `models/${heroFile(h.id)}.r2.glb`, `ui/${heroFile(h.id)}.webp`]) {
+      assert.ok(fs.existsSync(new URL(`../public/${f}`, import.meta.url)), f);
+    }
+  }
+  // their hand bones are rolled ~180 deg against the Radbros': never a Radbro's numbers
+  for (const r of RETARDIOS) for (const b of RADBROS) assert.notDeepEqual(RADBRO_GRIPS[r.id], RADBRO_GRIPS[b.id], `${r.id} vs #${b.id}`);
 });
 
 test("AK: full auto, 10 rounds a second from one 30-round mag, then a 2.2 s reload from an endless reserve", () => {
