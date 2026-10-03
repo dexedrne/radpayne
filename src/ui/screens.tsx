@@ -26,6 +26,7 @@ import { TopLeft } from "./Hud.tsx";
 import { setHitFeel, useFeel } from "./feel.ts";
 import type { HitFeelMode } from "../app/hitfeel.ts";
 import { CHAPTERS, clearedChapters, type ChapterId } from "./chapters.ts";
+import { IN_VYVANSE, backToVyvanse } from "../vyvanse/menu.ts";
 
 const INK = "#f3ead8";
 
@@ -130,9 +131,10 @@ const portraitPath = (id: HeroId) => assetUrl(`/ui/${heroFile(id)}.webp`);
 
 // ---- title ---------------------------------------------------------------------------------------
 
-/** The title's focus rows, top to bottom (↑↓ / Tab / D-pad move, ←→ change, Enter / A plays from any).
- *  RetardioPayne's title has no difficulty to change. */
-const TITLE_ROWS = ["chapter", "radbro", "difficulty", "graphics", "play"] as const;
+/** The title's focus rows, top to bottom (↑↓ / Tab / D-pad move, ←→ change, Enter / A plays from any
+ *  but the last). RetardioPayne's title has no difficulty to change; the last row, back to vyvanse.beer,
+ *  is there only when vyvanse.beer frames the game (vyvanse/menu.ts). */
+const TITLE_ROWS = ["chapter", "radbro", "difficulty", "graphics", "play", "vyvanse"] as const;
 type TitleRow = (typeof TITLE_ROWS)[number];
 
 /** The small link to the other game (RadPayne <-> RetardioPayne): its site, or ?game= in a dev build. */
@@ -154,11 +156,11 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
   // the chapter select, once chapter 1 is cleared on this browser
   const chapterOpen = useMemo(() => clearedChapters().includes(1), []);
   const chapter = useUi(s => s.chapter);
-  const rows = TITLE_ROWS.filter(r => (r !== "chapter" || chapterOpen) && (r !== "difficulty" || !IS_CUT));
+  const rows = TITLE_ROWS.filter(r => (r !== "chapter" || chapterOpen) && (r !== "difficulty" || !IS_CUT) && (r !== "vyvanse" || IN_VYVANSE));
   const pick = (id: HeroId) => { useUi.setState({ radbro: id }); store("radbro", id); };
   const move = (d: number) => setRow(r => rows[(rows.indexOf(r) + d + rows.length) % rows.length]);
   useMenuInput(a => {
-    if (a === "enter") { if (go) onPlay(); return; }
+    if (a === "enter") { if (row === "vyvanse") backToVyvanse(); else if (go) onPlay(); return; }
     if (a === "up" || a === "tabPrev") return move(-1);
     if (a === "down" || a === "tabNext") return move(1);
     if (a === "left" || a === "right") {
@@ -216,6 +218,11 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
         </div>
         <div className="rp-foot-hint rp-title-hint">
           <span><Keycap k="↑↓" /> choose</span><span><Keycap k="←→" /> change</span><span><Keycap k="ENTER" /> play</span>
+          {IN_VYVANSE && (
+            <button type="button" className={`rp-mbtn rp-vyv${row === "vyvanse" ? " sel" : ""}`} onClick={() => backToVyvanse()} data-testid="title-vyvanse" {...focus("vyvanse")}>
+              BACK TO VYVANSE.BEER
+            </button>
+          )}
         </div>
         <KeyList className="rp-controls" />
         <div className="rp-credits">
@@ -403,7 +410,10 @@ export function Pause({ s: sProp, onResume, onRestart, onQuit }: { s?: Session |
     { id: "settings", label: "SETTINGS", k: "▶", act: () => openSettings(tab === "controls" ? "display" : tab) },
     { id: "controls", label: "CONTROLS", act: () => openSettings("controls") },
     { id: "quit", label: "QUIT TO TITLE", act: () => (confirm ? onQuit() : setConfirm(true)) },
+    // framed by vyvanse.beer only (vyvanse/menu.ts): the launcher closes the game
+    ...(IN_VYVANSE ? [{ id: "vyvanse", label: "BACK TO VYVANSE.BEER", act: () => { backToVyvanse(); } }] : []),
   ];
+  const menuIndex = (id: string) => Math.max(0, buttons.findIndex(b => b.id === id));
   const nextTab = (d: number) => { const t = TABS[(TABS.indexOf(tab) + d + TABS.length) % TABS.length]; setTab(t); setSi(0); if (showPanel) setCol("set"); setOpen(true); };
   useMenuInput((a: MenuAction) => {
     if (confirm) {
@@ -425,7 +435,7 @@ export function Pause({ s: sProp, onResume, onRestart, onQuit }: { s?: Session |
     else if (a === "down") setSi(i => Math.min(rows.length - 1, i + 1));
     else if (a === "left" || a === "right") row?.step?.(a === "right" ? 1 : -1);
     else if (a === "enter") row?.activate?.();
-    else if (a === "back") { setCol("menu"); setMi(tab === "controls" ? 3 : 2); if (!wide) setOpen(false); }
+    else if (a === "back") { setCol("menu"); setMi(menuIndex(tab === "controls" ? "controls" : "settings")); if (!wide) setOpen(false); }
   });
   const g = s?.game;
   return (

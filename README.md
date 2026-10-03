@@ -487,6 +487,11 @@ input log. Bullet time is a time scale on it.
   "http://localhost:4880/?bot&tour&seed=1&webgl2&room=room1&loadout=handcannon,sawedoff,rifle&grenades=3"
   .local/shots/tour1` shoots the first shot with each gun, a melee, a grenade, the scope, the drops
   picked up, and each secret, door and egg.
+- **vyvanse.beer:** framed by the launcher at https://vyvanse.beer (`location.ancestorOrigins` or the
+  referrer), the pause menu and the title get **BACK TO VYVANSE.BEER** (keys, mouse and pad like the other
+  entries): it posts `{ type: "vyvanse:menu" }` to that origin, never `*`, and the launcher closes the game
+  (`src/vyvanse/menu.ts`). Opened on its own or framed by radbro.fun there is no entry. Dev and test builds
+  also take an http://localhost / 127.0.0.1 parent.
 
 ## RetardioPayne
 

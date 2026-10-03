@@ -313,6 +313,8 @@
 .rp-row .grp.focus .h { color: var(--paper); }
 .rp-row .grp.focus .rp-seg { outline: 2px solid var(--pink); outline-offset: 3px; }
 .rp-title-hint { justify-content: flex-start; margin: -10px 0 18px; }
+/* framed by vyvanse.beer: the way back to its menu, at the hint line's right (vyvanse/menu.ts) */
+.rp-title-hint .rp-vyv { margin-left: auto; font-size: 22px; padding: 9px 14px 7px; }
 .rp-controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 22px; margin-bottom: 20px; }
 .rp-controls div { display: flex; align-items: center; gap: 10px; font: 700 17px/1.2 var(--type); color: rgba(243, 234, 216, 0.8); }
 /* a key group's caps sit apart (W A S D read as four keys) and the labels line up in each column */
