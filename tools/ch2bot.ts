@@ -19,7 +19,7 @@ const TRIES = Number(process.env.CH2_TRIES ?? 6);
 
 export type RunResult = { room: string; seed: number; cleared: boolean; time: number; deaths: number; lost: number; kills: number; total: number; stage: string[]; left: number };
 
-export function runRoom(room: string, seed: number, difficulty: Difficulty = "normal", demo = true): RunResult {
+export function runRoom(room: string, seed: number, difficulty: Difficulty = "normal", demo = true, onStep?: (g: Game) => void): RunResult {
   const file = path.resolve(import.meta.dirname, "..", "public", "levels", `${room}.json`);
   const level = () => readLevel(JSON.parse(fs.readFileSync(file, "utf8")));
   let resume: Resume | undefined;
@@ -37,6 +37,7 @@ export function runRoom(room: string, seed: number, difficulty: Difficulty = "no
     for (let i = 0; i < MAX_S / DT && g.phase !== "done" && !down(); i++) {
       g.step(bot.next(g));
       for (const e of g.drain()) if (e.type === "stage") stage.add(e.what);
+      onStep?.(g);
     }
     lost += g.stats.damageTaken - lost0;
     time += g.stats.time - t0;

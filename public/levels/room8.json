@@ -197,6 +197,41 @@
         "cue": "blow",
         "hold": [16.4, -7, 34, 7],
         "out": [25, 7.4]
+       },
+       "arrive": {
+        "ways": {
+         "galley": [
+          [-5, 0, -8.5],
+          [-3.8, 0, -7.6],
+          [-1.6, 0, -7.6],
+          [-0.4, 0, -8.5]
+         ],
+         "aft": [
+          [35.2, 0, -1.8],
+          [35.2, 0, 1.8],
+          [36.6, 0, 0],
+          [37.2, 0, -2],
+          [37.2, 0, 2]
+         ]
+        },
+        "groups": {
+         "waveA": [
+          "self",
+          "aft"
+         ],
+         "waveB": [
+          "self",
+          "galley"
+         ],
+         "waveC": [
+          "self",
+          "galley"
+         ],
+         "waveD": [
+          "self",
+          "aft"
+         ]
+        }
        }
       }
      }
@@ -1506,6 +1541,86 @@
       }
      },
      {
+      "id": "banq-bow-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-22.3, 0.6, -3.4],
+         "scale": [0.6, 1.2, 2.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "velvet"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "banq-bow-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-22.3, 0.6, 3.4],
+         "scale": [0.6, 1.2, 2.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "velvet"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
       "id": "cab-floor",
       "components": {
        "transform": {
@@ -2589,6 +2704,246 @@
       }
      },
      {
+      "id": "booth-n--9.2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-9.2, 0.6, -2.95],
+         "scale": [0.5, 1.2, 1.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "velvet"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "booth-s--9.2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-9.2, 0.6, 2.95],
+         "scale": [0.5, 1.2, 1.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "velvet"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "booth-n--2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2, 0.6, -2.95],
+         "scale": [0.5, 1.2, 1.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "velvet"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "booth-s--2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2, 0.6, 2.95],
+         "scale": [0.5, 1.2, 1.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "velvet"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "booth-n-4.4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.4, 0.6, -2.95],
+         "scale": [0.5, 1.2, 1.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "velvet"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "booth-s-4.4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.4, 0.6, 2.95],
+         "scale": [0.5, 1.2, 1.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "velvet"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
       "id": "gal-floor",
       "components": {
        "transform": {
@@ -3025,6 +3380,46 @@
         "type": "Material",
         "properties": {
          "materialId": "piano"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "banq-bar",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.7, 0.6, -0.4],
+         "scale": [0.6, 1.2, 2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "velvet"
         }
        },
        "mesh": {
@@ -3782,6 +4177,46 @@
         "properties": {
          "data": {
           "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "pallet",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [19.1, 0.65, 0],
+         "scale": [1.4, 1.3, 1.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "crate"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
          }
         }
        }
@@ -7037,6 +7472,166 @@
       }
      },
      {
+      "id": "pallet-net--0.5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [19.1, 0.72, -0.5],
+         "scale": [1.48, 1.24, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "netRope"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "pallet-net-0",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [19.1, 0.72, 0],
+         "scale": [1.48, 1.24, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "netRope"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "pallet-net-0.5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [19.1, 0.72, 0.5],
+         "scale": [1.48, 1.24, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "netRope"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "pallet-net-x18.8",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [18.8, 0.72, 0],
+         "scale": [0.04, 1.24, 1.68]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "netRope"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "pallet-net-x19.4",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [19.4, 0.72, 0],
+         "scale": [0.04, 1.24, 1.68]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "netRope"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
       "id": "aft-stairs",
       "components": {
        "transform": {
@@ -7837,7 +8432,173 @@
       }
      },
      {
-      "id": "cv-cab-desk-36",
+      "id": "cv-banq-bow-n-36",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-22.3, 0, -5.22]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-banq-bow-n-37",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-22.3, 0, -1.58],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-banq-bow-n-38",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-21.38, 0, -3.4],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-banq-bow-n-39",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-23.22, 0, -3.4],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-banq-bow-s-40",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-22.3, 0, 1.58]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-banq-bow-s-41",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-22.3, 0, 5.22],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-banq-bow-s-42",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-21.38, 0, 3.4],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-banq-bow-s-43",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-23.22, 0, 3.4],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-cab-desk-44",
       "components": {
        "transform": {
         "type": "Transform",
@@ -7858,7 +8619,7 @@
       }
      },
      {
-      "id": "cv-dine-n-0-37",
+      "id": "cv-dine-n-0-45",
       "components": {
        "transform": {
         "type": "Transform",
@@ -7878,7 +8639,7 @@
       }
      },
      {
-      "id": "cv-dine-n-0-38",
+      "id": "cv-dine-n-0-46",
       "components": {
        "transform": {
         "type": "Transform",
@@ -7899,7 +8660,7 @@
       }
      },
      {
-      "id": "cv-dine-n-0-39",
+      "id": "cv-dine-n-0-47",
       "components": {
        "transform": {
         "type": "Transform",
@@ -7920,7 +8681,7 @@
       }
      },
      {
-      "id": "cv-dine-n-0-40",
+      "id": "cv-dine-n-0-48",
       "components": {
        "transform": {
         "type": "Transform",
@@ -7941,7 +8702,7 @@
       }
      },
      {
-      "id": "cv-dine-s-0-41",
+      "id": "cv-dine-s-0-49",
       "components": {
        "transform": {
         "type": "Transform",
@@ -7961,7 +8722,7 @@
       }
      },
      {
-      "id": "cv-dine-s-0-42",
+      "id": "cv-dine-s-0-50",
       "components": {
        "transform": {
         "type": "Transform",
@@ -7982,7 +8743,7 @@
       }
      },
      {
-      "id": "cv-dine-s-0-43",
+      "id": "cv-dine-s-0-51",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8003,7 +8764,7 @@
       }
      },
      {
-      "id": "cv-dine-s-0-44",
+      "id": "cv-dine-s-0-52",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8024,7 +8785,7 @@
       }
      },
      {
-      "id": "cv-dine-n-1-45",
+      "id": "cv-dine-n-1-53",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8044,7 +8805,7 @@
       }
      },
      {
-      "id": "cv-dine-n-1-46",
+      "id": "cv-dine-n-1-54",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8065,7 +8826,7 @@
       }
      },
      {
-      "id": "cv-dine-n-1-47",
+      "id": "cv-dine-n-1-55",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8086,7 +8847,7 @@
       }
      },
      {
-      "id": "cv-dine-n-1-48",
+      "id": "cv-dine-n-1-56",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8107,7 +8868,7 @@
       }
      },
      {
-      "id": "cv-dine-s-1-49",
+      "id": "cv-dine-s-1-57",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8127,7 +8888,7 @@
       }
      },
      {
-      "id": "cv-dine-s-1-50",
+      "id": "cv-dine-s-1-58",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8148,7 +8909,7 @@
       }
      },
      {
-      "id": "cv-dine-s-1-51",
+      "id": "cv-dine-s-1-59",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8169,7 +8930,7 @@
       }
      },
      {
-      "id": "cv-dine-s-1-52",
+      "id": "cv-dine-s-1-60",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8190,7 +8951,7 @@
       }
      },
      {
-      "id": "cv-dine-n-2-53",
+      "id": "cv-dine-n-2-61",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8210,7 +8971,7 @@
       }
      },
      {
-      "id": "cv-dine-n-2-54",
+      "id": "cv-dine-n-2-62",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8231,7 +8992,7 @@
       }
      },
      {
-      "id": "cv-dine-n-2-55",
+      "id": "cv-dine-n-2-63",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8252,7 +9013,7 @@
       }
      },
      {
-      "id": "cv-dine-n-2-56",
+      "id": "cv-dine-n-2-64",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8273,7 +9034,7 @@
       }
      },
      {
-      "id": "cv-dine-s-2-57",
+      "id": "cv-dine-s-2-65",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8293,7 +9054,7 @@
       }
      },
      {
-      "id": "cv-dine-s-2-58",
+      "id": "cv-dine-s-2-66",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8314,7 +9075,7 @@
       }
      },
      {
-      "id": "cv-dine-s-2-59",
+      "id": "cv-dine-s-2-67",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8335,7 +9096,7 @@
       }
      },
      {
-      "id": "cv-dine-s-2-60",
+      "id": "cv-dine-s-2-68",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8356,7 +9117,7 @@
       }
      },
      {
-      "id": "cv-dine-n-3-61",
+      "id": "cv-dine-n-3-69",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8376,7 +9137,7 @@
       }
      },
      {
-      "id": "cv-dine-n-3-62",
+      "id": "cv-dine-n-3-70",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8397,7 +9158,7 @@
       }
      },
      {
-      "id": "cv-dine-n-3-63",
+      "id": "cv-dine-n-3-71",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8418,7 +9179,7 @@
       }
      },
      {
-      "id": "cv-dine-n-3-64",
+      "id": "cv-dine-n-3-72",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8439,7 +9200,7 @@
       }
      },
      {
-      "id": "cv-dine-s-3-65",
+      "id": "cv-dine-s-3-73",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8459,7 +9220,7 @@
       }
      },
      {
-      "id": "cv-dine-s-3-66",
+      "id": "cv-dine-s-3-74",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8480,7 +9241,7 @@
       }
      },
      {
-      "id": "cv-dine-s-3-67",
+      "id": "cv-dine-s-3-75",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8501,7 +9262,7 @@
       }
      },
      {
-      "id": "cv-dine-s-3-68",
+      "id": "cv-dine-s-3-76",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8522,7 +9283,7 @@
       }
      },
      {
-      "id": "cv-dine-n-4-69",
+      "id": "cv-dine-n-4-77",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8542,7 +9303,7 @@
       }
      },
      {
-      "id": "cv-dine-n-4-70",
+      "id": "cv-dine-n-4-78",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8563,28 +9324,7 @@
       }
      },
      {
-      "id": "cv-dine-n-4-71",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [4.62, 0, -2.5],
-         "rotation": [0, -1.571, 0]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "cover",
-          "height": "low"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "cv-dine-n-4-72",
+      "id": "cv-dine-n-4-80",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8605,7 +9345,7 @@
       }
      },
      {
-      "id": "cv-dine-s-4-73",
+      "id": "cv-dine-s-4-81",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8625,7 +9365,7 @@
       }
      },
      {
-      "id": "cv-dine-s-4-74",
+      "id": "cv-dine-s-4-82",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8646,28 +9386,7 @@
       }
      },
      {
-      "id": "cv-dine-s-4-75",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [4.62, 0, 2.5],
-         "rotation": [0, -1.571, 0]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "cover",
-          "height": "low"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "cv-dine-s-4-76",
+      "id": "cv-dine-s-4-84",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8688,265 +9407,7 @@
       }
      },
      {
-      "id": "cv-pil-n--9.2-77",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [-9.25, 0, -4.18],
-         "rotation": [0, 3.142, 0]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "cover",
-          "height": "high",
-          "side": "right"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "cv-pil-n--9.2-78",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [-9.15, 0, -4.18],
-         "rotation": [0, 3.142, 0]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "cover",
-          "height": "high",
-          "side": "left"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "cv-pil-s--9.2-79",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [-9.15, 0, 4.18]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "cover",
-          "height": "high",
-          "side": "right"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "cv-pil-s--9.2-80",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [-9.25, 0, 4.18]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "cover",
-          "height": "high",
-          "side": "left"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "cv-pil-n--2-81",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [-2.05, 0, -4.18],
-         "rotation": [0, 3.142, 0]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "cover",
-          "height": "high",
-          "side": "right"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "cv-pil-n--2-82",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [-1.95, 0, -4.18],
-         "rotation": [0, 3.142, 0]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "cover",
-          "height": "high",
-          "side": "left"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "cv-pil-s--2-83",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [-1.95, 0, 4.18]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "cover",
-          "height": "high",
-          "side": "right"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "cv-pil-s--2-84",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [-2.05, 0, 4.18]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "cover",
-          "height": "high",
-          "side": "left"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "cv-pil-n-4.4-85",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [4.35, 0, -4.18],
-         "rotation": [0, 3.142, 0]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "cover",
-          "height": "high",
-          "side": "right"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "cv-pil-n-4.4-86",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [4.45, 0, -4.18],
-         "rotation": [0, 3.142, 0]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "cover",
-          "height": "high",
-          "side": "left"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "cv-pil-s-4.4-87",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [4.45, 0, 4.18]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "cover",
-          "height": "high",
-          "side": "right"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "cv-pil-s-4.4-88",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [4.35, 0, 4.18]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "cover",
-          "height": "high",
-          "side": "left"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "cv-trolley-89",
+      "id": "cv-trolley-97",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8966,7 +9427,7 @@
       }
      },
      {
-      "id": "cv-trolley-90",
+      "id": "cv-trolley-98",
       "components": {
        "transform": {
         "type": "Transform",
@@ -8987,7 +9448,7 @@
       }
      },
      {
-      "id": "cv-trolley-91",
+      "id": "cv-trolley-99",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9008,7 +9469,7 @@
       }
      },
      {
-      "id": "cv-trolley-92",
+      "id": "cv-trolley-100",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9029,7 +9490,340 @@
       }
      },
      {
-      "id": "cv-gal-counter-93",
+      "id": "cv-booth-n--9.2-102",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-9.2, 0, -1.38],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-booth-n--9.2-103",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8.33, 0, -2.95],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-booth-n--9.2-104",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.07, 0, -2.95],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-booth-s--9.2-105",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-9.2, 0, 1.38]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-booth-s--9.2-107",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8.33, 0, 2.95],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-booth-s--9.2-108",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.07, 0, 2.95],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-booth-n--2-110",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2, 0, -1.38],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-booth-n--2-111",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.13, 0, -2.95],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-booth-n--2-112",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2.87, 0, -2.95],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-booth-s--2-113",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2, 0, 1.38]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-booth-s--2-115",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.13, 0, 2.95],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-booth-s--2-116",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2.87, 0, 2.95],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-booth-n-4.4-118",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.4, 0, -1.38],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-booth-n-4.4-119",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [5.27, 0, -2.95],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-booth-s-4.4-121",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.4, 0, 1.38]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-booth-s-4.4-123",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [5.27, 0, 2.95],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gal-counter-125",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9050,7 +9844,7 @@
       }
      },
      {
-      "id": "cv-gal-counter-94",
+      "id": "cv-gal-counter-126",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9071,7 +9865,7 @@
       }
      },
      {
-      "id": "cv-gal-counter-95",
+      "id": "cv-gal-counter-127",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9092,7 +9886,7 @@
       }
      },
      {
-      "id": "cv-bar-96",
+      "id": "cv-bar-128",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9113,7 +9907,7 @@
       }
      },
      {
-      "id": "cv-bar-97",
+      "id": "cv-bar-129",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9134,7 +9928,7 @@
       }
      },
      {
-      "id": "cv-bar-98",
+      "id": "cv-bar-130",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9155,7 +9949,7 @@
       }
      },
      {
-      "id": "cv-bar-99",
+      "id": "cv-bar-131",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9176,27 +9970,7 @@
       }
      },
      {
-      "id": "cv-sofa-l-1-101",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [9.5, 0, 0.78]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "cover",
-          "height": "low"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "cv-sofa-l-1-102",
+      "id": "cv-sofa-l-1-134",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9217,7 +9991,7 @@
       }
      },
      {
-      "id": "cv-sofa-l-1-103",
+      "id": "cv-sofa-l-1-135",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9238,7 +10012,7 @@
       }
      },
      {
-      "id": "cv-sofa-l-1-104",
+      "id": "cv-sofa-l-1-136",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9259,7 +10033,7 @@
       }
      },
      {
-      "id": "cv-sofa-l-2-105",
+      "id": "cv-sofa-l-2-137",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9279,7 +10053,7 @@
       }
      },
      {
-      "id": "cv-sofa-l-2-106",
+      "id": "cv-sofa-l-2-138",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9300,7 +10074,7 @@
       }
      },
      {
-      "id": "cv-sofa-l-2-107",
+      "id": "cv-sofa-l-2-139",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9321,7 +10095,7 @@
       }
      },
      {
-      "id": "cv-sofa-l-2-108",
+      "id": "cv-sofa-l-2-140",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9342,7 +10116,7 @@
       }
      },
      {
-      "id": "cv-piano-109",
+      "id": "cv-piano-141",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9362,7 +10136,7 @@
       }
      },
      {
-      "id": "cv-piano-111",
+      "id": "cv-piano-143",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9383,12 +10157,74 @@
       }
      },
      {
-      "id": "cv-piano-112",
+      "id": "cv-piano-144",
       "components": {
        "transform": {
         "type": "Transform",
         "properties": {
          "position": [8.38, 0, 4.6],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-banq-bar-145",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.7, 0, -2.02]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-banq-bar-147",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.62, 0, -0.4],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-banq-bar-148",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.78, 0, -0.4],
          "rotation": [0, 1.571, 0]
         }
        },
@@ -9447,7 +10283,7 @@
       }
      },
      {
-      "id": "cv-crate-c1-113",
+      "id": "cv-crate-c1-149",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9467,7 +10303,7 @@
       }
      },
      {
-      "id": "cv-crate-c1-114",
+      "id": "cv-crate-c1-150",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9488,7 +10324,7 @@
       }
      },
      {
-      "id": "cv-crate-c1-115",
+      "id": "cv-crate-c1-151",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9509,7 +10345,7 @@
       }
      },
      {
-      "id": "cv-crate-c1-116",
+      "id": "cv-crate-c1-152",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9530,7 +10366,7 @@
       }
      },
      {
-      "id": "cv-crate-c2-117",
+      "id": "cv-crate-c2-153",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9551,7 +10387,7 @@
       }
      },
      {
-      "id": "cv-crate-c2-118",
+      "id": "cv-crate-c2-154",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9572,7 +10408,7 @@
       }
      },
      {
-      "id": "cv-crate-c2-119",
+      "id": "cv-crate-c2-155",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9594,7 +10430,7 @@
       }
      },
      {
-      "id": "cv-crate-c2-120",
+      "id": "cv-crate-c2-156",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9616,7 +10452,7 @@
       }
      },
      {
-      "id": "cv-crate-c2-121",
+      "id": "cv-crate-c2-157",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9638,7 +10474,7 @@
       }
      },
      {
-      "id": "cv-crate-c2-122",
+      "id": "cv-crate-c2-158",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9660,7 +10496,7 @@
       }
      },
      {
-      "id": "cv-crate-c2-123",
+      "id": "cv-crate-c2-159",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9682,7 +10518,7 @@
       }
      },
      {
-      "id": "cv-crate-c2-124",
+      "id": "cv-crate-c2-160",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9704,7 +10540,7 @@
       }
      },
      {
-      "id": "cv-crate-c3-125",
+      "id": "cv-crate-c3-161",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9724,7 +10560,7 @@
       }
      },
      {
-      "id": "cv-crate-c3-126",
+      "id": "cv-crate-c3-162",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9745,7 +10581,7 @@
       }
      },
      {
-      "id": "cv-crate-c3-127",
+      "id": "cv-crate-c3-163",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9766,7 +10602,7 @@
       }
      },
      {
-      "id": "cv-crate-c3-128",
+      "id": "cv-crate-c3-164",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9787,7 +10623,7 @@
       }
      },
      {
-      "id": "cv-crate-c4-130",
+      "id": "cv-crate-c4-166",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9808,7 +10644,7 @@
       }
      },
      {
-      "id": "cv-crate-c4-131",
+      "id": "cv-crate-c4-167",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9830,7 +10666,7 @@
       }
      },
      {
-      "id": "cv-crate-c4-132",
+      "id": "cv-crate-c4-168",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9852,7 +10688,7 @@
       }
      },
      {
-      "id": "cv-crate-c4-133",
+      "id": "cv-crate-c4-169",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9874,7 +10710,7 @@
       }
      },
      {
-      "id": "cv-crate-c4-134",
+      "id": "cv-crate-c4-170",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9896,7 +10732,7 @@
       }
      },
      {
-      "id": "cv-crate-c4-135",
+      "id": "cv-crate-c4-171",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9918,7 +10754,7 @@
       }
      },
      {
-      "id": "cv-crate-c5-137",
+      "id": "cv-crate-c5-173",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9938,7 +10774,7 @@
       }
      },
      {
-      "id": "cv-crate-c5-138",
+      "id": "cv-crate-c5-174",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9959,7 +10795,7 @@
       }
      },
      {
-      "id": "cv-crate-c5-139",
+      "id": "cv-crate-c5-175",
       "components": {
        "transform": {
         "type": "Transform",
@@ -9980,7 +10816,7 @@
       }
      },
      {
-      "id": "cv-crate-c5-140",
+      "id": "cv-crate-c5-176",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10001,7 +10837,7 @@
       }
      },
      {
-      "id": "cv-crate-c6-141",
+      "id": "cv-crate-c6-177",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10022,7 +10858,7 @@
       }
      },
      {
-      "id": "cv-crate-c6-142",
+      "id": "cv-crate-c6-178",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10043,7 +10879,7 @@
       }
      },
      {
-      "id": "cv-crate-c6-143",
+      "id": "cv-crate-c6-179",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10065,7 +10901,7 @@
       }
      },
      {
-      "id": "cv-crate-c6-144",
+      "id": "cv-crate-c6-180",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10087,7 +10923,7 @@
       }
      },
      {
-      "id": "cv-crate-c6-147",
+      "id": "cv-crate-c6-183",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10109,7 +10945,7 @@
       }
      },
      {
-      "id": "cv-crate-c6-148",
+      "id": "cv-crate-c6-184",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10131,7 +10967,7 @@
       }
      },
      {
-      "id": "cv-crate-c7-149",
+      "id": "cv-crate-c7-185",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10151,7 +10987,7 @@
       }
      },
      {
-      "id": "cv-crate-c7-150",
+      "id": "cv-crate-c7-186",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10172,7 +11008,7 @@
       }
      },
      {
-      "id": "cv-crate-c7-151",
+      "id": "cv-crate-c7-187",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10193,7 +11029,7 @@
       }
      },
      {
-      "id": "cv-crate-c7-152",
+      "id": "cv-crate-c7-188",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10214,7 +11050,7 @@
       }
      },
      {
-      "id": "cv-crate-c8-153",
+      "id": "cv-crate-c8-189",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10234,7 +11070,7 @@
       }
      },
      {
-      "id": "cv-crate-c8-154",
+      "id": "cv-crate-c8-190",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10255,7 +11091,7 @@
       }
      },
      {
-      "id": "cv-crate-c8-155",
+      "id": "cv-crate-c8-191",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10276,7 +11112,7 @@
       }
      },
      {
-      "id": "cv-crate-c8-156",
+      "id": "cv-crate-c8-192",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10297,7 +11133,7 @@
       }
      },
      {
-      "id": "cv-car-158",
+      "id": "cv-car-194",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10319,7 +11155,7 @@
       }
      },
      {
-      "id": "cv-car-159",
+      "id": "cv-car-195",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10341,7 +11177,7 @@
       }
      },
      {
-      "id": "cv-car-160",
+      "id": "cv-car-196",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10363,7 +11199,7 @@
       }
      },
      {
-      "id": "cv-car-161",
+      "id": "cv-car-197",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10379,6 +11215,89 @@
           "marker": "cover",
           "height": "high",
           "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pallet-199",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [19.1, 0, -1.42]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pallet-200",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [19.1, 0, 1.42],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pallet-201",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [20.42, 0, 0],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pallet-202",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [17.78, 0, 0],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
          }
         }
        }
@@ -10753,7 +11672,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-9.5, 0, -1.5]
+         "position": [-6.5, 0, -4.5]
         }
        },
        "data": {
@@ -10772,7 +11691,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-9.5, 0, 1.5]
+         "position": [-6.5, 0, 4.5]
         }
        },
        "data": {
@@ -10791,7 +11710,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-6.5, 0, -4.5]
+         "position": [-3.5, 0, -4.5]
         }
        },
        "data": {
@@ -10810,7 +11729,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-6.5, 0, 4.5]
+         "position": [-3.5, 0, 4.5]
         }
        },
        "data": {
@@ -10829,7 +11748,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-3.5, 0, -4.5]
+         "position": [-0.5, 0, -4.5]
         }
        },
        "data": {
@@ -10848,7 +11767,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-3.5, 0, 4.5]
+         "position": [-0.5, 0, 4.5]
         }
        },
        "data": {
@@ -10867,44 +11786,6 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-0.5, 0, -4.5]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "waypoint"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "wp-prom-11",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [-0.5, 0, 4.5]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "waypoint"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "wp-prom-12",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
          "position": [2.5, 0, -4.5]
         }
        },
@@ -10919,7 +11800,7 @@
       }
      },
      {
-      "id": "wp-prom-13",
+      "id": "wp-prom-11",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11019,7 +11900,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10, 0, -1]
+         "position": [12.5, 0, -3.5]
         }
        },
        "data": {
@@ -11038,7 +11919,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [12.5, 0, -3.5]
+         "position": [12.5, 0, 4]
         }
        },
        "data": {
@@ -11057,7 +11938,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [12.5, 0, 4]
+         "position": [15, 0, -3.5]
         }
        },
        "data": {
@@ -11076,7 +11957,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [15, 0, -3.5]
+         "position": [15, 0, -1]
         }
        },
        "data": {
@@ -11095,25 +11976,6 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [15, 0, -1]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "waypoint"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "wp-lounge-9",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
          "position": [15, 0, 1.5]
         }
        },
@@ -11128,7 +11990,7 @@
       }
      },
      {
-      "id": "wp-lounge-10",
+      "id": "wp-lounge-9",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11774,7 +12636,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "group": "front"
          }
         }
        }
@@ -11795,7 +12658,9 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "group": "front",
+          "minDiff": "hard"
          }
         }
        }
@@ -11817,6 +12682,7 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
+          "group": "front",
           "minDiff": "hard"
          }
         }
@@ -11839,6 +12705,7 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
+          "group": "front",
           "minDiff": "hard"
          }
         }
@@ -11860,7 +12727,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "rusher"
+          "kind": "rusher",
+          "group": "front"
          }
         }
        }
@@ -11882,7 +12750,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "minDiff": "hard"
+          "group": "front",
+          "minDiff": "hardcore"
          }
         }
        }
@@ -11903,7 +12772,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "group": "front"
          }
         }
        }
@@ -11925,6 +12795,7 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
+          "group": "front",
           "minDiff": "hard"
          }
         }
@@ -11946,7 +12817,9 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "group": "front",
+          "minDiff": "hard"
          }
         }
        }
@@ -11968,6 +12841,7 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
+          "group": "front",
           "minDiff": "hard"
          }
         }
@@ -11989,7 +12863,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "group": "front"
          }
         }
        }
@@ -12011,7 +12886,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "minDiff": "hard"
+          "group": "front",
+          "minDiff": "hardcore"
          }
         }
        }
@@ -12096,7 +12972,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveA"
+          "group": "waveA",
+          "minDiff": "hard"
          }
         }
        }
@@ -12117,7 +12994,9 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "group": "bar",
+          "deaf": true
          }
         }
        }
@@ -12138,7 +13017,10 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "group": "bar",
+          "deaf": true,
+          "minDiff": "hard"
          }
         }
        }
@@ -12160,6 +13042,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
+          "group": "bar",
+          "deaf": true,
           "minDiff": "hard"
          }
         }
@@ -12182,6 +13066,8 @@
          "data": {
           "marker": "enemy",
           "kind": "heavy",
+          "group": "bar",
+          "deaf": true,
           "model": "rival652"
          }
         }
@@ -12203,7 +13089,9 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "rusher"
+          "kind": "rusher",
+          "group": "bar",
+          "deaf": true
          }
         }
        }
@@ -12249,7 +13137,8 @@
           "marker": "enemy",
           "kind": "goon",
           "group": "hold",
-          "deaf": true
+          "deaf": true,
+          "minDiff": "hard"
          }
         }
        }
@@ -12319,7 +13208,7 @@
           "kind": "rusher",
           "group": "hold",
           "deaf": true,
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }
@@ -12409,7 +13298,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveB"
+          "group": "waveB",
+          "minDiff": "hard"
          }
         }
        }
@@ -12432,7 +13322,7 @@
           "marker": "enemy",
           "kind": "rusher",
           "group": "waveB",
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }
@@ -12455,7 +13345,7 @@
           "marker": "enemy",
           "kind": "goon",
           "group": "waveB",
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }
@@ -12501,7 +13391,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveC"
+          "group": "waveC",
+          "minDiff": "hard"
          }
         }
        }
@@ -12535,7 +13426,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [30, 3, -6.1]
+         "position": [37.2, 0, -2],
+         "rotation": [0, -1.571, 0]
         }
        },
        "data": {
@@ -12544,8 +13436,7 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveC2",
-          "perch": true,
+          "group": "waveC",
           "weapon": "sniper",
           "minDiff": "hard"
          }
@@ -12559,7 +13450,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [21, 3, -6.1]
+         "position": [37.2, 0, 2],
+         "rotation": [0, -1.571, 0]
         }
        },
        "data": {
@@ -12568,7 +13460,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveC2"
+          "group": "waveC",
+          "minDiff": "hardcore"
          }
         }
        }
@@ -12580,8 +13473,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-30, 0, -2],
-         "rotation": [0, 1.571, 0]
+         "position": [-5, 0, -8.5]
         }
        },
        "data": {
@@ -12602,8 +13494,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-30, 0, 2],
-         "rotation": [0, 1.571, 0]
+         "position": [-3.8, 0, -7.6]
         }
        },
        "data": {
@@ -12612,7 +13503,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "group": "waveD"
+          "group": "waveD",
+          "minDiff": "hard"
          }
         }
        }
@@ -12624,8 +13516,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-28, 0, 0],
-         "rotation": [0, 1.571, 0]
+         "position": [-1.6, 0, -7.6]
         }
        },
        "data": {
@@ -12635,7 +13526,7 @@
           "marker": "enemy",
           "kind": "rusher",
           "group": "waveD",
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }
@@ -12696,7 +13587,56 @@
         "properties": {
          "data": {
           "marker": "trigger",
-          "action": "alert"
+          "action": "alert",
+          "group": "front"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "t-bar",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [5.4, 1, 0],
+         "scale": [1.6, 3, 12]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "trigger",
+          "action": "alert",
+          "group": "bar"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "t-bar-kills",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 1, 0],
+         "scale": [1, 1, 1]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "trigger",
+          "action": "alert",
+          "group": "bar",
+          "afterKills": {
+           "normal": 6,
+           "hard": 8
+          }
          }
         }
        }
@@ -12742,8 +13682,8 @@
           "action": "alert",
           "group": "hold",
           "afterKills": {
-           "normal": 15,
-           "hard": 20
+           "normal": 11,
+           "hard": 16
           }
          }
         }
@@ -12790,8 +13730,8 @@
           "action": "setpiece",
           "cue": "blow",
           "afterKills": {
-           "normal": 17,
-           "hard": 22
+           "normal": 11,
+           "hard": 18
           }
          }
         }
@@ -12815,7 +13755,10 @@
           "marker": "trigger",
           "action": "spawn",
           "group": "waveA",
-          "afterKills": 5
+          "afterKills": {
+           "normal": 3,
+           "hard": 4
+          }
          }
         }
        }
@@ -12839,8 +13782,8 @@
           "action": "checkpoint",
           "at": "cp-mid",
           "afterKills": {
-           "normal": 12,
-           "hard": 16
+           "normal": 8,
+           "hard": 13
           }
          }
         }
@@ -12865,8 +13808,8 @@
           "action": "spawn",
           "group": "waveB",
           "afterKills": {
-           "normal": 12,
-           "hard": 16
+           "normal": 8,
+           "hard": 13
           }
          }
         }
@@ -12891,34 +13834,8 @@
           "action": "spawn",
           "group": "waveC",
           "afterKills": {
-           "normal": 19,
-           "hard": 26
-          }
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "t-waveC2",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [0, 1, 0],
-         "scale": [1, 1, 1]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "trigger",
-          "action": "spawn",
-          "group": "waveC2",
-          "afterKills": {
-           "normal": 21,
-           "hard": 28
+           "normal": 12,
+           "hard": 21
           }
          }
         }
@@ -12943,8 +13860,8 @@
           "action": "spawn",
           "group": "waveD",
           "afterKills": {
-           "normal": 23,
-           "hard": 31
+           "normal": 15,
+           "hard": 25
           }
          }
         }
@@ -13685,6 +14602,86 @@
          "data": {
           "marker": "camera",
           "at": [26, 1.5, 6.5]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cam-cover-bow",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-30.5, 2.5, 4.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "camera",
+          "at": [-21, 0.6, -1]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cam-cover-prom",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13, 2.6, 4.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "camera",
+          "at": [0, 0.6, -1]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cam-cover-bar",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.8, 2.6, 4.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "camera",
+          "at": [12, 0.6, -2]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cam-cover-hold",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.8, 3.2, 5.8]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "camera",
+          "at": [21, 0.6, -1]
          }
         }
        }

@@ -8,7 +8,7 @@ import path from "node:path";
 import { BRANDS, brandHtml, otherGameHref, resolveGame } from "../src/brands.ts";
 import { GAME, IS_CUT } from "../src/product.ts";
 import { DIFFICULTY, MADAME, RADPAYNE_DIFFICULTIES, type Difficulty } from "../src/sim/tuning.ts";
-import { BEAM, CH2_DIFF, COUNTESS, ROOF, SNIPER2, killsFor, perDiff } from "../src/sim/tuning2.ts";
+import { ARRIVE, BEAM, CH2_DIFF, COUNTESS, ROOF, SNIPER2, killsFor, perDiff } from "../src/sim/tuning2.ts";
 import { CUT } from "../src/sim/cut.ts";
 import { HEROES, RADBROS, RETARDIOS, defaultHeroOf, fixedDifficultyOf, pickFor, rosterOf } from "../src/ui/store.ts";
 import { CUT_TEXT, textFor } from "../src/ui/cutText.ts";
@@ -23,7 +23,7 @@ const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8");
 const level = (id: string): LevelData => readLevel(JSON.parse(read(`public/levels/${id}.json`)));
 const RAD4: Difficulty[] = ["easy", "normal", "hard", "hardcore"];
 
-test("RadPayne's tuning is unchanged: its four difficulties, Madame Pockit's and chapter 2's tables", () => {
+test("RadPayne's tuning: its four difficulties, Madame Pockit's and chapter 2's tables as they were; chapter 2's arrivals and its new, lighter Normal rosters", () => {
   assert.deepEqual([...RADPAYNE_DIFFICULTIES], RAD4);
   assert.deepEqual(DIFFICULTY.easy, { speedK: 0.55, label: "Chill", damage: 0.5, reaction: 0.9, accuracy: 0.8, wake: 0.9, shooters: 1, far: 32, farFloor: 0.12, hp: 1, boss: 0.5, copium: 2, keep: 1, startCopium: 2, heal: 35, checkpoint: 60, btDrain: 1, killRefill: 1, suppress: 0, flank: 0, grenade: 0, camp: 0, rush: 0 });
   assert.deepEqual(DIFFICULTY.normal, { speedK: 0.45, label: "Normal", damage: 1.15, reaction: 0.45, accuracy: 1.1, wake: 0.35, shooters: 2, far: 40, farFloor: 0.2, hp: 1, boss: 0.85, copium: 1, keep: 0.8, startCopium: 1, heal: 30, checkpoint: 60, btDrain: 1.25, killRefill: 1.2, suppress: 0.5, flank: 1, grenade: 14, camp: 6, rush: 9 });
@@ -53,11 +53,15 @@ test("RadPayne's tuning is unchanged: its four difficulties, Madame Pockit's and
   assert.deepEqual(per(BEAM.dur), [3.8, 3.6, 2.8, 2.8]);
   assert.deepEqual(per(BEAM.pace), [1.4, 1.25, 1, 1]);
   assert.deepEqual(per(BEAM.damage), [10, 10, 16, 16]);
-  // a chapter 2 room on RadPayne's difficulties: the same rosters as ever (Normal leaves the Hard girls out)
-  for (const id of ["room6", "room10"]) {
-    const n = RAD4.map(d => new Game(level(id), { seed: 1, difficulty: d }).enemies.length);
-    assert.ok(n[0] === n[1] && n[1] < n[2] && n[2] === n[3], `${id}: ${n.join(" / ")}`);
-  }
+  // chapter 2's arrivals (2026-10-03, the owner: "too many enemies, they even spawn in places where you
+  // hide"): the most standing at once and the gap between two, per difficulty
+  assert.deepEqual(per(ARRIVE.maxUp), [4, 6, 8, 9]);
+  assert.deepEqual(per(ARRIVE.gap), [2.2, 1.6, 1.1, 0.9]);
+  assert.deepEqual([ARRIVE.minDist, ARRIVE.backDist, ARRIVE.step, ARRIVE.zone], [12, 20, 1.5, 2.5]);
+  // a chapter 2 room on RadPayne's difficulties (since 2026-10-03): Normal about a third under what it had,
+  // Hard about a fifth (some of its girls are Hardcore's only now), Hardcore every girl, as before
+  const rosters: Record<string, number[]> = { room6: [16, 16, 26, 32], room7: [15, 15, 28, 34], room8: [18, 18, 33, 40], room9: [17, 17, 28, 36], room10: [9, 9, 15, 18] };
+  for (const [id, want] of Object.entries(rosters)) assert.deepEqual(RAD4.map(d => new Game(level(id), { seed: 1, difficulty: d }).enemies.length), want, id);
 });
 
 test("RadPayne's characters are unchanged: the six Radbros and the two Retardios, #4764 first pick", () => {
@@ -140,7 +144,7 @@ test("RetardioPayne plays only the Retardios on its one fixed difficulty", () =>
   assert.equal(DIFFICULTY.retardio, CUT.diff);
 });
 
-test("the harder cut against RadPayne's Normal: better aim, faster, pushing, more damage, slower bullet time, fewer cans, more of the gang, tougher bosses", () => {
+test("the harder cut against RadPayne's Normal: better aim, faster, pushing, more damage, slower bullet time, fewer cans, tougher bosses; chapter 2 on Normal's rosters with two shooting at once", () => {
   const n = DIFFICULTY.normal, c = DIFFICULTY.retardio;
   assert.ok(c.accuracy > n.accuracy && c.far >= n.far && c.farFloor > n.farFloor && c.speedK < n.speedK, "aim");
   assert.ok(c.reaction < n.reaction && c.wake < n.wake, "reaction");
@@ -149,21 +153,34 @@ test("the harder cut against RadPayne's Normal: better aim, faster, pushing, mor
   assert.ok(c.killRefill < n.killRefill && c.killRefill < DIFFICULTY.hard.killRefill, "bullet time refills slower than Normal's and Hard's");
   assert.ok(c.keep < n.keep && c.copium <= n.copium && c.startCopium <= n.startCopium, "cans");
   assert.ok(MADAME.hp.retardio > MADAME.hp.normal && perDiff(COUNTESS.hp, "retardio") > perDiff(COUNTESS.hp, "normal"), "bosses over Normal's");
-  assert.ok(MADAME.maxLive.retardio > MADAME.maxLive.normal && perDiff(COUNTESS.doorFirst, "retardio") > perDiff(COUNTESS.doorFirst, "normal") && perDiff(COUNTESS.doorLive, "retardio") > perDiff(COUNTESS.doorLive, "normal"), "the bosses' doors");
-  // chapter 2: every girl the level marks for Hard and up is in, and each wave still comes in
+  // Madame Pockit's doors keep three up (Normal two); the Countess's lifts open on Normal's numbers (two,
+  // two standing: chapter 2 plays Normal's rosters) at a quicker pace
+  assert.ok(MADAME.maxLive.retardio > MADAME.maxLive.normal, "Madame Pockit's doors");
+  assert.equal(perDiff(COUNTESS.doorFirst, "retardio"), perDiff(COUNTESS.doorFirst, "normal"));
+  assert.equal(perDiff(COUNTESS.doorLive, "retardio"), perDiff(COUNTESS.doorLive, "normal"));
+  assert.ok(perDiff(COUNTESS.doorPace, "retardio") < perDiff(COUNTESS.doorPace, "normal"), "the Countess's lifts, quicker");
+  // chapter 2 (2026-10-03: the owner found it too hard): Normal's rosters, none of the girls a level marks
+  // for Hard, each wave still comes in; at most two of them shooting at once, as many standing as on
+  // Normal, coming in a little quicker; harder than Normal through the rest (aim, reaction, damage, health,
+  // bullet time)
   for (const id of ["room6", "room7", "room8", "room9", "room10"]) {
     const lv = level(id);
     const g = new Game(lv, { seed: 1, difficulty: "retardio" });
-    const normal = new Game(lv, { seed: 1, difficulty: "normal" }).enemies.length, hard = new Game(lv, { seed: 1, difficulty: "hard" }).enemies.length;
-    assert.ok(g.enemies.length === hard && g.enemies.length > normal, `${id}: ${g.enemies.length} (Normal ${normal}, Hard ${hard})`);
+    const normal = new Game(lv, { seed: 1, difficulty: "normal" });
+    assert.deepEqual(g.enemies.map(e => e.id), normal.enemies.map(e => e.id), `${id}: Normal's roster`);
     for (const t of g.triggers) {
       const k = killsFor(t.data.afterKills, "retardio");
-      if (k !== undefined) assert.ok(k <= g.enemies.length && k === killsFor(t.data.afterKills, "hard"), `${id} ${t.id}: waits for ${k} of ${g.enemies.length}`);
+      if (k !== undefined) assert.ok(k <= g.enemies.length && k === killsFor(t.data.afterKills, "normal"), `${id} ${t.id}: waits for ${k} of ${g.enemies.length}`);
     }
     // its own chapter 2 ease, over the cut's row
     assert.equal(g.diff.damage, CUT.ch2.damage);
+    assert.ok(g.diff.damage > normal.diff.damage && g.diff.accuracy > normal.diff.accuracy && g.diff.reaction < normal.diff.reaction && g.diff.hp > normal.diff.hp);
     assert.equal(g.diff.accuracy, c.accuracy);
+    assert.equal(g.diff.shooters, 2);
+    assert.equal(normal.diff.shooters, 2);
   }
+  assert.equal(perDiff(ARRIVE.maxUp, "retardio"), perDiff(ARRIVE.maxUp, "normal"));
+  assert.ok(perDiff(ARRIVE.gap, "retardio") < perDiff(ARRIVE.gap, "normal"));
   const ch1 = new Game(level("room1"), { seed: 1, difficulty: "retardio" });
   assert.deepEqual(ch1.diff, c, "chapter 1 takes the cut's row as it is");
 });

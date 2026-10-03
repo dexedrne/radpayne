@@ -2221,6 +2221,166 @@
       }
      },
      {
+      "id": "stack-en",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.4, 0.7, -11],
+         "scale": [2, 1.4, 0.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "gold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "stack-wn",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4.4, 0.7, -11],
+         "scale": [2, 1.4, 0.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "gold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "stack-es",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.6, 0.7, 11.9],
+         "scale": [2, 1.4, 0.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "gold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "stack-ws",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6.6, 0.7, 11.9],
+         "scale": [2, 1.4, 0.9]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "gold"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
       "id": "bonds",
       "components": {
        "transform": {
@@ -5567,6 +5727,338 @@
       }
      },
      {
+      "id": "cv-stack-en-86",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.4, 0, -12.07]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-stack-en-87",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.4, 0, -9.93],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-stack-en-88",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.02, 0, -11],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-stack-en-89",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [2.78, 0, -11],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-stack-wn-90",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4.4, 0, -12.07]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-stack-wn-91",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4.4, 0, -9.93],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-stack-wn-92",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2.78, 0, -11],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-stack-wn-93",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6.02, 0, -11],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-stack-es-94",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.6, 0, 10.83]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-stack-es-95",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [6.6, 0, 12.97],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-stack-es-96",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.22, 0, 11.9],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-stack-es-97",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [4.98, 0, 11.9],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-stack-ws-98",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6.6, 0, 10.83]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-stack-ws-99",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6.6, 0, 12.97],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-stack-ws-100",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4.98, 0, 11.9],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-stack-ws-101",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8.22, 0, 11.9],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
       "id": "secret-stash",
       "components": {
        "transform": {
@@ -5864,7 +6356,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-4.5, 0, -10.5]
+         "position": [-4.5, 0, -4.5]
         }
        },
        "data": {
@@ -5883,7 +6375,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-4.5, 0, -4.5]
+         "position": [-4.5, 0, -1.5]
         }
        },
        "data": {
@@ -5902,7 +6394,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-4.5, 0, -1.5]
+         "position": [-4.5, 0, 1.5]
         }
        },
        "data": {
@@ -5921,7 +6413,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-4.5, 0, 1.5]
+         "position": [-4.5, 0, 4.5]
         }
        },
        "data": {
@@ -5940,7 +6432,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-4.5, 0, 4.5]
+         "position": [-4.5, 0, 13.5]
         }
        },
        "data": {
@@ -5959,7 +6451,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-4.5, 0, 13.5]
+         "position": [-1.5, 0, -10.5]
         }
        },
        "data": {
@@ -5978,7 +6470,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-1.5, 0, -10.5]
+         "position": [-1.5, 0, -7.5]
         }
        },
        "data": {
@@ -5997,7 +6489,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-1.5, 0, -7.5]
+         "position": [-1.5, 0, 7.5]
         }
        },
        "data": {
@@ -6016,7 +6508,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-1.5, 0, 7.5]
+         "position": [-1.5, 0, 10.5]
         }
        },
        "data": {
@@ -6035,7 +6527,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-1.5, 0, 10.5]
+         "position": [-1.5, 0, 13.5]
         }
        },
        "data": {
@@ -6054,7 +6546,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-1.5, 0, 13.5]
+         "position": [1.5, 0, -10.5]
         }
        },
        "data": {
@@ -6073,7 +6565,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [1.5, 0, -10.5]
+         "position": [1.5, 0, -7.5]
         }
        },
        "data": {
@@ -6092,7 +6584,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [1.5, 0, -7.5]
+         "position": [1.5, 0, 7.5]
         }
        },
        "data": {
@@ -6111,7 +6603,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [1.5, 0, 7.5]
+         "position": [1.5, 0, 10.5]
         }
        },
        "data": {
@@ -6130,7 +6622,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [1.5, 0, 10.5]
+         "position": [1.5, 0, 13.5]
         }
        },
        "data": {
@@ -6149,7 +6641,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [1.5, 0, 13.5]
+         "position": [4.5, 0, -4.5]
         }
        },
        "data": {
@@ -6168,7 +6660,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [4.5, 0, -10.5]
+         "position": [4.5, 0, -1.5]
         }
        },
        "data": {
@@ -6187,7 +6679,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [4.5, 0, -4.5]
+         "position": [4.5, 0, 1.5]
         }
        },
        "data": {
@@ -6206,7 +6698,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [4.5, 0, -1.5]
+         "position": [4.5, 0, 4.5]
         }
        },
        "data": {
@@ -6225,7 +6717,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [4.5, 0, 1.5]
+         "position": [4.5, 0, 13.5]
         }
        },
        "data": {
@@ -6244,7 +6736,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [4.5, 0, 4.5]
+         "position": [7.5, 0, -10.5]
         }
        },
        "data": {
@@ -6263,7 +6755,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [4.5, 0, 13.5]
+         "position": [7.5, 0, -1.5]
         }
        },
        "data": {
@@ -6282,7 +6774,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [7.5, 0, -10.5]
+         "position": [7.5, 0, 1.5]
         }
        },
        "data": {
@@ -6301,7 +6793,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [7.5, 0, -1.5]
+         "position": [7.5, 0, 10.5]
         }
        },
        "data": {
@@ -6320,7 +6812,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [7.5, 0, 1.5]
+         "position": [10.5, 0, -7.5]
         }
        },
        "data": {
@@ -6339,7 +6831,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [7.5, 0, 10.5]
+         "position": [10.5, 0, -4.5]
         }
        },
        "data": {
@@ -6358,7 +6850,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10.5, 0, -7.5]
+         "position": [10.5, 0, -1.5]
         }
        },
        "data": {
@@ -6377,7 +6869,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10.5, 0, -4.5]
+         "position": [10.5, 0, 1.5]
         }
        },
        "data": {
@@ -6396,7 +6888,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10.5, 0, -1.5]
+         "position": [10.5, 0, 4.5]
         }
        },
        "data": {
@@ -6415,7 +6907,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10.5, 0, 1.5]
+         "position": [10.5, 0, 7.5]
         }
        },
        "data": {
@@ -6434,44 +6926,6 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10.5, 0, 4.5]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "waypoint"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "wp-floor-43",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [10.5, 0, 7.5]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "waypoint"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "wp-floor-44",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
          "position": [13.5, 0, -1.5]
         }
        },
@@ -6486,7 +6940,7 @@
       }
      },
      {
-      "id": "wp-floor-45",
+      "id": "wp-floor-43",
       "components": {
        "transform": {
         "type": "Transform",
@@ -7067,7 +7521,8 @@
           "marker": "enemy",
           "kind": "goon",
           "group": "liftE",
-          "deaf": true
+          "deaf": true,
+          "minDiff": "hard"
          }
         }
        }
@@ -7091,7 +7546,7 @@
           "kind": "rusher",
           "group": "liftE",
           "deaf": true,
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }
@@ -7115,7 +7570,7 @@
           "kind": "rusher",
           "group": "liftW",
           "deaf": true,
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }
@@ -7185,7 +7640,8 @@
           "marker": "enemy",
           "kind": "goon",
           "group": "liftW",
-          "deaf": true
+          "deaf": true,
+          "minDiff": "hard"
          }
         }
        }
@@ -7209,7 +7665,7 @@
           "kind": "rusher",
           "group": "liftE2",
           "deaf": true,
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }
@@ -7255,7 +7711,8 @@
           "marker": "enemy",
           "kind": "goon",
           "group": "liftE2",
-          "deaf": true
+          "deaf": true,
+          "minDiff": "hard"
          }
         }
        }
@@ -7325,7 +7782,8 @@
           "marker": "enemy",
           "kind": "goon",
           "group": "liftW2",
-          "deaf": true
+          "deaf": true,
+          "minDiff": "hard"
          }
         }
        }
@@ -7893,6 +8351,46 @@
          "data": {
           "marker": "camera",
           "at": [0, 2.8, -1.7]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cam-cover-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3, 3.4, 11]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "camera",
+          "at": [10.4, 0.7, 1]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cam-cover-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6, 3.4, -4]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "camera",
+          "at": [0, 0.6, -11]
          }
         }
        }

@@ -120,6 +120,13 @@
    "color": "#8a6a44",
    "roughness": 0.85
   },
+  "crate": {
+   "color": "#9a8466",
+   "texture": "/textures/backrooms/boxes_cardboard.webp",
+   "repeat": true,
+   "repeatCount": [1.25, 1.25],
+   "roughness": 0.9
+  },
   "stairEdge": {
    "color": "#3a3a3c",
    "roughness": 0.8
@@ -218,7 +225,6 @@
        "stage": {
         "kind": "roof",
         "heli": [2, 15, -34],
-        "pad": [0, 1, -14],
         "path": [
          [-12, 4],
          [4, 10],
@@ -226,26 +232,81 @@
          [6, -8],
          [-6, -6]
         ],
-        "drops": [
-         {
-          "group": "drop1",
-          "ropes": [
+        "ropes": {
+         "pad": {
+          "at": [0, 1, -14],
+          "slots": [
            [-2.5, -15.5],
            [2.5, -15.5],
            [-2.5, -12.5],
            [2.5, -12.5]
           ]
          },
-         {
-          "group": "drop2",
-          "ropes": [
-           [-3, -16],
-           [3, -16],
-           [0, -11.5],
-           [0, -18]
+         "south": {
+          "at": [4.5, 0, 18.2],
+          "slots": [
+           [3, 17],
+           [6, 17],
+           [3, 19.5],
+           [6, 19.5]
           ]
          }
-        ]
+        }
+       },
+       "arrive": {
+        "ways": {
+         "machine": [
+          [17, 0, -15.2],
+          [21.4, 0, -15.2],
+          [19.2, 0, -16.6],
+          [17.4, 0, -17.2]
+         ],
+         "se": [
+          [23, 0, 15],
+          [25, 0, 16],
+          [23, 0, 18],
+          [22.4, 0, 20]
+         ],
+         "west": [
+          [-26.4, 0, -1.6],
+          [-26.4, 0, 1.6],
+          [-27.6, 0, 0]
+         ]
+        },
+        "groups": {
+         "waveA": [
+          "self",
+          "se",
+          "west"
+         ],
+         "waveB": [
+          "self",
+          "machine",
+          "west"
+         ],
+         "waveC": [
+          "self",
+          "se",
+          "west"
+         ],
+         "waveC2": [
+          "self",
+          "machine",
+          "se"
+         ],
+         "drop1": [
+          "pad",
+          "south",
+          "machine",
+          "se"
+         ],
+         "drop2": [
+          "pad",
+          "south",
+          "se",
+          "machine"
+         ]
+        }
        }
       }
      }
@@ -4271,6 +4332,382 @@
       }
      },
      {
+      "id": "ac-5",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-18.25, 1.15, -3.6],
+         "scale": [2.5, 2.3, 2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "hvac"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ac-6",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.8, 1.15, 3.5],
+         "scale": [2.4, 2.3, 2.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "hvac"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "ac-7",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [20.2, 1.15, 3.2],
+         "scale": [2.4, 2.3, 2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "hvac"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "metal"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "crates-a",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-11.2, 0.6, 1.7],
+         "scale": [1.6, 1.2, 1.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "crate"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "crates-b",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.7, 0.625, 3.4],
+         "scale": [1.8, 1.25, 1.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "crate"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "crates-c",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.4, 0.6, -1.3],
+         "scale": [1.6, 1.2, 1.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "crate"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "crates-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.2, 0.6, 17.7],
+         "scale": [1.6, 1.2, 1.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "crate"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "surface": "wood"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "pad-wall-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13.3, 0.55, -12.75],
+         "scale": [0.6, 1.1, 5.5]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "parapet"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "wt-base-n",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-14, 0.575, 8.8],
+         "scale": [7, 1.15, 0.5]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "parapet"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "wt-base-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-18.35, 0.575, 13],
+         "scale": [0.5, 1.15, 6.8]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "parapet"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
       "id": "coop",
       "components": {
        "transform": {
@@ -6482,6 +6919,262 @@
         "type": "Material",
         "properties": {
          "materialId": "redBlink"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ac-5-fan",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-18.25, 2.36, -3.6],
+         "scale": [1.7, 0.12, 1.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "vent"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ac-6-fan",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.8, 2.36, 3.5],
+         "scale": [1.6, 0.12, 1.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "vent"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ac-7-fan",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [20.2, 2.36, 3.2],
+         "scale": [1.6, 0.12, 1.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "vent"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "crates-a-strap",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-11.2, 0.61, 1.7],
+         "scale": [1.64, 1.22, 0.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steelDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "crates-b-strap",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.7, 0.635, 3.4],
+         "scale": [1.84, 1.27, 0.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steelDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "crates-c-strap",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.4, 0.61, -1.3],
+         "scale": [1.64, 1.22, 0.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steelDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "crates-e-strap",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.2, 0.61, 17.7],
+         "scale": [1.64, 1.22, 0.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "steelDark"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "pad-wall-w-cap",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-13.3, 1.14, -12.75],
+         "scale": [0.7, 0.08, 5.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "padEdge"
         }
        },
        "mesh": {
@@ -9501,6 +10194,1193 @@
       }
      },
      {
+      "id": "cv-ac-5-148",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.25, 0, -5.22]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-5-149",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17.25, 0, -5.22]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-5-150",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17.25, 0, -1.98],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-5-151",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.25, 0, -1.98],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-5-152",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-16.38, 0, -4.35],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-5-153",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-16.38, 0, -2.85],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-5-154",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20.12, 0, -2.85],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-5-155",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20.12, 0, -4.35],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-6-156",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.85, 0, 1.78]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-6-157",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.75, 0, 1.78]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-6-158",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.75, 0, 5.22],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-6-159",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [8.85, 0, 5.22],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-6-160",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [11.62, 0, 2.65],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-6-161",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [11.62, 0, 4.35],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-6-162",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.98, 0, 4.35],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-6-163",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.98, 0, 2.65],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-7-164",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [19.25, 0, 1.58]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-7-165",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [21.15, 0, 1.58]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-7-166",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [21.15, 0, 4.82],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-7-167",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [19.25, 0, 4.82],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-7-168",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [22.02, 0, 2.45],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-7-169",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [22.02, 0, 3.95],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-7-170",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [18.38, 0, 3.95],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "right"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-ac-7-171",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [18.38, 0, 2.45],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "high",
+          "side": "left"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-crates-a-172",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-11.2, 0, 0.38]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-crates-a-173",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-11.2, 0, 3.02],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-crates-a-174",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-9.78, 0, 1.7],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-crates-a-175",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-12.62, 0, 1.7],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-crates-b-176",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.7, 0, 1.98]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-crates-b-177",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.7, 0, 4.82],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-crates-b-178",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0.82, 0, 3.4],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-crates-b-179",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2.22, 0, 3.4],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-crates-c-180",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.4, 0, -2.62]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-crates-c-181",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.4, 0, 0.02],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-crates-c-182",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [17.82, 0, -1.3],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-crates-c-183",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [14.98, 0, -1.3],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-crates-e-184",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.2, 0, 16.38]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-crates-e-185",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.2, 0, 19.02],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-crates-e-186",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0.22, 0, 17.7],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-crates-e-187",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2.62, 0, 17.7],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pad-wall-w-188",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-12.38, 0, -14.125],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pad-wall-w-189",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-12.38, 0, -11.375],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pad-wall-w-190",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-14.22, 0, -14.125],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-pad-wall-w-191",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-14.22, 0, -11.375],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-wt-base-n-192",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-16.333, 0, 7.93]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-wt-base-n-193",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-14, 0, 7.93]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-wt-base-n-194",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-11.667, 0, 7.93]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-wt-base-n-195",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-16.333, 0, 9.67],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-wt-base-n-196",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-14, 0, 9.67],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-wt-base-n-197",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-11.667, 0, 9.67],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-wt-base-w-198",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17.48, 0, 10.733],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-wt-base-w-199",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17.48, 0, 13],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-wt-base-w-200",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17.48, 0, 15.267],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-wt-base-w-201",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.22, 0, 10.733],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-wt-base-w-202",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.22, 0, 13],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-wt-base-w-203",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.22, 0, 15.267],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
       "id": "secret-closet",
       "components": {
        "transform": {
@@ -9988,7 +11868,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-12.5, 0, -14.5]
+         "position": [-12.5, 0, -1]
         }
        },
        "data": {
@@ -10007,7 +11887,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-12.5, 0, -10]
+         "position": [-12.5, 0, 3.5]
         }
        },
        "data": {
@@ -10026,7 +11906,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-12.5, 0, -1]
+         "position": [-12.5, 0, 8]
         }
        },
        "data": {
@@ -10045,7 +11925,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-12.5, 0, 3.5]
+         "position": [-12.5, 0, 12.5]
         }
        },
        "data": {
@@ -10064,7 +11944,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-12.5, 0, 8]
+         "position": [-12.5, 0, 17]
         }
        },
        "data": {
@@ -10083,7 +11963,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-12.5, 0, 12.5]
+         "position": [-8, 0, -19]
         }
        },
        "data": {
@@ -10102,7 +11982,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-12.5, 0, 17]
+         "position": [-8, 0, -14.5]
         }
        },
        "data": {
@@ -10121,7 +12001,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-8, 0, -19]
+         "position": [-8, 0, -10]
         }
        },
        "data": {
@@ -10140,7 +12020,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-8, 0, -14.5]
+         "position": [-8, 0, -5.5]
         }
        },
        "data": {
@@ -10159,7 +12039,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-8, 0, -10]
+         "position": [-8, 0, -1]
         }
        },
        "data": {
@@ -10178,7 +12058,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-8, 0, -5.5]
+         "position": [-8, 0, 3.5]
         }
        },
        "data": {
@@ -10197,7 +12077,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-8, 0, -1]
+         "position": [-8, 0, 8]
         }
        },
        "data": {
@@ -10216,7 +12096,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-8, 0, 3.5]
+         "position": [-8, 0, 12.5]
         }
        },
        "data": {
@@ -10235,7 +12115,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-8, 0, 8]
+         "position": [-8, 0, 17]
         }
        },
        "data": {
@@ -10254,7 +12134,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-8, 0, 12.5]
+         "position": [-3.5, 0, -1]
         }
        },
        "data": {
@@ -10273,7 +12153,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-8, 0, 17]
+         "position": [-3.5, 0, 3.5]
         }
        },
        "data": {
@@ -10292,7 +12172,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-3.5, 0, -1]
+         "position": [-3.5, 0, 8]
         }
        },
        "data": {
@@ -10311,7 +12191,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-3.5, 0, 3.5]
+         "position": [-3.5, 0, 17]
         }
        },
        "data": {
@@ -10330,7 +12210,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-3.5, 0, 8]
+         "position": [1, 0, -1]
         }
        },
        "data": {
@@ -10349,7 +12229,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-3.5, 0, 17]
+         "position": [1, 0, 3.5]
         }
        },
        "data": {
@@ -10368,7 +12248,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [1, 0, -1]
+         "position": [1, 0, 8]
         }
        },
        "data": {
@@ -10387,7 +12267,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [1, 0, 3.5]
+         "position": [1, 0, 12.5]
         }
        },
        "data": {
@@ -10406,7 +12286,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [1, 0, 8]
+         "position": [1, 0, 17]
         }
        },
        "data": {
@@ -10425,7 +12305,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [1, 0, 12.5]
+         "position": [5.5, 0, -5.5]
         }
        },
        "data": {
@@ -10444,7 +12324,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [1, 0, 17]
+         "position": [5.5, 0, -1]
         }
        },
        "data": {
@@ -10463,7 +12343,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [5.5, 0, -5.5]
+         "position": [5.5, 0, 12.5]
         }
        },
        "data": {
@@ -10482,7 +12362,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [5.5, 0, -1]
+         "position": [5.5, 0, 17]
         }
        },
        "data": {
@@ -10501,7 +12381,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [5.5, 0, 12.5]
+         "position": [10, 0, -19]
         }
        },
        "data": {
@@ -10520,7 +12400,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [5.5, 0, 17]
+         "position": [10, 0, -14.5]
         }
        },
        "data": {
@@ -10539,7 +12419,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10, 0, -19]
+         "position": [10, 0, -10]
         }
        },
        "data": {
@@ -10558,7 +12438,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10, 0, -14.5]
+         "position": [10, 0, -5.5]
         }
        },
        "data": {
@@ -10577,7 +12457,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10, 0, -10]
+         "position": [10, 0, -1]
         }
        },
        "data": {
@@ -10596,7 +12476,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10, 0, -5.5]
+         "position": [10, 0, 17]
         }
        },
        "data": {
@@ -10615,7 +12495,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10, 0, -1]
+         "position": [14.5, 0, -10]
         }
        },
        "data": {
@@ -10634,7 +12514,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10, 0, 3.5]
+         "position": [14.5, 0, -1]
         }
        },
        "data": {
@@ -10653,7 +12533,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10, 0, 17]
+         "position": [14.5, 0, 3.5]
         }
        },
        "data": {
@@ -10672,7 +12552,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [14.5, 0, -10]
+         "position": [14.5, 0, 8]
         }
        },
        "data": {
@@ -10691,7 +12571,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [14.5, 0, -1]
+         "position": [14.5, 0, 12.5]
         }
        },
        "data": {
@@ -10710,7 +12590,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [14.5, 0, 3.5]
+         "position": [19, 0, -10]
         }
        },
        "data": {
@@ -10729,7 +12609,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [14.5, 0, 8]
+         "position": [19, 0, -5.5]
         }
        },
        "data": {
@@ -10748,7 +12628,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [14.5, 0, 12.5]
+         "position": [19, 0, -1]
         }
        },
        "data": {
@@ -10767,7 +12647,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [19, 0, -10]
+         "position": [19, 0, 8]
         }
        },
        "data": {
@@ -10786,7 +12666,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [19, 0, -5.5]
+         "position": [19, 0, 12.5]
         }
        },
        "data": {
@@ -10805,7 +12685,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [19, 0, -1]
+         "position": [19, 0, 17]
         }
        },
        "data": {
@@ -10824,7 +12704,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [19, 0, 3.5]
+         "position": [23.5, 0, -10]
         }
        },
        "data": {
@@ -10843,7 +12723,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [19, 0, 8]
+         "position": [23.5, 0, -5.5]
         }
        },
        "data": {
@@ -10862,7 +12742,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [19, 0, 12.5]
+         "position": [23.5, 0, -1]
         }
        },
        "data": {
@@ -10881,82 +12761,6 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [19, 0, 17]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "waypoint"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "wp-roof-70",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [23.5, 0, -10]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "waypoint"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "wp-roof-71",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [23.5, 0, -5.5]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "waypoint"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "wp-roof-72",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [23.5, 0, -1]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "waypoint"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "wp-roof-73",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
          "position": [23.5, 0, 3.5]
         }
        },
@@ -10971,7 +12775,7 @@
       }
      },
      {
-      "id": "wp-roof-74",
+      "id": "wp-roof-70",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11666,7 +13470,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "minDiff": "hard"
          }
         }
        }
@@ -11707,7 +13512,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "goon"
+          "kind": "goon",
+          "minDiff": "hard"
          }
         }
        }
@@ -11819,7 +13625,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveA"
+          "group": "waveA",
+          "minDiff": "hard"
          }
         }
        }
@@ -11861,7 +13668,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveA"
+          "group": "waveA",
+          "minDiff": "hard"
          }
         }
        }
@@ -11883,7 +13691,7 @@
           "marker": "enemy",
           "kind": "rusher",
           "group": "waveA",
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }
@@ -11904,7 +13712,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "group": "drop1"
+          "group": "drop1",
+          "minDiff": "hard"
          }
         }
        }
@@ -11968,7 +13777,7 @@
           "marker": "enemy",
           "kind": "rusher",
           "group": "drop1",
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }
@@ -12012,7 +13821,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "group": "waveB"
+          "group": "waveB",
+          "minDiff": "hard"
          }
         }
        }
@@ -12034,7 +13844,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveB"
+          "group": "waveB",
+          "minDiff": "hard"
          }
         }
        }
@@ -12057,7 +13868,7 @@
           "marker": "enemy",
           "kind": "rusher",
           "group": "waveB",
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }
@@ -12123,7 +13934,7 @@
           "marker": "enemy",
           "kind": "rusher",
           "group": "drop2",
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }
@@ -12165,7 +13976,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "drop2"
+          "group": "drop2",
+          "minDiff": "hard"
          }
         }
        }
@@ -12209,7 +14021,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveC"
+          "group": "waveC",
+          "minDiff": "hard"
          }
         }
        }
@@ -12231,7 +14044,7 @@
           "marker": "enemy",
           "kind": "goon",
           "group": "waveC",
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }
@@ -12276,7 +14089,7 @@
           "marker": "enemy",
           "kind": "rusher",
           "group": "waveC2",
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }
@@ -12381,8 +14194,8 @@
           "action": "spawn",
           "group": "waveA",
           "afterKills": {
-           "normal": 4,
-           "hard": 5
+           "normal": 3,
+           "hard": 4
           }
          }
         }
@@ -12407,8 +14220,8 @@
           "action": "spawn",
           "group": "drop1",
           "afterKills": {
-           "normal": 7,
-           "hard": 9
+           "normal": 5,
+           "hard": 7
           }
          }
         }
@@ -12433,8 +14246,8 @@
           "action": "checkpoint",
           "at": "cp-mid",
           "afterKills": {
-           "normal": 10,
-           "hard": 14
+           "normal": 7,
+           "hard": 11
           }
          }
         }
@@ -12459,8 +14272,8 @@
           "action": "spawn",
           "group": "waveB",
           "afterKills": {
-           "normal": 10,
-           "hard": 14
+           "normal": 7,
+           "hard": 11
           }
          }
         }
@@ -12485,8 +14298,8 @@
           "action": "spawn",
           "group": "drop2",
           "afterKills": {
-           "normal": 13,
-           "hard": 18
+           "normal": 9,
+           "hard": 15
           }
          }
         }
@@ -12511,8 +14324,8 @@
           "action": "spawn",
           "group": "waveC",
           "afterKills": {
-           "normal": 16,
-           "hard": 22
+           "normal": 11,
+           "hard": 18
           }
          }
         }
@@ -12537,8 +14350,8 @@
           "action": "spawn",
           "group": "waveC2",
           "afterKills": {
-           "normal": 18,
-           "hard": 24
+           "normal": 13,
+           "hard": 20
           }
          }
         }
@@ -13233,6 +15046,86 @@
          "data": {
           "marker": "camera",
           "at": [-14, 5, 13]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cam-cover-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-25, 4.5, 7]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "camera",
+          "at": [-13, 0.6, -3]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cam-cover-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [3, 4.5, -7]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "camera",
+          "at": [17, 0.6, 2]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cam-cover-tank",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-4, 3.5, 2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "camera",
+          "at": [-15, 0.8, 11]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cam-cover-pad",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-18, 4, -3]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "camera",
+          "at": [-4, 1, -13]
          }
         }
        }

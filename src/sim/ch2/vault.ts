@@ -3,7 +3,10 @@
 //  - the phases at COUNTESS.phase2 / phase3 of her health (each change: COUNTESS.shift of no damage),
 //    her last stand at COUNTESS.lastStand (she runs for the vault door, the world slows by itself);
 //  - the lift doors: each wave's group comes through its door after a lamp over it (the tell), the first
-//    batch, then pairs while few of them stand; a wave starts with its phase;
+//    batch, then pairs while few of them stand; a wave starts with its phase. They come in one at a time
+//    by the arrivals' rule (sim/arrive.ts: never near him, never behind his back, only while few of the
+//    gang stand): with him close to her lift a girl takes the other one (its lamp first if it is shut),
+//    else she waits;
 //  - the security beams, from phase 2: a red beam turns about the counting desk, high (chest: dive under
 //    it or lie prone) or low (shins: jump it), shown dim and still for the tell first, then sweeping
 //    half a turn; tall cover between it and him keeps it off; once per sweep, BEAM.damage;
@@ -15,12 +18,18 @@ import type { Enemy } from "../actors.ts";
 import type { Game } from "../game.ts";
 import type { Fnv1a } from "../math.ts";
 import { HB_HEAD } from "../../combat/hitboxes.ts";
-import { alertGoon, goToCover, setState } from "../../ai/goon.ts";
+import { goToCover, setState } from "../../ai/goon.ts";
 import { startRush } from "../../ai/rusher.ts";
-import { BEAM, COUNTESS, perDiff } from "../tuning2.ts";
+import { ARRIVE, BEAM, COUNTESS, perDiff } from "../tuning2.ts";
+import { arrivalOk, arrivalRoom, comeIn, type Slot } from "../arrive.ts";
 import type { Stage, StageBoss, StageHint, StageSettings } from "../stage.ts";
 
-type Wave = { group: string; door: string; phase: number; lamp: number; lit: boolean; queue: number[]; next: number; x: number; z: number; ox: number; oz: number };
+/** A lift: its door (a collider out of the world once open), the lamp's time left (the tell), the door's
+ *  centre and the point just outside it (where the girls run from it when she falls). */
+type Lift = { door: string; lamp: number; open: boolean; x: number; z: number; ox: number; oz: number; slots: Slot[]; turn: number };
+/** A wave: its group through its own lift (`lift`), the girls still to come in, how many may come now
+ *  (`pending`), the time to the next pair. */
+type Wave = { group: string; door: string; lift: number; phase: number; lit: boolean; queue: number[]; pending: number; next: number; x: number; z: number; ox: number; oz: number };
 /** 0 off, 1 the tell, 2 sweeping. `a` the angle now (0 = +Z, like facing), dir +-1, high or low. */
 export type Beam = { state: number; t: number; a0: number; a: number; dir: number; high: boolean; hit: boolean; dur: number };
 
@@ -38,7 +47,10 @@ export class Vault implements Stage {
   /** A collider out of the world until the fight starts (the vault door's gate: no fighting from the corridor). */
   readonly lock: string;
   locked = false;
+  readonly lifts: Lift[] = [];
   readonly waves: Wave[];
+  /** World s until the next girl may come in (ARRIVE.gap). */
+  gapT = 0;
   phase = 1;
   started = false;
   introT = 0;
@@ -66,11 +78,39 @@ export class Vault implements Stage {
     const her = g.enemies[this.idx];
     if (her) { her.perch = true; her.coverUsed = true; }
     this.waves = ((s.waves as Array<{ group: string; door: string; phase: number }>) ?? []).map(w => {
-      const box = g.level.boxes.find(b => b.node === w.door);
-      const x = box?.cx ?? 0, z = box?.cz ?? 0;
-      const dx = x - this.center[0], dz = z - this.center[1], l = Math.hypot(dx, dz) || 1;
-      return { group: w.group, door: w.door, phase: w.phase, lamp: 0, lit: false, queue: g.enemies.filter(e => e.group === w.group).map(e => e.idx), next: 0, x, z, ox: x + (dx / l) * 1.6, oz: z + (dz / l) * 1.6 };
+      let lift = this.lifts.findIndex(l => l.door === w.door);
+      if (lift < 0) {
+        const box = g.level.boxes.find(b => b.node === w.door);
+        const x = box?.cx ?? 0, z = box?.cz ?? 0;
+        const dx = x - this.center[0], dz = z - this.center[1], l = Math.hypot(dx, dz) || 1;
+        lift = this.lifts.push({ door: w.door, lamp: 0, open: false, x, z, ox: x + (dx / l) * 1.6, oz: z + (dz / l) * 1.6, slots: [], turn: 0 }) - 1;
+      }
+      const L = this.lifts[lift];
+      return { group: w.group, door: w.door, lift, phase: w.phase, lit: false, queue: g.enemies.filter(e => e.group === w.group).map(e => e.idx), pending: 0, next: 0, x: L.x, z: L.z, ox: L.ox, oz: L.oz };
     });
+    // each lift's slots: where its girls stand behind the door, and the other lift's mirrored through the
+    // vault's centre (a girl may come through either)
+    for (const w of this.waves) for (const i of w.queue) {
+      const e = g.enemies[i];
+      const own: Slot = [e.x, e.y, e.z], other: Slot = [2 * this.center[0] - e.x, e.y, 2 * this.center[1] - e.z];
+      for (const [k, L] of this.lifts.entries()) {
+        const sl = k === w.lift ? own : other;
+        if (!L.slots.some(q => Math.hypot(q[0] - sl[0], q[2] - sl[2]) < 0.3)) L.slots.push(sl);
+      }
+    }
+  }
+
+  /** The lift's lamp is on (the tell before its door opens). */
+  lampOn(door: string): boolean {
+    return this.lifts.some(l => l.door === door && l.lamp > 0);
+  }
+
+  /** Light a shut lift's lamp (its door opens when it runs out). */
+  private callLift(g: Game, k: number): void {
+    const L = this.lifts[k];
+    if (L.open || L.lamp > 0) return;
+    L.lamp = COUNTESS.doors.lamp;
+    g.emit({ type: "stage", what: "lamp", x: L.x, z: L.z });
   }
 
   her(g: Game): Enemy | undefined {
@@ -101,8 +141,9 @@ export class Vault implements Stage {
   private lightWaves(g: Game, phase: number): void {
     for (const w of this.waves) if (w.phase === phase && !w.lit && w.queue.length) {
       w.lit = true;
-      w.lamp = COUNTESS.doors.lamp;
-      g.emit({ type: "stage", what: "lamp", x: w.x, z: w.z });
+      w.pending = perDiff(COUNTESS.doorFirst, g.difficulty);
+      w.next = COUNTESS.doors.every * perDiff(COUNTESS.doorPace, g.difficulty);
+      this.callLift(g, w.lift);
     }
   }
 
@@ -112,15 +153,24 @@ export class Vault implements Stage {
     return n;
   }
 
-  private spawn(g: Game, w: Wave, n: number): void {
-    for (let k = 0; k < n && w.queue.length; k++) {
-      const e = g.enemies[w.queue.shift()!];
-      if (!e || e.state !== "inactive" || e.fled) continue;
-      setState(e, "idle");
-      e.hit.hittable = true;
-      e.deaf = false;
-      alertGoon(g, e, 0.15 + 0.3 * g.rng.next());
+  /** The wave's next girl comes in if she may: at a slot of its own lift that passes the arrivals' rule,
+   *  else of the other lift; a shut lift that passes is called first (its lamp, then its door). */
+  private bringNext(g: Game, w: Wave): boolean {
+    while (w.queue.length && (g.enemies[w.queue[0]]?.state !== "inactive" || g.enemies[w.queue[0]]?.fled)) w.queue.shift();
+    const e = g.enemies[w.queue[0]];
+    if (!e) return false;
+    for (const k of [w.lift, ...this.lifts.keys()].filter((k, i, a) => a.indexOf(k) === i)) {
+      const L = this.lifts[k];
+      let slot: Slot | null = null;
+      for (let i = 0; i < L.slots.length && !slot; i++) { const q = L.slots[(L.turn + i) % L.slots.length]; if (arrivalOk(g, q[0], q[1], q[2])) { slot = q; L.turn = (L.turn + i + 1) % L.slots.length; } }
+      if (!slot) continue;
+      if (!L.open) { this.callLift(g, k); return false; }
+      w.queue.shift();
+      comeIn(g, e, slot);
+      g.emit({ type: "stage", what: "arrive", id: e.idx, x: slot[0], z: slot[2], group: e.group });
+      return true;
     }
+    return false;
   }
 
   step(g: Game, dt: number): void {
@@ -166,18 +216,24 @@ export class Vault implements Stage {
       if (this.phase === 2) { setState(e, "alert"); e.react = 0; goToCover(g, e); }
       else if (this.phase === 3) { e.engageAt = COUNTESS.engage; startRush(g, e); }
     }
-    // the lift doors
+    // the lifts: a lamp, then the door is open for good
+    for (const L of this.lifts) if (L.lamp > 0) {
+      L.lamp -= dt;
+      if (L.lamp <= 0) { L.lamp = 0; L.open = true; if (g.world.setEnabled(L.door, false)) g.emit({ type: "stage", what: "door", x: L.x, z: L.z }); }
+    }
+    // the waves: the first batch, then a pair every so often while few of them stand; one girl at a time
+    // (ARRIVE.gap apart) while the room has space for her (ARRIVE.maxUp)
+    this.gapT = Math.max(0, this.gapT - dt);
     for (const w of this.waves) {
-      if (w.lit && w.lamp > 0) {
-        w.lamp -= dt;
-        if (w.lamp <= 0) {
-          if (g.world.setEnabled(w.door, false)) g.emit({ type: "stage", what: "door", x: w.x, z: w.z });
-          if (alive) this.spawn(g, w, perDiff(COUNTESS.doorFirst, g.difficulty));
-          w.next = COUNTESS.doors.every * perDiff(COUNTESS.doorPace, g.difficulty);
-        }
-      } else if (w.lit && w.queue.length && alive) {
-        w.next -= dt;
-        if (w.next <= 0 && this.liveOf(g, w.group) < perDiff(COUNTESS.doorLive, g.difficulty)) { this.spawn(g, w, COUNTESS.doors.pair); w.next = COUNTESS.doors.every * perDiff(COUNTESS.doorPace, g.difficulty); }
+      if (!w.lit || !w.queue.length || !alive) continue;
+      w.next -= dt;
+      if (w.next <= 0) {
+        if (this.liveOf(g, w.group) < perDiff(COUNTESS.doorLive, g.difficulty)) w.pending = Math.max(w.pending, COUNTESS.doors.pair);
+        w.next = COUNTESS.doors.every * perDiff(COUNTESS.doorPace, g.difficulty);
+      }
+      if (w.pending > 0 && this.gapT <= 0 && g.phase === "play" && g.player.mode !== "dead" && arrivalRoom(g) && this.bringNext(g, w)) {
+        w.pending--;
+        this.gapT = perDiff(ARRIVE.gap, g.difficulty);
       }
     }
     // her aim broken: enough damage during the tell and the round never comes (a stagger)
@@ -312,6 +368,8 @@ export class Vault implements Stage {
   hashInto(h: Fnv1a): void {
     h.i32(this.phase).i32(this.locked ? 1 : 0).i32(this.started ? 1 : 0).f64(this.introT).f64(this.shiftT).i32(this.lastStand).f64(this.shotNext).f64(this.beamNext).i32(this.beams);
     h.i32(this.beam.state).f64(this.beam.t).f64(this.beam.a).i32(this.beam.high ? 1 : 0).i32(this.beam.hit ? 1 : 0);
-    for (const w of this.waves) h.f64(w.lamp).i32(w.lit ? 1 : 0).i32(w.queue.length).f64(w.next);
+    for (const L of this.lifts) h.f64(L.lamp).i32(L.open ? 1 : 0).i32(L.turn);
+    for (const w of this.waves) h.i32(w.lit ? 1 : 0).i32(w.queue.length).i32(w.pending).f64(w.next);
+    h.f64(this.gapT);
   }
 }

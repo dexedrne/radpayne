@@ -71,7 +71,12 @@ test("chapter 2's rooms: each a full room (25-40 of the gang in waves from sever
   assert.deepEqual([...pins].sort(), ["g250", "g2564", "g3171", "g4764", "g652", "g723"]);
 });
 
-test("chapter 2 on every difficulty: its roster (Normal leaves some of the gang out) and every wave still comes in (each afterKills count is reachable)", () => {
+// Normal's rosters before the owner found chapter 2 too hard ("too many enemies"): cut by about a third
+const NORMAL_WAS: Record<string, number> = { room6: 25, room7: 22, room8: 27, room9: 27, room10: 13 };
+const NORMAL_NOW: Record<string, number> = { room6: 16, room7: 15, room8: 18, room9: 17, room10: 9 };
+const HARD_WAS: Record<string, number> = { room6: 32, room7: 34, room8: 40, room9: 36, room10: 18 };
+
+test("chapter 2 on every difficulty: its roster (Normal leaves some of the gang out: a third fewer than it had) and every wave still comes in (each afterKills count is reachable)", () => {
   const DIFFS: Difficulty[] = ["easy", "normal", "hard", "hardcore"];
   const counts: Record<string, number[]> = {};
   for (const id of ROOMS) {
@@ -102,10 +107,12 @@ test("chapter 2 on every difficulty: its roster (Normal leaves some of the gang 
         if (k !== undefined) assert.ok(k <= g.enemies.length, `${id} ${d}: ${t.id} waits for ${k} of ${g.enemies.length}`);
       }
     }
-    // Normal is lighter than Hard; Chill has what Normal has
+    // Normal is lighter than Hard, Hard than Hardcore (every girl); Chill has what Normal has; Normal about
+    // a third under what it was, Hard about a fifth
     const [easy, normal, hard, hardcore] = counts[id];
-    assert.ok(normal < hard && easy === normal && hardcore === hard, `${id}: ${counts[id].join(" / ")}`);
-    if (id !== "room10") assert.ok(normal >= 20 && normal <= 28, `${id}: ${normal} on Normal`);
+    assert.ok(normal < hard && easy === normal && hard < hardcore && hard <= HARD_WAS[id] * 0.85, `${id}: ${counts[id].join(" / ")}`);
+    assert.equal(normal, NORMAL_NOW[id], `${id}: ${normal} on Normal`);
+    assert.ok(normal <= NORMAL_WAS[id] * 0.7, `${id}: ${normal} on Normal (it had ${NORMAL_WAS[id]})`);
   }
   // chapter 2's own Normal: chapter 1's aim and damage, their frags and rushers less often, every can, a
   // checkpoint restores more, the snipers' tell longer; Hard and Hardcore untouched
@@ -131,7 +138,9 @@ test("chapter 2 on every difficulty: its roster (Normal leaves some of the gang 
 });
 
 test("the bot clears every chapter 2 room on normal (seeds 1-3; the vault's boss on 1, 4, 5), each set piece on the way", () => {
-  const want: Record<string, string[]> = { room6: ["lit", "drop", "landed"], room7: ["crack", "collapse"], room8: ["klaxon", "blow", "gone"], room9: ["shutterWarn", "shutters", "dark", "lights"], room10: ["intro", "door", "phase2", "beamGo", "phase3", "lastStand", "down"] };
+  // (the roof's drop girls may be shot on their ropes before they land; the hold's girls may all be down
+  // before the sky takes one)
+  const want: Record<string, string[]> = { room6: ["lit", "drop", "arrive"], room7: ["crack", "collapse", "arrive"], room8: ["klaxon", "blow", "calm", "arrive"], room9: ["shutterWarn", "shutters", "dark", "lights", "arrive"], room10: ["intro", "door", "arrive", "phase2", "beamGo", "phase3", "lastStand", "down"] };
   for (const id of ROOMS) for (const seed of id === "room10" ? [1, 4, 5] : [1, 2, 3]) {
     const g = new Game(room(id), { seed, difficulty: "normal" });
     const ev = runBot(g, 600);
@@ -170,23 +179,43 @@ test("roof: the light patrols, then follows him slower than he runs; lit, the ga
   assert.ok(stage(g.drain()).includes("lampOut"));
 });
 
-test("roof: a drop group comes down the ropes onto the pad (hittable, not firing until down); one shot off her rope lands on the pad", () => {
+test("roof: a drop group comes down the ropes once the helicopter is over the pad, one girl at a time (hittable, not firing until down); one shot off her rope lands on the pad; with him by the pad they come down over the south roof", () => {
   const g = new Game(room("room6"), { seed: 2 });
   const r = g.stage as Roof;
   const t = g.triggers.find(x => x.data.group === "drop1")!;
-  t.data.afterKills = 0;
-  const ev = idle(g, 0.1);
-  assert.ok(stage(ev).includes("drop"));
+  for (const x of g.triggers) if (x.data.action === "spawn") x.data.afterKills = x === t ? 0 : 99;
+  // (three of the roof's own girls down: room for more, ARRIVE.maxUp)
+  for (const id of ["g-1", "g-2", "g-3"]) g.damageEnemy(g.enemies.find(e => e.id === id)!, 999, HB_TORSO, 0, 1, null);
   const girls = g.enemies.filter(e => e.group === "drop1");
-  assert.ok(girls.every(e => e.y > ROOF.ropeY * 0.9 && e.hit.hittable), "up on the ropes, and she can be shot");
-  const shots = girls.map(e => e.shots);
-  g.damageEnemy(girls[0], 999, HB_TORSO, 0, 1, null);
-  assert.ok(Math.abs(girls[0].y - 1) < 1e-6, "shot off her rope: on the pad");
-  const ev2 = idle(g, ROOF.ropeY / ROOF.ropeSpeed + 1.2);
-  assert.ok(stage(ev2).filter(w => w === "landed").length >= girls.length - 1);
-  assert.ok(girls.slice(1).every(e => Math.abs(e.y - 1) < 1e-6), "on the pad");
-  assert.deepEqual(girls.slice(1).map(e => e.shots), shots.slice(1), "no shot from the rope");
+  assert.equal(girls.length, 2, "Normal's drop: two");
+  // the helicopter flies over the pad first; she waits for it
+  assert.ok(!stage(idle(g, 0.5)).includes("drop"));
+  let n = 0;
+  while (!r.roping.size && n++ < 8 / DT) idle(g, DT);
+  assert.ok(Math.hypot(r.hx - 0, r.hz + 14) < 1.5, "over the pad");
+  const first = girls.find(e => r.roping.has(e.idx))!;
+  assert.ok(first && first.y > 1 + ROOF.ropeY * 0.6 && first.hit.hittable, "up on a rope, and she can be shot");
+  const second = girls.find(e => e !== first)!;
+  idle(g, 0.5);
+  assert.equal(second.state, "inactive", "one at a time");
+  const shots = second.shots;
+  g.damageEnemy(first, 999, HB_TORSO, 0, 1, null);
+  assert.ok(Math.abs(first.y - 1) < 1e-6, "shot off her rope: on the pad");
+  const ev2 = idle(g, 2 + ROOF.ropeY / ROOF.ropeSpeed + 1.2);
+  const landed = ev2.find((e): e is StageEv => e.type === "stage" && e.what === "landed" && e.id === second.idx);
+  assert.ok(landed && Math.hypot(landed.x! - 0, landed.z! + 14) < 4, "down on the pad");
+  assert.equal(second.shots, shots, "no shot from the rope");
   assert.equal(r.roping.size, 0);
+  // him by the pad: the ropes go down over the open roof in the south (12 m and more from him)
+  const h = new Game(room("room6"), { seed: 2, ai: false });
+  const hr = h.stage as Roof;
+  for (const x of h.triggers) if (x.data.action === "spawn") x.data.afterKills = x.data.group === "drop1" ? 0 : 99;
+  for (const id of ["g-1", "g-2", "g-3"]) h.damageEnemy(h.enemies.find(e => e.id === id)!, 999, HB_TORSO, 0, 1, null);
+  h.player.x = 0; h.player.z = -6; h.player.yaw = 0;
+  idle(h, 14);
+  const hg = h.enemies.filter(e => e.group === "drop1");
+  assert.ok(hg.every(e => e.state !== "inactive" && e.z > 15 && Math.hypot(e.x - h.player.x, e.z - h.player.z) >= 12), `the south roof: ${hg.map(e => `${e.x.toFixed(1)},${e.z.toFixed(1)}`).join(" ")}`);
+  assert.ok(hr.hz > 10, "the helicopter went there");
 });
 
 test("garden: the glass cracks when he steps on it, gives way 2.6 s later: the girls on it drop to the pit and take the fall, the colliders are gone; a checkpoint keeps it gone", () => {
@@ -225,7 +254,8 @@ test("airship: the klaxon, then the door is gone and the hold pulls: he can hold
   // standing still in the hold he drifts to the net but never through it
   g.player.x = 25; g.player.z = 4;
   const girl = g.enemies.find(e => e.id === "h-4")!; // (h-5 is there on Hard and up only)
-  girl.x = 26; girl.z = 5.8; girl.state = "cover";
+  // (right by the opening: farther off, her own run away from it can hold against the pull)
+  girl.x = 25.5; girl.z = 6.5; girl.state = "cover";
   const kills = g.stats.kills;
   const ev3 = idle(g, 3);
   assert.ok(g.player.z > 5 && g.player.z < 7.3 - 0.3, `pinned on the net (${g.player.z.toFixed(2)})`);

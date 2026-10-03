@@ -10,7 +10,10 @@
 //                       stolen bags along the walls (high); the security beams turn about the desk from
 //                       phase 2 (high: dive; low: jump; tall cover keeps them off)
 //   the lifts           east and west walls: her girls come through them after a lamp over the door
-//                       (sim/ch2/vault.ts waves)
+//                       (sim/ch2/vault.ts waves), one at a time by the arrivals' rule (with him close to
+//                       one, through the other); 6 of them on Normal, 11 on Hard, 14 on Hardcore
+//   more cover          tall gold-bar stacks (they stop both beams) by the north shelf and either side of
+//                       the way in from the vault door
 //   secrets             a sliding shelf (E) in the north-west wall (the pin), a case of bearer bonds (it
 //                       breaks: frags), the teller's cage off the entry corridor
 // Room settings: stage (the vault: the desk, the beams' reach, the door she runs for, the waves), later
@@ -86,6 +89,11 @@ for (const [id, a, b, face] of [
 ] as Array<[string, V3, V3, "n" | "s" | "e" | "w"]>) k.cover(id, a, b, "shelfBags", { data: { surface: "wood" } }, { faces: [face] });
 // bullion carts inside the vault door (low): somewhere to duck when the gate shuts behind him
 for (const sx of [-1, 1]) k.cover(`cart-${sx > 0 ? "e" : "w"}`, [sx > 0 ? 2.6 : -4.6, 0, 10.8], [sx > 0 ? 4.6 : -2.6, 0.95, 11.6], "gold", { data: { surface: "metal" } });
+// tall gold-bar stacks (1.4 m: over the high beam) by the north shelf and either side of the way in from
+// the vault door (away from the lifts: no cover handed to the girls coming out of them)
+for (const [sx, x, z] of [[1, 4.4, -11], [-1, 4.4, -11], [1, 6.6, 11.9], [-1, 6.6, 11.9]] as const) {
+  k.cover(`stack-${sx > 0 ? "e" : "w"}${z > 0 ? "s" : "n"}`, [sx * x - 1, 0, z - 0.45], [sx * x + 1, 1.4, z + 0.45], "gold", { data: { surface: "metal" } });
+}
 k.box("bonds", [9.4, 0, 10.4], [10.8, 0.9, 11.4], "case", { data: { breakable: 30, surface: "wood", drop: "grenade", amount: 3, secret: "secret-bonds" } });
 // the sliding shelf in the north-west wall, and the room behind
 k.solid.splice(k.solid.findIndex(n => n.id === "wall-d-nw"), 1);
@@ -136,19 +144,20 @@ for (const [side, sx] of [["e", 1], ["w", -1]] as const) {
 
 // ---------------------------------------------------------------- the Countess and her girls
 const E = (id: string, x: number, y: number, z: number, yaw: number, d: Record<string, unknown> = {}) => marker(id, "enemy", [x, y, z], { kind: "goon", ...d }, yaw);
-// (a kind ending in "+" is there on Hard and up only: Normal's lifts bring fewer)
+// (a kind ending in "+" is there on Hard and up only, "++" on Hardcore only: Normal's lifts bring 6 of the
+// 14, Hard's 11)
 const adds = (side: "e" | "w", group: string, kinds: string[]) => kinds.map((kd0, i) => {
   const sx = side === "e" ? 1 : -1;
-  const kd = kd0.replace("+", "");
-  return E(`${group}-${i + 1}`, sx * (16.2 + (i % 2) * 1.4), 0, -1.6 + Math.floor(i / 2) * 1.4, side === "e" ? FACE_W : FACE_E, { kind: kd, group, deaf: true, ...(kd === "heavy" ? { model: side === "e" ? "rival652" : "rival723" } : {}), ...(kd0.endsWith("+") ? { minDiff: "hard" } : {}) });
+  const kd = kd0.replace(/\+/g, "");
+  return E(`${group}-${i + 1}`, sx * (16.2 + (i % 2) * 1.4), 0, -1.6 + Math.floor(i / 2) * 1.4, side === "e" ? FACE_W : FACE_E, { kind: kd, group, deaf: true, ...(kd === "heavy" ? { model: side === "e" ? "rival652" : "rival723" } : {}), ...(kd0.endsWith("++") ? { minDiff: "hardcore" } : kd0.endsWith("+") ? { minDiff: "hard" } : {}) });
 });
 k.m(
   E("countess", 0, DESK, -1.7, FACE_N, { kind: "countess", drop: false }),
   E("guard-1", -6.5, 0, 3, FACE_W), E("guard-2", 6, 0, 2.6, FACE_E, { minDiff: "hard" }), E("guard-3", 0, 0, -9.4, FACE_N, { kind: "rusher" }),
-  ...adds("e", "liftE", ["goon", "rusher", "goon", "rusher+"]),
-  ...adds("w", "liftW", ["rusher+", "goon", "heavy", "goon"]),
-  ...adds("e", "liftE2", ["rusher+", "goon", "goon"]).map(n => { const t = (n.components!.transform as { properties: { position: number[] } }).properties; t.position = [t.position[0], t.position[1], t.position[2] + 0.7]; return n; }),
-  ...adds("w", "liftW2", ["goon", "rusher+", "goon"]).map(n => { const t = (n.components!.transform as { properties: { position: number[] } }).properties; t.position = [t.position[0], t.position[1], t.position[2] + 0.7]; return n; }),
+  ...adds("e", "liftE", ["goon", "rusher", "goon+", "rusher++"]),
+  ...adds("w", "liftW", ["rusher++", "goon", "heavy", "goon+"]),
+  ...adds("e", "liftE2", ["rusher++", "goon", "goon+"]).map(n => { const t = (n.components!.transform as { properties: { position: number[] } }).properties; t.position = [t.position[0], t.position[1], t.position[2] + 0.7]; return n; }),
+  ...adds("w", "liftW2", ["goon", "rusher+", "goon+"]).map(n => { const t = (n.components!.transform as { properties: { position: number[] } }).properties; t.position = [t.position[0], t.position[1], t.position[2] + 0.7]; return n; }),
 );
 
 // ---------------------------------------------------------------- triggers, pickups, eggs, lights
@@ -174,6 +183,9 @@ k.m(
   ] as Array<[string, number, number, number, string, number, number]>).map(([id, x, y, z, color, intensity, distance]) => marker(`light-${id}`, "light", [x, y, z], { color, intensity, distance })),
   marker("cam-vault", "camera", [0, 2, 13.5], { at: [0, 2.2, 0] }),
   marker("cam-desk", "camera", [-6, 2.6, 6], { at: [0, DESK + 1.2, -1.7] }),
+  // the cover (screenshot shots: ?cam=cam-cover-e etc.)
+  marker("cam-cover-e", "camera", [3, 3.4, 11], { at: [10.4, 0.7, 1] }),
+  marker("cam-cover-n", "camera", [-6, 3.4, -4], { at: [0, 0.6, -11] }),
 );
 
 // ---------------------------------------------------------------- materials

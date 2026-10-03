@@ -14,8 +14,13 @@
 //                       to the service landing (wave B)
 //   the service room    east (wave A and D); the bridge corridor west (wave E comes up behind him); the
 //                       mast stair south (the way out, and wave D's heavy)
-// Hostiles 34; a checkpoint at 15 down. Secrets: the tool shed (E; pin, copium), a loose panel behind the
-// pond's waterfall (it breaks: the sawed-off, sniper rounds), the orchid shelf at the gallery's east end.
+// Cover: planters, benches with high backs, hedges, palm trunks, the gazebo, a fountain on the east lawn, a
+// low garden wall, planters along the gallery; the pit's stones.
+// Hostiles 15 on Normal, 28 on Hard, 34 on Hardcore; a checkpoint at 7 down (Hard 12). The waves come
+// in by the arrivals' rule (sim/arrive.ts) through the service room, the service landing, the pump
+// corridor, the mast stair and the bridge behind him, each with the others to fall back on
+// (room.arrive). Secrets: the tool shed (E; pin, copium), a loose panel behind the pond's waterfall (it
+// breaks: the sawed-off, sniper rounds), the orchid shelf at the gallery's east end.
 import { FACE_E, FACE_N, FACE_S, FACE_W, glow, marker, prim, tex, writeLevel, type V3 } from "./levelKit.ts";
 import { RoomKit } from "./levels/kit2.ts";
 
@@ -128,7 +133,7 @@ k.box("ms-back", [-3.2, 0, 26], [3.2, 4, 26.2], "stone");
 k.deco("ms-spiral", [-1, 0, 23.5], [1, 4, 25.5], "brass");
 
 // ---------------------------------------------------------------- the garden's cover
-for (const [id, x, z, w, d] of [["p1", -16, -9, 4, 1.2], ["p2", -16, 9.5, 4, 1.2], ["p3", 14, -9, 4, 1.2], ["p4", 12.2, 9, 1.2, 3], ["p5", -13.5, 3.8, 1.2, 2.4], ["p6", -13.5, -3.8, 1.2, 2.4], ["p7", 13, 3.8, 1.2, 2.4], ["p8", 13, -3.8, 1.2, 2.4], ["p9", -4, 12.5, 3.2, 1.2], ["p10", 4.5, -10, 3.2, 1.2], ["p11", 20, 0, 1.2, 3.2], ["p12", -20, -4, 1.2, 2.4]] as const) {
+for (const [id, x, z, w, d] of [["p1", -16, -9, 4, 1.2], ["p2", -16, 9.5, 4, 1.2], ["p3", 14, -9, 4, 1.2], ["p4", 12.2, 9, 1.2, 3], ["p5", -13.5, 3.8, 1.2, 2.4], ["p6", -13.5, -3.8, 1.2, 2.4], ["p7", 13, 3.8, 1.2, 2.4], ["p8", 13, -3.8, 1.2, 2.4], ["p9", -4, 12.5, 3.2, 1.2], ["p10", 4.5, -10, 3.2, 1.2], ["p11", 20, 0, 1.2, 3.2], ["p12", -20, -4, 1.2, 2.4], ["p13", -20, 4, 1.2, 2.4], ["p14", -1, -12, 2.4, 1.2]] as const) {
   k.cover(`planter-${id}`, [x - w / 2, 0, z - d / 2], [x + w / 2, 0.9, z + d / 2], "planter");
   k.deco(`plants-${id}`, [x - w / 2 + 0.1, 0.9, z - d / 2 + 0.1], [x + w / 2 - 0.1, 1.5, z + d / 2 - 0.1], "leaves");
 }
@@ -140,7 +145,18 @@ for (const [x, z] of [[-10, -10], [10, 11], [-18, 14.5], [18, -8], [-2.5, 14.5],
   k.cover(`palm-${x}-${z}`, [x - 0.25, 0, z - 0.25], [x + 0.25, 6, z + 0.25], "trunk", { data: { surface: "wood" } });
   k.decor.push(prim(`frond-${x}-${z}`, "sphere", [x, 6.4, z], [1.8, 10, 6], "leaves"));
 }
-for (const [id, x, z] of [["b1", -10.5, 15.5], ["b2", 10.5, -16.5], ["b3", 0, 9]] as const) k.cover(`bench-${id}`, [x - 1.1, 0, z - 0.35], [x + 1.1, 0.6, z + 0.35], "wood", { data: { surface: "wood" } });
+// (the benches have high backs: low cover)
+for (const [id, x, z] of [["b1", -10.5, 15.5], ["b2", 10.5, -16.5], ["b3", 0, 9]] as const) k.cover(`bench-${id}`, [x - 1.1, 0, z - 0.35], [x + 1.1, 1.0, z + 0.35], "wood", { data: { surface: "wood" } });
+// the fountain on the east lawn (its rim is cover), a low garden wall in the south, planters along the
+// gallery's glass
+k.cover("fountain", [15, 0, -1.5], [18, 0.95, 1.5], "planter");
+k.deco("fountain-water", [15.2, 0.95, -1.3], [17.8, 0.98, 1.3], "pond");
+k.decor.push(prim("fountain-spout", "cylinder", [16.5, 1.5, 0], [0.18, 0.28, 1.1, 12], "stoneBig"), prim("fountain-bowl", "cylinder", [16.5, 2.05, 0], [0.7, 0.3, 0.2, 16], "planter"));
+k.cover("garden-wall", [8, 0, 15.6], [11.4, 1.0, 16.2], "stoneBig");
+for (const [id, x0] of [["gp-w", -12], ["gp-e", 8]] as const) {
+  k.cover(id, [x0, GY, -17.7], [x0 + 3, GY + 0.9, -17.1], "planter", {}, { faces: ["s", "e", "w"] });
+  k.deco(`${id}-plants`, [x0 + 0.1, GY + 0.9, -17.6], [x0 + 2.9, GY + 1.5, -17.2], "leaves");
+}
 // the gazebo (SE): four posts, a roof, a table
 for (const [x, z] of [[14, 11.5], [18.5, 11.5], [14, 16], [18.5, 16]]) k.box(`gz-post-${x}-${z}`, [x - 0.15, 0, z - 0.15], [x + 0.15, 3, z + 0.15], "whiteWood", { data: { surface: "wood" } });
 k.deco("gz-roof", [13.4, 3, 11], [19.1, 3.3, 16.5], "whiteWood");
@@ -192,28 +208,28 @@ k.wp("ms-out", [0, 0, 16.2], ["ms-in"]);
 k.wp("sh-in", [-20, 0, 13], ["sh-out"], { door: "sh-door" });
 k.wp("sh-out", [-16.6, 0, 13], ["sh-in"]);
 
-// ---------------------------------------------------------------- the gang (34)
+// ---------------------------------------------------------------- the gang (Normal 15, Hard 28, Hardcore 34)
 const E = (id: string, x: number, y: number, z: number, yaw: number, d: Record<string, unknown> = {}) => marker(id, "enemy", [x, y, z], { kind: "goon", ...d }, yaw);
 k.m(
   // at the garden party
   E("g-1", -11, 0, -7, FACE_W), E("g-2", -11, 0, 8, FACE_W), E("g-3", 11, 0, -6.5, FACE_W), E("g-4", 16, 0, 5, FACE_W, { minDiff: "hard" }),
-  E("g-5", 2, 0, 0, FACE_W), E("g-6", -3, 0, 0.5, FACE_W, { kind: "rusher" }),
-  E("g-7", -8, GY, -15, FACE_S, { perch: true, weapon: "sniper" }), E("g-8", 8, GY, -15, FACE_S, { minDiff: "hard" }),
-  E("pond-1", -2, PIT, 5, FACE_N), E("pond-2", 4, PIT, -2.6, FACE_W, { minDiff: "hard" }),
-  // wave A (5 down): the service room, east
-  E("a-1", 26, 0, 5, FACE_W, { group: "waveA" }), E("a-2", 26, 0, 9.6, FACE_W, { group: "waveA" }), E("a-3", 28.4, 0, 7, FACE_W, { group: "waveA", kind: "rusher" }),
-  E("a-4", 25.6, 0, 11, FACE_W, { group: "waveA", minDiff: "hard" }), E("a-5", 28.6, 0, 10.6, FACE_W, { group: "waveA", kind: "rusher", minDiff: "hard" }),
-  // wave B (10 down): the service landing, onto the gallery
-  E("b-1", -1.2, GY, -19.4, FACE_S, { group: "waveB", weapon: "sniper", minDiff: "hard" }), E("b-2", 1.2, GY, -19.4, FACE_S, { group: "waveB" }), E("b-3", -1.2, GY, -21, FACE_S, { group: "waveB", kind: "rusher" }), E("b-4", 1.2, GY, -21, FACE_S, { group: "waveB", minDiff: "hard" }),
-  // wave C (15 down): out of the pump corridor into the pit
-  E("c-1", -1, PIT, 8.4, FACE_N, { group: "waveC", kind: "rusher" }), E("c-2", 1, PIT, 8.4, FACE_N, { group: "waveC", kind: "rusher", minDiff: "hard" }), E("c-3", -1, PIT, 9.6, FACE_N, { group: "waveC" }),
-  E("c-4", 1, PIT, 9.6, FACE_N, { group: "waveC", kind: "rusher", minDiff: "hard" }), E("c-5", 0, PIT, 7.2, FACE_N, { group: "waveC" }),
-  // wave D (20 down): the mast stair (the heavy) and the service room
-  E("d-1", 0, 0, 22, FACE_N, { group: "waveD", kind: "heavy", model: "rival723" }), E("d-2", -1.6, 0, 24, FACE_N, { group: "waveD" }), E("d-3", 1.6, 0, 24, FACE_N, { group: "waveD", minDiff: "hard" }),
-  E("d-4", 27.6, 0, 6, FACE_W, { group: "waveD", kind: "rusher" }), E("d-5", 27.6, 0, 8.6, FACE_W, { group: "waveD", minDiff: "hard" }),
-  // wave E (25 down): up the bridge behind him, and the gallery
-  E("e-1", -32, 0, -0.6, FACE_E, { group: "waveE", kind: "rusher" }), E("e-2", -33.5, 0, 0.6, FACE_E, { group: "waveE", kind: "rusher", minDiff: "hard" }), E("e-3", -30.5, 0, 0.6, FACE_E, { group: "waveE" }),
-  E("e-4", -1.2, GY, -20.4, FACE_S, { group: "waveE2", kind: "heavy", model: "rival652" }), E("e-5", 1.2, GY, -20.4, FACE_S, { group: "waveE2" }),
+  E("g-5", 2, 0, 0, FACE_W), E("g-6", -3, 0, 0.5, FACE_W, { kind: "rusher", minDiff: "hard" }),
+  E("g-7", -8, GY, -15, FACE_S, { perch: true, weapon: "sniper" }), E("g-8", 8, GY, -15, FACE_S, { minDiff: "hardcore" }),
+  E("pond-1", -2, PIT, 5, FACE_N), E("pond-2", 4, PIT, -2.6, FACE_W, { minDiff: "hardcore" }),
+  // wave A (Normal 3 down, Hard 4): the service room, east
+  E("a-1", 26, 0, 5, FACE_W, { group: "waveA" }), E("a-2", 26, 0, 9.6, FACE_W, { group: "waveA", minDiff: "hard" }), E("a-3", 28.4, 0, 7, FACE_W, { group: "waveA", kind: "rusher" }),
+  E("a-4", 25.6, 0, 11, FACE_W, { group: "waveA", minDiff: "hard" }), E("a-5", 28.6, 0, 10.6, FACE_W, { group: "waveA", kind: "rusher", minDiff: "hardcore" }),
+  // wave B (5 down, Hard 8): the service landing, onto the gallery
+  E("b-1", -1.2, GY, -19.4, FACE_S, { group: "waveB", weapon: "sniper", minDiff: "hard" }), E("b-2", 1.2, GY, -19.4, FACE_S, { group: "waveB" }), E("b-3", -1.2, GY, -21, FACE_S, { group: "waveB", kind: "rusher", minDiff: "hard" }), E("b-4", 1.2, GY, -21, FACE_S, { group: "waveB", minDiff: "hard" }),
+  // wave C (7 down, Hard 12): out of the pump corridor into the pit
+  E("c-1", -1, PIT, 8.4, FACE_N, { group: "waveC", kind: "rusher" }), E("c-2", 1, PIT, 8.4, FACE_N, { group: "waveC", kind: "rusher", minDiff: "hard" }), E("c-3", -1, PIT, 9.6, FACE_N, { group: "waveC", minDiff: "hard" }),
+  E("c-4", 1, PIT, 9.6, FACE_N, { group: "waveC", kind: "rusher", minDiff: "hardcore" }), E("c-5", 0, PIT, 7.2, FACE_N, { group: "waveC" }),
+  // wave D (9 down, Hard 16): the mast stair (the heavy) and the service room
+  E("d-1", 0, 0, 22, FACE_N, { group: "waveD", kind: "heavy", model: "rival723" }), E("d-2", -1.6, 0, 24, FACE_N, { group: "waveD", minDiff: "hard" }), E("d-3", 1.6, 0, 24, FACE_N, { group: "waveD", minDiff: "hard" }),
+  E("d-4", 27.6, 0, 6, FACE_W, { group: "waveD", kind: "rusher" }), E("d-5", 27.6, 0, 8.6, FACE_W, { group: "waveD", minDiff: "hardcore" }),
+  // wave E (11 down, Hard 20): up the bridge behind him, and the gallery (12, Hard 22)
+  E("e-1", -32, 0, -0.6, FACE_E, { group: "waveE", kind: "rusher", minDiff: "hard" }), E("e-2", -33.5, 0, 0.6, FACE_E, { group: "waveE", kind: "rusher", minDiff: "hardcore" }), E("e-3", -30.5, 0, 0.6, FACE_E, { group: "waveE" }),
+  E("e-4", -1.2, GY, -20.4, FACE_S, { group: "waveE2", kind: "heavy", model: "rival652", minDiff: "hard" }), E("e-5", 1.2, GY, -20.4, FACE_S, { group: "waveE2" }),
 );
 
 // ---------------------------------------------------------------- triggers, pickups, eggs, lights
@@ -223,14 +239,14 @@ k.m(
   marker("cp-mid", "checkpoint", [-17, 0, 0], {}, FACE_E),
   T("t-alert", [-20, 1, 0], { action: "alert" }, [3, 3, 34]),
   T("t-crack-step", [0, 1, 0], { action: "setpiece", cue: "crack" }, [4, 3, 3.2]),
-  T("t-crack-kills", [0, 1, 0], { action: "setpiece", cue: "crack", afterKills: { normal: 12, hard: 16 } }),
-  T("t-waveA", [0, 1, 0], { action: "spawn", group: "waveA", afterKills: { normal: 4, hard: 5 } }),
-  T("t-waveB", [0, 1, 0], { action: "spawn", group: "waveB", afterKills: { normal: 7, hard: 10 } }),
-  T("t-cp", [0, 1, 0], { action: "checkpoint", at: "cp-mid", afterKills: { normal: 10, hard: 15 } }),
-  T("t-waveC", [0, 1, 0], { action: "spawn", group: "waveC", afterKills: { normal: 10, hard: 15 } }),
-  T("t-waveD", [0, 1, 0], { action: "spawn", group: "waveD", afterKills: { normal: 13, hard: 20 } }),
-  T("t-waveE", [0, 1, 0], { action: "spawn", group: "waveE", afterKills: { normal: 16, hard: 25 } }),
-  T("t-waveE2", [0, 1, 0], { action: "spawn", group: "waveE2", afterKills: { normal: 18, hard: 27 } }),
+  T("t-crack-kills", [0, 1, 0], { action: "setpiece", cue: "crack", afterKills: { normal: 8, hard: 13 } }),
+  T("t-waveA", [0, 1, 0], { action: "spawn", group: "waveA", afterKills: { normal: 3, hard: 4 } }),
+  T("t-waveB", [0, 1, 0], { action: "spawn", group: "waveB", afterKills: { normal: 5, hard: 8 } }),
+  T("t-cp", [0, 1, 0], { action: "checkpoint", at: "cp-mid", afterKills: { normal: 7, hard: 12 } }),
+  T("t-waveC", [0, 1, 0], { action: "spawn", group: "waveC", afterKills: { normal: 7, hard: 12 } }),
+  T("t-waveD", [0, 1, 0], { action: "spawn", group: "waveD", afterKills: { normal: 9, hard: 16 } }),
+  T("t-waveE", [0, 1, 0], { action: "spawn", group: "waveE", afterKills: { normal: 11, hard: 20 } }),
+  T("t-waveE2", [0, 1, 0], { action: "spawn", group: "waveE2", afterKills: { normal: 12, hard: 22 } }),
   T("t-exit", [0, 1, 22.5], { action: "exit" }, [5, 3, 5]),
   marker("exit", "exit", [0, 0, 19]),
   marker("cop-1", "pickup", [-22.5, 0, -8], { item: "copium" }), marker("cop-2", "pickup", [0, PIT, 3], { item: "copium" }),
@@ -255,6 +271,11 @@ k.m(
   marker("cam-garden", "camera", [-20, 3, 6], { at: [6, 1, -4] }),
   marker("cam-pit", "camera", [-10, 2.5, 4], { at: [0, PIT, 0] }),
   marker("cam-gallery", "camera", [4, 2, 4], { at: [0, GY + 1, -15] }),
+  // the cover (screenshot shots: ?cam=cam-cover-w etc.)
+  marker("cam-cover-w", "camera", [-23, 3.4, 0.5], { at: [-12, 0.6, 2] }),
+  marker("cam-cover-e", "camera", [7, 3.5, -5], { at: [17, 0.6, 0] }),
+  marker("cam-cover-gallery", "camera", [-3, GY + 2.6, -13.6], { at: [-10, GY + 0.6, -17.2] }),
+  marker("cam-cover-s", "camera", [-6, 3, 6.8], { at: [6, 0.6, 15] }),
 );
 
 // ---------------------------------------------------------------- materials
@@ -292,5 +313,20 @@ writeLevel("room7", "Room 7: the sky garden", {
   enterLine: "r7_enter", clearLine: "r7_clear",
   floorY: 4,
   stage: { kind: "garden", glass: ["glass-1", "glass-2", "glass-3", "glass-4"], cue: "crack", area: [-8, -1.6, 8, 1.6] },
+  // the ways in (sim/arrive.ts; y as the room ends up, 4 m up): slots inside the service room's door, the
+  // service landing's, the pump corridor's, the mast stair's, the bridge's far end
+  arrive: {
+    ways: {
+      service: [[26, 4, 5], [26, 4, 9.6], [28.4, 4, 7], [27.6, 4, 8.6]],
+      landing: [[-1.2, GY + 4, -19.4], [1.2, GY + 4, -19.4], [-1.2, GY + 4, -21], [1.2, GY + 4, -21]],
+      pump: [[-1, PIT + 4, 8.4], [1, PIT + 4, 8.4], [-1, PIT + 4, 9.6], [0, PIT + 4, 7.2]],
+      mast: [[0, 4, 22], [-1.6, 4, 24], [1.6, 4, 24]],
+      bridge: [[-32, 4, -0.6], [-33.5, 4, 0.6], [-30.5, 4, 0.6]],
+    },
+    groups: {
+      waveA: ["self", "mast", "landing"], waveB: ["self", "service", "mast"], waveC: ["self", "mast", "service"],
+      waveD: ["self", "service", "landing"], waveE: ["self", "landing", "service"], waveE2: ["self", "service", "mast"],
+    },
+  },
 }, materials, k.solid, k.decor, k.clean().shift(4).markers);
 void FACE_N;

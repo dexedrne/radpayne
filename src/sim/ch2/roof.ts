@@ -4,11 +4,14 @@
 //    runs. Standing in it (and in the lamp's line: an overhang or a tall box keeps it off) he is seen by
 //    everyone and they aim better (ROOF.accuracy); the first time, the idle gang wakes.
 //  - The lamp can be shot out (ROOF.lampHp): the light dies and the helicopter leaves.
-//  - A group named in `drops` (the room's spawn triggers bring it in) comes down on ropes from the
-//    helicopter over the pad: each girl is lowered from ROOF.ropeY at ROOF.ropeSpeed (she can be shot
-//    on the rope; she cannot shoot until she is down), the helicopter moving over the pad for it.
-// Settings: {kind: "roof", heli: [x, y, z] (its hover point), pad: [x, y, z] (where it hovers for a
-// drop), path: [[x, z], ...] (the light's patrol loop), drops: [{group, ropes: [[x, z], ...]}]}.
+//  - Its ropes are ways in for the arrivals (sim/arrive.ts): a group whose ways name a drop zone comes
+//    down on ropes from the helicopter over it, one girl at a time by the arrivals' rule (no zone near
+//    him or behind him: the helicopter takes the girls to the other zone, or holds them). It flies over
+//    the zone first ("wait" until it is there); each girl is lowered from ROOF.ropeY at ROOF.ropeSpeed
+//    (she can be shot on the rope; she cannot shoot until she is down). With the lamp out the helicopter
+//    has left: the ropes are no way in, and the group takes its next way (a door).
+// Settings: {kind: "roof", heli: [x, y, z] (its hover point), path: [[x, z], ...] (the light's patrol
+// loop), ropes: {zone: {at: [x, y, z] (the roof under its hover point), slots: [[x, z], ...]}}}.
 import type { Enemy } from "../actors.ts";
 import type { Game } from "../game.ts";
 import type { Fnv1a } from "../math.ts";
@@ -16,7 +19,7 @@ import { setState } from "../../ai/goon.ts";
 import { ROOF, perDiff } from "../tuning2.ts";
 import type { Stage, StageSettings, StageTarget } from "../stage.ts";
 
-type Drop = { group: string; ropes: Array<[number, number]>; done: boolean };
+type Zone = { name: string; at: [number, number, number]; slots: Array<[number, number, number]> };
 
 export class Roof implements Stage {
   readonly kind = "roof";
@@ -24,7 +27,6 @@ export class Roof implements Stage {
   hx: number; hy: number; hz: number;
   tx: number; ty: number; tz: number;
   readonly home: [number, number, number];
-  readonly pad: [number, number, number];
   gone = false;
   /** The light's spot on the roof; its patrol leg; he is in it; the lamp's health. */
   lx: number; lz: number;
@@ -33,21 +35,71 @@ export class Roof implements Stage {
   litEver = false;
   lamp: number = ROOF.lampHp;
   readonly path: Array<[number, number]>;
-  readonly drops: Drop[];
+  /** The drop zones (the arrivals' rope ways), the one it is asked to fly to (-1: none) and for how long
+   *  more (world s), the one it last lowered a girl over and how long it holds there. */
+  readonly zones: Zone[];
+  want = -1;
+  wantT = 0;
+  over = -1;
+  padT = 0;
   /** Enemies on a rope (index -> the ground under her). */
   readonly roping = new Map<number, number>();
-  /** World s the helicopter holds over the pad. */
-  padT = 0;
 
   constructor(g: Game, s: StageSettings) {
     this.home = (s.heli as [number, number, number]) ?? [0, 14, -30];
-    this.pad = (s.pad as [number, number, number]) ?? [0, 0, 0];
     [this.hx, this.hy, this.hz] = this.home;
     [this.tx, this.ty, this.tz] = this.home;
-    this.path = (s.path as Array<[number, number]>) ?? [[this.pad[0], this.pad[2]]];
+    this.path = (s.path as Array<[number, number]>) ?? [[0, 0]];
     [this.lx, this.lz] = this.path[0];
-    this.drops = ((s.drops as Array<{ group: string; ropes: Array<[number, number]> }>) ?? []).map(d => ({ group: d.group, ropes: d.ropes, done: false }));
-    void g;
+    const ropes = (s.ropes ?? {}) as Record<string, { at: [number, number, number]; slots: Array<[number, number]> }>;
+    this.zones = Object.entries(ropes).map(([name, z]) => ({
+      name, at: z.at,
+      slots: z.slots.map(([x, sz]) => { const gy = g.world.groundBelow(x, sz, 0.3, z.at[1] + 2); return [x, Number.isFinite(gy) ? gy : z.at[1], sz] as [number, number, number]; }),
+    }));
+  }
+
+  private zoneOf(name: string): number {
+    return this.zones.findIndex(z => z.name === name);
+  }
+
+  /** Where it hovers to lower girls over a zone. */
+  private hover(z: Zone): [number, number, number] {
+    return [z.at[0], z.at[1] + ROOF.ropeY + 3.5, z.at[2]];
+  }
+
+  waySlots(name: string): Array<[number, number, number]> | null {
+    const k = this.zoneOf(name);
+    return k < 0 ? null : this.zones[k].slots;
+  }
+
+  /** Over that zone now: ready; on its way (or still lowering a girl over the other): wait; gone: no. */
+  wayReady(_g: Game, name: string): "ready" | "wait" | "no" {
+    const k = this.zoneOf(name);
+    if (k < 0 || !this.lightOn) return "no";
+    if (this.roping.size > 0 && this.over >= 0 && this.over !== k) return "wait";
+    this.want = k;
+    this.wantT = 1;
+    const [x, y, z] = this.hover(this.zones[k]);
+    return Math.hypot(this.hx - x, this.hy - y, this.hz - z) < 1.5 ? "ready" : "wait";
+  }
+
+  /** Lower her on a rope at the slot. */
+  bring(g: Game, e: Enemy, name: string, slot: [number, number, number]): void {
+    const k = this.zoneOf(name);
+    const p = g.player;
+    const n = this.roping.size;
+    e.x = slot[0]; e.z = slot[2]; e.y = slot[1] + ROOF.ropeY + (n % 3) * 0.9;
+    e.vx = e.vz = 0;
+    setState(e, "alert");
+    e.react = (e.y - slot[1]) / ROOF.ropeSpeed + ROOF.ropeWait;
+    e.facing = Math.atan2(p.x - e.x, p.z - e.z);
+    e.hit.hittable = true;
+    e.deaf = false;
+    this.roping.set(e.idx, slot[1]);
+    g.syncEnemyPose(e);
+    if (this.over !== k || this.padT <= 0) g.emit({ type: "stage", what: "drop", x: slot[0], z: slot[2], group: e.group });
+    this.over = k;
+    this.padT = 4;
   }
 
   /** The lamp (the helicopter's nose, a little under it). */
@@ -87,9 +139,11 @@ export class Roof implements Stage {
 
   private leave(): void {
     this.gone = true;
-    this.tx = this.home[0] + (this.home[0] - this.pad[0]) * 3;
+    // (away over the edge: from the first drop zone out past its hover point)
+    const c = this.zones[0]?.at ?? [0, 0, 0];
+    this.tx = this.home[0] + (this.home[0] - c[0]) * 3;
     this.ty = this.home[1] + 30;
-    this.tz = this.home[2] + (this.home[2] - this.pad[2]) * 3;
+    this.tz = this.home[2] + (this.home[2] - c[2]) * 3;
   }
 
   accuracy(_g: Game, _e: Enemy): number {
@@ -98,11 +152,15 @@ export class Roof implements Stage {
 
   step(g: Game, dt: number): void {
     const p = g.player;
-    // the helicopter flies to its target (over the pad while a drop is on, else home)
+    // the helicopter flies to its target: over the zone it lowers girls on, else the one it is asked to
+    // fly to, else home
     if (!this.gone) {
-      const dropping = this.roping.size > 0 || this.padT > 0;
       if (this.padT > 0) this.padT = Math.max(0, this.padT - dt);
-      const want = dropping ? [this.pad[0], this.pad[1] + ROOF.ropeY + 3.5, this.pad[2]] : this.home;
+      if (this.wantT > 0) this.wantT = Math.max(0, this.wantT - dt);
+      const holding = this.over >= 0 && (this.roping.size > 0 || this.padT > 0);
+      const k = holding ? this.over : this.wantT > 0 ? this.want : -1;
+      if (!holding) this.over = -1;
+      const want = k >= 0 ? this.hover(this.zones[k]) : this.home;
       this.tx = want[0]; this.ty = want[1]; this.tz = want[2];
     }
     const dx = this.tx - this.hx, dy = this.ty - this.hy, dz = this.tz - this.hz, d = Math.hypot(dx, dy, dz);
@@ -132,29 +190,7 @@ export class Roof implements Stage {
         }
       }
     } else this.lit = false;
-    // rope drops: a drop group just brought in goes up on the ropes
-    for (const d of this.drops) {
-      if (d.done) continue;
-      const grp = g.enemies.filter(e => e.group === d.group);
-      if (!grp.some(e => e.state !== "inactive" && e.state !== "dead")) continue;
-      d.done = true;
-      grp.forEach((e, k) => {
-        if (e.state === "inactive" || e.state === "dead") return;
-        const [rx, rz] = d.ropes[k % d.ropes.length];
-        const gy = g.world.groundBelow(rx, rz, 0.3, this.pad[1] + 2);
-        const ground = Number.isFinite(gy) ? gy : this.pad[1];
-        e.x = rx; e.z = rz; e.y = ground + ROOF.ropeY + (k % 3) * 0.9;
-        setState(e, "alert");
-        e.react = (e.y - ground) / ROOF.ropeSpeed + ROOF.ropeWait;
-        e.facing = Math.atan2(p.x - e.x, p.z - e.z);
-        e.hit.hittable = true;
-        e.deaf = false;
-        this.roping.set(e.idx, ground);
-        g.syncEnemyPose(e);
-      });
-      this.padT = 4;
-      g.emit({ type: "stage", what: "drop", x: this.pad[0], z: this.pad[2], group: d.group });
-    }
+    // the girls on the ropes
     for (const [i, ground] of this.roping) {
       const e = g.enemies[i];
       if (!e || e.state === "dead") { this.roping.delete(i); continue; }
@@ -174,18 +210,17 @@ export class Roof implements Stage {
   }
 
   save(): number[] {
-    return [this.lamp, ...this.drops.map(d => (d.done ? 1 : 0))];
+    return [this.lamp];
   }
 
   load(g: Game, v: number[]): void {
     if (typeof v[0] === "number") this.lamp = v[0];
     if (this.lamp <= 0) { this.lamp = 0; this.leave(); [this.hx, this.hy, this.hz] = [this.tx, this.ty, this.tz]; }
-    this.drops.forEach((d, k) => { d.done = v[k + 1] === 1; });
     void g;
   }
 
   hashInto(h: Fnv1a): void {
     h.f64(this.hx).f64(this.hy).f64(this.hz).f64(this.lx).f64(this.lz).f64(this.lamp).i32(this.lit ? 1 : 0).i32(this.leg).f64(this.padT).i32(this.roping.size);
-    for (const d of this.drops) h.i32(d.done ? 1 : 0);
+    h.i32(this.want).f64(this.wantT).i32(this.over);
   }
 }
