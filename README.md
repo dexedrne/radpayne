@@ -40,16 +40,19 @@ still to make. Each room hides three secrets, a gold Webring pin and an egg.
 **Fair fights up there** (2026-10-03, after "chapter 2 is way too hard, no cover, too many enemies, they
 even spawn in places where you hide"): the gang comes in only by a way in (a door, a stair, a lift, the
 helicopter's ropes, the far end of a bridge), never within 12 m of you, never at or next to the cover you
-are in or could reach in a step, and never behind your back closer than 20 m; a way that fails that takes
-her through another of her wave's, else she waits until one passes. They come in one at a time (1.6 s
-apart on Normal) and only while fewer than six of the gang stand (Chill four, Hard eight, Hardcore nine).
-Normal has a third fewer of them than it had (16, 15, 18, 17 and 9 in rooms 6-10), Hard a fifth fewer
-(Hardcore has them all). Every room has more cover along its fights, built from its own props: AC units,
-crate stacks, a blast wall by the helipad and the water tower's concrete base on the roof; planters,
-benches with high backs, a fountain, a garden wall and the gallery's planters in the sky garden;
-banquettes and booth backs, a cargo pallet under a net on the airship; server cabinets and a raised
-boardroom table on the counting floor; tall gold-bar stacks (they stop both security beams) in the vault.
-On the airship the bar and the hold sleep behind their bulkheads until you walk in.
+are in or could reach in a step, and never behind your back closer than 20 m; nor does she pop up out of
+the open in front of you: by a door, a stair, the far end of a bridge or an open lift she only comes in
+where you are not looking (the helicopter's ropes and a lift's door opening show you her coming; only if
+the room has stood empty six seconds does that give way). A way that fails that takes her through another
+of her wave's, else she waits until one passes. They come in one at a time (1.6 s apart on Normal) and
+only while fewer than six of the gang stand (Chill four, Hard eight, Hardcore nine). Normal has a third
+fewer of them than it had (16, 15, 18, 17 and 9 in rooms 6-10), Hard a fifth fewer (13 in the vault),
+Hardcore has them all. Every room has more cover along its fights, built from its own props: AC units
+(lit control panels), taped crate stacks, a blast wall by the helipad and the water tower's concrete base
+on the roof; planters, back-to-back park benches, a fountain, a garden wall and the gallery's planters in
+the sky garden; banquettes and booth backs, a cargo pallet under a net on the airship; server racks and a
+raised boardroom table on the counting floor; tall stacks of gold bars (they stop both security beams) in
+the vault. On the airship the bar and the hold sleep behind their bulkheads until you walk in.
 
 **The arsenal:** every hostile drops the gun she carried, and guns lie in the rooms from the first street
 on: the hand cannon, a sawed-off, an assault rifle, a sniper rifle with a scope, frag grenades, #4764's
@@ -99,8 +102,11 @@ to start, half the cans, bullet time drains almost twice as fast). Madame Pockit
 factor on every setting. Chapter 2's rooms are long and each has a set piece on top, so its Normal eases
 off: about half of Hardcore's gang (Hard has four in five of them), their frags and rushers a little less
 often, every can in the room, the snipers' laser and the vault's beams on a longer tell, the
-Countess's lifts two girls at a time; Hard and Hardcore keep their own dials. On every setting the gang
-comes in by the arrivals' rule (above: never near you, never where you hide, a few at a time).
+Countess's lifts two girls at a time. Hard eases off there too, from its own: they hit x1.4 (x1.6 in
+chapter 1), frags and rushers come less often, 70 % of the cans, a checkpoint restores 60, and the vault's
+lifts bring nine (Hardcore fourteen); their aim and reaction stay Hard's. Hardcore keeps its own dials. On
+every setting the gang comes in by the arrivals' rule (above: never near you, never where you hide, never
+popping up in front of you, a few at a time).
 
 | Input | Action |
 |---|---|
@@ -561,7 +567,8 @@ npm run build:retardiopayne   # its production build in dist/ (VITE_GAME=retardi
   found chapter 2 way too hard); its aim, reaction, damage, health and bullet time keep it a bit harder than
   RadPayne's Normal.
 - **Fair:** the bots clear every room on the cut (rooms 1-5: these runs were on its first, harder numbers;
-  the eased cut is easier on every dial; rooms 6-10: after the chapter 2 fix of 2026-10-03). `node
+  the eased cut is easier on every dial; rooms 6-10: after the chapter 2 fix of 2026-10-03 and its second
+  pass, the same day: no pop-ins, Hard eased). `node
   tools/balance.ts --diffs normal,hard,retardio --seeds 1,...,12 --bot cover|plain` (rooms 1-5, five
   attempts a seed) and `node tools/ch2spawns.ts room6,... 1,...,12 normal,hard,retardio` (rooms 6-10,
   `tools/ch2bot.ts`'s runs, six tries); clears out of 12 seeds, deaths a run:
@@ -573,16 +580,21 @@ npm run build:retardiopayne   # its production build in dist/ (VITE_GAME=retardi
 | 3 | 12 / 12 / 12 (0.2, 0.6, 0.5) | 12 / 11 / 12 | |
 | 4 | 12 / 10 / 10 (0.6, 2.4, 2.5) | 12 / 6 / 11 | |
 | 5 | 12 / 9 / 12 (0, 1.8, 1.7) | 12 / 7 / 12 | |
-| 6 | | | 12 / 10 / 12 (0, 2.7, 0) |
-| 7 | | | 12 / 10 / 12 (0, 3.4, 0.1) |
-| 8 | | | 12 / 11 / 12 (0, 1.3, 0.1) |
-| 9 | | | 12 / 9 / 12 (0, 1.7, 0) |
-| 10 | | | 12 / 7 / 12 (0, 3.8, 0.2) |
+| 6 | | | 12 / 12 / 12 (0, 1.2, 0) |
+| 7 | | | 12 / 10 / 12 (0, 2.2, 0.1) |
+| 8 | | | 12 / 12 / 12 (0, 0.2, 0.1) |
+| 9 | | | 12 / 12 / 12 (0, 0.4, 0) |
+| 10 | | | 12 / 12 / 12 (0.1, 1.2, 0.2) |
 
-  Health lost over rooms 1-5 (cover bot): Normal 339, Hard 809, the cut 858; rooms 6-10: Normal 184 (356
-  before the fix), the cut 332 (796 on the eased cut before it, 1135 on its first numbers), Hard 1451 (1924).
-  Before the fix the bot met girls coming in under 12 m from it 73 times in 12 Normal runs of each room
-  (nearest 4.5 m) and behind its back up close 122 times; after it, none (nearest 12.0 m). With ten
+  Health lost over rooms 1-5 (cover bot): Normal 339, Hard 809, the cut 858; rooms 6-10: Normal 227 (356
+  before the fix, 184 after its first pass), the cut 311 (796 on the eased cut before it, 1135 on its first
+  numbers), Hard 966 (1924 before the fix, 1451 after its first pass). Before the fix the bot met girls
+  coming in under 12 m from it 73 times in 12 Normal runs of each room (nearest 4.5 m) and behind its back
+  up close 122 times; after it, none (nearest 12.0 m). After the first pass a quarter of the sky garden's
+  arrivals and a third of the vault's still appeared in its view (out of a dead-end bridge or dock, inside
+  an open lift); after the second, none by a door, a stair or a bridge, and in a lift only as its door
+  opens or once a girl has waited 6 s (5 of 78 on Normal). On seeds 13-36 every chapter 2 room clears on
+  Normal and the cut (24 of 24, at most 2 deaths in 24 runs). With ten
   attempts every seed clears but one: the cover bot on room 4's seed 4 keeps dying at the last stop (back
   at 60 health with no cans), the same wall it meets on Hard's seed 12; the plain bot clears room 4 on
   every seed.
