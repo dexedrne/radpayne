@@ -1,6 +1,7 @@
 // Chapter 2's arrivals (sim/arrive.ts, the vault's lifts in sim/ch2/vault.ts): the gang a wave, a rope drop
 // or a lift brings in comes in only by a way in, never near him, never in or next to the cover he hides
-// behind, never behind his back at close range; one at a time, and never more than ARRIVE.maxUp standing.
+// behind, never behind his back at close range, never out of the open in front of his eyes (a door, a
+// stair, a bridge's end, an open lift); one at a time, and never more than ARRIVE.maxUp standing.
 // The owner, on chapter 2: "too many enemies, they even spawn in places where you hide".
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -11,7 +12,7 @@ import { Game, laterGroups } from "../src/sim/game.ts";
 import { DT } from "../src/sim/tuning.ts";
 import { ARRIVE, perDiff } from "../src/sim/tuning2.ts";
 import { attachCover, hideRange, segLive, segNearest, type CoverSeg } from "../src/sim/cover.ts";
-import { arrivalOk, standing } from "../src/sim/arrive.ts";
+import { arrivalOk, inSight, standing } from "../src/sim/arrive.ts";
 import { HB_TORSO } from "../src/combat/hitboxes.ts";
 import { emptyInput } from "../src/sim/types.ts";
 import type { Difficulty } from "../src/sim/tuning.ts";
@@ -47,7 +48,12 @@ function callEverything(g: Game): void {
   }
 }
 
-type Arrival = { id: string; dist: number; zone: number; behind: boolean };
+/** `seen`: she came in where he would watch her appear (inSight); `shown`: that is allowed there (off the
+ *  helicopter's rope, or out of a lift whose door has just opened: ARRIVE.liftShow); `waited`: the sight
+ *  part had given way (the room empty, or the vault's girl due, for ARRIVE.sightWait). */
+type Arrival = { id: string; dist: number; zone: number; behind: boolean; seen: boolean; shown: boolean; waited: boolean };
+/** An arrival he would watch happen out of the open (a door, a stair, a bridge's end, an open lift). */
+const popIn = (a: Arrival) => a.seen && !a.shown && !a.waited;
 /** His cover zone, worked out here on its own: the stretch of the cover he is in a step either side of
  *  his spot, and of every live cover on his floor within a step of him, round the point nearest him. */
 function zoneOf(g: Game, mine: CoverSeg | null): Array<{ s: CoverSeg; a: number; b: number }> {
@@ -77,7 +83,9 @@ function runWaves(g: Game, maxS: number, mine: CoverSeg | null, groups?: string[
   const was = g.enemies.map(e => e.state);
   let most = 0;
   const left = () => g.enemies.filter(e => e.state === "inactive" && !e.fled && (!groups || groups.includes(e.group))).length;
+  const held = () => Math.max(g.arrivals?.held ?? 0, (g.stage as unknown as { heldT?: number } | null)?.heldT ?? 0);
   for (let i = 0; i < maxS / DT && left() > 0; i++) {
+    const waited = held() + DT >= ARRIVE.sightWait - 1e-9;
     g.step(inp);
     g.drain();
     most = Math.max(most, standing(g));
@@ -90,7 +98,9 @@ function runWaves(g: Game, maxS: number, mine: CoverSeg | null, groups?: string[
         const zone = Math.min(Infinity, ...near.filter(q => Math.abs(gy - q.s.y) < 1.5).map(q => stretchDist(q, e.x, e.z)));
         const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);
         const behind = dist < ARRIVE.backDist && (fx * dx + fz * dz) / (dist || 1) < Math.cos(ARRIVE.backAngle);
-        out.push({ id: e.id, dist, zone, behind });
+        const lift = g.stage?.kind === "vault" ? (g.stage as Vault).lifts.reduce((a, b) => (Math.hypot(a.x - e.x, a.z - e.z) < Math.hypot(b.x - e.x, b.z - e.z) ? a : b)) : null;
+        const shown = roped !== undefined || (!!lift && lift.since <= ARRIVE.liftShow + DT);
+        out.push({ id: e.id, dist, zone, behind, seen: inSight(g, e.x, gy, e.z), shown, waited });
         if (e.kind !== "countess") g.damageEnemy(e, 9999, HB_TORSO, 0, 1, null);
       }
       was[e.idx] = e.state;
@@ -99,7 +109,7 @@ function runWaves(g: Game, maxS: number, mine: CoverSeg | null, groups?: string[
   return { arrivals: out, left: left(), most };
 }
 
-test("no spawns where he hides: him at every cover spot of every chapter 2 room, every wave comes in at least 12 m away, never in or next to his cover, never behind his back close up", () => {
+test("no spawns where he hides: him at every cover spot of every chapter 2 room, every wave comes in at least 12 m away, never in or next to his cover, never behind his back close up, never out of the open before his eyes", () => {
   const d: Difficulty = "hardcore"; // (every girl the rooms have)
   for (const id of ROOMS) {
     const lv = room(id);
@@ -112,7 +122,7 @@ test("no spawns where he hides: him at every cover spot of every chapter 2 room,
       const n = Math.max(1, Math.round((hi - lo) / 6));
       for (let k = 0; k < n; k++) spots.push([i, lo + ((k + 0.5) * (hi - lo)) / n]);
     });
-    let minDist = Infinity, minZone = Infinity, runs = 0, comes = 0;
+    let minDist = Infinity, minZone = Infinity, runs = 0, comes = 0, seen = 0, waited = 0;
     for (const [i, u] of spots) {
       const g = new Game(lv, { seed: 1, difficulty: d, ai: false });
       callEverything(g);
@@ -126,13 +136,16 @@ test("no spawns where he hides: him at every cover spot of every chapter 2 room,
         assert.ok(a.dist >= ARRIVE.minDist, `${id}: ${a.id} came in ${a.dist.toFixed(1)} m from him in cover ${i} at (${g.player.x.toFixed(1)}, ${g.player.z.toFixed(1)})`);
         assert.ok(a.zone >= ARRIVE.zone, `${id}: ${a.id} came in ${a.zone.toFixed(1)} m from his cover ${i}`);
         assert.ok(!a.behind, `${id}: ${a.id} came in behind his back ${a.dist.toFixed(1)} m away (cover ${i})`);
+        assert.ok(!popIn(a), `${id}: ${a.id} appeared before his eyes ${a.dist.toFixed(1)} m away (cover ${i})`);
+        if (a.seen && !a.shown) seen++;
+        if (a.waited) waited++;
         minDist = Math.min(minDist, a.dist);
         minZone = Math.min(minZone, a.zone);
       }
       assert.ok(r.most <= perDiff(ARRIVE.maxUp, d), `${id}: ${r.most} standing at once`);
     }
     assert.ok(runs >= 40 && comes > runs * 5, `${id}: ${runs} spots, ${comes} arrivals`);
-    console.log(`  ${id}: ${runs} cover spots, ${comes} arrivals, nearest ${minDist.toFixed(1)} m (to his cover ${minZone.toFixed(1)} m)`);
+    console.log(`  ${id}: ${runs} cover spots, ${comes} arrivals, nearest ${minDist.toFixed(1)} m (to his cover ${minZone.toFixed(1)} m); ${waited} after the room stood empty ${ARRIVE.sightWait} s (${seen} of them in his sight)`);
   }
 });
 
@@ -165,30 +178,70 @@ test("a way in that fails the rule now gives her another of her group's ways; wi
   assert.ok(later.arrivals.every(a => a.dist >= ARRIVE.minDist));
 });
 
-test("behind his back at close range is out: the bridge's wave comes in from it only while he faces it or is far from it", () => {
+test("behind his back at close range is out, and so is before his eyes: the bridge's wave comes in from it only while it is far behind him", () => {
   const lv = room("room7");
-  const setup = (yaw: number) => {
+  const setup = (x: number, yaw: number) => {
     const g = new Game(lv, { seed: 1, difficulty: "normal", ai: false });
     callEverything(g);
     for (const t of g.triggers) if (t.data.group !== "waveE") t.data.afterKills = 99;
-    g.player.x = -16; g.player.z = 0; g.player.y = 4; g.player.yaw = yaw;
+    g.player.x = x; g.player.z = 0; g.player.y = 4; g.player.yaw = yaw;
     return g;
   };
   const bridge = (g: Game) => g.enemies.filter(e => e.group === "waveE" && e.state !== "inactive").every(e => e.x < -24);
-  // (yaw -pi/2: facing east, the bridge 14-17 m behind him; yaw pi/2: facing west, at it)
-  const away = setup(-Math.PI / 2);
+  // (yaw -pi/2: facing east, the bridge 14-17 m behind him; yaw pi/2: facing west, down it)
+  const away = setup(-16, -Math.PI / 2);
   const r1 = runWaves(away, 20, null, ["waveE"]);
-  assert.ok(r1.left === 0 && r1.arrivals.every(a => !a.behind && a.dist >= ARRIVE.minDist));
+  assert.ok(r1.left === 0 && r1.arrivals.every(a => !a.behind && a.dist >= ARRIVE.minDist && !popIn(a)));
   assert.ok(!bridge(away), "his back to the bridge: she came another way");
-  const facing = setup(Math.PI / 2);
+  // (the bridge dead-ends: before 2026-10-03's second pass she appeared halfway down it, in his sight)
+  const facing = setup(-16, Math.PI / 2);
   const r2 = runWaves(facing, 20, null, ["waveE"]);
-  assert.ok(r2.left === 0 && bridge(facing), "facing it: across the bridge, in front of him");
+  assert.ok(r2.left === 0 && r2.arrivals.every(a => a.dist >= ARRIVE.minDist && !a.seen), "facing down it: none before his eyes");
+  assert.ok(!bridge(facing), "facing down it: she came another way");
+  const far = setup(6, -Math.PI / 2);
+  const r3 = runWaves(far, 20, null, ["waveE"]);
+  assert.ok(r3.left === 0 && bridge(far) && r3.arrivals.every(a => !a.seen), "the bridge far behind him: across it");
   // the rule itself: right behind him at 15 m is out, in front at 15 m is fine, 25 m behind is fine
-  const g = setup(-Math.PI / 2);
+  const g = setup(-16, -Math.PI / 2);
   assert.equal(arrivalOk(g, -31, 4, 0), false);
   assert.equal(arrivalOk(g, -1, 4, 0), true);
   assert.equal(arrivalOk(g, -41, 4, 0), true);
   assert.equal(arrivalOk(g, -20, 4, 0), false, "under 12 m");
+  // in front at 15 m down the bridge: fine, but not by a way in (he would watch her appear)
+  const f = setup(-16, Math.PI / 2);
+  assert.equal(arrivalOk(f, -31, 4, 0), true);
+  assert.equal(arrivalOk(f, -31, 4, 0, true), false);
+  assert.ok(inSight(f, -31, 4, 0) && !inSight(f, -1, 4, 0));
+});
+
+test("no pop-in: by a dead-end way in she never appears where he would watch her; only once the room has stood empty ARRIVE.sightWait does she come anyway (and still by the rest of the rule)", () => {
+  // room 9's dock (he starts by it; it dead-ends behind wall-w's 3.2 m opening): him on the floor looking
+  // into it, wave C (its own spot on the gangway) takes the back stair
+  for (const d of ["normal", "retardio"] as Difficulty[]) {
+    const g = new Game(room("room9"), { seed: 1, difficulty: d, ai: false });
+    callEverything(g);
+    for (const t of g.triggers) if (t.data.group !== "waveC") t.data.afterKills = 99;
+    g.player.x = -14; g.player.z = 0; g.player.yaw = Math.PI / 2;
+    const r = runWaves(g, 20, null, ["waveC"]);
+    assert.ok(r.left === 0 && r.arrivals.length >= 3, `${d}: ${r.arrivals.length} came`);
+    assert.ok(r.arrivals.every(a => !a.seen && a.dist >= ARRIVE.minDist), `${d}: none before his eyes`);
+    assert.ok(g.enemies.filter(e => e.group === "waveC").every(e => e.x > -26), `${d}: none off the gangway`);
+  }
+  // her own spot only, him looking down the bridge: she waits while the room is empty, then comes anyway
+  const h = new Game(room("room7"), { seed: 1, difficulty: "normal", ai: false });
+  callEverything(h);
+  for (const t of h.triggers) if (t.data.group !== "waveE") t.data.afterKills = 99;
+  for (const grp of ["waveE", "waveE2"]) h.arrivals!.groups.set(grp, ["self"]);
+  h.player.x = -16; h.player.z = 0; h.player.y = 4; h.player.yaw = Math.PI / 2;
+  const t0 = h.time;
+  const first = { t: -1 };
+  const was = h.enemies.map(e => e.state);
+  const inp = emptyInput(); inp.yaw = h.player.yaw;
+  for (let i = 0; i < 12 / DT && first.t < 0; i++) {
+    h.step(inp); h.drain();
+    for (const e of h.enemies) { if (was[e.idx] === "inactive" && e.state !== "inactive" && e.x < -24) first.t = h.time - t0; was[e.idx] = e.state; }
+  }
+  assert.ok(first.t >= ARRIVE.sightWait - 0.01 && first.t < ARRIVE.sightWait + 0.5, `came after ${first.t.toFixed(2)} s`);
 });
 
 test("the trickle: every wave of a room called at once comes in one at a time, ARRIVE.gap apart, never more than ARRIVE.maxUp standing", () => {
@@ -220,14 +273,14 @@ test("the trickle: every wave of a room called at once comes in one at a time, A
   }
 });
 
-test("the vault: him by the east lift, its girls come through the west one (its lamp first); a checkpoint's resume queues a room's called waves again", () => {
+test("the vault: him by the east lift, its girls come through the west one (its lamp first), none appearing in an open lift before his eyes; a checkpoint's resume queues a room's called waves again", () => {
   const g = new Game(room("room10"), { seed: 3, difficulty: "normal", ai: false });
   const v = g.stage as Vault;
   callEverything(g);
   g.player.x = 9; g.player.z = 2; g.player.yaw = -Math.PI / 2;
   const r = runWaves(g, 40, null);
   assert.equal(r.left, 0);
-  assert.ok(r.arrivals.every(a => a.dist >= ARRIVE.minDist && !a.behind));
+  assert.ok(r.arrivals.every(a => a.dist >= ARRIVE.minDist && !a.behind && !popIn(a)));
   const east = g.enemies.filter(e => e.group.startsWith("liftE"));
   assert.ok(east.length > 0 && east.every(e => e.x < 0), "the east lift's girls came through the west one");
   assert.ok(v.lifts.every(l => l.open));

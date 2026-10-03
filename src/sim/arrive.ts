@@ -3,7 +3,11 @@
 //  - The rule (arrivalOk, numbers in tuning2.ts ARRIVE): she comes in at least ARRIVE.minDist from him;
 //    never inside or next to his cover zone (coverZone: the cover he is in and any he could reach in a
 //    step); never behind his back at close range (more than ARRIVE.backAngle off his aim, or on his side
-//    of the cover he is in, closer than ARRIVE.backDist).
+//    of the cover he is in, closer than ARRIVE.backDist). By a door, a stair or the far end of a bridge (her own spot or a named way) she
+//    also never comes in where he would watch her appear (inSight: on screen, in the open); the
+//    helicopter's ropes and the vault's lifts show their arrivals (the rope, the lift's lamp and door).
+//    Only when the room has stood empty of the gang for ARRIVE.sightWait with her waiting does the sight
+//    part give way (the rest of the rule never does).
 //  - The ways in: each girl's own spot (her marker, inside a door, a stair, a lift: "self"), the room's
 //    named ways (room.arrive.ways: {name: [[x, y, z], ...]}, slots inside a doorway) and the stage's own
 //    (the roof's ropes: Stage.waySlots / wayReady / bring). A group lists the ways it may use, in order
@@ -16,7 +20,10 @@
 import type { Enemy } from "./actors.ts";
 import type { Game } from "./game.ts";
 import type { Fnv1a } from "./math.ts";
+import type { RayHit } from "./world.ts";
 import { segLive, type CoverSeg } from "./cover.ts";
+import { pivotOf } from "./player.ts";
+import { SHOULDER } from "./aim.ts";
 import { alertGoon, setState } from "../ai/goon.ts";
 import { ARRIVE, perDiff } from "./tuning2.ts";
 
@@ -65,13 +72,36 @@ export function behindHim(g: Game, x: number, z: number): boolean {
   return !!s && (s.nx * dx + s.nz * dz) / d > 0.2;
 }
 
+const pivTmp = { x: 0, y: 0, z: 0 };
+const rayTmp: RayHit = { t: 0, box: null, nx: 0, ny: 0, nz: 0 };
+/** Where he would watch her appear: inside ARRIVE.sightCone of his aim as the camera sees it (from behind
+ *  his shoulder, pulled in by a wall like the camera), with a clear line (glass and rails let it through)
+ *  from the camera or his eye to her head or her middle. */
+export function inSight(g: Game, x: number, y: number, z: number): boolean {
+  const p = g.player;
+  const piv = pivotOf(p, pivTmp, g.world);
+  const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);
+  const h = g.world.raycast(piv.x, piv.y, piv.z, -fx, 0, -fz, SHOULDER.arm, false, rayTmp);
+  const arm = h ? Math.max(SHOULDER.minArm, h.t - 0.2) : SHOULDER.arm;
+  const cx = piv.x - fx * arm, cz = piv.z - fz * arm;
+  const dx = x - cx, dz = z - cz, d = Math.hypot(dx, dz);
+  if (d > 1e-6 && (fx * dx + fz * dz) / d < Math.cos(ARRIVE.sightCone)) return false;
+  for (const up of ARRIVE.sightAt) {
+    if (g.world.clear(cx, piv.y, cz, x, y + up, z, true)) return true;
+    if (g.world.clear(piv.x, piv.y, piv.z, x, y + up, z, true)) return true;
+  }
+  return false;
+}
+
 const zoneTmp: ZonePart[] = [];
-/** The rule: may one of the gang come in at (x, y, z) now? */
-export function arrivalOk(g: Game, x: number, y: number, z: number): boolean {
+/** The rule: may one of the gang come in at (x, y, z) now? `unseen`: and not where he would watch her
+ *  appear (a door, a stair, a bridge's end, an open lift: inSight). */
+export function arrivalOk(g: Game, x: number, y: number, z: number, unseen = false): boolean {
   const p = g.player;
   if (Math.hypot(x - p.x, z - p.z) < ARRIVE.minDist) return false;
   if (behindHim(g, x, z)) return false;
-  return !inCoverZone(coverZone(g, zoneTmp), x, y, z);
+  if (inCoverZone(coverZone(g, zoneTmp), x, y, z)) return false;
+  return !unseen || !inSight(g, x, y, z);
 }
 
 /** The gang standing in the room now (awake or not; not those still to come in, the dead or the fled). */
@@ -110,6 +140,8 @@ export class Arrivals {
   readonly queue: number[] = [];
   /** World seconds until the next may come in. */
   gap = 0;
+  /** World seconds the room has stood empty of the gang with girls waiting (ARRIVE.sightWait). */
+  held = 0;
   /** Round robin over each way's slots. */
   private readonly turn = new Map<string, number>();
 
@@ -133,10 +165,12 @@ export class Arrivals {
   /** Where she would come in now (the first of her ways with a slot that passes the rule), or null (she
    *  waits). A stage's way that needs a moment (the helicopter flying over the pad) holds her for it. */
   pick(g: Game, e: Enemy): { way: string; slot: Slot } | null {
+    // (out of his sight by a door, a stair, a bridge: until the room has stood empty a while)
+    const unseen = this.held < ARRIVE.sightWait;
     for (const w of this.waysOf(e)) {
       if (w === "self") {
         const h = this.home[e.idx];
-        if (arrivalOk(g, h[0], h[1], h[2])) return { way: w, slot: h };
+        if (arrivalOk(g, h[0], h[1], h[2], unseen)) return { way: w, slot: h };
         continue;
       }
       const own = g.stage?.waySlots?.(w);
@@ -144,7 +178,7 @@ export class Arrivals {
       if (!slots || !slots.length) continue;
       const t = this.turn.get(w) ?? 0;
       let slot: Slot | null = null;
-      for (let i = 0; i < slots.length && !slot; i++) { const s = slots[(t + i) % slots.length]; if (arrivalOk(g, s[0], s[1], s[2])) slot = s; }
+      for (let i = 0; i < slots.length && !slot; i++) { const s = slots[(t + i) % slots.length]; if (arrivalOk(g, s[0], s[1], s[2], unseen && !own)) slot = s; }
       if (!slot) continue;
       if (own) {
         const ready = g.stage?.wayReady?.(g, w) ?? "no";
@@ -158,6 +192,7 @@ export class Arrivals {
 
   step(g: Game, dt: number): void {
     this.gap = Math.max(0, this.gap - dt);
+    this.held = this.queue.length && g.phase === "play" && standing(g) === 0 ? this.held + dt : 0;
     if (!this.queue.length || this.gap > 0 || g.phase !== "play" || g.player.mode === "dead" || !arrivalRoom(g)) return;
     for (let k = 0; k < this.queue.length; k++) {
       const e = g.enemies[this.queue[k]];
@@ -173,12 +208,13 @@ export class Arrivals {
       else comeIn(g, e, at.slot);
       g.emit({ type: "stage", what: "arrive", id: e.idx, x: at.slot[0], z: at.slot[2], group: e.group });
       this.gap = perDiff(ARRIVE.gap, g.difficulty);
+      this.held = 0;
       return;
     }
   }
 
   hashInto(h: Fnv1a): void {
-    h.f64(this.gap).i32(this.queue.length);
+    h.f64(this.gap).f64(this.held).i32(this.queue.length);
     for (const i of this.queue) h.i32(i);
   }
 }

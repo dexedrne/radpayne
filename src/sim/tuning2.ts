@@ -53,7 +53,11 @@ export function killsFor(after: unknown, d: Difficulty): number | undefined {
  *  The rule, for every one of them: she comes in only by a way in (a door, a stair, a lift, the
  *  helicopter's ropes, the far end of a bridge), at least `minDist` from him; never inside or next to
  *  (`zone`) the cover he is in or could reach in a step (`step`); never behind his back (more than
- *  `backAngle` off his aim, or on his side of the cover he is in) closer than `backDist`. A way in that
+ *  `backAngle` off his aim, or on his side of the cover he is in) closer than `backDist`. By a door, a stair or a bridge's end, never where he would
+ *  watch her appear: inside `sightCone` of his aim with a clear line from the camera or his eye to her
+ *  head or middle (`sightAt` over her feet); that part alone gives way once the room has stood empty of
+ *  the gang for `sightWait` with her waiting (the vault's lifts: once she has waited that long). The
+ *  helicopter's ropes show their arrivals, and so does a lift's door opening (`liftShow`). A way in that
  *  fails it now gives her another of her group's ways, else she waits until one passes. They come in one
  *  at a time (`gap` world s apart) and only while fewer than `maxUp` of the gang are standing. */
 export const ARRIVE = {
@@ -62,6 +66,12 @@ export const ARRIVE = {
   backAngle: (100 * Math.PI) / 180,
   step: 1.5,
   zone: 2.5,
+  /** (the camera shows about 50 deg either side of his aim at 16:9, 58 at 21:9) */
+  sightCone: (70 * Math.PI) / 180,
+  sightAt: [1.6, 1.0],
+  sightWait: 6,
+  /** (a lift's door opening shows the girl in it: world s after it opens that she may be in his sight) */
+  liftShow: 1,
   maxUp: { easy: 4, normal: 6, hard: 8, hardcore: 9, retardio: CUT.arrive.maxUp } as PerDiff,
   gap: { easy: 2.2, normal: 1.6, hard: 1.1, hardcore: 0.9, retardio: CUT.arrive.gap } as PerDiff,
 } as const;

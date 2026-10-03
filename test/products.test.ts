@@ -58,6 +58,9 @@ test("RadPayne's tuning: its four difficulties, Madame Pockit's and chapter 2's 
   assert.deepEqual(per(ARRIVE.maxUp), [4, 6, 8, 9]);
   assert.deepEqual(per(ARRIVE.gap), [2.2, 1.6, 1.1, 0.9]);
   assert.deepEqual([ARRIVE.minDist, ARRIVE.backDist, ARRIVE.step, ARRIVE.zone], [12, 20, 1.5, 2.5]);
+  // (and never before his eyes by a door, a stair, a bridge's end or an open lift: within 70 deg of his aim,
+  // his head or middle in a clear line; that part gives way after 6 s, a lift's opening shows its first)
+  assert.deepEqual([Math.round((ARRIVE.sightCone * 180) / Math.PI), ...ARRIVE.sightAt, ARRIVE.sightWait, ARRIVE.liftShow], [70, 1.6, 1.0, 6, 1]);
   // a chapter 2 room on RadPayne's difficulties (since 2026-10-03): Normal about a third under what it had,
   // Hard about a fifth (some of its girls are Hardcore's only now), Hardcore every girl, as before
   const rosters: Record<string, number[]> = { room6: [16, 16, 26, 32], room7: [15, 15, 28, 34], room8: [18, 18, 33, 40], room9: [17, 17, 28, 36], room10: [9, 9, 15, 18] };

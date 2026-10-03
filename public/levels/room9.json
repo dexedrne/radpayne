@@ -15132,8 +15132,8 @@
          "data": {
           "marker": "waypoint",
           "links": [
-           "wp-of-1-out",
-           "wp-of-1b"
+           "wp-of-door",
+           "wp-of-1e"
           ]
          }
         }
@@ -15155,8 +15155,77 @@
          "data": {
           "marker": "waypoint",
           "links": [
+           "wp-of-door"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-of-door",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20.6, 0, 9.9]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-of-1-out",
            "wp-of-1",
            "wp-of-2"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-of-1e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-21.5, 0, 12.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-of-1",
+           "wp-of-1s"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-of-1s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-21.5, 0, 14.3]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-of-1e",
+           "wp-of-1b"
           ]
          }
         }
@@ -15178,7 +15247,7 @@
          "data": {
           "marker": "waypoint",
           "links": [
-           "wp-of-1",
+           "wp-of-1s",
            "wp-safe-in"
           ]
          }
@@ -15201,7 +15270,53 @@
          "data": {
           "marker": "waypoint",
           "links": [
-           "wp-of-1-out",
+           "wp-of-door",
+           "wp-of-2w"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-of-2w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.35, 0, 12.2]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-of-2",
+           "wp-of-2s"
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "wp-of-2s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-19.35, 0, 14.3]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "waypoint",
+          "links": [
+           "wp-of-2w",
            "wp-of-2b"
           ]
          }
@@ -15224,7 +15339,7 @@
          "data": {
           "marker": "waypoint",
           "links": [
-           "wp-of-2",
+           "wp-of-2s",
            "wp-bs-in"
           ]
          }

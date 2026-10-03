@@ -136,11 +136,18 @@ k.volume("secret-safe", "secret", [-29, 0, 14], [-26.2, 2.4, 17.8], { name: "the
 k.volume("secret-panel", "secret", [25.6, 0, 6], [25.9, 1.4, 8], { name: "behind the ticker", via: "break" });
 k.volume("secret-hatch", "secret", [-24, CY, -18], [-21.6, CY + 2, -15.4], { name: "the roof hatch" });
 k.grid("floor", -24, 24.5, -16, 16, 3, 0, (x, z) => Math.abs(x - PX) < 0.8 || (x < -15.5 && z > 9.5));
-k.wp("of-1", [-22.4, 0, 11.6], ["of-1-out", "of-1b"]);
-k.wp("of-1-out", [-20.6, 0, 8.6], ["of-1", "of-2"]);
-k.wp("of-1b", [-24, 0, 16], ["of-1", "safe-in"]);
-k.wp("of-2", [-18, 0, 11.6], ["of-1-out", "of-2b"]);
-k.wp("of-2b", [-18, 0, 16], ["of-2", "bs-in"]);
+// (the offices' doorway, x -21.4..-19.8 in their glass front: through its middle, clear of both panes;
+// in each office round the east / west end of its desk to the back: the back stair's way in)
+k.wp("of-1", [-22.4, 0, 11.6], ["of-door", "of-1e"]);
+k.wp("of-1-out", [-20.6, 0, 8.6], ["of-door"]);
+k.wp("of-door", [-20.6, 0, 9.9], ["of-1-out", "of-1", "of-2"]);
+k.wp("of-1e", [-21.5, 0, 12.2], ["of-1", "of-1s"]);
+k.wp("of-1s", [-21.5, 0, 14.3], ["of-1e", "of-1b"]);
+k.wp("of-1b", [-24, 0, 16], ["of-1s", "safe-in"]);
+k.wp("of-2", [-18, 0, 11.6], ["of-door", "of-2w"]);
+k.wp("of-2w", [-19.35, 0, 12.2], ["of-2", "of-2s"]);
+k.wp("of-2s", [-19.35, 0, 14.3], ["of-2w", "of-2b"]);
+k.wp("of-2b", [-18, 0, 16], ["of-2s", "bs-in"]);
 k.wp("bs-in", [-18, 0, 19.6], ["of-2b", "bs-back"]);
 k.wp("bs-back", [-18, 0, 21], ["bs-in"]);
 k.wp("safe-in", [-27.6, 0, 15.9], ["of-1b"], { door: "filing" });
