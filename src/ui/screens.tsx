@@ -72,7 +72,7 @@ const NOTES = {
   killcam: "Special shots: sniper kills, long headshots, two with one round, a grenade's double, the room's last kill. Any key skips.",
   assist: "Gamepad only: the stick slows near a target you can see, and holding L2 / LT (or firing) pulls the aim lightly onto her. Never through walls; the mouse never gets it.",
   difficulty: "From the next restart or room. Normal: they aim better at range, hit harder, pin you down and come round the side, frags flush you out; fewer cans. Hard: you need cover. Hardcore: no cans to start, bullet time drains fast.",
-  cut: "RetardioPayne has one difficulty: they aim better, react faster, hit harder and push in; half the cans; bullet time refills slower; the bosses take more.",
+  cut: "RetardioPayne has one difficulty: they aim better, react faster, hit harder and push in; fewer cans; bullet time refills slower; the bosses take more.",
   deadZone: "How far the sticks move before they count (radial). Raise it if the aim drifts.",
   hitFeel: "The hitmarker, the hit / kill sounds, the flash and burst on a struck girl, the camera punch on kills and the pad's hit pulses. Subtle: all of it, quieter. Off: none of it (she still flinches).",
 };

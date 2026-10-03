@@ -142,13 +142,13 @@ test("RetardioPayne plays only the Retardios on its one fixed difficulty", () =>
 
 test("the harder cut against RadPayne's Normal: better aim, faster, pushing, more damage, slower bullet time, fewer cans, more of the gang, tougher bosses", () => {
   const n = DIFFICULTY.normal, c = DIFFICULTY.retardio;
-  assert.ok(c.accuracy > n.accuracy && c.accuracy > DIFFICULTY.hard.accuracy && c.far >= n.far && c.farFloor > n.farFloor && c.speedK < n.speedK, "aim");
-  assert.ok(c.reaction < n.reaction && c.reaction < DIFFICULTY.hard.reaction && c.wake < n.wake, "reaction");
+  assert.ok(c.accuracy > n.accuracy && c.far >= n.far && c.farFloor > n.farFloor && c.speedK < n.speedK, "aim");
+  assert.ok(c.reaction < n.reaction && c.wake < n.wake, "reaction");
   assert.ok(c.shooters > n.shooters && c.suppress > n.suppress && c.flank > n.flank && c.grenade < n.grenade && c.camp < n.camp && c.rush < n.rush, "push");
   assert.ok(c.damage > n.damage && c.hp > n.hp && c.boss > n.boss, "damage");
-  for (const d of RAD4) assert.ok(c.killRefill < DIFFICULTY[d].killRefill, `bullet time refills slower than ${d}'s`);
+  assert.ok(c.killRefill < n.killRefill && c.killRefill < DIFFICULTY.hard.killRefill, "bullet time refills slower than Normal's and Hard's");
   assert.ok(c.keep < n.keep && c.copium <= n.copium && c.startCopium <= n.startCopium, "cans");
-  for (const d of RAD4) assert.ok(MADAME.hp.retardio > MADAME.hp[d] && perDiff(COUNTESS.hp, "retardio") > perDiff(COUNTESS.hp, d), `bosses over ${d}'s`);
+  assert.ok(MADAME.hp.retardio > MADAME.hp.normal && perDiff(COUNTESS.hp, "retardio") > perDiff(COUNTESS.hp, "normal"), "bosses over Normal's");
   assert.ok(MADAME.maxLive.retardio > MADAME.maxLive.normal && perDiff(COUNTESS.doorFirst, "retardio") > perDiff(COUNTESS.doorFirst, "normal") && perDiff(COUNTESS.doorLive, "retardio") > perDiff(COUNTESS.doorLive, "normal"), "the bosses' doors");
   // chapter 2: every girl the level marks for Hard and up is in, and each wave still comes in
   for (const id of ["room6", "room7", "room8", "room9", "room10"]) {

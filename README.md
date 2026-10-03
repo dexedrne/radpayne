@@ -514,24 +514,26 @@ npm run build:retardiopayne   # its production build in dist/ (VITE_GAME=retardi
   tone map. The rain, the neon and the gold vs red gunfire stay. The on-screen lines that call him a Radbro
   read differently there (`src/ui/cutText.ts`); the recorded voices are RadPayne's.
 - **The harder cut** is the difficulty `retardio`, every number of it in `src/sim/cut.ts` (deterministic like
-  the others; RadPayne's four never read it). Against RadPayne's Normal:
+  the others; RadPayne's four never read it). Eased a step (2026-10-03) to sit between RadPayne's Normal and
+  Hard. Against RadPayne's Normal:
 
 | | Normal | Hard | the cut |
 |---|---|---|---|
-| their accuracy, reaction (s), wake (s) | 1.1, 0.45, 0.35 | 1.3, 0.35, 0.25 | **1.35, 0.32, 0.22** |
-| shooting at once, pinning fire, flankers | 2, 0.5, 1 | 3, 0.8, 2 | **3, 0.85, 2** |
-| a frag at a held spot after, a rusher round after (s) | 6, 9 | 4.5, 6 | **4.5, 6** |
-| damage to him, their health | x1.15, x1 | x1.6, x1.1 | **x1.45, x1.1** |
-| bullet time: a kill refills, the drain | x1.2, x1.25 | x1.3, x1.5 | **x0.9, x1.25** (about 1.1 s a kill, Normal 1.4) |
-| cans in the room, to start | 80 %, 1 | 55 %, 1 | **50 %, 1** |
-| Madame Pockit: health, adds a door, her pace | 2300, 2, x1.3 | 2600, 3, x1 | **2900, 3, x1.15** |
-| the Countess: health, her lifts (first, standing) | 2300, 2 / 2 | 2800, 3 / 4 | **3000, 3 / 3** |
+| their accuracy, reaction (s), wake (s) | 1.1, 0.45, 0.35 | 1.3, 0.35, 0.25 | **1.25, 0.38, 0.27** |
+| shooting at once, pinning fire, flankers | 2, 0.5, 1 | 3, 0.8, 2 | **3, 0.7, 2** |
+| a frag at a held spot after, a rusher round after (s) | 6, 9 | 4.5, 6 | **5, 7.5** |
+| damage to him, their health | x1.15, x1 | x1.6, x1.1 | **x1.3, x1.05** |
+| bullet time: a kill refills, the drain | x1.2, x1.25 | x1.3, x1.5 | **x1, x1.25** (about 1.2 s a kill, Normal 1.4) |
+| cans in the room, to start | 80 %, 1 | 55 %, 1 | **65 %, 1** |
+| Madame Pockit: health, adds a door, her pace | 2300, 2, x1.3 | 2600, 3, x1 | **2600, 3, x1.2** |
+| the Countess: health, her lifts (first, standing) | 2300, 2 / 2 | 2800, 3 / 4 | **2600, 3 / 3** |
 | chapter 2's gang (`minDiff: "hard"` girls) | left out | in | **in** |
 
-  Chapter 2 eases off for the cut as it does for RadPayne's Normal (`CUT.ch2`: x1.3 damage, frags and
-  rushers a little less often, 90 % of the cans; the snipers', the Countess's and the beams' tells between
+  Chapter 2 eases off for the cut as it does for RadPayne's Normal (`CUT.ch2`: x1.2 damage, frags and
+  rushers a little less often, 95 % of the cans; the snipers', the Countess's and the beams' tells between
   Normal's and Hard's).
-- **Fair:** the bots clear every room on the cut. `node tools/balance.ts --diffs normal,hard,retardio --seeds
+- **Fair:** the bots clear every room on the cut (these runs were on its first, harder numbers; the eased cut
+  is easier on every dial). `node tools/balance.ts --diffs normal,hard,retardio --seeds
   1,...,12 --bot cover|plain` (rooms 1-5, five attempts a seed) and `node tools/ch2bot.ts room6,... 1,...,12
   retardio` (rooms 6-10, six tries); clears out of 12 seeds, deaths a run:
 
