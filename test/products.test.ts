@@ -34,8 +34,10 @@ test("RadPayne's tuning: its four difficulties, Madame Pockit's and chapter 2's 
   assert.deepEqual(four(MADAME.pace), [1.5, 1.3, 1, 0.9]);
   assert.deepEqual(four(MADAME.maxLive), [2, 2, 3, 3]);
   assert.deepEqual({ ...CH2_DIFF.normal }, { keep: 1, checkpoint: 70, grenade: 16, camp: 7, rush: 10, suppress: 0.45 });
+  // (Hard eases off in chapter 2 too since 2026-10-03's second pass: it was the hardest part of the game
+  // there, the vault most of all)
+  assert.deepEqual({ ...CH2_DIFF.hard }, { damage: 1.4, keep: 0.7, checkpoint: 60, grenade: 12, camp: 5.5, rush: 7.5, suppress: 0.65 });
   assert.equal(CH2_DIFF.easy, undefined);
-  assert.equal(CH2_DIFF.hard, undefined);
   assert.equal(CH2_DIFF.hardcore, undefined);
   const per = (t: Parameters<typeof perDiff>[0]) => RAD4.map(d => perDiff(t, d));
   assert.deepEqual(per(COUNTESS.hp), [1800, 2300, 2800, 2800]);
@@ -62,8 +64,9 @@ test("RadPayne's tuning: its four difficulties, Madame Pockit's and chapter 2's 
   // his head or middle in a clear line; that part gives way after 6 s, a lift's opening shows its first)
   assert.deepEqual([Math.round((ARRIVE.sightCone * 180) / Math.PI), ...ARRIVE.sightAt, ARRIVE.sightWait, ARRIVE.liftShow], [70, 1.6, 1.0, 6, 1]);
   // a chapter 2 room on RadPayne's difficulties (since 2026-10-03): Normal about a third under what it had,
-  // Hard about a fifth (some of its girls are Hardcore's only now), Hardcore every girl, as before
-  const rosters: Record<string, number[]> = { room6: [16, 16, 26, 32], room7: [15, 15, 28, 34], room8: [18, 18, 33, 40], room9: [17, 17, 28, 36], room10: [9, 9, 15, 18] };
+  // Hard about a fifth (some of its girls are Hardcore's only now; the vault's lifts two more), Hardcore
+  // every girl, as before
+  const rosters: Record<string, number[]> = { room6: [16, 16, 26, 32], room7: [15, 15, 28, 34], room8: [18, 18, 33, 40], room9: [17, 17, 28, 36], room10: [9, 9, 13, 18] };
   for (const [id, want] of Object.entries(rosters)) assert.deepEqual(RAD4.map(d => new Game(level(id), { seed: 1, difficulty: d }).enemies.length), want, id);
 });
 

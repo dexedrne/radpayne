@@ -11,7 +11,8 @@
 //                       phase 2 (high: dive; low: jump; tall cover keeps them off)
 //   the lifts           east and west walls: her girls come through them after a lamp over the door
 //                       (sim/ch2/vault.ts waves), one at a time by the arrivals' rule (with him close to
-//                       one, through the other); 6 of them on Normal, 11 on Hard, 14 on Hardcore
+//                       one, through the other, and never appearing in an open lift he is watching);
+//                       6 of them on Normal, 9 on Hard, 14 on Hardcore
 //   more cover          tall gold-bar stacks (they stop both beams) by the north shelf and either side of
 //                       the way in from the vault door
 //   secrets             a sliding shelf (E) in the north-west wall (the pin), a case of bearer bonds (it
@@ -145,7 +146,7 @@ for (const [side, sx] of [["e", 1], ["w", -1]] as const) {
 // ---------------------------------------------------------------- the Countess and her girls
 const E = (id: string, x: number, y: number, z: number, yaw: number, d: Record<string, unknown> = {}) => marker(id, "enemy", [x, y, z], { kind: "goon", ...d }, yaw);
 // (a kind ending in "+" is there on Hard and up only, "++" on Hardcore only: Normal's lifts bring 6 of the
-// 14, Hard's 11)
+// 14, Hard's 9 since 2026-10-03: the vault was the hardest room of the game on Hard)
 const adds = (side: "e" | "w", group: string, kinds: string[]) => kinds.map((kd0, i) => {
   const sx = side === "e" ? 1 : -1;
   const kd = kd0.replace(/\+/g, "");
@@ -154,10 +155,10 @@ const adds = (side: "e" | "w", group: string, kinds: string[]) => kinds.map((kd0
 k.m(
   E("countess", 0, DESK, -1.7, FACE_N, { kind: "countess", drop: false }),
   E("guard-1", -6.5, 0, 3, FACE_W), E("guard-2", 6, 0, 2.6, FACE_E, { minDiff: "hard" }), E("guard-3", 0, 0, -9.4, FACE_N, { kind: "rusher" }),
-  ...adds("e", "liftE", ["goon", "rusher", "goon+", "rusher++"]),
+  ...adds("e", "liftE", ["goon", "rusher", "goon++", "rusher++"]),
   ...adds("w", "liftW", ["rusher++", "goon", "heavy", "goon+"]),
   ...adds("e", "liftE2", ["rusher++", "goon", "goon+"]).map(n => { const t = (n.components!.transform as { properties: { position: number[] } }).properties; t.position = [t.position[0], t.position[1], t.position[2] + 0.7]; return n; }),
-  ...adds("w", "liftW2", ["goon", "rusher+", "goon+"]).map(n => { const t = (n.components!.transform as { properties: { position: number[] } }).properties; t.position = [t.position[0], t.position[1], t.position[2] + 0.7]; return n; }),
+  ...adds("w", "liftW2", ["goon", "rusher++", "goon+"]).map(n => { const t = (n.components!.transform as { properties: { position: number[] } }).properties; t.position = [t.position[0], t.position[1], t.position[2] + 0.7]; return n; }),
 );
 
 // ---------------------------------------------------------------- triggers, pickups, eggs, lights

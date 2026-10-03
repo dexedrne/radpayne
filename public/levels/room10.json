@@ -7522,7 +7522,7 @@
           "kind": "goon",
           "group": "liftE",
           "deaf": true,
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }
@@ -7759,7 +7759,7 @@
           "kind": "rusher",
           "group": "liftW2",
           "deaf": true,
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }

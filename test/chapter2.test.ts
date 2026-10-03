@@ -115,7 +115,8 @@ test("chapter 2 on every difficulty: its roster (Normal leaves some of the gang 
     assert.ok(normal <= NORMAL_WAS[id] * 0.7, `${id}: ${normal} on Normal (it had ${NORMAL_WAS[id]})`);
   }
   // chapter 2's own Normal: chapter 1's aim and damage, their frags and rushers less often, every can, a
-  // checkpoint restores more, the snipers' tell longer; Hard and Hardcore untouched
+  // checkpoint restores more, the snipers' tell longer; Hard eases off from its own (less damage, frags
+  // and rushers less often, more cans: CH2_DIFF.hard) with its aim and the rest; Hardcore untouched
   const n2 = new Game(room("room6"), { seed: 1, difficulty: "normal" });
   assert.equal(n2.diff.keep, CH2_DIFF.normal!.keep);
   assert.ok(n2.diff.damage === DIFFICULTY.normal.damage && n2.diff.accuracy === DIFFICULTY.normal.accuracy);
@@ -123,11 +124,14 @@ test("chapter 2 on every difficulty: its roster (Normal leaves some of the gang 
   assert.ok(n2.diff.keep > DIFFICULTY.normal.keep && n2.diff.checkpoint > DIFFICULTY.normal.checkpoint);
   assert.equal(n2.sniperArms.tell, perDiff(SNIPER2.tell, "normal"));
   assert.ok(n2.sniperArms.tell > ENEMY_ARMS.sniper.tell && n2.sniperArms.damage < ENEMY_ARMS.sniper.damage);
-  for (const d of ["hard", "hardcore"] as const) {
-    const g = new Game(room("room6"), { seed: 1, difficulty: d });
-    assert.deepEqual(g.diff, DIFFICULTY[d], `${d}: chapter 2 takes the table as it is`);
-    assert.equal(g.sniperArms.damage, ENEMY_ARMS.sniper.damage);
-  }
+  const h2 = new Game(room("room6"), { seed: 1, difficulty: "hard" });
+  assert.deepEqual(h2.diff, { ...DIFFICULTY.hard, ...CH2_DIFF.hard });
+  assert.ok(h2.diff.damage < DIFFICULTY.hard.damage && h2.diff.damage > DIFFICULTY.normal.damage);
+  assert.ok(h2.diff.grenade > DIFFICULTY.hard.grenade && h2.diff.camp > DIFFICULTY.hard.camp && h2.diff.rush > DIFFICULTY.hard.rush && h2.diff.keep > DIFFICULTY.hard.keep);
+  assert.ok(h2.diff.accuracy === DIFFICULTY.hard.accuracy && h2.diff.shooters === DIFFICULTY.hard.shooters && h2.diff.hp === DIFFICULTY.hard.hp);
+  const hc = new Game(room("room6"), { seed: 1, difficulty: "hardcore" });
+  assert.deepEqual(hc.diff, DIFFICULTY.hardcore, "hardcore: chapter 2 takes the table as it is");
+  for (const g of [h2, hc]) assert.equal(g.sniperArms.damage, ENEMY_ARMS.sniper.damage);
   // Hardcore's chapter 2 numbers are at least Hard's (a table without a Hardcore entry takes Hard's)
   assert.equal(perDiff(COUNTESS.hp, "hardcore"), perDiff(COUNTESS.hp, "hard"));
   assert.equal(perDiff(ROOF.accuracy, "hardcore"), ROOF.accuracy.hard);

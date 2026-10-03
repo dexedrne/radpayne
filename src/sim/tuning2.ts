@@ -15,9 +15,16 @@ export const perDiff = (t: PerDiff, d: Difficulty | string): number => t[d] ?? (
  *  little less often, every copium can is in the room and a checkpoint restores more (with the rooms'
  *  lighter Normal rosters and the snipers' longer tell). On the balance bots it costs about 1.1x
  *  chapter 1's health on Normal with no deaths (it was 1.5x before the ease, and 0.65x with their aim
- *  and damage at 1.0 and frags rarer still). Chill, Hard and Hardcore keep their own. */
+ *  and damage at 1.0 and frags rarer still). Hard eases off from its own too (below); Chill and
+ *  Hardcore keep theirs. */
 export const CH2_DIFF: Partial<Record<Difficulty, Partial<DifficultyTuning>>> = {
   normal: { keep: 1, checkpoint: 70, grenade: 16, camp: 7, rush: 10, suppress: 0.45 },
+  // Hard eases off the same way from its own (2026-10-03: chapter 2 was the hardest of the game on Hard,
+  // the vault most of all, half of it the gang's frags): their damage x1.4 (chapter 1's Hard x1.6),
+  // frags 12 s apart and at a cover held 5.5 s (9, 4.5), a rusher round after 7.5 s (6), less pinning
+  // fire, 70 % of the cans (55 %), a checkpoint restores 60 (50). Their aim, reaction, health, the three
+  // shooting at once and the Hard rosters stay.
+  hard: { damage: 1.4, keep: 0.7, checkpoint: 60, grenade: 12, camp: 5.5, rush: 7.5, suppress: 0.65 },
   // RetardioPayne's harder cut eases off here too (cut.ts)
   retardio: CUT.ch2,
 };
