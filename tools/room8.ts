@@ -14,7 +14,12 @@
 //                           wall: it blows (sim/ch2/airship.ts) when he walks in or at 22 down; a cargo net
 //                           across the opening holds him; the girls go through it
 //   the aft stair           x 34..38: waves B and C, and the way out once she has docked
-// Hostiles 40; a checkpoint at 16 down. George is aboard.
+// Cover: sofas and high-backed banquettes (the bow, the promenade's booths, the bar), the bar, the piano,
+// pillars, the hold's crates, the car and a cargo pallet under a net.
+// Hostiles 18 on Normal, 33 on Hard, 40 on Hardcore; a checkpoint at 8 down (Hard 13). The opening
+// alert wakes the bow and the promenade; the bar and the hold sleep behind their bulkheads until he
+// walks in (or enough are down). The waves come in by the arrivals' rule (sim/arrive.ts) through the
+// galley door and the aft stair, each with the other to fall back on (room.arrive). George is aboard.
 import { FACE_E, FACE_N, FACE_S, FACE_W, glow, marker, prim, tex, writeLevel, type V3 } from "./levelKit.ts";
 import { RoomKit } from "./levels/kit2.ts";
 
@@ -70,6 +75,9 @@ k.cover("table-bow", [-26.2, 0, -0.7], [-24.8, 0.75, 0.7], "brassTable", { data:
 k.cover("pillar-bow-1", [-18.4, 0, -4.4], [-17.6, CH, -3.6], "brass", { data: { surface: "metal" } });
 k.cover("pillar-bow-2", [-18.4, 0, 3.6], [-17.6, CH, 4.4], "brass", { data: { surface: "metal" } });
 k.cover("globe", [-17, 0, -0.6], [-15.8, 1.3, 0.6], "brassTable", { data: { surface: "metal" } });
+// high-backed banquettes (low cover) across the lounge
+k.cover("banq-bow-n", [-22.6, 0, -4.6], [-22, 1.2, -2.2], "velvet", { data: { surface: "wood" } });
+k.cover("banq-bow-s", [-22.6, 0, 2.2], [-22, 1.2, 4.6], "velvet", { data: { surface: "wood" } });
 // the captain's cabin (north), through a wood panel (E)
 k.box("cab-floor", [-23, -0.5, -9.4], [-19, 0, -6.2], "deck");
 k.box("cab-w", [-23.2, 0, -9.4], [-23, CH, -6.2], "panelWood");
@@ -106,6 +114,12 @@ for (let i = 0; i < 5; i++) {
 }
 for (const x of [-9.2, -2, 4.4]) { k.cover(`pil-n-${x}`, [x - 0.2, 0, -5.2], [x + 0.2, CH, -4.8], "brass", { data: { surface: "metal" } }, { faces: ["s"] }); k.cover(`pil-s-${x}`, [x - 0.2, 0, 4.8], [x + 0.2, CH, 5.2], "brass", { data: { surface: "metal" } }, { faces: ["n"] }); }
 k.cover("trolley", [-5.6, 0, -0.5], [-4.6, 1.0, 0.5], "brassTable", { data: { surface: "metal" } });
+// the booths' high backs between the tables (low cover across the promenade, both rows)
+for (const x of [-9.2, -2, 4.4]) {
+  // (short of the pillars by the windows: the lanes along them stay open)
+  k.cover(`booth-n-${x}`, [x - 0.25, 0, -3.9], [x + 0.25, 1.2, -2], "velvet", { data: { surface: "wood" } });
+  k.cover(`booth-s-${x}`, [x - 0.25, 0, 2], [x + 0.25, 1.2, 3.9], "velvet", { data: { surface: "wood" } });
+}
 // the galley (north, wave A)
 k.box("gal-floor", [-6.2, -0.5, -10], [0.6, 0, -6.2], "tiles");
 k.box("gal-w", [-6.4, 0, -10], [-6.2, CH, -6.2], "panelWhite");
@@ -124,6 +138,7 @@ k.deco("bar-shelf", [8.2, 1.3, -5.95], [13.8, 2.6, -5.85], "bottles");
 k.cover("sofa-l-1", [8, 0, 1.4], [11, 0.8, 2.4], "velvet", { data: { surface: "wood" } });
 k.cover("sofa-l-2", [12.4, 0, -1.6], [13.4, 0.8, 1.6], "velvet", { data: { surface: "wood" } });
 k.cover("piano", [9, 0, 3.8], [11.2, 1.2, 5.4], "piano", { data: { surface: "wood" } });
+k.cover("banq-bar", [9.4, 0, -1.4], [10, 1.2, 0.6], "velvet", { data: { surface: "wood" } });
 k.box("wine", [14.4, 0, -5.8], [15.8, 1.4, -4.4], "crate", { data: { breakable: 40, surface: "wood", drop: "grenade", amount: 3, secret: "secret-wine" } });
 k.volume("secret-wine", "secret", [14.4, 0, -5.8], [15.8, 1.4, -4.4], { name: "the wine crates", via: "break" });
 // the lifeboat alcove (south wall, a sliding panel)
@@ -149,6 +164,10 @@ for (const [id, x, z, w, d, h] of [["c1", 19, -3.8, 2, 2, 1.2], ["c2", 19, 3.8, 
   k.cover(`crate-${id}`, [x - w / 2, 0, z - d / 2], [x + w / 2, h, z + d / 2], h > 2 ? "crateBig" : "crate", { data: { surface: "wood" } });
 }
 k.cover("car", [23, 0, -6.4], [27.6, 1.6, -4.6], "tarp", { data: { surface: "metal" } }, { faces: ["s", "w", "e"] });
+// a pallet of boxes under a cargo net in the middle of the hold
+k.cover("pallet", [18.4, 0, -0.8], [19.8, 1.3, 0.8], "crate", { data: { surface: "wood" } });
+for (const z of [-0.5, 0, 0.5]) k.deco(`pallet-net-${z}`, [18.36, 0.1, z - 0.02], [19.84, 1.34, z + 0.02], "netRope");
+for (const x of [18.8, 19.4]) k.deco(`pallet-net-x${x}`, [x - 0.02, 0.1, -0.84], [x + 0.02, 1.34, 0.84], "netRope");
 // the catwalk (north, y 3) and its stair (east end, down to the south)
 k.box("cw-deck", [17, 2.8, -7], [33.6, 3, -5.2], "grate", { data: { surface: "metal" } });
 k.box("cw-rail", [17, 3, -5.3], [30, 4, -5.2], "rail", { data: { shootThrough: true, surface: "metal" } });
@@ -183,27 +202,28 @@ k.wp("cw-mid", [30.9, 1.5, -0.8], ["cw-bot", "cw-top"]);
 k.wp("cw-top", [30.9, 3, -6.1], ["cw-mid", "cw-w"]);
 k.wp("cw-w", [20, 3, -6.1], ["cw-top"]);
 
-// ---------------------------------------------------------------- the gang (40)
+// ---------------------------------------------------------------- the gang (Normal 18, Hard 33, Hardcore 40)
 const E = (id: string, x: number, y: number, z: number, yaw: number, d: Record<string, unknown> = {}) => marker(id, "enemy", [x, y, z], { kind: "goon", ...d }, yaw);
 k.m(
   // the observation lounge
-  E("o-1", -24, 0, -3, FACE_W), E("o-2", -23.5, 0, 3, FACE_W), E("o-3", -19.5, 0, -1.8, FACE_W, { minDiff: "hard" }), E("o-4", -19.5, 0, 2.2, FACE_W, { minDiff: "hard" }), E("o-5", -16.5, 0, -2.6, FACE_W, { kind: "rusher" }), E("o-6", -16, 0, 2.6, FACE_W, { minDiff: "hard" }),
+  E("o-1", -24, 0, -3, FACE_W, { group: "front" }), E("o-2", -23.5, 0, 3, FACE_W, { group: "front", minDiff: "hard" }), E("o-3", -19.5, 0, -1.8, FACE_W, { group: "front", minDiff: "hard" }), E("o-4", -19.5, 0, 2.2, FACE_W, { group: "front", minDiff: "hard" }), E("o-5", -16.5, 0, -2.6, FACE_W, { group: "front", kind: "rusher" }), E("o-6", -16, 0, 2.6, FACE_W, { group: "front", minDiff: "hardcore" }),
   // the promenade
-  E("p-1", -9, 0, -1, FACE_W), E("p-2", -7.4, 0, 1.2, FACE_W, { minDiff: "hard" }), E("p-3", -3.8, 0, -3.8, FACE_W), E("p-4", -0.2, 0, 3.8, FACE_W, { minDiff: "hard" }), E("p-5", 2.6, 0, -1, FACE_W), E("p-6", 3.6, 0, 1.2, FACE_W, { kind: "rusher", minDiff: "hard" }),
-  // wave A (5 down): the galley
-  E("a-1", -5, 0, -8.5, FACE_S, { group: "waveA" }), E("a-2", -3.8, 0, -7.6, FACE_S, { group: "waveA", kind: "rusher" }), E("a-3", -1.6, 0, -7.6, FACE_S, { group: "waveA", kind: "rusher", minDiff: "hard" }), E("a-4", -0.4, 0, -8.5, FACE_S, { group: "waveA" }),
-  // the lounge bar (asleep till they hear it)
-  E("l-1", 11, 0, -3.4, FACE_W), E("l-2", 13.6, 0, -2.4, FACE_W), E("l-3", 9.4, 0, 3.2, FACE_W, { minDiff: "hard" }), E("l-4", 14.6, 0, 2.8, FACE_W, { kind: "heavy", model: "rival652" }), E("l-5", 7.8, 0, -0.4, FACE_W, { kind: "rusher" }),
+  E("p-1", -9, 0, -1, FACE_W, { group: "front" }), E("p-2", -7.4, 0, 1.2, FACE_W, { group: "front", minDiff: "hard" }), E("p-3", -3.8, 0, -3.8, FACE_W, { group: "front", minDiff: "hard" }), E("p-4", -0.2, 0, 3.8, FACE_W, { group: "front", minDiff: "hard" }), E("p-5", 2.6, 0, -1, FACE_W, { group: "front" }), E("p-6", 3.6, 0, 1.2, FACE_W, { group: "front", kind: "rusher", minDiff: "hardcore" }),
+  // wave A (Normal 3 down, Hard 4): the galley
+  E("a-1", -5, 0, -8.5, FACE_S, { group: "waveA" }), E("a-2", -3.8, 0, -7.6, FACE_S, { group: "waveA", kind: "rusher" }), E("a-3", -1.6, 0, -7.6, FACE_S, { group: "waveA", kind: "rusher", minDiff: "hard" }), E("a-4", -0.4, 0, -8.5, FACE_S, { group: "waveA", minDiff: "hard" }),
+  // the lounge bar (asleep behind the bulkhead: they wake when he walks in, or at 6 down, Hard 8)
+  E("l-1", 11, 0, -3.4, FACE_W, { group: "bar", deaf: true }), E("l-2", 13.6, 0, -2.4, FACE_W, { group: "bar", deaf: true, minDiff: "hard" }), E("l-3", 9.4, 0, 3.2, FACE_W, { group: "bar", deaf: true, minDiff: "hard" }),
+  E("l-4", 14.6, 0, 2.8, FACE_W, { group: "bar", deaf: true, kind: "heavy", model: "rival652" }), E("l-5", 7.8, 0, -0.4, FACE_W, { group: "bar", deaf: true, kind: "rusher" }),
   // the hold (behind the bulkhead: they wake when he walks in)
-  E("h-1", 20.6, 0, -1.4, FACE_W, { group: "hold", deaf: true }), E("h-2", 24.5, 0, 2.4, FACE_W, { group: "hold", deaf: true }), E("h-3", 25.4, 0, -2.8, FACE_W, { group: "hold", deaf: true, kind: "rusher" }),
-  E("h-4", 29.4, 0, 0.4, FACE_W, { group: "hold", deaf: true }), E("h-5", 29.8, 0, 4.8, FACE_W, { group: "hold", deaf: true, kind: "rusher", minDiff: "hard" }), E("h-6", 24, 3, -6.1, FACE_S, { group: "hold", deaf: true, perch: true, weapon: "sniper" }),
-  // wave B (16 down): up the aft stair
-  E("b-1", 35.2, 0, -1.8, FACE_W, { group: "waveB" }), E("b-2", 35.2, 0, 1.8, FACE_W, { group: "waveB", kind: "rusher" }), E("b-3", 36.6, 0, 0, FACE_W, { group: "waveB" }), E("b-4", 37.2, 0, -2, FACE_W, { group: "waveB", kind: "rusher", minDiff: "hard" }), E("b-5", 37.2, 0, 2, FACE_W, { group: "waveB", minDiff: "hard" }),
-  // wave C (26 down): the aft stair again (the hand cannon) and the catwalk
-  E("c-1", 36.4, 0, 0, FACE_W, { group: "waveC", kind: "heavy", model: "rival723", weapon: "handcannon" }), E("c-2", 35.2, 0, -2, FACE_W, { group: "waveC" }), E("c-3", 35.2, 0, 2, FACE_W, { group: "waveC", kind: "rusher" }),
-  E("c-4", 30, 3, -6.1, FACE_S, { group: "waveC2", perch: true, weapon: "sniper", minDiff: "hard" }), E("c-5", 21, 3, -6.1, FACE_S, { group: "waveC2" }),
-  // wave D (31 down): back from the bow, behind him
-  E("d-1", -30, 0, -2, FACE_E, { group: "waveD", kind: "rusher" }), E("d-2", -30, 0, 2, FACE_E, { group: "waveD", kind: "rusher" }), E("d-3", -28, 0, 0, FACE_E, { group: "waveD", kind: "rusher", minDiff: "hard" }),
+  E("h-1", 20.6, 0, -1.4, FACE_W, { group: "hold", deaf: true }), E("h-2", 24.5, 0, 2.4, FACE_W, { group: "hold", deaf: true, minDiff: "hard" }), E("h-3", 25.4, 0, -2.8, FACE_W, { group: "hold", deaf: true, kind: "rusher" }),
+  E("h-4", 29.4, 0, 0.4, FACE_W, { group: "hold", deaf: true }), E("h-5", 29.8, 0, 4.8, FACE_W, { group: "hold", deaf: true, kind: "rusher", minDiff: "hardcore" }), E("h-6", 24, 3, -6.1, FACE_S, { group: "hold", deaf: true, perch: true, weapon: "sniper" }),
+  // wave B (8 down, Hard 13): up the aft stair
+  E("b-1", 35.2, 0, -1.8, FACE_W, { group: "waveB" }), E("b-2", 35.2, 0, 1.8, FACE_W, { group: "waveB", kind: "rusher" }), E("b-3", 36.6, 0, 0, FACE_W, { group: "waveB", minDiff: "hard" }), E("b-4", 37.2, 0, -2, FACE_W, { group: "waveB", kind: "rusher", minDiff: "hardcore" }), E("b-5", 37.2, 0, 2, FACE_W, { group: "waveB", minDiff: "hardcore" }),
+  // wave C (12 down, Hard 21): the aft stair again (the hand cannon; on Hard a girl with the sniper rifle)
+  E("c-1", 36.4, 0, 0, FACE_W, { group: "waveC", kind: "heavy", model: "rival723", weapon: "handcannon" }), E("c-2", 35.2, 0, -2, FACE_W, { group: "waveC", minDiff: "hard" }), E("c-3", 35.2, 0, 2, FACE_W, { group: "waveC", kind: "rusher" }),
+  E("c-4", 37.2, 0, -2, FACE_W, { group: "waveC", weapon: "sniper", minDiff: "hard" }), E("c-5", 37.2, 0, 2, FACE_W, { group: "waveC", minDiff: "hardcore" }),
+  // wave D (15 down, Hard 25): out of the galley again
+  E("d-1", -5, 0, -8.5, FACE_S, { group: "waveD", kind: "rusher" }), E("d-2", -3.8, 0, -7.6, FACE_S, { group: "waveD", kind: "rusher", minDiff: "hard" }), E("d-3", -1.6, 0, -7.6, FACE_S, { group: "waveD", kind: "rusher", minDiff: "hardcore" }),
 );
 
 // ---------------------------------------------------------------- triggers, pickups, eggs, lights
@@ -211,17 +231,19 @@ const T = (id: string, pos: V3, data: Record<string, unknown>, scale: V3 = [1, 1
 k.m(
   marker("spawn", "spawn", [-29.5, 0, 0], {}, FACE_E),
   marker("cp-mid", "checkpoint", [8, 0, 0], {}, FACE_E),
-  T("t-alert", [-27, 1, 0], { action: "alert" }, [3, 3, 12]),
+  // (the bow's and the promenade's girls; the bar and the hold sleep behind their bulkheads)
+  T("t-alert", [-27, 1, 0], { action: "alert", group: "front" }, [3, 3, 12]),
+  T("t-bar", [5.4, 1, 0], { action: "alert", group: "bar" }, [1.6, 3, 12]),
+  T("t-bar-kills", [0, 1, 0], { action: "alert", group: "bar", afterKills: { normal: 6, hard: 8 } }),
   T("t-hold", [17.2, 1, 0], { action: "alert", group: "hold" }, [2, 3, 14]),
-  T("t-hold-kills", [0, 1, 0], { action: "alert", group: "hold", afterKills: { normal: 15, hard: 20 } }),
+  T("t-hold-kills", [0, 1, 0], { action: "alert", group: "hold", afterKills: { normal: 11, hard: 16 } }),
   T("t-blow-step", [19.5, 1, 0], { action: "setpiece", cue: "blow" }, [1.5, 3, 14]),
-  T("t-blow-kills", [0, 1, 0], { action: "setpiece", cue: "blow", afterKills: { normal: 17, hard: 22 } }),
-  T("t-waveA", [0, 1, 0], { action: "spawn", group: "waveA", afterKills: 5 }),
-  T("t-cp", [0, 1, 0], { action: "checkpoint", at: "cp-mid", afterKills: { normal: 12, hard: 16 } }),
-  T("t-waveB", [0, 1, 0], { action: "spawn", group: "waveB", afterKills: { normal: 12, hard: 16 } }),
-  T("t-waveC", [0, 1, 0], { action: "spawn", group: "waveC", afterKills: { normal: 19, hard: 26 } }),
-  T("t-waveC2", [0, 1, 0], { action: "spawn", group: "waveC2", afterKills: { normal: 21, hard: 28 } }),
-  T("t-waveD", [0, 1, 0], { action: "spawn", group: "waveD", afterKills: { normal: 23, hard: 31 } }),
+  T("t-blow-kills", [0, 1, 0], { action: "setpiece", cue: "blow", afterKills: { normal: 11, hard: 18 } }),
+  T("t-waveA", [0, 1, 0], { action: "spawn", group: "waveA", afterKills: { normal: 3, hard: 4 } }),
+  T("t-cp", [0, 1, 0], { action: "checkpoint", at: "cp-mid", afterKills: { normal: 8, hard: 13 } }),
+  T("t-waveB", [0, 1, 0], { action: "spawn", group: "waveB", afterKills: { normal: 8, hard: 13 } }),
+  T("t-waveC", [0, 1, 0], { action: "spawn", group: "waveC", afterKills: { normal: 12, hard: 21 } }),
+  T("t-waveD", [0, 1, 0], { action: "spawn", group: "waveD", afterKills: { normal: 15, hard: 25 } }),
   T("t-exit", [36.6, 1, 0], { action: "exit" }, [2.4, 3, 5]),
   marker("exit", "exit", [34.6, 0, 0]),
   marker("cop-1", "pickup", [-30.5, 0, -4.5], { item: "copium" }), marker("cop-2", "pickup", [-13, 0, -5], { item: "copium" }),
@@ -245,6 +267,11 @@ k.m(
   marker("cam-bow", "camera", [-30, 2, 4], { at: [-16, 1.2, -2] }),
   marker("cam-prom", "camera", [-13, 2, 4.5], { at: [4, 1.2, -1] }),
   marker("cam-hold", "camera", [18, 3.4, 5], { at: [26, 1.5, 6.5] }),
+  // the cover (screenshot shots: ?cam=cam-cover-prom etc.)
+  marker("cam-cover-bow", "camera", [-30.5, 2.5, 4.5], { at: [-21, 0.6, -1] }),
+  marker("cam-cover-prom", "camera", [-13, 2.6, 4.5], { at: [0, 0.6, -1] }),
+  marker("cam-cover-bar", "camera", [6.8, 2.6, 4.5], { at: [12, 0.6, -2] }),
+  marker("cam-cover-hold", "camera", [16.8, 3.2, 5.8], { at: [21, 0.6, -1] }),
 );
 
 // ---------------------------------------------------------------- materials
@@ -284,5 +311,13 @@ writeLevel("room8", "Room 8: the airship", {
   name: "The Airship", next: "room9", cutsceneAfter: "ch2d", music: "airship", look: "airship", footsteps: "hard", tutorial: false, chapter: 2, maxRise: 1.2,
   enterLine: "r8_enter", clearLine: "r8_clear",
   stage: { kind: "airship", door: "cargo-door", cue: "blow", hold: [16.4, -7, 34, 7], out: [25, 7.4] },
+  // the ways in (sim/arrive.ts): slots inside the galley's door and the aft stair's
+  arrive: {
+    ways: {
+      galley: [[-5, 0, -8.5], [-3.8, 0, -7.6], [-1.6, 0, -7.6], [-0.4, 0, -8.5]],
+      aft: [[35.2, 0, -1.8], [35.2, 0, 1.8], [36.6, 0, 0], [37.2, 0, -2], [37.2, 0, 2]],
+    },
+    groups: { waveA: ["self", "aft"], waveB: ["self", "galley"], waveC: ["self", "galley"], waveD: ["self", "aft"] },
+  },
 }, materials, k.solid, k.decor, k.clean().markers);
 void FACE_N;

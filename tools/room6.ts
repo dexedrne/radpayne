@@ -14,10 +14,15 @@
 //   the machine room     NE, hollow, its door on the south wall: waves A and C; a steel panel inside
 //                        (E) opens on a closet (a secret: a pin, copium)
 //   the south-east stair x 20..27, z 13..21.6, hollow, its door on the west wall: wave B
-//   cover                HVAC units (high), vents, ducts, a skylight (low), the antenna mast
+//   cover                HVAC units and AC units (high), vents, ducts, crate stacks, a skylight (low), the
+//                        antenna mast, the helipad's low blast walls and the water tower's concrete base
 //   the exit             the glass bridge through the east parapet at z 0
-// Hostiles 32 over six waves from five places (the helicopter's two drops among them); a checkpoint at
-// 14 down. The searchlight patrols until the gang is awake, then follows him (sim/ch2/roof.ts).
+// Hostiles 16 on Normal, 26 on Hard, 32 on Hardcore, over six waves from four ways in: the machine
+// room's door, the south-east stair, the west stairwell behind him and the helicopter's ropes (over the
+// helipad, else over the open roof in the south). They come in by the arrivals' rule (sim/arrive.ts:
+// never near him, never behind his back, one at a time while few stand), each wave with the other ways
+// to fall back on (room.arrive); a checkpoint at 7 down (Hard 11). The searchlight patrols until the
+// gang is awake, then follows him (sim/ch2/roof.ts).
 import { FACE_E, FACE_N, FACE_S, FACE_W, glow, marker, prim, tex, writeLevel } from "./levelKit.ts";
 import { RoomKit } from "./levels/kit2.ts";
 
@@ -140,6 +145,35 @@ k.cover("skylight", [-4, 0, 10], [0, 0.8, 14], "skylight", { data: { surface: "g
 k.cover("mast", [21.7, 0, 7.7], [22.3, 9, 8.3], "steelDark", { data: { surface: "metal" } });
 k.cover("gen", [-24, 0, -14], [-20, 1.9, -11.5], "machine", { data: { surface: "metal" } });
 k.decor.push(prim("mast-light", "sphere", [22, 9.2, 8], [0.18, 10, 8], "redBlink"));
+// more cover along the fights' routes (the owner found the roof bare): AC units (high), crate stacks
+// under straps (low), the helipad's blast walls and the water tower's concrete base (low)
+for (const [id, a, b] of [["ac-5", [-19.5, 0, -4.6], [-17, 2.3, -2.6]], ["ac-6", [8.6, 0, 2.4], [11, 2.3, 4.6]], ["ac-7", [19, 0, 2.2], [21.4, 2.3, 4.2]]] as Array<[string, [number, number, number], [number, number, number]]>) {
+  k.cover(id, a, b, "hvac", { data: { surface: "metal" } });
+  k.deco(`${id}-fan`, [a[0] + 0.4, b[1], a[2] + 0.4], [b[0] - 0.4, b[1] + 0.12, b[2] - 0.4], "vent");
+  // (a lit control panel on each long side and a pale band round the top: they read on the night roof)
+  const alongX = b[0] - a[0] >= b[2] - a[2], mx = (a[0] + b[0]) / 2, mz = (a[2] + b[2]) / 2;
+  for (const s of [-1, 1]) {
+    if (alongX) k.deco(`${id}-panel${s > 0 ? "s" : "n"}`, [mx + 0.3, 1.45, s > 0 ? b[2] : a[2] - 0.03], [mx + 0.75, 1.75, s > 0 ? b[2] + 0.03 : a[2]], "acPanel");
+    else k.deco(`${id}-panel${s > 0 ? "e" : "w"}`, [s > 0 ? b[0] : a[0] - 0.03, 1.45, mz + 0.3], [s > 0 ? b[0] + 0.03 : a[0], 1.75, mz + 0.75], "acPanel");
+  }
+  k.deco(`${id}-band`, [a[0] - 0.02, b[1] - 0.12, a[2] - 0.02], [b[0] + 0.02, b[1] - 0.04, b[2] + 0.02], "acBand");
+}
+for (const [id, a, b] of [["crates-a", [-12, 0, 1], [-10.4, 1.2, 2.4]], ["crates-b", [-1.6, 0, 2.6], [0.2, 1.25, 4.2]], ["crates-c", [15.6, 0, -2], [17.2, 1.2, -0.6]], ["crates-e", [-2, 0, 17], [-0.4, 1.2, 18.4]]] as Array<[string, [number, number, number], [number, number, number]]>) {
+  k.cover(id, a, b, "crate", { data: { surface: "wood" } });
+  // (the straps both ways round the stack, reflective yellow tape on them)
+  k.deco(`${id}-strap`, [a[0] - 0.02, a[1], (a[2] + b[2]) / 2 - 0.05], [b[0] + 0.02, b[1] + 0.02, (a[2] + b[2]) / 2 + 0.05], "tape");
+  k.deco(`${id}-strap2`, [(a[0] + b[0]) / 2 - 0.05, a[1], a[2] - 0.02], [(a[0] + b[0]) / 2 + 0.05, b[1] + 0.02, b[2] + 0.02], "tape");
+}
+// (the helipad's low blast wall stands off its west side, on the way up from the stairwell: cover from the
+// pad for him, too far from it to be the drop girls' own)
+k.cover("pad-wall-w", [-13.6, 0, -15.5], [-13, 1.1, -10], "parapet", {}, { faces: ["e", "w"] });
+// (the base runs leg to leg: no gap a body would stick in)
+k.cover("wt-base-n", [-17.5, 0, 8.55], [-10.5, 1.15, 9.05], "parapet", {}, { faces: ["n", "s"] });
+k.cover("wt-base-w", [-18.6, 0, 9.6], [-18.1, 1.15, 16.4], "parapet", {}, { faces: ["e", "w"] });
+for (const id of ["pad-wall-w"]) {
+  const b = k.boxes.find(x => x.id === id)!;
+  k.deco(`${id}-cap`, [b.a[0] - 0.05, b.b[1], b.a[2] - 0.05], [b.b[0] + 0.05, b.b[1] + 0.08, b.b[2] + 0.05], "padEdge");
+}
 
 // ---------------------------------------------------------------- secrets: the closet, the billboard, the pigeon coop
 k.volume("secret-closet", "secret", [11.2, 0, -18], [14, 2.4, -16.2], { name: "the closet" });
@@ -176,27 +210,27 @@ k.wp("sw-in", [-25.6, 0, 0], ["sw-out"]);
 k.wp("sw-out", [-22.4, 0, 0], ["sw-in"]);
 k.wp("bridge", [34, 0, 0]);
 
-// ---------------------------------------------------------------- the gang (32)
+// ---------------------------------------------------------------- the gang (Normal 16, Hard 26, Hardcore 32)
 const E = (id: string, x: number, y: number, z: number, yaw: number, d: Record<string, unknown> = {}) => marker(id, "enemy", [x, y, z], { kind: "goon", ...d }, yaw);
 k.m(
   // on the roof when he comes out (the light's patrol has not seen him yet)
-  E("g-1", -9, 0, -2, FACE_W), E("g-2", -7.5, 0, 8, FACE_W), E("g-3", 1, 0, -3.8, FACE_W), E("g-4", 6.5, 0, 6.6, FACE_W),
-  E("g-5", 12, 0, 0, FACE_W, { kind: "rusher" }), E("g-6", 0, 1, -12, FACE_S),
+  E("g-1", -9, 0, -2, FACE_W), E("g-2", -7.5, 0, 8, FACE_W), E("g-3", 1, 0, -3.8, FACE_W), E("g-4", 6.5, 0, 6.6, FACE_W, { minDiff: "hard" }),
+  E("g-5", 12, 0, 0, FACE_W, { kind: "rusher" }), E("g-6", 0, 1, -12, FACE_S, { minDiff: "hard" }),
   E("sn-1", -11, 4, 12.4, FACE_E, { perch: true, weapon: "sniper" }), E("sn-2", -14.2, 4, 9.6, FACE_N, { perch: true, weapon: "sniper", minDiff: "hard" }),
   E("sn-3", 26.7, 3, -2, FACE_W, { perch: true, weapon: "sniper" }),
-  // wave A (5 down): out of the machine room
-  E("a-1", 16.4, 0, -15.2, FACE_S, { group: "waveA" }), E("a-2", 21.6, 0, -15.2, FACE_S, { group: "waveA" }), E("a-3", 19, 0, -17.2, FACE_S, { group: "waveA", kind: "rusher" }),
-  E("a-4", 17, 0, -17.4, FACE_S, { group: "waveA" }), E("a-5", 23.4, 0, -17.4, FACE_S, { group: "waveA", kind: "rusher", minDiff: "hard" }),
-  // drop 1 (9 down): on ropes onto the pad
-  E("d1-1", -2.5, 1, -15, FACE_S, { group: "drop1", kind: "rusher" }), E("d1-2", 2.5, 1, -15, FACE_S, { group: "drop1" }), E("d1-3", -2.5, 1, -12, FACE_S, { group: "drop1" }), E("d1-4", 2.5, 1, -12, FACE_S, { group: "drop1", kind: "rusher", minDiff: "hard" }),
-  // wave B (14 down): up the south-east stair
-  E("b-1", 23, 0, 15, FACE_W, { group: "waveB" }), E("b-2", 25, 0, 16, FACE_W, { group: "waveB", kind: "rusher" }), E("b-3", 23, 0, 18, FACE_W, { group: "waveB" }),
-  E("b-4", 25.2, 0, 14.4, FACE_W, { group: "waveB", kind: "rusher", minDiff: "hard" }), E("b-5", 22.4, 0, 20, FACE_W, { group: "waveB", kind: "heavy", model: "rival652" }),
-  // drop 2 (18 down)
-  E("d2-1", -3, 1, -16, FACE_S, { group: "drop2" }), E("d2-2", 3, 1, -16, FACE_S, { group: "drop2", kind: "rusher", minDiff: "hard" }), E("d2-3", 0, 1, -11, FACE_S, { group: "drop2", kind: "rusher" }), E("d2-4", 0, 1, -18, FACE_S, { group: "drop2" }),
-  // wave C (22 down): the machine room again, and up the west stairwell behind him
-  E("c-1", 19, 0, -18.6, FACE_S, { group: "waveC", kind: "heavy", model: "rival723", weapon: "handcannon" }), E("c-2", 16.4, 0, -15, FACE_S, { group: "waveC" }), E("c-3", 22, 0, -15, FACE_S, { group: "waveC", minDiff: "hard" }),
-  E("c-4", -26.4, 0, -1.6, FACE_E, { group: "waveC2", kind: "rusher" }), E("c-5", -26.4, 0, 1.6, FACE_E, { group: "waveC2", kind: "rusher", minDiff: "hard" }),
+  // wave A (Normal 3 down, Hard 4): out of the machine room
+  E("a-1", 16.4, 0, -15.2, FACE_S, { group: "waveA" }), E("a-2", 21.6, 0, -15.2, FACE_S, { group: "waveA", minDiff: "hard" }), E("a-3", 19, 0, -17.2, FACE_S, { group: "waveA", kind: "rusher" }),
+  E("a-4", 17, 0, -17.4, FACE_S, { group: "waveA", minDiff: "hard" }), E("a-5", 23.4, 0, -17.4, FACE_S, { group: "waveA", kind: "rusher", minDiff: "hardcore" }),
+  // drop 1 (5 down, Hard 7): on ropes from the helicopter (the pad, else the south roof)
+  E("d1-1", -2.5, 1, -15, FACE_S, { group: "drop1", kind: "rusher", minDiff: "hard" }), E("d1-2", 2.5, 1, -15, FACE_S, { group: "drop1" }), E("d1-3", -2.5, 1, -12, FACE_S, { group: "drop1" }), E("d1-4", 2.5, 1, -12, FACE_S, { group: "drop1", kind: "rusher", minDiff: "hardcore" }),
+  // wave B (7 down, Hard 11): up the south-east stair
+  E("b-1", 23, 0, 15, FACE_W, { group: "waveB" }), E("b-2", 25, 0, 16, FACE_W, { group: "waveB", kind: "rusher", minDiff: "hard" }), E("b-3", 23, 0, 18, FACE_W, { group: "waveB", minDiff: "hard" }),
+  E("b-4", 25.2, 0, 14.4, FACE_W, { group: "waveB", kind: "rusher", minDiff: "hardcore" }), E("b-5", 22.4, 0, 20, FACE_W, { group: "waveB", kind: "heavy", model: "rival652" }),
+  // drop 2 (9 down, Hard 15)
+  E("d2-1", -3, 1, -16, FACE_S, { group: "drop2" }), E("d2-2", 3, 1, -16, FACE_S, { group: "drop2", kind: "rusher", minDiff: "hardcore" }), E("d2-3", 0, 1, -11, FACE_S, { group: "drop2", kind: "rusher" }), E("d2-4", 0, 1, -18, FACE_S, { group: "drop2", minDiff: "hard" }),
+  // wave C (11 down, Hard 18): the machine room again, and up the west stairwell behind him (13, Hard 20)
+  E("c-1", 19, 0, -18.6, FACE_S, { group: "waveC", kind: "heavy", model: "rival723", weapon: "handcannon" }), E("c-2", 16.4, 0, -15, FACE_S, { group: "waveC", minDiff: "hard" }), E("c-3", 22, 0, -15, FACE_S, { group: "waveC", minDiff: "hardcore" }),
+  E("c-4", -26.4, 0, -1.6, FACE_E, { group: "waveC2", kind: "rusher" }), E("c-5", -26.4, 0, 1.6, FACE_E, { group: "waveC2", kind: "rusher", minDiff: "hardcore" }),
 );
 
 // ---------------------------------------------------------------- triggers, checkpoints, pickups, eggs
@@ -206,13 +240,13 @@ k.m(
   marker("cp-start", "checkpoint", [-22.4, 0, 0], {}, FACE_E),
   marker("cp-mid", "checkpoint", [-12, 0, 1], {}, FACE_E),
   T("t-alert", [-19, 1, 0], { action: "alert" }, [4, 3, 30]),
-  T("t-waveA", [0, 1, 0], { action: "spawn", group: "waveA", afterKills: { normal: 4, hard: 5 } }),
-  T("t-drop1", [0, 1, 0], { action: "spawn", group: "drop1", afterKills: { normal: 7, hard: 9 } }),
-  T("t-cp", [0, 1, 0], { action: "checkpoint", at: "cp-mid", afterKills: { normal: 10, hard: 14 } }),
-  T("t-waveB", [0, 1, 0], { action: "spawn", group: "waveB", afterKills: { normal: 10, hard: 14 } }),
-  T("t-drop2", [0, 1, 0], { action: "spawn", group: "drop2", afterKills: { normal: 13, hard: 18 } }),
-  T("t-waveC", [0, 1, 0], { action: "spawn", group: "waveC", afterKills: { normal: 16, hard: 22 } }),
-  T("t-waveC2", [0, 1, 0], { action: "spawn", group: "waveC2", afterKills: { normal: 18, hard: 24 } }),
+  T("t-waveA", [0, 1, 0], { action: "spawn", group: "waveA", afterKills: { normal: 3, hard: 4 } }),
+  T("t-drop1", [0, 1, 0], { action: "spawn", group: "drop1", afterKills: { normal: 5, hard: 7 } }),
+  T("t-cp", [0, 1, 0], { action: "checkpoint", at: "cp-mid", afterKills: { normal: 7, hard: 11 } }),
+  T("t-waveB", [0, 1, 0], { action: "spawn", group: "waveB", afterKills: { normal: 7, hard: 11 } }),
+  T("t-drop2", [0, 1, 0], { action: "spawn", group: "drop2", afterKills: { normal: 9, hard: 15 } }),
+  T("t-waveC", [0, 1, 0], { action: "spawn", group: "waveC", afterKills: { normal: 11, hard: 18 } }),
+  T("t-waveC2", [0, 1, 0], { action: "spawn", group: "waveC2", afterKills: { normal: 13, hard: 20 } }),
   T("t-exit", [33, 1, 0], { action: "exit" }, [3, 3, 3.2]),
   marker("exit", "exit", [31, 0, 0]),
   // pickups: copium, the rifle on hvac-2's lee, the shotgun by the south-east stair, the sniper up the tower
@@ -244,6 +278,11 @@ k.m(
   marker("cam-roof", "camera", [-22, 3, 4], { at: [10, 1, -6] }),
   marker("cam-pad", "camera", [0, 3, 2], { at: [0, 1.5, -14] }),
   marker("cam-tower", "camera", [-2, 2.5, 4], { at: [-14, 5, 13] }),
+  // the cover (screenshot shots: ?cam=cam-cover-w etc.)
+  marker("cam-cover-w", "camera", [-25, 4.5, 7], { at: [-13, 0.6, -3] }),
+  marker("cam-cover-e", "camera", [3, 4.5, -7], { at: [17, 0.6, 2] }),
+  marker("cam-cover-tank", "camera", [-4, 3.5, 2], { at: [-15, 0.8, 11] }),
+  marker("cam-cover-pad", "camera", [-18, 4, -3], { at: [-4, 1, -13] }),
 );
 
 // ---------------------------------------------------------------- materials
@@ -269,6 +308,10 @@ const materials: Record<string, Record<string, unknown>> = {
   tankWood: { color: "#5a4632", roughness: 0.9 },
   skylight: { color: "#9fc0d8", roughness: 0.1, metalness: 0.3, transparent: true, opacity: 0.55 },
   plywood: { color: "#8a6a44", roughness: 0.85 },
+  crate: tex(`${B}boxes_cardboard.webp`, 0.8, { roughness: 0.9, color: "#b09878" }),
+  tape: glow("#e8c048", 0.32),
+  acPanel: glow("#8affc0", 0.7, "", `${B}console_panel.webp`),
+  acBand: glow("#b8c8d8", 0.18),
   stairEdge: { color: "#3a3a3c", roughness: 0.8 },
   billboard: glow("#ffffff", 0.45, "", `${P}window_skyline.webp`),
   towerFar: glow("#ffffff", 0.22, "", `${S}tower.webp`),
@@ -287,9 +330,23 @@ writeLevel("room6", "Room 6: the roof", {
   name: "The Roof", next: "room7", cutsceneAfter: "ch2b", music: "roof", look: "roof", footsteps: "wet", ambience: "storm", tutorial: false, chapter: 2, maxRise: 1.2,
   enterLine: "r6_enter", clearLine: "r6_clear",
   stage: {
-    kind: "roof", heli: [2, 15, -34], pad: [0, 1, -14],
+    kind: "roof", heli: [2, 15, -34],
     path: [[-12, 4], [4, 10], [16, -2], [6, -8], [-6, -6]],
-    drops: [{ group: "drop1", ropes: [[-2.5, -15.5], [2.5, -15.5], [-2.5, -12.5], [2.5, -12.5]] }, { group: "drop2", ropes: [[-3, -16], [3, -16], [0, -11.5], [0, -18]] }],
+    // the drop zones: the helipad, else the open roof in the south
+    ropes: { pad: { at: [0, 1, -14], slots: [[-2.5, -15.5], [2.5, -15.5], [-2.5, -12.5], [2.5, -12.5]] }, south: { at: [4.5, 0, 18.2], slots: [[3, 17], [6, 17], [3, 19.5], [6, 19.5]] } },
+  },
+  // the ways in (sim/arrive.ts): slots inside the machine room's door, the south-east stair's, the west
+  // stairwell's; each wave's own first ("self": her marker; the drops: the ropes), then the others
+  arrive: {
+    ways: {
+      machine: [[17, 0, -15.2], [21.4, 0, -15.2], [19.2, 0, -16.6], [17.4, 0, -17.2]],
+      se: [[23, 0, 15], [25, 0, 16], [23, 0, 18], [22.4, 0, 20]],
+      west: [[-26.4, 0, -1.6], [-26.4, 0, 1.6], [-27.6, 0, 0]],
+    },
+    groups: {
+      waveA: ["self", "se", "west"], waveB: ["self", "machine", "west"], waveC: ["self", "se", "west"], waveC2: ["self", "machine", "se"],
+      drop1: ["pad", "south", "machine", "se"], drop2: ["pad", "south", "se", "machine"],
+    },
   },
 }, materials, k.solid, k.decor, k.clean().markers);
 

@@ -246,7 +246,7 @@ export function Chapter2View({ s }: { s: Session }) {
       for (const w of vt.waves) {
         const d = P[`door-${w.door}`], l = P[`lamp-${w.door}`];
         if (d) d.visible = !g.world.off.has(w.door);
-        if (l) l.visible = vt.waves.some(x => x.door === w.door && x.lit && x.lamp > 0) && Math.sin(t * 10) > -0.3;
+        if (l) l.visible = vt.lampOn(w.door) && Math.sin(t * 10) > -0.3;
       }
       const b = vt.beam, beam = P.beam as Mesh;
       beam.visible = b.state !== 0;

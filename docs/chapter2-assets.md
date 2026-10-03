@@ -150,6 +150,8 @@ Milady too: sweet, precise and cold, never loud.
 - The Countess is Pockit #1847 at 1.3x with the sniper rifle and a procedural gold crown; a model of her own (white fur
   stole, gold crown, gold rifle) would replace it.
 - The rooms reuse chapter 1's textures (the street, the back rooms, the elevator, the penthouse), tinted and lit
-  for the storm, the garden, the ship, the trading floor and the sunrise. Wanted: roof gravel and HVAC panels, a
-  helipad marking, greenhouse glass and planted beds, the airship's cabin panelling and a cloud-sea sky, the
-  scoreboard's ticker, the vault's gold and the sunrise dome.
+  for the storm, the garden, the ship, the trading floor and the sunrise, and two baked ones of their own
+  (`tools/textures.ts`): the vault's stacked gold bars (`gold_bars.webp`) and the counting floor's server racks
+  (`server_rack.webp`). Wanted: roof gravel and HVAC panels, a helipad marking, greenhouse glass and planted beds,
+  the airship's cabin panelling and a cloud-sea sky, the scoreboard's ticker, painted gold bars and the sunrise
+  dome; models for the sky garden's park benches (now boxes over their collider) and the roof's AC units.

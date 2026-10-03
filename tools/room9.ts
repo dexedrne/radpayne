@@ -6,14 +6,18 @@
 // the west, facing east):
 //   the trading floor   x -24..16: five rows of trading desks (low) with aisles across them, pillars
 //   the offices         south-west: two glass offices; in the first, a filing wall slides (E) on the safe
-//                       room (a secret: a pin)
+//                       room (a secret: a pin); the second has a door in its back wall on the back stair
 //   the partition       x 16: a low wall with armoured glass over it, three openings; the shutters drop
 //                       into them at 8 down (sim/ch2/counting.ts) and the way east is the catwalk
 //   the catwalk         along the north wall at y 3.6, over the partition, a stair at each end
 //   the board room      x 16..26: the scoreboard over the east wall (its maintenance panel breaks: a
 //                       secret), the boardroom table, the money counters; the vault corridor's door (out)
-//   the blackout        at 12 down the lights go for 14 s (the screens and every girl's rim stay lit)
-// Hostiles 36; a checkpoint at 14 down.
+//   the blackout        at 7 down (Hard 10) the lights go for 14 s (the screens and every girl's rim stay lit)
+// Cover: the desk rows, pillars, server cabinets (by the dock where he comes in, in the board room, either
+// side of the vault corridor's door), the boardroom table, the money counters.
+// Hostiles 17 on Normal, 28 on Hard, 36 on Hardcore; a checkpoint at 9 down (Hard 12). The waves come
+// in by the arrivals' rule (sim/arrive.ts) through the vault corridor, the back stair (through the
+// offices) and the gangway behind him, each with the others to fall back on (room.arrive).
 import { FACE_E, FACE_N, FACE_S, FACE_W, glow, marker, tex, writeLevel, type V3 } from "./levelKit.ts";
 import { RoomKit } from "./levels/kit2.ts";
 
@@ -24,7 +28,16 @@ const H = 7, CY = 3.6;
 k.box("floor", [-34, -0.5, -18], [30, 0, 18], "carpet");
 k.box("ceil", [-26, H, -18.2], [26.2, H + 0.3, 18.2], "ceilTile");
 k.box("wall-n", [-26, 0, -18.2], [26.2, H, -18], "wallDark");
-k.box("wall-s", [-26, 0, 18], [26.2, H, 18.2], "wallDark");
+k.box("wall-s1", [-26, 0, 18], [-18.8, H, 18.2], "wallDark");
+k.box("wall-s2", [-17.2, 0, 18], [26.2, H, 18.2], "wallDark");
+k.box("wall-s-door", [-18.8, 2.4, 18], [-17.2, H, 18.2], "wallDark");
+// the back stair behind the second office (a way in)
+k.box("bs-floor", [-20, -0.5, 18.2], [-16, 0, 22.2], "carpet");
+k.box("bs-w", [-20, 0, 18.2], [-19.8, 3, 22], "steel");
+k.box("bs-e", [-16.2, 0, 18.2], [-16, 3, 22], "steel");
+k.box("bs-back", [-20, 0, 22], [-16, 3, 22.2], "steel");
+k.box("bs-roof", [-20, 3, 18.2], [-16, 3.2, 22.2], "steel");
+k.deco("bs-stairs", [-19.6, 0, 21], [-16.4, 1.2, 21.9], "grate");
 k.box("wall-w1", [-26.2, 0, -18.2], [-26, H, -1.6], "wallDark");
 k.box("wall-w2", [-26.2, 0, 1.6], [-26, H, 18.2], "wallDark");
 k.box("wall-w-top", [-26.2, 2.8, -1.6], [-26, H, 1.6], "wallDark");
@@ -54,6 +67,16 @@ for (const x of [-18, -12, -6, 0, 6]) {
   }
 }
 for (const [x, z] of [[-15, -8.1], [-15, 8.1], [-3, -8.1], [-3, 8.1], [9, -8.1], [9, 8.1], [-9, 0], [3, 0]]) k.cover(`pillar-${x}-${z}`, [x - 0.45, 0, z - 0.45], [x + 0.45, H, z + 0.45], "pillar");
+// server cabinets (high): by the dock where he comes in
+// (each long face a rack front, its status LEDs lit: they read in the dark and in the blackout)
+const racks = (id: string, x0: number, z0: number) => {
+  k.deco(`${id}-rack-w`, [x0 - 0.02, 0.04, z0 + 0.06], [x0, 1.96, z0 + 1.94], "rack");
+  k.deco(`${id}-rack-e`, [x0 + 0.8, 0.04, z0 + 0.06], [x0 + 0.82, 1.96, z0 + 1.94], "rack");
+};
+for (const [id, z0] of [["srv-dock-n", -6], ["srv-dock-s", 4]] as const) {
+  k.cover(id, [-23.5, 0, z0], [-22.7, 2.0, z0 + 2], "counter", { data: { surface: "metal" } });
+  racks(id, -23.5, z0);
+}
 
 // ---------------------------------------------------------------- the offices (south-west, glass)
 k.box("of-n1", [-24, 0, 9.8], [-21.4, 3, 10], "glassWall", { data: { surface: "glass" } });
@@ -103,9 +126,14 @@ k.box("cw-st-e-rail2", [24.2, 0, -15.4], [24.35, CY + 1, -6], "rail", { data: { 
 k.cover("cw-crates", [-23.6, CY, -17.8], [-22.2, CY + 1.0, -16.6], "crate", { data: { surface: "wood" } }, { faces: ["e"] });
 
 // ---------------------------------------------------------------- the board room
-k.cover("table", [19, 0, -3], [22.6, 0.8, 3], "tableDark", { data: { surface: "wood" } });
+k.cover("table", [19, 0, -3], [22.6, 0.95, 3], "tableDark", { data: { surface: "wood" } });
+// server cabinets in the board room, and either side of the vault corridor's door
+for (const [id, x0, z0] of [["srv-br-n", 17.2, -6.4], ["srv-br-s", 17.2, 4.4], ["srv-vc-n", 24.6, -5.2], ["srv-vc-s", 24.6, 3.2]] as const) {
+  k.cover(id, [x0, 0, z0], [x0 + 0.8, 2.0, z0 + 2], "counter", { data: { surface: "metal" } });
+  racks(id, x0, z0);
+}
 for (const [id, x, z] of [["m1", 19.5, -10], ["m2", 22.5, -10], ["m3", 19.5, 10], ["m4", 22.5, 10]] as const) k.cover(`counter-${id}`, [x - 0.9, 0, z - 0.6], [x + 0.9, 1.1, z + 0.6], "counter", { data: { surface: "metal" } });
-k.cover("bin-n", [24.4, 0, -14.4], [25.6, 1.6, -12.8], "steel", { data: { surface: "metal" } });
+k.cover("bin-n", [24.4, 0, -14.4], [25.6, 1.6, -12.8], "steel", { data: { surface: "metal" } }, { faces: ["n", "s", "w"] });
 k.box("board-panel", [25.6, 0, 6], [25.9, 1.4, 8], "steel", { data: { breakable: 30, surface: "metal", secret: "secret-panel", drop: "grenade", amount: 3 } });
 
 // ---------------------------------------------------------------- secrets, waypoints
@@ -113,11 +141,20 @@ k.volume("secret-safe", "secret", [-29, 0, 14], [-26.2, 2.4, 17.8], { name: "the
 k.volume("secret-panel", "secret", [25.6, 0, 6], [25.9, 1.4, 8], { name: "behind the ticker", via: "break" });
 k.volume("secret-hatch", "secret", [-24, CY, -18], [-21.6, CY + 2, -15.4], { name: "the roof hatch" });
 k.grid("floor", -24, 24.5, -16, 16, 3, 0, (x, z) => Math.abs(x - PX) < 0.8 || (x < -15.5 && z > 9.5));
-k.wp("of-1", [-22.4, 0, 11.6], ["of-1-out", "of-1b"]);
-k.wp("of-1-out", [-20.6, 0, 8.6], ["of-1", "of-2"]);
-k.wp("of-1b", [-24, 0, 16], ["of-1", "safe-in"]);
-k.wp("of-2", [-18, 0, 11.6], ["of-1-out", "of-2b"]);
-k.wp("of-2b", [-18, 0, 16], ["of-2"]);
+// (the offices' doorway, x -21.4..-19.8 in their glass front: through its middle, clear of both panes;
+// in each office round the east / west end of its desk to the back: the back stair's way in)
+k.wp("of-1", [-22.4, 0, 11.6], ["of-door", "of-1e"]);
+k.wp("of-1-out", [-20.6, 0, 8.6], ["of-door"]);
+k.wp("of-door", [-20.6, 0, 9.9], ["of-1-out", "of-1", "of-2"]);
+k.wp("of-1e", [-21.5, 0, 12.2], ["of-1", "of-1s"]);
+k.wp("of-1s", [-21.5, 0, 14.3], ["of-1e", "of-1b"]);
+k.wp("of-1b", [-24, 0, 16], ["of-1s", "safe-in"]);
+k.wp("of-2", [-18, 0, 11.6], ["of-door", "of-2w"]);
+k.wp("of-2w", [-19.35, 0, 12.2], ["of-2", "of-2s"]);
+k.wp("of-2s", [-19.35, 0, 14.3], ["of-2w", "of-2b"]);
+k.wp("of-2b", [-18, 0, 16], ["of-2s", "bs-in"]);
+k.wp("bs-in", [-18, 0, 19.6], ["of-2b", "bs-back"]);
+k.wp("bs-back", [-18, 0, 21], ["bs-in"]);
 k.wp("safe-in", [-27.6, 0, 15.9], ["of-1b"], { door: "filing" });
 gaps.forEach(([z0, z1], i) => {
   k.wp(`gap-${i}-w`, [PX - 1.4, 0, (z0 + z1) / 2], [`gap-${i}-e`]);
@@ -138,28 +175,28 @@ k.wp("cw-3", [23.4, CY, -16.8], ["cw-2", "cw-e-mid"]);
 k.wp("cw-e-mid", [23.4, 1.8, -9.8], ["cw-3", "cw-e-bot"]);
 k.wp("cw-e-bot", [23.4, 0, -5], ["cw-e-mid"]);
 
-// ---------------------------------------------------------------- the gang (36)
+// ---------------------------------------------------------------- the gang (Normal 17, Hard 28, Hardcore 36)
 const E = (id: string, x: number, y: number, z: number, yaw: number, d: Record<string, unknown> = {}) => marker(id, "enemy", [x, y, z], { kind: "goon", ...d }, yaw);
 k.m(
   // at the desks
-  E("t-1", -15, 0, -4, FACE_W), E("t-2", -15, 0, 4, FACE_W), E("t-3", -9, 0, -11, FACE_W), E("t-4", -9, 0, 11.5, FACE_W, { minDiff: "hard" }),
-  E("t-5", -3, 0, -3, FACE_W), E("t-6", -3, 0, 4.5, FACE_W, { kind: "rusher" }), E("t-7", 3, 0, -12, FACE_W), E("t-8", 3, 0, 12, FACE_W, { minDiff: "hard" }),
-  E("t-9", -2, CY, -16.6, FACE_S, { perch: true, weapon: "sniper" }), E("t-10", 10, CY, -16.6, FACE_S),
+  E("t-1", -15, 0, -4, FACE_W), E("t-2", -15, 0, 4, FACE_W), E("t-3", -9, 0, -11, FACE_W, { minDiff: "hard" }), E("t-4", -9, 0, 11.5, FACE_W, { minDiff: "hard" }),
+  E("t-5", -3, 0, -3, FACE_W), E("t-6", -3, 0, 4.5, FACE_W, { kind: "rusher" }), E("t-7", 3, 0, -12, FACE_W, { minDiff: "hardcore" }), E("t-8", 3, 0, 12, FACE_W, { minDiff: "hardcore" }),
+  E("t-9", -2, CY, -16.6, FACE_S, { perch: true, weapon: "sniper" }), E("t-10", 10, CY, -16.6, FACE_S, { minDiff: "hard" }),
   // the board room from the start (behind the partition)
-  E("r-1", 20.4, 0, -6, FACE_W), E("r-2", 20.4, 0, 6, FACE_W), E("r-3", 24, 0, 0, FACE_W, { kind: "heavy", model: "rival652" }),
-  // wave A (4 down): out of the offices
-  E("a-1", -22.4, 0, 15.4, FACE_N, { group: "waveA" }), E("a-2", -18, 0, 15.6, FACE_N, { group: "waveA", kind: "rusher" }), E("a-3", -23.6, 0, 11.4, FACE_N, { group: "waveA" }), E("a-4", -17.4, 0, 11.4, FACE_N, { group: "waveA" }),
-  // wave B (8 down): the vault corridor into the board room, and up the east stair
-  E("b-1", 28.4, 0, -0.6, FACE_W, { group: "waveB" }), E("b-2", 29.4, 0, 0.6, FACE_W, { group: "waveB", kind: "rusher" }), E("b-3", 23.4, CY, -16.8, FACE_W, { group: "waveB" }),
-  E("b-4", 21.4, CY, -16.8, FACE_W, { group: "waveB", weapon: "sniper", perch: true, minDiff: "hard" }), E("b-5", 27.6, 0, 0.6, FACE_W, { group: "waveB", minDiff: "hard" }),
-  // wave C (14 down): off the gangway behind him
-  E("c-1", -31, 0, -1.4, FACE_E, { group: "waveC", kind: "rusher" }), E("c-2", -31, 0, 1.4, FACE_E, { group: "waveC", kind: "rusher" }), E("c-3", -33, 0, 0, FACE_E, { group: "waveC", kind: "rusher", minDiff: "hard" }), E("c-4", -29.4, 0, 0, FACE_E, { group: "waveC" }),
-  // wave D (19 down): the vault corridor
-  E("d-1", 28.2, 0, 0, FACE_W, { group: "waveD", kind: "heavy", model: "rival723", weapon: "handcannon" }), E("d-2", 29.4, 0, -0.8, FACE_W, { group: "waveD" }), E("d-3", 29.4, 0, 0.8, FACE_W, { group: "waveD" }),
-  E("d-4", 27, 0, -0.8, FACE_W, { group: "waveD", kind: "rusher", minDiff: "hard" }), E("d-5", 27, 0, 0.8, FACE_W, { group: "waveD", kind: "rusher", minDiff: "hard" }),
-  // wave E (25 down): the catwalk (both ends) and the offices
-  E("e-1", -20.6, CY, -16.8, FACE_E, { group: "waveE" }), E("e-2", 23.4, CY, -17.2, FACE_W, { group: "waveE", kind: "rusher" }), E("e-3", -22.4, 0, 15.4, FACE_N, { group: "waveE", kind: "rusher", minDiff: "hard" }),
-  E("e-4", -18, 0, 15.6, FACE_N, { group: "waveE", minDiff: "hard" }), E("e-5", 28.4, 0, 0, FACE_W, { group: "waveE", kind: "heavy", model: "rival652" }),
+  E("r-1", 20.4, 0, -6, FACE_W, { minDiff: "hard" }), E("r-2", 20.4, 0, 6, FACE_W, { minDiff: "hardcore" }), E("r-3", 24, 0, 0, FACE_W, { kind: "heavy", model: "rival652" }),
+  // wave A (3 down): up the back stair, through the offices
+  E("a-1", -18.8, 0, 19.6, FACE_N, { group: "waveA" }), E("a-2", -17.2, 0, 19.6, FACE_N, { group: "waveA", kind: "rusher" }), E("a-3", -18.8, 0, 21.2, FACE_N, { group: "waveA", minDiff: "hard" }), E("a-4", -17.2, 0, 21.2, FACE_N, { group: "waveA", minDiff: "hard" }),
+  // wave B (5 down, Hard 7): the vault corridor into the board room
+  E("b-1", 28.4, 0, -0.6, FACE_W, { group: "waveB" }), E("b-2", 29.4, 0, 0.6, FACE_W, { group: "waveB", kind: "rusher" }), E("b-3", 27.6, 0, -0.6, FACE_W, { group: "waveB", minDiff: "hard" }),
+  E("b-4", 29.4, 0, -0.6, FACE_W, { group: "waveB", weapon: "sniper", minDiff: "hard" }), E("b-5", 27.6, 0, 0.6, FACE_W, { group: "waveB", minDiff: "hardcore" }),
+  // wave C (9 down, Hard 12): off the gangway behind him
+  E("c-1", -31, 0, -1.4, FACE_E, { group: "waveC", kind: "rusher" }), E("c-2", -31, 0, 1.4, FACE_E, { group: "waveC", kind: "rusher" }), E("c-3", -33, 0, 0, FACE_E, { group: "waveC", kind: "rusher", minDiff: "hardcore" }), E("c-4", -29.4, 0, 0, FACE_E, { group: "waveC" }),
+  // wave D (11 down, Hard 16): the vault corridor
+  E("d-1", 28.2, 0, 0, FACE_W, { group: "waveD", kind: "heavy", model: "rival723", weapon: "handcannon" }), E("d-2", 29.4, 0, -0.8, FACE_W, { group: "waveD" }), E("d-3", 29.4, 0, 0.8, FACE_W, { group: "waveD", minDiff: "hard" }),
+  E("d-4", 27, 0, -0.8, FACE_W, { group: "waveD", kind: "rusher", minDiff: "hard" }), E("d-5", 27, 0, 0.8, FACE_W, { group: "waveD", kind: "rusher", minDiff: "hardcore" }),
+  // wave E (14 down, Hard 21): the back stair and the vault corridor
+  E("e-1", -18.8, 0, 20.4, FACE_N, { group: "waveE", minDiff: "hardcore" }), E("e-2", 27, 0, 0, FACE_W, { group: "waveE", kind: "rusher", minDiff: "hard" }), E("e-3", -17.2, 0, 20.4, FACE_N, { group: "waveE", kind: "rusher", minDiff: "hardcore" }),
+  E("e-4", -18, 0, 21.2, FACE_N, { group: "waveE" }), E("e-5", 28.4, 0, 0, FACE_W, { group: "waveE", kind: "heavy", model: "rival652" }),
 );
 
 // ---------------------------------------------------------------- triggers, pickups, eggs, lights
@@ -168,14 +205,14 @@ k.m(
   marker("spawn", "spawn", [-27.4, 0, 0], {}, FACE_E),
   marker("cp-mid", "checkpoint", [-20.4, 0, -3], {}, FACE_E),
   T("t-alert", [-24, 1, 0], { action: "alert" }, [3, 3, 34]),
-  T("t-shutters", [0, 1, 0], { action: "setpiece", cue: "shutters", afterKills: 8 }),
-  T("t-dark", [0, 1, 0], { action: "setpiece", cue: "dark", afterKills: { normal: 11, hard: 12 } }),
-  T("t-waveA", [0, 1, 0], { action: "spawn", group: "waveA", afterKills: 4 }),
-  T("t-waveB", [0, 1, 0], { action: "spawn", group: "waveB", afterKills: 8 }),
-  T("t-cp", [0, 1, 0], { action: "checkpoint", at: "cp-mid", afterKills: { normal: 13, hard: 14 } }),
-  T("t-waveC", [0, 1, 0], { action: "spawn", group: "waveC", afterKills: { normal: 13, hard: 14 } }),
-  T("t-waveD", [0, 1, 0], { action: "spawn", group: "waveD", afterKills: { normal: 16, hard: 19 } }),
-  T("t-waveE", [0, 1, 0], { action: "spawn", group: "waveE", afterKills: { normal: 20, hard: 25 } }),
+  T("t-shutters", [0, 1, 0], { action: "setpiece", cue: "shutters", afterKills: { normal: 5, hard: 7 } }),
+  T("t-dark", [0, 1, 0], { action: "setpiece", cue: "dark", afterKills: { normal: 7, hard: 10 } }),
+  T("t-waveA", [0, 1, 0], { action: "spawn", group: "waveA", afterKills: { normal: 3, hard: 3 } }),
+  T("t-waveB", [0, 1, 0], { action: "spawn", group: "waveB", afterKills: { normal: 5, hard: 7 } }),
+  T("t-cp", [0, 1, 0], { action: "checkpoint", at: "cp-mid", afterKills: { normal: 9, hard: 12 } }),
+  T("t-waveC", [0, 1, 0], { action: "spawn", group: "waveC", afterKills: { normal: 9, hard: 12 } }),
+  T("t-waveD", [0, 1, 0], { action: "spawn", group: "waveD", afterKills: { normal: 11, hard: 16 } }),
+  T("t-waveE", [0, 1, 0], { action: "spawn", group: "waveE", afterKills: { normal: 14, hard: 21 } }),
   T("t-exit", [28.6, 1, 0], { action: "exit" }, [2.6, 3, 2.8]),
   marker("exit", "exit", [26.6, 0, 0]),
   marker("cop-1", "pickup", [-24.5, 0, -6], { item: "copium" }), marker("cop-2", "pickup", [-9, 0, 8.1], { item: "copium" }),
@@ -193,11 +230,16 @@ k.m(
   ...([
     ["f-1", -16, 6, -8, "#dfe8ff", 8, 16], ["f-2", -16, 6, 8, "#dfe8ff", 8, 16], ["f-3", -2, 6, -8, "#dfe8ff", 8, 16], ["f-4", -2, 6, 8, "#dfe8ff", 8, 16],
     ["f-5", 10, 6, 0, "#dfe8ff", 8, 16], ["board", 22, 4.5, 0, "#7fd4ff", 10, 14], ["of", -20, 2.7, 14, "#ffe0b0", 4, 8], ["cw", 0, CY + 2, -16.6, "#dfe8ff", 5, 14],
-    ["dock", -30, 2.6, 0, "#8fc0ff", 4, 7], ["vc", 28.4, 2.6, 0, "#ffc860", 5, 7], ["safe", -27.6, 2.6, 15.9, "#ffc07a", 2, 4],
+    ["dock", -30, 2.6, 0, "#8fc0ff", 4, 7], ["vc", 28.4, 2.6, 0, "#ffc860", 5, 7], ["safe", -27.6, 2.6, 15.9, "#ffc07a", 2, 4], ["bs", -18, 2.6, 20, "#ffe0b0", 3, 6],
   ] as Array<[string, number, number, number, string, number, number]>).map(([id, x, y, z, color, intensity, distance]) => marker(`light-${id}`, "light", [x, y, z], { color, intensity, distance, dim: true })),
   marker("cam-floor", "camera", [-24, 3, 8], { at: [4, 1, -2] }),
   marker("cam-board", "camera", [14, 3, 12], { at: [25, 4.5, 0] }),
   marker("cam-catwalk", "camera", [-10, 5, -12], { at: [10, CY, -16.6] }),
+  // the cover (screenshot shots: ?cam=cam-cover-dock etc.)
+  marker("cam-cover-dock", "camera", [-25.4, 2.6, -9], { at: [-20, 0.8, 2] }),
+  marker("cam-cover-desks", "camera", [7.5, 3.4, -16], { at: [12, 0.6, -2] }),
+  marker("cam-cover-board", "camera", [17, 3.2, 14], { at: [22, 0.8, -1] }),
+  marker("cam-cover-back", "camera", [-12, 2.6, 7], { at: [-18, 1.2, 18] }),
 );
 
 // ---------------------------------------------------------------- materials
@@ -222,6 +264,7 @@ const materials: Record<string, Record<string, unknown>> = {
   filing: tex(`${B}gun_locker.webp`, [3, 2.4], { roughness: 0.5, metalness: 0.4, color: "#9aa0a8" }),
   tableDark: { color: "#1c1714", roughness: 0.3 },
   counter: tex(`${B}console_panel.webp`, 1.2, { roughness: 0.5, metalness: 0.3 }),
+  rack: { ...glow("#ffffff", 1.8, "", `${S}server_rack.webp`), repeat: true, repeatCount: [1 / 0.6, 1 / 1.2] },
   vaultGlow: glow("#ffc860", 0.9),
 };
 
@@ -229,5 +272,17 @@ writeLevel("room9", "Room 9: the counting floor", {
   name: "The Counting Floor", next: "room10", cutsceneAfter: "ch2e", music: "counting", look: "counting", footsteps: "hard", tutorial: false, chapter: 2, maxRise: 1.2,
   enterLine: "r9_enter", clearLine: "r9_clear",
   stage: { kind: "counting", shutters: ["shutter-1", "shutter-2", "shutter-3"], cue: "shutters", dark: "dark" },
+  // the ways in (sim/arrive.ts): slots inside the vault corridor, the back stair, the gangway dock
+  arrive: {
+    ways: {
+      vault: [[27, 0, -0.7], [27, 0, 0.7], [28.4, 0, 0], [29.4, 0, -0.7], [29.4, 0, 0.7]],
+      backstair: [[-18.8, 0, 19.6], [-17.2, 0, 19.6], [-18, 0, 21]],
+      gangway: [[-31, 0, -1.4], [-31, 0, 1.4], [-33, 0, 0], [-29.4, 0, 0]],
+    },
+    groups: {
+      waveA: ["self", "vault", "gangway"], waveB: ["self", "backstair", "gangway"], waveC: ["self", "backstair", "vault"],
+      waveD: ["self", "backstair", "gangway"], waveE: ["self", "gangway", "backstair", "vault"],
+    },
+  },
 }, materials, k.solid, k.decor, k.clean().markers);
 void FACE_S;

@@ -93,6 +93,25 @@
    "repeatCount": [0.6666666666666666, 0.6666666666666666],
    "roughness": 0.6
   },
+  "benchSlats": {
+   "color": "#c89a68",
+   "texture": "/textures/backrooms/wood_desk.webp",
+   "repeat": true,
+   "repeatCount": [0.6666666666666666, 2.5],
+   "roughness": 0.55
+  },
+  "benchBase": {
+   "color": "#a8a294",
+   "texture": "/textures/elevator/concrete_bare.webp",
+   "repeat": true,
+   "repeatCount": [0.8333333333333334, 0.8333333333333334],
+   "roughness": 0.85
+  },
+  "benchIron": {
+   "color": "#26282c",
+   "roughness": 0.4,
+   "metalness": 0.7
+  },
   "whiteWood": {
    "color": "#e9e4da",
    "roughness": 0.7
@@ -184,6 +203,70 @@
         ],
         "cue": "crack",
         "area": [-8, -1.6, 8, 1.6]
+       },
+       "arrive": {
+        "ways": {
+         "service": [
+          [26, 4, 5],
+          [26, 4, 9.6],
+          [28.4, 4, 7],
+          [27.6, 4, 8.6]
+         ],
+         "landing": [
+          [-1.2, 7.2, -19.4],
+          [1.2, 7.2, -19.4],
+          [-1.2, 7.2, -21],
+          [1.2, 7.2, -21]
+         ],
+         "pump": [
+          [-1, 0, 8.4],
+          [1, 0, 8.4],
+          [-1, 0, 9.6],
+          [0, 0, 7.2]
+         ],
+         "mast": [
+          [0, 4, 22],
+          [-1.6, 4, 24],
+          [1.6, 4, 24]
+         ],
+         "bridge": [
+          [-32, 4, -0.6],
+          [-33.5, 4, 0.6],
+          [-30.5, 4, 0.6]
+         ]
+        },
+        "groups": {
+         "waveA": [
+          "self",
+          "mast",
+          "landing"
+         ],
+         "waveB": [
+          "self",
+          "service",
+          "mast"
+         ],
+         "waveC": [
+          "self",
+          "mast",
+          "service"
+         ],
+         "waveD": [
+          "self",
+          "service",
+          "landing"
+         ],
+         "waveE": [
+          "self",
+          "landing",
+          "service"
+         ],
+         "waveE2": [
+          "self",
+          "service",
+          "mast"
+         ]
+        }
        }
       }
      }
@@ -4958,6 +5041,70 @@
       }
      },
      {
+      "id": "planter-p13",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20, 4.45, 4],
+         "scale": [1.2, 0.9, 2.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "planter"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "planter-p14",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1, 4.45, -12],
+         "scale": [2.4, 0.9, 1.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "planter"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
       "id": "hedge-1",
       "components": {
        "transform": {
@@ -5371,8 +5518,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-10.5, 4.3, 15.5],
-         "scale": [2.2, 0.6, 0.7]
+         "position": [-10.5, 4.5, 15.5],
+         "scale": [2.2, 1, 0.7]
         }
        },
        "geometry": {
@@ -5392,14 +5539,16 @@
         "type": "Mesh",
         "properties": {
          "castShadow": false,
-         "receiveShadow": false
+         "receiveShadow": false,
+         "visible": false
         }
        },
        "data": {
         "type": "Data",
         "properties": {
          "data": {
-          "surface": "wood"
+          "surface": "wood",
+          "camera": true
          }
         }
        }
@@ -5411,8 +5560,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10.5, 4.3, -16.5],
-         "scale": [2.2, 0.6, 0.7]
+         "position": [10.5, 4.5, -16.5],
+         "scale": [2.2, 1, 0.7]
         }
        },
        "geometry": {
@@ -5432,14 +5581,16 @@
         "type": "Mesh",
         "properties": {
          "castShadow": false,
-         "receiveShadow": false
+         "receiveShadow": false,
+         "visible": false
         }
        },
        "data": {
         "type": "Data",
         "properties": {
          "data": {
-          "surface": "wood"
+          "surface": "wood",
+          "camera": true
          }
         }
        }
@@ -5451,8 +5602,8 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [0, 4.3, 9],
-         "scale": [2.2, 0.6, 0.7]
+         "position": [0, 4.5, 9],
+         "scale": [2.2, 1, 0.7]
         }
        },
        "geometry": {
@@ -5472,15 +5623,145 @@
         "type": "Mesh",
         "properties": {
          "castShadow": false,
-         "receiveShadow": false
+         "receiveShadow": false,
+         "visible": false
         }
        },
        "data": {
         "type": "Data",
         "properties": {
          "data": {
-          "surface": "wood"
+          "surface": "wood",
+          "camera": true
          }
+        }
+       }
+      }
+     },
+     {
+      "id": "fountain",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.5, 4.475, 0],
+         "scale": [3, 0.95, 3]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "planter"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "garden-wall",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.7, 4.5, 15.9],
+         "scale": [3.4, 1, 0.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "stoneBig"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "gp-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 7.65, -17.4],
+         "scale": [3, 0.9, 0.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "planter"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "gp-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.5, 7.65, -17.4],
+         "scale": [3, 0.9, 0.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "planter"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
         }
        }
       }
@@ -8464,6 +8745,70 @@
       }
      },
      {
+      "id": "plants-p13",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20, 5.2, 4],
+         "scale": [1, 0.6, 2.2]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "leaves"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "plants-p14",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1, 5.2, -12],
+         "scale": [2.2, 0.6, 1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "leaves"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
       "id": "frond--10--10",
       "components": {
        "transform": {
@@ -8663,6 +9008,1220 @@
         "properties": {
          "geometryType": "sphere",
          "args": [1.8, 10, 6]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "leaves"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-base",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 4.2, 15.5],
+         "scale": [2.04, 0.4, 0.52]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchBase"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-seatn",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 4.435, 15.29],
+         "scale": [2.08, 0.07, 0.28]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-railn0.62",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 4.67, 15.41],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-railn0.84",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 4.89, 15.41],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-seats",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 4.435, 15.71],
+         "scale": [2.08, 0.07, 0.28]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-rails0.62",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 4.67, 15.59],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-rails0.84",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 4.89, 15.59],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-back",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 4.705, 15.5],
+         "scale": [2.04, 0.47, 0.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "wood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-top",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 4.97, 15.5],
+         "scale": [2.12, 0.06, 0.18]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-endw",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-11.56, 4.49, 15.5],
+         "scale": [0.08, 0.98, 0.7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchIron"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-ende",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-9.44, 4.49, 15.5],
+         "scale": [0.08, 0.98, 0.7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchIron"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-base",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 4.2, -16.5],
+         "scale": [2.04, 0.4, 0.52]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchBase"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-seatn",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 4.435, -16.71],
+         "scale": [2.08, 0.07, 0.28]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-railn0.62",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 4.67, -16.59],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-railn0.84",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 4.89, -16.59],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-seats",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 4.435, -16.29],
+         "scale": [2.08, 0.07, 0.28]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-rails0.62",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 4.67, -16.41],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-rails0.84",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 4.89, -16.41],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-back",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 4.705, -16.5],
+         "scale": [2.04, 0.47, 0.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "wood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-top",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 4.97, -16.5],
+         "scale": [2.12, 0.06, 0.18]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-endw",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.44, 4.49, -16.5],
+         "scale": [0.08, 0.98, 0.7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchIron"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-ende",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [11.56, 4.49, -16.5],
+         "scale": [0.08, 0.98, 0.7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchIron"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-base",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 4.2, 9],
+         "scale": [2.04, 0.4, 0.52]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchBase"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-seatn",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 4.435, 8.79],
+         "scale": [2.08, 0.07, 0.28]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-railn0.62",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 4.67, 8.91],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-railn0.84",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 4.89, 8.91],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-seats",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 4.435, 9.21],
+         "scale": [2.08, 0.07, 0.28]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-rails0.62",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 4.67, 9.09],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-rails0.84",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 4.89, 9.09],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-back",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 4.705, 9],
+         "scale": [2.04, 0.47, 0.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "wood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-top",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 4.97, 9],
+         "scale": [2.12, 0.06, 0.18]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-endw",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.06, 4.49, 9],
+         "scale": [0.08, 0.98, 0.7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchIron"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-ende",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [1.06, 4.49, 9],
+         "scale": [0.08, 0.98, 0.7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchIron"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "fountain-water",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.5, 4.965, 0],
+         "scale": [2.6, 0.03, 2.6]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "pond"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "fountain-spout",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.5, 5.5, 0]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.18, 0.28, 1.1, 12]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "stoneBig"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "fountain-bowl",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.5, 6.05, 0]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "cylinder",
+         "args": [0.7, 0.3, 0.2, 16]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "planter"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "gp-w-plants",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 8.4, -17.4],
+         "scale": [2.8, 0.6, 0.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "leaves"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "gp-e-plants",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.5, 8.4, -17.4],
+         "scale": [2.8, 0.6, 0.4]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
         }
        },
        "material": {
@@ -10295,7 +11854,173 @@
       }
      },
      {
-      "id": "cv-hedge-1-77",
+      "id": "cv-planter-p13-77",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20, 4, 2.18]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-planter-p13-78",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-20, 4, 5.82],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-planter-p13-79",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-18.78, 4, 4],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-planter-p13-80",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-21.22, 4, 4],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-planter-p14-81",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1, 4, -13.22]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-planter-p14-82",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1, 4, -10.78],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-planter-p14-83",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0.82, 4, -12],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-planter-p14-84",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-2.82, 4, -12],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-hedge-1-85",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10316,7 +12041,7 @@
       }
      },
      {
-      "id": "cv-hedge-1-78",
+      "id": "cv-hedge-1-86",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10337,7 +12062,7 @@
       }
      },
      {
-      "id": "cv-hedge-1-79",
+      "id": "cv-hedge-1-87",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10359,7 +12084,7 @@
       }
      },
      {
-      "id": "cv-hedge-1-80",
+      "id": "cv-hedge-1-88",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10381,7 +12106,7 @@
       }
      },
      {
-      "id": "cv-hedge-1-81",
+      "id": "cv-hedge-1-89",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10403,7 +12128,7 @@
       }
      },
      {
-      "id": "cv-hedge-1-82",
+      "id": "cv-hedge-1-90",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10425,7 +12150,7 @@
       }
      },
      {
-      "id": "cv-hedge-1-83",
+      "id": "cv-hedge-1-91",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10447,7 +12172,7 @@
       }
      },
      {
-      "id": "cv-hedge-1-84",
+      "id": "cv-hedge-1-92",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10469,7 +12194,7 @@
       }
      },
      {
-      "id": "cv-hedge-2-85",
+      "id": "cv-hedge-2-93",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10490,7 +12215,7 @@
       }
      },
      {
-      "id": "cv-hedge-2-86",
+      "id": "cv-hedge-2-94",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10511,7 +12236,7 @@
       }
      },
      {
-      "id": "cv-hedge-2-87",
+      "id": "cv-hedge-2-95",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10533,7 +12258,7 @@
       }
      },
      {
-      "id": "cv-hedge-2-88",
+      "id": "cv-hedge-2-96",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10555,7 +12280,7 @@
       }
      },
      {
-      "id": "cv-hedge-2-89",
+      "id": "cv-hedge-2-97",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10577,7 +12302,7 @@
       }
      },
      {
-      "id": "cv-hedge-2-90",
+      "id": "cv-hedge-2-98",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10599,7 +12324,7 @@
       }
      },
      {
-      "id": "cv-hedge-2-92",
+      "id": "cv-hedge-2-100",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10621,7 +12346,7 @@
       }
      },
      {
-      "id": "cv-hedge-3-93",
+      "id": "cv-hedge-3-101",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10642,7 +12367,7 @@
       }
      },
      {
-      "id": "cv-hedge-3-94",
+      "id": "cv-hedge-3-102",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10663,7 +12388,7 @@
       }
      },
      {
-      "id": "cv-hedge-3-95",
+      "id": "cv-hedge-3-103",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10685,7 +12410,7 @@
       }
      },
      {
-      "id": "cv-hedge-3-96",
+      "id": "cv-hedge-3-104",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10707,7 +12432,7 @@
       }
      },
      {
-      "id": "cv-hedge-3-97",
+      "id": "cv-hedge-3-105",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10729,7 +12454,7 @@
       }
      },
      {
-      "id": "cv-hedge-3-98",
+      "id": "cv-hedge-3-106",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10751,7 +12476,7 @@
       }
      },
      {
-      "id": "cv-hedge-3-99",
+      "id": "cv-hedge-3-107",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10773,7 +12498,7 @@
       }
      },
      {
-      "id": "cv-hedge-3-100",
+      "id": "cv-hedge-3-108",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10795,7 +12520,7 @@
       }
      },
      {
-      "id": "cv-hedge-4-101",
+      "id": "cv-hedge-4-109",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10816,7 +12541,7 @@
       }
      },
      {
-      "id": "cv-hedge-4-102",
+      "id": "cv-hedge-4-110",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10837,7 +12562,7 @@
       }
      },
      {
-      "id": "cv-hedge-4-103",
+      "id": "cv-hedge-4-111",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10859,7 +12584,7 @@
       }
      },
      {
-      "id": "cv-hedge-4-104",
+      "id": "cv-hedge-4-112",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10881,7 +12606,7 @@
       }
      },
      {
-      "id": "cv-hedge-4-105",
+      "id": "cv-hedge-4-113",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10903,7 +12628,7 @@
       }
      },
      {
-      "id": "cv-hedge-4-106",
+      "id": "cv-hedge-4-114",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10925,7 +12650,7 @@
       }
      },
      {
-      "id": "cv-hedge-4-107",
+      "id": "cv-hedge-4-115",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10947,7 +12672,7 @@
       }
      },
      {
-      "id": "cv-hedge-4-108",
+      "id": "cv-hedge-4-116",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10969,7 +12694,7 @@
       }
      },
      {
-      "id": "cv-palm--10--10-109",
+      "id": "cv-palm--10--10-117",
       "components": {
        "transform": {
         "type": "Transform",
@@ -10990,7 +12715,7 @@
       }
      },
      {
-      "id": "cv-palm--10--10-110",
+      "id": "cv-palm--10--10-118",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11011,7 +12736,7 @@
       }
      },
      {
-      "id": "cv-palm--10--10-111",
+      "id": "cv-palm--10--10-119",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11033,7 +12758,7 @@
       }
      },
      {
-      "id": "cv-palm--10--10-112",
+      "id": "cv-palm--10--10-120",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11055,7 +12780,7 @@
       }
      },
      {
-      "id": "cv-palm--10--10-113",
+      "id": "cv-palm--10--10-121",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11077,7 +12802,7 @@
       }
      },
      {
-      "id": "cv-palm--10--10-114",
+      "id": "cv-palm--10--10-122",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11099,7 +12824,7 @@
       }
      },
      {
-      "id": "cv-palm--10--10-115",
+      "id": "cv-palm--10--10-123",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11121,7 +12846,7 @@
       }
      },
      {
-      "id": "cv-palm--10--10-116",
+      "id": "cv-palm--10--10-124",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11143,7 +12868,7 @@
       }
      },
      {
-      "id": "cv-palm-10-11-117",
+      "id": "cv-palm-10-11-125",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11164,7 +12889,7 @@
       }
      },
      {
-      "id": "cv-palm-10-11-118",
+      "id": "cv-palm-10-11-126",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11185,7 +12910,7 @@
       }
      },
      {
-      "id": "cv-palm-10-11-119",
+      "id": "cv-palm-10-11-127",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11207,7 +12932,7 @@
       }
      },
      {
-      "id": "cv-palm-10-11-120",
+      "id": "cv-palm-10-11-128",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11229,7 +12954,7 @@
       }
      },
      {
-      "id": "cv-palm-10-11-121",
+      "id": "cv-palm-10-11-129",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11251,7 +12976,7 @@
       }
      },
      {
-      "id": "cv-palm-10-11-122",
+      "id": "cv-palm-10-11-130",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11273,7 +12998,7 @@
       }
      },
      {
-      "id": "cv-palm-10-11-123",
+      "id": "cv-palm-10-11-131",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11295,7 +13020,7 @@
       }
      },
      {
-      "id": "cv-palm-10-11-124",
+      "id": "cv-palm-10-11-132",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11317,7 +13042,7 @@
       }
      },
      {
-      "id": "cv-palm--18-14.5-127",
+      "id": "cv-palm--18-14.5-135",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11339,7 +13064,7 @@
       }
      },
      {
-      "id": "cv-palm--18-14.5-128",
+      "id": "cv-palm--18-14.5-136",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11361,7 +13086,7 @@
       }
      },
      {
-      "id": "cv-palm--18-14.5-129",
+      "id": "cv-palm--18-14.5-137",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11383,7 +13108,7 @@
       }
      },
      {
-      "id": "cv-palm--18-14.5-130",
+      "id": "cv-palm--18-14.5-138",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11405,7 +13130,7 @@
       }
      },
      {
-      "id": "cv-palm--18-14.5-131",
+      "id": "cv-palm--18-14.5-139",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11427,7 +13152,7 @@
       }
      },
      {
-      "id": "cv-palm--18-14.5-132",
+      "id": "cv-palm--18-14.5-140",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11449,7 +13174,7 @@
       }
      },
      {
-      "id": "cv-palm-18--8-133",
+      "id": "cv-palm-18--8-141",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11470,7 +13195,7 @@
       }
      },
      {
-      "id": "cv-palm-18--8-134",
+      "id": "cv-palm-18--8-142",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11491,7 +13216,7 @@
       }
      },
      {
-      "id": "cv-palm-18--8-135",
+      "id": "cv-palm-18--8-143",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11513,7 +13238,7 @@
       }
      },
      {
-      "id": "cv-palm-18--8-136",
+      "id": "cv-palm-18--8-144",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11535,7 +13260,7 @@
       }
      },
      {
-      "id": "cv-palm-18--8-137",
+      "id": "cv-palm-18--8-145",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11557,7 +13282,7 @@
       }
      },
      {
-      "id": "cv-palm-18--8-138",
+      "id": "cv-palm-18--8-146",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11579,7 +13304,7 @@
       }
      },
      {
-      "id": "cv-palm-18--8-139",
+      "id": "cv-palm-18--8-147",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11601,7 +13326,7 @@
       }
      },
      {
-      "id": "cv-palm-18--8-140",
+      "id": "cv-palm-18--8-148",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11623,7 +13348,7 @@
       }
      },
      {
-      "id": "cv-palm--2.5-14.5-141",
+      "id": "cv-palm--2.5-14.5-149",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11644,7 +13369,7 @@
       }
      },
      {
-      "id": "cv-palm--2.5-14.5-142",
+      "id": "cv-palm--2.5-14.5-150",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11665,7 +13390,7 @@
       }
      },
      {
-      "id": "cv-palm--2.5-14.5-143",
+      "id": "cv-palm--2.5-14.5-151",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11687,7 +13412,7 @@
       }
      },
      {
-      "id": "cv-palm--2.5-14.5-144",
+      "id": "cv-palm--2.5-14.5-152",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11709,7 +13434,7 @@
       }
      },
      {
-      "id": "cv-palm--2.5-14.5-145",
+      "id": "cv-palm--2.5-14.5-153",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11731,7 +13456,7 @@
       }
      },
      {
-      "id": "cv-palm--2.5-14.5-146",
+      "id": "cv-palm--2.5-14.5-154",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11753,7 +13478,7 @@
       }
      },
      {
-      "id": "cv-palm--2.5-14.5-147",
+      "id": "cv-palm--2.5-14.5-155",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11775,7 +13500,7 @@
       }
      },
      {
-      "id": "cv-palm--2.5-14.5-148",
+      "id": "cv-palm--2.5-14.5-156",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11797,7 +13522,7 @@
       }
      },
      {
-      "id": "cv-palm-10.5--14.5-149",
+      "id": "cv-palm-10.5--14.5-157",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11818,7 +13543,7 @@
       }
      },
      {
-      "id": "cv-palm-10.5--14.5-150",
+      "id": "cv-palm-10.5--14.5-158",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11839,7 +13564,7 @@
       }
      },
      {
-      "id": "cv-palm-10.5--14.5-151",
+      "id": "cv-palm-10.5--14.5-159",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11861,7 +13586,7 @@
       }
      },
      {
-      "id": "cv-palm-10.5--14.5-152",
+      "id": "cv-palm-10.5--14.5-160",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11883,7 +13608,7 @@
       }
      },
      {
-      "id": "cv-palm-10.5--14.5-153",
+      "id": "cv-palm-10.5--14.5-161",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11905,7 +13630,7 @@
       }
      },
      {
-      "id": "cv-palm-10.5--14.5-154",
+      "id": "cv-palm-10.5--14.5-162",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11927,7 +13652,7 @@
       }
      },
      {
-      "id": "cv-palm-10.5--14.5-155",
+      "id": "cv-palm-10.5--14.5-163",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11949,7 +13674,7 @@
       }
      },
      {
-      "id": "cv-palm-10.5--14.5-156",
+      "id": "cv-palm-10.5--14.5-164",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11971,7 +13696,7 @@
       }
      },
      {
-      "id": "cv-palm--11-11-157",
+      "id": "cv-palm--11-11-165",
       "components": {
        "transform": {
         "type": "Transform",
@@ -11992,7 +13717,7 @@
       }
      },
      {
-      "id": "cv-palm--11-11-158",
+      "id": "cv-palm--11-11-166",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12013,7 +13738,7 @@
       }
      },
      {
-      "id": "cv-palm--11-11-159",
+      "id": "cv-palm--11-11-167",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12035,7 +13760,7 @@
       }
      },
      {
-      "id": "cv-palm--11-11-160",
+      "id": "cv-palm--11-11-168",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12057,7 +13782,7 @@
       }
      },
      {
-      "id": "cv-palm--11-11-161",
+      "id": "cv-palm--11-11-169",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12079,7 +13804,7 @@
       }
      },
      {
-      "id": "cv-palm--11-11-162",
+      "id": "cv-palm--11-11-170",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12101,7 +13826,7 @@
       }
      },
      {
-      "id": "cv-palm--11-11-163",
+      "id": "cv-palm--11-11-171",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12123,7 +13848,7 @@
       }
      },
      {
-      "id": "cv-palm--11-11-164",
+      "id": "cv-palm--11-11-172",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12145,7 +13870,7 @@
       }
      },
      {
-      "id": "cv-bench-b1-165",
+      "id": "cv-bench-b1-173",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12165,7 +13890,7 @@
       }
      },
      {
-      "id": "cv-bench-b1-166",
+      "id": "cv-bench-b1-174",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12186,7 +13911,7 @@
       }
      },
      {
-      "id": "cv-bench-b1-167",
+      "id": "cv-bench-b1-175",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12207,7 +13932,7 @@
       }
      },
      {
-      "id": "cv-bench-b1-168",
+      "id": "cv-bench-b1-176",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12228,7 +13953,7 @@
       }
      },
      {
-      "id": "cv-bench-b2-169",
+      "id": "cv-bench-b2-177",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12248,7 +13973,7 @@
       }
      },
      {
-      "id": "cv-bench-b2-170",
+      "id": "cv-bench-b2-178",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12269,7 +13994,7 @@
       }
      },
      {
-      "id": "cv-bench-b2-171",
+      "id": "cv-bench-b2-179",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12290,7 +14015,7 @@
       }
      },
      {
-      "id": "cv-bench-b2-172",
+      "id": "cv-bench-b2-180",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12311,7 +14036,7 @@
       }
      },
      {
-      "id": "cv-bench-b3-173",
+      "id": "cv-bench-b3-181",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12331,7 +14056,7 @@
       }
      },
      {
-      "id": "cv-bench-b3-174",
+      "id": "cv-bench-b3-182",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12352,7 +14077,7 @@
       }
      },
      {
-      "id": "cv-bench-b3-175",
+      "id": "cv-bench-b3-183",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12373,7 +14098,7 @@
       }
      },
      {
-      "id": "cv-bench-b3-176",
+      "id": "cv-bench-b3-184",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12394,7 +14119,299 @@
       }
      },
      {
-      "id": "cv-gz-table-177",
+      "id": "cv-fountain-185",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.5, 4, -2.12]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-fountain-186",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.5, 4, 2.12],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-fountain-187",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [18.62, 4, 0],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-fountain-188",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [14.38, 4, 0],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-garden-wall-189",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.7, 4, 14.98]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-garden-wall-190",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.7, 4, 16.82],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-garden-wall-191",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [12.02, 4, 15.9],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-garden-wall-192",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.38, 4, 15.9],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gp-w-193",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 7.2, -16.48],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gp-w-194",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-8.38, 7.2, -17.4],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gp-w-195",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-12.62, 7.2, -17.4],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gp-e-196",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.5, 7.2, -16.48],
+         "rotation": [0, 3.142, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gp-e-197",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [11.62, 7.2, -17.4],
+         "rotation": [0, -1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gp-e-198",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7.38, 7.2, -17.4],
+         "rotation": [0, 1.571, 0]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "cover",
+          "height": "low"
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cv-gz-table-199",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12414,7 +14431,7 @@
       }
      },
      {
-      "id": "cv-gz-table-178",
+      "id": "cv-gz-table-200",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12435,7 +14452,7 @@
       }
      },
      {
-      "id": "cv-gz-table-179",
+      "id": "cv-gz-table-201",
       "components": {
        "transform": {
         "type": "Transform",
@@ -12456,7 +14473,7 @@
       }
      },
      {
-      "id": "cv-gz-table-180",
+      "id": "cv-gz-table-202",
       "components": {
        "transform": {
         "type": "Transform",
@@ -13135,7 +15152,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-2, 4, -12]
+         "position": [-2, 4, -8]
         }
        },
        "data": {
@@ -13154,7 +15171,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-2, 4, -8]
+         "position": [-2, 4, 8]
         }
        },
        "data": {
@@ -13173,7 +15190,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-2, 4, 8]
+         "position": [-2, 4, 16]
         }
        },
        "data": {
@@ -13192,7 +15209,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-2, 4, 16]
+         "position": [2, 4, -16]
         }
        },
        "data": {
@@ -13211,7 +15228,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [2, 4, -16]
+         "position": [2, 4, -12]
         }
        },
        "data": {
@@ -13230,7 +15247,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [2, 4, -12]
+         "position": [2, 4, -8]
         }
        },
        "data": {
@@ -13249,7 +15266,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [2, 4, -8]
+         "position": [2, 4, 8]
         }
        },
        "data": {
@@ -13268,7 +15285,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [2, 4, 8]
+         "position": [2, 4, 12]
         }
        },
        "data": {
@@ -13287,7 +15304,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [2, 4, 12]
+         "position": [2, 4, 16]
         }
        },
        "data": {
@@ -13306,7 +15323,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [2, 4, 16]
+         "position": [6, 4, -16]
         }
        },
        "data": {
@@ -13325,7 +15342,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [6, 4, -16]
+         "position": [6, 4, -12]
         }
        },
        "data": {
@@ -13344,7 +15361,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [6, 4, -12]
+         "position": [6, 4, -8]
         }
        },
        "data": {
@@ -13363,7 +15380,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [6, 4, -8]
+         "position": [6, 4, 8]
         }
        },
        "data": {
@@ -13382,7 +15399,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [6, 4, 8]
+         "position": [6, 4, 16]
         }
        },
        "data": {
@@ -13401,7 +15418,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [6, 4, 16]
+         "position": [10, 4, -12]
         }
        },
        "data": {
@@ -13420,7 +15437,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10, 4, -12]
+         "position": [10, 4, -8]
         }
        },
        "data": {
@@ -13439,7 +15456,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10, 4, -8]
+         "position": [10, 4, -4]
         }
        },
        "data": {
@@ -13458,7 +15475,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10, 4, -4]
+         "position": [10, 4, 0]
         }
        },
        "data": {
@@ -13477,7 +15494,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10, 4, 0]
+         "position": [10, 4, 4]
         }
        },
        "data": {
@@ -13496,7 +15513,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10, 4, 4]
+         "position": [10, 4, 8]
         }
        },
        "data": {
@@ -13515,7 +15532,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10, 4, 8]
+         "position": [10, 4, 12]
         }
        },
        "data": {
@@ -13534,7 +15551,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10, 4, 12]
+         "position": [14, 4, -16]
         }
        },
        "data": {
@@ -13553,7 +15570,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [10, 4, 16]
+         "position": [14, 4, -12]
         }
        },
        "data": {
@@ -13572,7 +15589,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [14, 4, -16]
+         "position": [14, 4, 0]
         }
        },
        "data": {
@@ -13591,7 +15608,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [14, 4, -12]
+         "position": [14, 4, 8]
         }
        },
        "data": {
@@ -13610,7 +15627,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [14, 4, 0]
+         "position": [18, 4, -16]
         }
        },
        "data": {
@@ -13629,7 +15646,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [14, 4, 8]
+         "position": [18, 4, -12]
         }
        },
        "data": {
@@ -13648,7 +15665,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [18, 4, -16]
+         "position": [18, 4, -4]
         }
        },
        "data": {
@@ -13667,7 +15684,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [18, 4, -12]
+         "position": [18, 4, 4]
         }
        },
        "data": {
@@ -13686,7 +15703,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [18, 4, -4]
+         "position": [18, 4, 8]
         }
        },
        "data": {
@@ -13705,7 +15722,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [18, 4, 0]
+         "position": [22, 4, -16]
         }
        },
        "data": {
@@ -13724,7 +15741,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [18, 4, 4]
+         "position": [22, 4, -4]
         }
        },
        "data": {
@@ -13743,7 +15760,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [18, 4, 8]
+         "position": [22, 4, 0]
         }
        },
        "data": {
@@ -13762,7 +15779,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [22, 4, -16]
+         "position": [22, 4, 4]
         }
        },
        "data": {
@@ -13781,7 +15798,7 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [22, 4, -4]
+         "position": [22, 4, 8]
         }
        },
        "data": {
@@ -13800,63 +15817,6 @@
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [22, 4, 0]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "waypoint"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "wp-lawn-67",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [22, 4, 4]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "waypoint"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "wp-lawn-68",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
-         "position": [22, 4, 8]
-        }
-       },
-       "data": {
-        "type": "Data",
-        "properties": {
-         "data": {
-          "marker": "waypoint"
-         }
-        }
-       }
-      }
-     },
-     {
-      "id": "wp-lawn-69",
-      "components": {
-       "transform": {
-        "type": "Transform",
-        "properties": {
          "position": [22, 4, 12]
         }
        },
@@ -13871,7 +15831,7 @@
       }
      },
      {
-      "id": "wp-lawn-70",
+      "id": "wp-lawn-67",
       "components": {
        "transform": {
         "type": "Transform",
@@ -14943,7 +16903,8 @@
         "properties": {
          "data": {
           "marker": "enemy",
-          "kind": "rusher"
+          "kind": "rusher",
+          "minDiff": "hard"
          }
         }
        }
@@ -14986,7 +16947,7 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }
@@ -15029,7 +16990,7 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }
@@ -15073,7 +17034,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveA"
+          "group": "waveA",
+          "minDiff": "hard"
          }
         }
        }
@@ -15141,7 +17103,7 @@
           "marker": "enemy",
           "kind": "rusher",
           "group": "waveA",
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }
@@ -15206,7 +17168,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "group": "waveB"
+          "group": "waveB",
+          "minDiff": "hard"
          }
         }
        }
@@ -15295,7 +17258,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveC"
+          "group": "waveC",
+          "minDiff": "hard"
          }
         }
        }
@@ -15318,7 +17282,7 @@
           "marker": "enemy",
           "kind": "rusher",
           "group": "waveC",
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }
@@ -15385,7 +17349,8 @@
          "data": {
           "marker": "enemy",
           "kind": "goon",
-          "group": "waveD"
+          "group": "waveD",
+          "minDiff": "hard"
          }
         }
        }
@@ -15453,7 +17418,7 @@
           "marker": "enemy",
           "kind": "goon",
           "group": "waveD",
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }
@@ -15475,7 +17440,8 @@
          "data": {
           "marker": "enemy",
           "kind": "rusher",
-          "group": "waveE"
+          "group": "waveE",
+          "minDiff": "hard"
          }
         }
        }
@@ -15498,7 +17464,7 @@
           "marker": "enemy",
           "kind": "rusher",
           "group": "waveE",
-          "minDiff": "hard"
+          "minDiff": "hardcore"
          }
         }
        }
@@ -15542,7 +17508,8 @@
           "marker": "enemy",
           "kind": "heavy",
           "group": "waveE2",
-          "model": "rival652"
+          "model": "rival652",
+          "minDiff": "hard"
          }
         }
        }
@@ -15670,8 +17637,8 @@
           "action": "setpiece",
           "cue": "crack",
           "afterKills": {
-           "normal": 12,
-           "hard": 16
+           "normal": 8,
+           "hard": 13
           }
          }
         }
@@ -15696,8 +17663,8 @@
           "action": "spawn",
           "group": "waveA",
           "afterKills": {
-           "normal": 4,
-           "hard": 5
+           "normal": 3,
+           "hard": 4
           }
          }
         }
@@ -15722,8 +17689,8 @@
           "action": "spawn",
           "group": "waveB",
           "afterKills": {
-           "normal": 7,
-           "hard": 10
+           "normal": 5,
+           "hard": 8
           }
          }
         }
@@ -15748,8 +17715,8 @@
           "action": "checkpoint",
           "at": "cp-mid",
           "afterKills": {
-           "normal": 10,
-           "hard": 15
+           "normal": 7,
+           "hard": 12
           }
          }
         }
@@ -15774,8 +17741,8 @@
           "action": "spawn",
           "group": "waveC",
           "afterKills": {
-           "normal": 10,
-           "hard": 15
+           "normal": 7,
+           "hard": 12
           }
          }
         }
@@ -15800,8 +17767,8 @@
           "action": "spawn",
           "group": "waveD",
           "afterKills": {
-           "normal": 13,
-           "hard": 20
+           "normal": 9,
+           "hard": 16
           }
          }
         }
@@ -15826,8 +17793,8 @@
           "action": "spawn",
           "group": "waveE",
           "afterKills": {
-           "normal": 16,
-           "hard": 25
+           "normal": 11,
+           "hard": 20
           }
          }
         }
@@ -15852,8 +17819,8 @@
           "action": "spawn",
           "group": "waveE2",
           "afterKills": {
-           "normal": 18,
-           "hard": 27
+           "normal": 12,
+           "hard": 22
           }
          }
         }
@@ -16549,6 +18516,86 @@
          "data": {
           "marker": "camera",
           "at": [0, 8.2, -15]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cam-cover-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-23, 7.4, 0.5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "camera",
+          "at": [-12, 4.6, 2]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cam-cover-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [7, 7.5, -5]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "camera",
+          "at": [17, 4.6, 0]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cam-cover-gallery",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-3, 9.8, -13.6]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "camera",
+          "at": [-10, 7.800000000000001, -17.2]
+         }
+        }
+       }
+      }
+     },
+     {
+      "id": "cam-cover-s",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-6, 7, 6.8]
+        }
+       },
+       "data": {
+        "type": "Data",
+        "properties": {
+         "data": {
+          "marker": "camera",
+          "at": [6, 4.6, 15]
          }
         }
        }

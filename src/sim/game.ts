@@ -24,10 +24,12 @@ import { FRAG_STEP, fragLaunch, fragLegacy, fragSubstep, fuseOut, fuseTick, pred
 import { Ride } from "./ride.ts";
 import { Boss } from "./boss.ts";
 import { makeStage, type Stage } from "./stage.ts";
-import { COUNTESS, SNIPER2, diffFor, killsFor, perDiff } from "./tuning2.ts";
+import { COUNTESS, SNIPER2, diffFor, killsFor, perDiff, rosterDiff } from "./tuning2.ts";
+import { Arrivals } from "./arrive.ts";
 
-/** A marker's minDiff leaves her out below that difficulty; RetardioPayne's harder cut has every one. */
-const DIFF_RANK: Difficulty[] = ["easy", "normal", "hard", "hardcore", "retardio"];
+/** A marker's minDiff leaves her out below that difficulty (RetardioPayne's harder cut plays Normal's
+ *  roster: tuning2.ts rosterDiff). */
+const DIFF_RANK: Difficulty[] = ["easy", "normal", "hard", "hardcore"];
 
 export const POCKIT_COUNT = 3333;
 
@@ -182,6 +184,8 @@ export class Game {
   readonly boss: Boss | null = null;
   /** Chapter 2: the room's set piece (sim/stage.ts; null elsewhere). */
   readonly stage: Stage | null = null;
+  /** Chapter 2: how the waves come in (sim/arrive.ts: by a way in, by the rule, one at a time; null elsewhere). */
+  readonly arrivals: Arrivals | null = null;
   /** The music set over the room's own (room 4 after the cables snap); null = the room's. */
   music: string | null = null;
   bulletTime = false;
@@ -267,7 +271,7 @@ export class Game {
         const kindName = (m.data.kind as string | undefined) ?? "goon";
         if (kindName !== "goon" && kindName !== "rusher" && kindName !== "heavy" && kindName !== "madame" && kindName !== "countess") continue;
         // (chapter 2: Data {minDiff: "hard"}: she is there only on that difficulty and up)
-        if (typeof m.data.minDiff === "string" && DIFF_RANK.indexOf(this.difficulty) < DIFF_RANK.indexOf(m.data.minDiff as Difficulty)) continue;
+        if (typeof m.data.minDiff === "string" && DIFF_RANK.indexOf(rosterDiff(this.difficulty)) < DIFF_RANK.indexOf(m.data.minDiff as Difficulty)) continue;
         const kind = kindName as EnemyKind;
         const pick = kind === "heavy" ? 0 : kind === "madame" ? MADAME.pockit : kind === "countess" ? COUNTESS.pockit : typeof m.data.milady === "number" ? (m.data.milady as number) : opts.pockit?.[m.id] ?? 1 + Math.floor(hash01(this.seed, n, 0x6d, 0) * POCKIT_COUNT);
         const gy = this.world.groundBelow(m.x, m.z, 0.3, m.y + 1);
@@ -311,8 +315,9 @@ export class Game {
     // round 3: the elevator's ride (room.ride) and the penthouse boss (an enemy of kind "madame")
     if (level.room.ride && typeof level.room.ride === "object") this.ride = new Ride(this, level.room.ride as never);
     if (this.enemies.some(e => e.kind === "madame")) this.boss = new Boss(this);
-    // chapter 2: the room's set piece (room.stage)
+    // chapter 2: the room's set piece (room.stage) and the waves' ways in (room.arrive)
     this.stage = makeStage(this);
+    if (level.room.chapter === 2) this.arrivals = new Arrivals(this, level.room.arrive);
     this.crowd = new Crowd(level.markers, this.world, this.graph, { seed: this.seed, pockitCount: POCKIT_COUNT });
     for (const w of opts.loadout ?? []) this.giveWeapon(w);
     // a loadout starts with its last weapon in hand
@@ -411,8 +416,12 @@ export class Game {
       if (!r.fired.includes(t.id)) continue;
       t.fired = true;
       t.prompted = true;
-      // the groups those triggers woke are awake again (the living ones)
-      if (t.data.action === "spawn") for (const e of this.enemies) if (e.state === "inactive" && e.group === t.data.group) { setState(e, "idle"); e.hit.hittable = true; }
+      // the groups those triggers woke are awake again (the living ones; chapter 2's come in again by the
+      // arrivals' rule, from where he stands now)
+      if (t.data.action === "spawn") {
+        if (this.arrivals) this.arrivals.enqueue(this, typeof t.data.group === "string" ? t.data.group : undefined);
+        else for (const e of this.enemies) if (e.state === "inactive" && e.group === t.data.group) { setState(e, "idle"); e.hit.hittable = true; }
+      }
       if (t.data.action === "breach") for (const e of this.enemies) if (e.group === t.data.group) e.deaf = false;
     }
     for (const w of r.owned) this.giveWeapon(w);
@@ -569,6 +578,7 @@ export class Game {
     this.ride?.step(this, wdt);
     this.boss?.step(this, wdt);
     this.stage?.step(this, wdt);
+    this.arrivals?.step(this, wdt);
 
     // pickups + triggers
     if (inControl && p.mode !== "dead") {
@@ -780,6 +790,8 @@ export class Game {
     if (action === "alert") {
       for (const e of this.enemies) if (!group || e.group === group) alertGoon(this, e, 0.2 * this.rng.next());
     } else if (action === "spawn") {
+      // chapter 2: they come in by a way in, by the rule, one at a time (sim/arrive.ts)
+      if (this.arrivals) { this.arrivals.enqueue(this, group); return; }
       for (const e of this.enemies) if (e.state === "inactive" && (!group || e.group === group)) {
         setState(e, "idle");
         e.hit.hittable = true;
@@ -1831,6 +1843,7 @@ export class Game {
     this.ride?.hashInto(h);
     this.boss?.hashInto(h);
     this.stage?.hashInto(h);
+    this.arrivals?.hashInto(h);
     return h.hex();
   }
 }

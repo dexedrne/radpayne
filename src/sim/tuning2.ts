@@ -8,15 +8,23 @@ import { CUT } from "./cut.ts";
 type PerDiff = Partial<Record<Difficulty | string, number>> & { normal: number };
 export const perDiff = (t: PerDiff, d: Difficulty | string): number => t[d] ?? (d === "hardcore" || d === "retardio" ? t.hard : undefined) ?? t.normal;
 
-/** Chapter 2 against DIFFICULTY (tuning.ts), per difficulty: its rooms are long (20-30 of the gang each,
- *  where chapter 1's streets had 8-11) and every one has a set piece on top, so Normal eases off here:
+/** Chapter 2 against DIFFICULTY (tuning.ts), per difficulty: its rooms are long (15-18 of the gang each on
+ *  Normal since 2026-10-03, where chapter 1's streets had 8-11) and every one has a set piece on top, so
+ *  Normal eases off here:
  *  their aim and damage are chapter 1's Normal, but their frags, suppressing fire and rushers come a
  *  little less often, every copium can is in the room and a checkpoint restores more (with the rooms'
  *  lighter Normal rosters and the snipers' longer tell). On the balance bots it costs about 1.1x
  *  chapter 1's health on Normal with no deaths (it was 1.5x before the ease, and 0.65x with their aim
- *  and damage at 1.0 and frags rarer still). Chill, Hard and Hardcore keep their own. */
+ *  and damage at 1.0 and frags rarer still). Hard eases off from its own too (below); Chill and
+ *  Hardcore keep theirs. */
 export const CH2_DIFF: Partial<Record<Difficulty, Partial<DifficultyTuning>>> = {
   normal: { keep: 1, checkpoint: 70, grenade: 16, camp: 7, rush: 10, suppress: 0.45 },
+  // Hard eases off the same way from its own (2026-10-03: chapter 2 was the hardest of the game on Hard,
+  // the vault most of all, half of it the gang's frags): their damage x1.4 (chapter 1's Hard x1.6),
+  // frags 12 s apart and at a cover held 5.5 s (9, 4.5), a rusher round after 7.5 s (6), less pinning
+  // fire, 70 % of the cans (55 %), a checkpoint restores 60 (50). Their aim, reaction, health, the three
+  // shooting at once and the Hard rosters stay.
+  hard: { damage: 1.4, keep: 0.7, checkpoint: 60, grenade: 12, camp: 5.5, rush: 7.5, suppress: 0.65 },
   // RetardioPayne's harder cut eases off here too (cut.ts)
   retardio: CUT.ch2,
 };
@@ -35,13 +43,45 @@ export const SNIPER2 = {
   damage: { easy: 14, normal: 16, hard: 22, retardio: CUT.sniper2.damage } as PerDiff,
 };
 
+/** Whose roster a difficulty plays in chapter 2 (a marker's minDiff, an afterKills count): its own, but
+ *  RetardioPayne's harder cut plays Normal's (it is harder through its other dials: cut.ts). */
+export const rosterDiff = (d: Difficulty): Difficulty => (d === "retardio" ? "normal" : d);
+
 /** Kills an `afterKills` trigger waits for on this difficulty: a number, or per difficulty ({normal: 8,
- *  hard: 10}: a room that leaves some of the gang out on Normal counts its waves in on its own). */
+ *  hard: 10}: a room that leaves some of the gang out on Normal counts its waves in on its own; the harder
+ *  cut counts Normal's, the roster it plays). */
 export function killsFor(after: unknown, d: Difficulty): number | undefined {
   if (typeof after === "number") return after;
-  if (after && typeof after === "object" && typeof (after as PerDiff).normal === "number") return perDiff(after as PerDiff, d);
+  if (after && typeof after === "object" && typeof (after as PerDiff).normal === "number") return perDiff(after as PerDiff, rosterDiff(d));
   return undefined;
 }
+
+/** Chapter 2's arrivals (sim/arrive.ts): how the gang a wave, a rope drop or a lift brings in comes in.
+ *  The rule, for every one of them: she comes in only by a way in (a door, a stair, a lift, the
+ *  helicopter's ropes, the far end of a bridge), at least `minDist` from him; never inside or next to
+ *  (`zone`) the cover he is in or could reach in a step (`step`); never behind his back (more than
+ *  `backAngle` off his aim, or on his side of the cover he is in) closer than `backDist`. By a door, a stair or a bridge's end, never where he would
+ *  watch her appear: inside `sightCone` of his aim with a clear line from the camera or his eye to her
+ *  head or middle (`sightAt` over her feet); that part alone gives way once the room has stood empty of
+ *  the gang for `sightWait` with her waiting (the vault's lifts: once she has waited that long). The
+ *  helicopter's ropes show their arrivals, and so does a lift's door opening (`liftShow`). A way in that
+ *  fails it now gives her another of her group's ways, else she waits until one passes. They come in one
+ *  at a time (`gap` world s apart) and only while fewer than `maxUp` of the gang are standing. */
+export const ARRIVE = {
+  minDist: 12,
+  backDist: 20,
+  backAngle: (100 * Math.PI) / 180,
+  step: 1.5,
+  zone: 2.5,
+  /** (the camera shows about 50 deg either side of his aim at 16:9, 58 at 21:9) */
+  sightCone: (70 * Math.PI) / 180,
+  sightAt: [1.6, 1.0],
+  sightWait: 6,
+  /** (a lift's door opening shows the girl in it: world s after it opens that she may be in his sight) */
+  liftShow: 1,
+  maxUp: { easy: 4, normal: 6, hard: 8, hardcore: 9, retardio: CUT.arrive.maxUp } as PerDiff,
+  gap: { easy: 2.2, normal: 1.6, hard: 1.1, hardcore: 0.9, retardio: CUT.arrive.gap } as PerDiff,
+} as const;
 
 /** Room 6, the roof: the helicopter's searchlight, its rope drops. */
 export const ROOF = {

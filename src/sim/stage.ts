@@ -8,7 +8,9 @@
 //   - damageMul / clampDamage: a boss's armour and her guaranteed last stand;
 //   - accuracy: the gang's aim (in the searchlight they aim better, in the blackout worse);
 //   - onKill: after any kill (the adds run when the boss falls; a girl shot off her rope drops);
-//   - save / load: its state in a checkpoint.
+//   - save / load: its state in a checkpoint;
+//   - waySlots / wayReady / bring: a way in for the arrivals (sim/arrive.ts) that is the stage's own (the
+//     roof's ropes from the helicopter).
 // A set piece starts from a trigger marker with action "setpiece" and a `cue` (a volume he walks into,
 // or `afterKills` / `whenClear`): the stage watches for it to have fired (cueFired).
 import type { Enemy } from "./actors.ts";
@@ -40,6 +42,12 @@ export interface Stage {
   onKill?(g: Game, e: Enemy): void;
   save?(): number[];
   load?(g: Game, v: number[]): void;
+  /** Chapter 2's arrivals: a way in of the stage's own (by name): its slots (null: not the stage's). */
+  waySlots?(name: string): Array<[number, number, number]> | null;
+  /** Whether it can bring one in by that way now ("wait": in a moment, it is getting ready; "no": not now). */
+  wayReady?(g: Game, name: string): "ready" | "wait" | "no";
+  /** Bring her in by it, at the slot. */
+  bring?(g: Game, e: Enemy, name: string, slot: [number, number, number]): void;
   /** Presentation: a moment no special kill cam should take (the boss's entrance, a phase change). */
   busy?(g: Game): boolean;
   boss?(g: Game): StageBoss | null;

@@ -63,6 +63,11 @@ export class Bot {
    *  and the targets it walks toward for a while instead of shooting at (enemy index -> world time). */
   private dry = 0;
   private dryFor = -1;
+  /** Chapter 2: seconds of firing without a hit on anyone, and the hits it last saw for that. */
+  private dryAll = 0;
+  private hitsAll = 0;
+  /** The live hostiles in its view this step. */
+  private readonly inView: number[] = [];
   private hitsSeen = 0;
   private readonly ignore = new Map<number, number>();
   /** Chapter 2: the walk target it has made no headway toward (a wall between, a pen): its key, the
@@ -105,13 +110,17 @@ export class Bot {
 
     // target: nearest visible live hostile
     let best = -1, bd = Infinity;
+    this.inView.length = 0;
     for (const e of g.enemies) {
       if (e.state === "dead" || e.state === "inactive") continue;
       if (g.stage && (this.ignore.get(e.idx) ?? -1) > g.time) continue;
       const part = HB_TORSO;
       if (!aimPoint(e.hit.body, e.hit.pose, part, this.v, this.caps)) continue;
       const d = (this.v.x - piv.x) ** 2 + (this.v.z - piv.z) ** 2;
-      if (d < bd && g.world.clear(piv.x, piv.y, piv.z, this.v.x, this.v.y, this.v.z, true)) { bd = d; best = e.idx; }
+      if (g.world.clear(piv.x, piv.y, piv.z, this.v.x, this.v.y, this.v.z, true)) {
+        this.inView.push(e.idx);
+        if (d < bd) { bd = d; best = e.idx; }
+      }
     }
     let shooting = 0;
     for (const e of g.enemies) if (e.state === "peek" || e.state === "engage" || (e.state === "move" && e.sees)) shooting++;
@@ -280,6 +289,14 @@ export class Bot {
       if (g.stats.hits !== this.hitsSeen || best !== this.dryFor) { this.hitsSeen = g.stats.hits; this.dryFor = best; this.dry = 0; }
       else if (f.fire && best >= 0) this.dry += 1 / 120;
       if (this.dry > 3 && best >= 0) { this.ignore.set(best, g.time + 4); this.dry = 0; }
+      // (switching between ones it cannot hit either, from a doorway or behind a cart, or one far off in
+      // and out of view that it never gets a shot at: all of those it can see, for a while, so it moves)
+      if (g.stats.hits !== this.hitsAll) { this.hitsAll = g.stats.hits; this.dryAll = 0; }
+      else if (best >= 0) this.dryAll += 1 / 120;
+      if (this.dryAll > 6) {
+        for (const i of this.inView) this.ignore.set(i, g.time + 4);
+        this.dryAll = 0;
+      }
     }
     // out of a heart grenade's ring
     const esc = g.boss ? grenadeEscape(g) : null;
@@ -366,7 +383,8 @@ export class Bot {
     if (hv) { const hx = p.x - hv.x, hz = p.z - hv.z, hl = Math.hypot(hx, hz) || 1; toWorld(c.nx * 0.7 + (hx / hl) * 0.3, c.nz * 0.7 + (hz / hl) * 0.3); this.coverCd = 3; this.popT = 0; return; }
     // flanked (one that can hit it from round the side), or nobody in view for a while: out
     const flank = g.enemies.some(e => e.sees && e.state !== "dead" && (((e.x - p.x) * -c.nx + (e.z - p.z) * -c.nz) / (Math.hypot(e.x - p.x, e.z - p.z) || 1)) < 0.25);
-    this.idleT = best >= 0 ? 0 : this.idleT + dt;
+    // (chapter 2: one who has not seen him yet, over in the next compartment, keeps nobody in cover)
+    this.idleT = best >= 0 && !(g.stage && g.enemies[best].state === "idle") ? 0 : this.idleT + dt;
     // (in the elevator's car it waits longer for them to show: the landing is theirs)
     const patience = g.ride && g.ride.inCar(p.x, p.z, 0) ? 7 : 2.5;
     if (flank || this.idleT > patience) {
