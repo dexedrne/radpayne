@@ -199,3 +199,14 @@ test("on-screen words: RetardioPayne's lines never call him a Radbro; RadPayne's
   assert.equal(RETARDIOPAYNE.game, "retardiopayne");
   assert.ok(!RETARDIOPAYNE.controls.some(c => c.includes("#4764")));
 });
+
+test("RetardioPayne's own cutscene panels each replace one of RadPayne's", () => {
+  const own = path.join(ROOT, "brand/retardiopayne/cutscenes");
+  const files = fs.readdirSync(own, { recursive: true }).map(String).filter(f => f.endsWith(".webp"));
+  assert.ok(files.length >= 29, `${files.length} panels`);
+  const webp = (p: string) => { const b = fs.readFileSync(p); return b.subarray(8, 12).toString("latin1") === "WEBP" ? b.length : 0; };
+  for (const f of files) {
+    assert.ok(fs.existsSync(path.join(ROOT, "public/cutscenes", f)), `${f} replaces a RadPayne panel`);
+    assert.ok(webp(path.join(own, f)) > 50_000, `${f} is a real webp`);
+  }
+});

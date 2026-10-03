@@ -50,18 +50,21 @@ function devSave(): Plugin {
 }
 
 /** Content hashes of the runtime files in public/ (src/app/assets.ts appends them as ?v=): a changed
- *  file gets a new URL, so vercel.json can serve versioned URLs as immutable. */
-function assetHashes(root: string): Record<string, string> {
+ *  file gets a new URL, so vercel.json can serve versioned URLs as immutable. A game with its own copy
+ *  of a file in brand/<game>/ (RetardioPayne's cutscene panels) is hashed by that copy. */
+function assetHashes(root: string, game: GameId): Record<string, string> {
   const out: Record<string, string> = {};
-  const walk = (dir: string) => {
+  const walk = (dir: string, base: string) => {
     if (!fs.existsSync(dir)) return;
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
       const p = path.join(dir, e.name);
-      if (e.isDirectory()) walk(p);
-      else out["/" + path.relative(path.join(root, "public"), p).split(path.sep).join("/")] = crypto.createHash("sha1").update(fs.readFileSync(p)).digest("hex").slice(0, 10);
+      if (e.isDirectory()) walk(p, base);
+      else out["/" + path.relative(base, p).split(path.sep).join("/")] = crypto.createHash("sha1").update(fs.readFileSync(p)).digest("hex").slice(0, 10);
     }
   };
-  for (const d of ["models", "audio", "textures", "cutscenes", "ui", "levels", "fonts"]) walk(path.join(root, "public", d));
+  const dirs = ["models", "audio", "textures", "cutscenes", "ui", "levels", "fonts"];
+  for (const d of dirs) walk(path.join(root, "public", d), path.join(root, "public"));
+  if (game !== "radpayne") for (const d of dirs) walk(path.join(root, "brand", game, d), path.join(root, "brand", game));
   return out;
 }
 
@@ -82,7 +85,8 @@ function fontVersions(hashes: Record<string, string>): Plugin {
 /**
  * The game this build is (src/brands.ts): VITE_GAME=retardiopayne builds RetardioPayne, anything else
  * RadPayne. RetardioPayne's page head is its own (brandHtml), and its build puts brand/retardiopayne/*
- * (the favicon, the share image og.jpg) over public's at the root of dist. A dev or test page switched
+ * (the favicon, the share image og.jpg, and cutscenes/: its panels with #85 and #555 in them) over
+ * public's in dist. A dev or test page switched
  * with ?game= takes its icon from /brand/<game>/favicon.svg (served here in dev, copied into a test
  * build). A plain production build is RadPayne's, file for file.
  */
@@ -98,6 +102,13 @@ function gameBrand(game: GameId, mode: string): Plugin {
     configResolved(c) { outDir = path.resolve(c.root, c.build.outDir); build = c.command === "build"; },
     transformIndexHtml: html => brandHtml(html, game),
     configureServer(server) {
+      // a dev server started as RetardioPayne (npm run dev:retardiopayne) shows its own cutscene panels
+      if (game !== "radpayne") server.middlewares.use("/cutscenes", (req, res, next) => {
+        const own = path.join(root, "brand", game, "cutscenes", (req.url ?? "").split("?")[0]);
+        if (!/\.webp$/.test(own) || !own.startsWith(path.join(root, "brand", game)) || !fs.existsSync(own)) return next();
+        res.setHeader("content-type", "image/webp");
+        res.end(fs.readFileSync(own));
+      });
       server.middlewares.use("/brand", (req, res, next) => {
         const m = /^\/(radpayne|retardiopayne)\/(favicon\.svg|og\.jpg)$/.exec((req.url ?? "").split("?")[0]);
         const file = m ? brandFile(m[1] as GameId, m[2]) : null;
@@ -109,7 +120,8 @@ function gameBrand(game: GameId, mode: string): Plugin {
     closeBundle() {
       // (a dev server calls this too when it closes: only a build writes into dist)
       if (!build || !fs.existsSync(outDir)) return;
-      if (game !== "radpayne") for (const f of fs.readdirSync(path.join(root, "brand", game))) fs.copyFileSync(path.join(root, "brand", game, f), path.join(outDir, f));
+      // its own files over public's: the favicon and og.jpg at the root, its cutscene panels in cutscenes/
+      if (game !== "radpayne") fs.cpSync(path.join(root, "brand", game), outDir, { recursive: true });
       if (mode !== "production") for (const g of Object.keys(BRANDS) as GameId[]) {
         const file = brandFile(g, "favicon.svg");
         if (!file) continue;
@@ -123,7 +135,7 @@ function gameBrand(game: GameId, mode: string): Plugin {
 export default defineConfig(({ command, mode }) => {
   const game = resolveGame(process.env.VITE_GAME, "production", "");
   // dev: no hashes (the editor saves levels while the page is open); build: every public runtime file
-  const hashes = command === "build" ? assetHashes(import.meta.dirname) : null;
+  const hashes = command === "build" ? assetHashes(import.meta.dirname, game) : null;
   return {
     plugins: [react(), devSave(), gameBrand(game, mode), ...(hashes ? [fontVersions(hashes)] : [])],
     define: { __ASSET_V__: hashes ? JSON.stringify(hashes) : "undefined" },
