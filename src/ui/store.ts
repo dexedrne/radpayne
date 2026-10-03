@@ -31,9 +31,9 @@ export const RETARDIOS: Array<Hero<RetardioId>> = [
 ];
 /** The character select, in order (the pins stay the six Radbros'). */
 export const HEROES: Hero[] = [...RADBROS, ...RETARDIOS];
-/** Who a game lets you play, in its character select's order, and its default pick: RadPayne everyone
+/** Who a game lets you play, in its character select's order, and its default pick: RadPayne the Radbros
  *  (#4764 first: he is the hero of the comic panels); RetardioPayne only the two Retardios. */
-export const rosterOf = (game: GameId): Hero[] => (game === "retardiopayne" ? RETARDIOS : HEROES);
+export const rosterOf = (game: GameId): Hero[] => (game === "retardiopayne" ? RETARDIOS : RADBROS);
 export const defaultHeroOf = (game: GameId): HeroId => (game === "retardiopayne" ? "retardio555" : "4764");
 /** The difficulty a game plays: RadPayne's is the player's (remembered); RetardioPayne has its one. */
 export const fixedDifficultyOf = (game: GameId): Difficulty | null => (game === "retardiopayne" ? "retardio" : null);

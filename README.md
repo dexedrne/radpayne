@@ -90,7 +90,7 @@ npm install
 npm run dev        # http://localhost:4880
 ```
 
-Pick a Radbro (or one of the two Retardios, #555 and #85) and a difficulty, then press **PLAY**. Click the game to lock the mouse.
+Pick a Radbro and a difficulty, then press **PLAY** (the two Retardios, #555 and #85, play in RetardioPayne). Click the game to lock the mouse.
 
 **Difficulty** (the title, or the pause menu's Settings from the next restart or room; remembered):
 **Chill** (the story: the first release's easy), **Normal** (the default, and tougher than the first
@@ -368,7 +368,7 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
     `cam-dais`, `cam-rug`, `cam-door-a`).
   - `?loadout=shotgun,sniper` starts with those weapons (any weapon id; the last one in hand),
     `?grenades=N` with N frags.
-  - `?radbro=<id>` plays that Radbro (or `retardio555` / `retardio85`) for one page load.
+  - `?radbro=<id>` plays that Radbro for one page load (in RetardioPayne, `retardio555` / `retardio85`).
   - `?holdcheck=<weapon id>` runs the hold check: an empty street, that gun in hand,
     and a scripted player instead of the input (`src/app/dev/holdcheck.ts`, `window.__holdcheck`).
   - `?bot&tour` is the arsenal tour: the bot fights on each new gun in turn, then walks the room's
