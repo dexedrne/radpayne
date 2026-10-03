@@ -150,10 +150,19 @@ k.decor.push(prim("mast-light", "sphere", [22, 9.2, 8], [0.18, 10, 8], "redBlink
 for (const [id, a, b] of [["ac-5", [-19.5, 0, -4.6], [-17, 2.3, -2.6]], ["ac-6", [8.6, 0, 2.4], [11, 2.3, 4.6]], ["ac-7", [19, 0, 2.2], [21.4, 2.3, 4.2]]] as Array<[string, [number, number, number], [number, number, number]]>) {
   k.cover(id, a, b, "hvac", { data: { surface: "metal" } });
   k.deco(`${id}-fan`, [a[0] + 0.4, b[1], a[2] + 0.4], [b[0] - 0.4, b[1] + 0.12, b[2] - 0.4], "vent");
+  // (a lit control panel on each long side and a pale band round the top: they read on the night roof)
+  const alongX = b[0] - a[0] >= b[2] - a[2], mx = (a[0] + b[0]) / 2, mz = (a[2] + b[2]) / 2;
+  for (const s of [-1, 1]) {
+    if (alongX) k.deco(`${id}-panel${s > 0 ? "s" : "n"}`, [mx + 0.3, 1.45, s > 0 ? b[2] : a[2] - 0.03], [mx + 0.75, 1.75, s > 0 ? b[2] + 0.03 : a[2]], "acPanel");
+    else k.deco(`${id}-panel${s > 0 ? "e" : "w"}`, [s > 0 ? b[0] : a[0] - 0.03, 1.45, mz + 0.3], [s > 0 ? b[0] + 0.03 : a[0], 1.75, mz + 0.75], "acPanel");
+  }
+  k.deco(`${id}-band`, [a[0] - 0.02, b[1] - 0.12, a[2] - 0.02], [b[0] + 0.02, b[1] - 0.04, b[2] + 0.02], "acBand");
 }
 for (const [id, a, b] of [["crates-a", [-12, 0, 1], [-10.4, 1.2, 2.4]], ["crates-b", [-1.6, 0, 2.6], [0.2, 1.25, 4.2]], ["crates-c", [15.6, 0, -2], [17.2, 1.2, -0.6]], ["crates-e", [-2, 0, 17], [-0.4, 1.2, 18.4]]] as Array<[string, [number, number, number], [number, number, number]]>) {
   k.cover(id, a, b, "crate", { data: { surface: "wood" } });
-  k.deco(`${id}-strap`, [a[0] - 0.02, a[1], (a[2] + b[2]) / 2 - 0.05], [b[0] + 0.02, b[1] + 0.02, (a[2] + b[2]) / 2 + 0.05], "steelDark");
+  // (the straps both ways round the stack, reflective yellow tape on them)
+  k.deco(`${id}-strap`, [a[0] - 0.02, a[1], (a[2] + b[2]) / 2 - 0.05], [b[0] + 0.02, b[1] + 0.02, (a[2] + b[2]) / 2 + 0.05], "tape");
+  k.deco(`${id}-strap2`, [(a[0] + b[0]) / 2 - 0.05, a[1], a[2] - 0.02], [(a[0] + b[0]) / 2 + 0.05, b[1] + 0.02, b[2] + 0.02], "tape");
 }
 // (the helipad's low blast wall stands off its west side, on the way up from the stairwell: cover from the
 // pad for him, too far from it to be the drop girls' own)
@@ -299,7 +308,10 @@ const materials: Record<string, Record<string, unknown>> = {
   tankWood: { color: "#5a4632", roughness: 0.9 },
   skylight: { color: "#9fc0d8", roughness: 0.1, metalness: 0.3, transparent: true, opacity: 0.55 },
   plywood: { color: "#8a6a44", roughness: 0.85 },
-  crate: tex(`${B}boxes_cardboard.webp`, 0.8, { roughness: 0.9, color: "#9a8466" }),
+  crate: tex(`${B}boxes_cardboard.webp`, 0.8, { roughness: 0.9, color: "#b09878" }),
+  tape: glow("#e8c048", 0.32),
+  acPanel: glow("#8affc0", 0.7, "", `${B}console_panel.webp`),
+  acBand: glow("#b8c8d8", 0.18),
   stairEdge: { color: "#3a3a3c", roughness: 0.8 },
   billboard: glow("#ffffff", 0.45, "", `${P}window_skyline.webp`),
   towerFar: glow("#ffffff", 0.22, "", `${S}tower.webp`),

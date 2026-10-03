@@ -1,10 +1,13 @@
 // Bakes room 1's tiling textures procedurally (no image generation, no source files) into
-// public/textures/*.webp. Every texture tiles seamlessly (all noise and patterns wrap on the tile).
-//   node tools/textures.ts            (needs ImageMagick's `magick` for the webp encode)
+// public/textures/*.webp, and two of chapter 2's (the vault's gold bars, the counting floor's server
+// racks). Every texture tiles seamlessly (all noise and patterns wrap on the tile).
+//   node tools/textures.ts [name ...]   (only those; needs ImageMagick's `magick` for the webp encode)
 //
 // Scale (the level materials use world-space UVs, so repeatCount = tiles per metre):
 //   asphalt 4 m, sidewalk 3 m (2x2 slabs), facades 13.2 m (floors 3.3 m), tower 25.6 x 51.2 m
-//   (3.2 m cells), shutter 1.28 m, puddles 18 m (a mask the street look samples, not a material).
+//   (3.2 m cells), shutter 1.28 m, puddles 18 m (a mask the street look samples, not a material),
+//   gold_bars 0.6 x 0.3 m (rows of bars, every other row offset half a bar), server_rack 0.6 x 1.2 m
+//   (a rack's units, its LEDs the only bright texels: for an unlit "glow" material).
 // Facade rule the look relies on: lit windows are the only texels brighter than ~0.45 luminance
 // (linear); the "lit <gain>" material rule turns exactly those into emissive light.
 import fs from "node:fs";
@@ -294,11 +297,69 @@ function puddles(): Img {
   return img;
 }
 
+/** Stacked gold bars, side on (0.6 x 0.3 m: 4 rows of two bars, every other row offset half a bar):
+ *  each bar a bright bevel along its top, a stamp in the middle, a dark seam round it. */
+function goldBars(): Img {
+  const W = 512, H = 256, img = new Img(W, H), rows = 4, rowH = H / rows, barW = W / 2;
+  const gold: RGB = [1.0, 0.74, 0.27], hi: RGB = [1.0, 0.93, 0.62], lo: RGB = [0.55, 0.33, 0.08], seam: RGB = [0.1, 0.06, 0.02];
+  img.each((x, y, u, v) => {
+    const row = Math.floor(y / rowH), ly = (y - row * rowH) / rowH;
+    const off = row % 2 ? barW / 2 : 0, bx = mod(x - off, barW), bar = Math.floor(mod(x - off, W) / barW);
+    // the bar's face: narrower at the top (a cast bar's taper), the seam outside it
+    const inset = 3 + 10 * ly;
+    if (ly < 0.05 || ly > 0.95 || bx < inset || bx > barW - inset) return seam;
+    let c = mix(lo, gold, Math.min(1, 0.35 + ly * 0.9));
+    if (ly > 0.8) c = mix(c, hi, (ly - 0.8) / 0.15);
+    // the stamp (a sunk rectangle with a light lower lip)
+    const sx = (bx - barW * 0.3) / (barW * 0.4), sy = (ly - 0.3) / 0.38;
+    if (sx > 0 && sx < 1 && sy > 0 && sy < 1) c = sy < 0.08 ? mix(c, hi, 0.5) : mul(c, 0.82);
+    const grain = 0.9 + 0.2 * fbm(u, v, 16, 8, 3, 301 + bar + row * 7);
+    return mul(c, grain);
+  });
+  return img;
+}
+
+/** A server rack's front (0.6 x 1.2 m): rails each side, units 1-4 U high with vent slots and a few
+ *  status LEDs (green, blue, amber), the only bright texels. */
+function serverRack(): Img {
+  const W = 256, H = 512, img = new Img(W, H), r = rng(411), U = 19;
+  img.each(() => [0.05, 0.055, 0.065]);
+  const rail = 14;
+  img.rect(0, 0, rail, H, () => [0.1, 0.105, 0.12]);
+  img.rect(W - rail, 0, rail, H, () => [0.1, 0.105, 0.12]);
+  const leds: RGB[] = [[0.35, 1.0, 0.55], [0.35, 1.0, 0.55], [0.4, 0.7, 1.0], [1.0, 0.7, 0.2]];
+  let y = 0;
+  while (y < H) {
+    const n = Math.min(Math.floor((H - y) / U), 1 + Math.floor(r() * 4));
+    if (n <= 0) break;
+    const h = n * U, shade = 0.1 + r() * 0.08, blank = r() < 0.08;
+    img.rect(rail + 2, y + 1, W - 2 * rail - 4, h - 2, (_x, _y, lx, ly) => {
+      if (blank) return [0.04, 0.04, 0.05];
+      const k = shade * (ly > 0.9 ? 1.4 : ly < 0.08 ? 0.6 : 1);
+      // vent slots across the right two thirds
+      if (lx > 0.36 && lx < 0.96 && ly > 0.25 && ly < 0.75 && Math.floor(_x / 4) % 2 === 0) return [k * 0.4, k * 0.4, k * 0.45];
+      return [k, k * 1.02, k * 1.1];
+    });
+    if (!blank) {
+      const count = 1 + Math.floor(r() * 5);
+      for (let i = 0; i < count; i++) {
+        const c = leds[Math.floor(r() * leds.length)], lx = rail + 10 + i * 9, ly = y + Math.floor(h / 2) - 2;
+        img.rect(lx, ly, 4, 4, () => c);
+      }
+    }
+    y += h;
+  }
+  return img;
+}
+
 // ---------- write ----------
 const outDir = path.resolve(import.meta.dirname, "..", "public", "textures");
 fs.mkdirSync(outDir, { recursive: true });
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "rp-tex-"));
-function save(name: string, img: Img, quality = 82): void {
+const only = process.argv.slice(2);
+function save(name: string, img: Img | (() => Img), quality = 82): void {
+  if (only.length && !only.includes(name)) return;
+  if (typeof img === "function") img = img();
   const p = path.join(tmp, `${name}.png`);
   fs.writeFileSync(p, png(img.w, img.h, img.px));
   const out = path.join(outDir, `${name}.webp`);
@@ -309,21 +370,23 @@ function save(name: string, img: Img, quality = 82): void {
 const warm: RGB = [1.0, 0.79, 0.46], warmWhite: RGB = [1.0, 0.9, 0.72], tv: RGB = [0.58, 0.72, 1.0], pinkRoom: RGB = [1.0, 0.45, 0.78];
 const homeLights: Lit = { p: 0.4, colors: [[warm, 0.55], [warmWhite, 0.27], [tv, 0.13], [pinkRoom, 0.05]] };
 
-save("asphalt", asphalt());
-save("sidewalk", sidewalk());
-save("facade-brick", facade(1024, 4, 31,
+save("asphalt", asphalt);
+save("sidewalk", sidewalk);
+save("facade-brick", () => facade(1024, 4, 31,
   brickWall(1024, 31, [0.42, 0.2, 0.15], 0.35, [0.3, 0.28, 0.26], 0.45),
   { w: 1.15, h: 1.75, sill: 0.85, panes: [1, 2], frame: [0.07, 0.07, 0.08], lintel: [0.36, 0.33, 0.3], lintelH: 0.2, sillC: [0.33, 0.31, 0.28] },
   homeLights));
-save("facade-brownstone", facade(1024, 6, 41,
+save("facade-brownstone", () => facade(1024, 6, 41,
   ashlarWall(1024, 41, [0.34, 0.23, 0.17], 0.18),
   { w: 0.95, h: 1.85, sill: 0.8, panes: [2, 2], frame: [0.1, 0.07, 0.06], lintel: [0.27, 0.18, 0.14], lintelH: 0.32, sillC: [0.3, 0.2, 0.15] },
   homeLights));
-save("facade-club", facade(1024, 4, 91,
+save("facade-club", () => facade(1024, 4, 91,
   brickWall(1024, 91, [0.24, 0.13, 0.11], 0.3, [0.17, 0.16, 0.16], 0.6),
   { w: 1.9, h: 2.1, sill: 0.7, panes: [4, 3], frame: [0.05, 0.05, 0.06], lintel: [0.2, 0.19, 0.18], lintelH: 0.18, sillC: [0.2, 0.19, 0.18] },
   { p: 0.3, colors: [[[1.0, 0.25, 0.75], 0.5], [[0.72, 0.35, 1.0], 0.3], [[0.25, 0.95, 1.0], 0.2]] }));
-save("tower", tower());
-save("shutter", shutter());
-save("puddles", puddles(), 90);
+save("tower", tower);
+save("shutter", shutter);
+save("puddles", puddles, 90);
+save("gold_bars", goldBars, 88);
+save("server_rack", serverRack, 90);
 fs.rmSync(tmp, { recursive: true, force: true });

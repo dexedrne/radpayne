@@ -68,9 +68,14 @@ for (const x of [-18, -12, -6, 0, 6]) {
 }
 for (const [x, z] of [[-15, -8.1], [-15, 8.1], [-3, -8.1], [-3, 8.1], [9, -8.1], [9, 8.1], [-9, 0], [3, 0]]) k.cover(`pillar-${x}-${z}`, [x - 0.45, 0, z - 0.45], [x + 0.45, H, z + 0.45], "pillar");
 // server cabinets (high): by the dock where he comes in
+// (each long face a rack front, its status LEDs lit: they read in the dark and in the blackout)
+const racks = (id: string, x0: number, z0: number) => {
+  k.deco(`${id}-rack-w`, [x0 - 0.02, 0.04, z0 + 0.06], [x0, 1.96, z0 + 1.94], "rack");
+  k.deco(`${id}-rack-e`, [x0 + 0.8, 0.04, z0 + 0.06], [x0 + 0.82, 1.96, z0 + 1.94], "rack");
+};
 for (const [id, z0] of [["srv-dock-n", -6], ["srv-dock-s", 4]] as const) {
   k.cover(id, [-23.5, 0, z0], [-22.7, 2.0, z0 + 2], "counter", { data: { surface: "metal" } });
-  k.deco(`${id}-leds`, [-22.69, 1.2, z0 + 0.2], [-22.66, 1.8, z0 + 1.8], "monitor");
+  racks(id, -23.5, z0);
 }
 
 // ---------------------------------------------------------------- the offices (south-west, glass)
@@ -125,7 +130,7 @@ k.cover("table", [19, 0, -3], [22.6, 0.95, 3], "tableDark", { data: { surface: "
 // server cabinets in the board room, and either side of the vault corridor's door
 for (const [id, x0, z0] of [["srv-br-n", 17.2, -6.4], ["srv-br-s", 17.2, 4.4], ["srv-vc-n", 24.6, -5.2], ["srv-vc-s", 24.6, 3.2]] as const) {
   k.cover(id, [x0, 0, z0], [x0 + 0.8, 2.0, z0 + 2], "counter", { data: { surface: "metal" } });
-  k.deco(`${id}-leds`, [x0 - 0.03, 1.2, z0 + 0.2], [x0 - 0.01, 1.8, z0 + 1.8], "monitor");
+  racks(id, x0, z0);
 }
 for (const [id, x, z] of [["m1", 19.5, -10], ["m2", 22.5, -10], ["m3", 19.5, 10], ["m4", 22.5, 10]] as const) k.cover(`counter-${id}`, [x - 0.9, 0, z - 0.6], [x + 0.9, 1.1, z + 0.6], "counter", { data: { surface: "metal" } });
 k.cover("bin-n", [24.4, 0, -14.4], [25.6, 1.6, -12.8], "steel", { data: { surface: "metal" } }, { faces: ["n", "s", "w"] });
@@ -259,6 +264,7 @@ const materials: Record<string, Record<string, unknown>> = {
   filing: tex(`${B}gun_locker.webp`, [3, 2.4], { roughness: 0.5, metalness: 0.4, color: "#9aa0a8" }),
   tableDark: { color: "#1c1714", roughness: 0.3 },
   counter: tex(`${B}console_panel.webp`, 1.2, { roughness: 0.5, metalness: 0.3 }),
+  rack: { ...glow("#ffffff", 1.8, "", `${S}server_rack.webp`), repeat: true, repeatCount: [1 / 0.6, 1 / 1.2] },
   vaultGlow: glow("#ffc860", 0.9),
 };
 

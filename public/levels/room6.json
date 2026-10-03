@@ -121,11 +121,30 @@
    "roughness": 0.85
   },
   "crate": {
-   "color": "#9a8466",
+   "color": "#b09878",
    "texture": "/textures/backrooms/boxes_cardboard.webp",
    "repeat": true,
    "repeatCount": [1.25, 1.25],
    "roughness": 0.9
+  },
+  "tape": {
+   "materialType": "basic",
+   "color": "#e8c048",
+   "toneMapped": false,
+   "name": "glow 0.32"
+  },
+  "acPanel": {
+   "materialType": "basic",
+   "color": "#8affc0",
+   "toneMapped": false,
+   "name": "glow 0.7",
+   "texture": "/textures/backrooms/console_panel.webp"
+  },
+  "acBand": {
+   "materialType": "basic",
+   "color": "#b8c8d8",
+   "toneMapped": false,
+   "name": "glow 0.18"
   },
   "stairEdge": {
    "color": "#3a3a3c",
@@ -6963,6 +6982,102 @@
       }
      },
      {
+      "id": "ac-5-paneln",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17.725, 1.6, -4.615],
+         "scale": [0.45, 0.3, 0.03]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "acPanel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ac-5-panels",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-17.725, 1.6, -2.585],
+         "scale": [0.45, 0.3, 0.03]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "acPanel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ac-5-band",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-18.25, 2.22, -3.6],
+         "scale": [2.54, 0.08, 2.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "acBand"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
       "id": "ac-6-fan",
       "components": {
        "transform": {
@@ -6983,6 +7098,102 @@
         "type": "Material",
         "properties": {
          "materialId": "vent"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ac-6-paneln",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.325, 1.6, 2.385],
+         "scale": [0.45, 0.3, 0.03]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "acPanel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ac-6-panels",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.325, 1.6, 4.615],
+         "scale": [0.45, 0.3, 0.03]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "acPanel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ac-6-band",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.8, 2.22, 3.5],
+         "scale": [2.44, 0.08, 2.24]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "acBand"
         }
        },
        "mesh": {
@@ -7027,6 +7238,102 @@
       }
      },
      {
+      "id": "ac-7-paneln",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [20.725, 1.6, 2.185],
+         "scale": [0.45, 0.3, 0.03]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "acPanel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ac-7-panels",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [20.725, 1.6, 4.215],
+         "scale": [0.45, 0.3, 0.03]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "acPanel"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "ac-7-band",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [20.2, 2.22, 3.2],
+         "scale": [2.44, 0.08, 2.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "acBand"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
       "id": "crates-a-strap",
       "components": {
        "transform": {
@@ -7046,7 +7353,39 @@
        "material": {
         "type": "Material",
         "properties": {
-         "materialId": "steelDark"
+         "materialId": "tape"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "crates-a-strap2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-11.2, 0.61, 1.7],
+         "scale": [0.1, 1.22, 1.44]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "tape"
         }
        },
        "mesh": {
@@ -7078,7 +7417,39 @@
        "material": {
         "type": "Material",
         "properties": {
-         "materialId": "steelDark"
+         "materialId": "tape"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "crates-b-strap2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-0.7, 0.635, 3.4],
+         "scale": [0.1, 1.27, 1.64]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "tape"
         }
        },
        "mesh": {
@@ -7110,7 +7481,39 @@
        "material": {
         "type": "Material",
         "properties": {
-         "materialId": "steelDark"
+         "materialId": "tape"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "crates-c-strap2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [16.4, 0.61, -1.3],
+         "scale": [0.1, 1.22, 1.44]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "tape"
         }
        },
        "mesh": {
@@ -7142,7 +7545,39 @@
        "material": {
         "type": "Material",
         "properties": {
-         "materialId": "steelDark"
+         "materialId": "tape"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "crates-e-strap2",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.2, 0.61, 17.7],
+         "scale": [0.1, 1.22, 1.44]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "tape"
         }
        },
        "mesh": {

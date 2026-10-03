@@ -129,6 +129,15 @@
    "roughness": 0.5,
    "metalness": 0.3
   },
+  "rack": {
+   "materialType": "basic",
+   "color": "#ffffff",
+   "toneMapped": false,
+   "name": "glow 1.8",
+   "texture": "/textures/server_rack.webp",
+   "repeat": true,
+   "repeatCount": [1.6666666666666667, 0.8333333333333334]
+  },
   "vaultGlow": {
    "materialType": "basic",
    "color": "#ffc860",
@@ -7312,13 +7321,13 @@
       }
      },
      {
-      "id": "srv-dock-n-leds",
+      "id": "srv-dock-n-rack-w",
       "components": {
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-22.675, 1.5, -5],
-         "scale": [0.03, 0.6, 1.6]
+         "position": [-23.51, 1, -5],
+         "scale": [0.02, 1.92, 1.88]
         }
        },
        "geometry": {
@@ -7331,7 +7340,7 @@
        "material": {
         "type": "Material",
         "properties": {
-         "materialId": "monitor"
+         "materialId": "rack"
         }
        },
        "mesh": {
@@ -7344,13 +7353,13 @@
       }
      },
      {
-      "id": "srv-dock-s-leds",
+      "id": "srv-dock-n-rack-e",
       "components": {
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [-22.675, 1.5, 5],
-         "scale": [0.03, 0.6, 1.6]
+         "position": [-22.69, 1, -5],
+         "scale": [0.02, 1.92, 1.88]
         }
        },
        "geometry": {
@@ -7363,7 +7372,71 @@
        "material": {
         "type": "Material",
         "properties": {
-         "materialId": "monitor"
+         "materialId": "rack"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "srv-dock-s-rack-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-23.51, 1, 5],
+         "scale": [0.02, 1.92, 1.88]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "rack"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "srv-dock-s-rack-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-22.69, 1, 5],
+         "scale": [0.02, 1.92, 1.88]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "rack"
         }
        },
        "mesh": {
@@ -7472,13 +7545,13 @@
       }
      },
      {
-      "id": "srv-br-n-leds",
+      "id": "srv-br-n-rack-w",
       "components": {
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [17.18, 1.5, -5.4],
-         "scale": [0.02, 0.6, 1.6]
+         "position": [17.19, 1, -5.4],
+         "scale": [0.02, 1.92, 1.88]
         }
        },
        "geometry": {
@@ -7491,7 +7564,7 @@
        "material": {
         "type": "Material",
         "properties": {
-         "materialId": "monitor"
+         "materialId": "rack"
         }
        },
        "mesh": {
@@ -7504,13 +7577,13 @@
       }
      },
      {
-      "id": "srv-br-s-leds",
+      "id": "srv-br-n-rack-e",
       "components": {
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [17.18, 1.5, 5.4],
-         "scale": [0.02, 0.6, 1.6]
+         "position": [18.01, 1, -5.4],
+         "scale": [0.02, 1.92, 1.88]
         }
        },
        "geometry": {
@@ -7523,7 +7596,7 @@
        "material": {
         "type": "Material",
         "properties": {
-         "materialId": "monitor"
+         "materialId": "rack"
         }
        },
        "mesh": {
@@ -7536,13 +7609,13 @@
       }
      },
      {
-      "id": "srv-vc-n-leds",
+      "id": "srv-br-s-rack-w",
       "components": {
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [24.58, 1.5, -4.2],
-         "scale": [0.02, 0.6, 1.6]
+         "position": [17.19, 1, 5.4],
+         "scale": [0.02, 1.92, 1.88]
         }
        },
        "geometry": {
@@ -7555,7 +7628,7 @@
        "material": {
         "type": "Material",
         "properties": {
-         "materialId": "monitor"
+         "materialId": "rack"
         }
        },
        "mesh": {
@@ -7568,13 +7641,13 @@
       }
      },
      {
-      "id": "srv-vc-s-leds",
+      "id": "srv-br-s-rack-e",
       "components": {
        "transform": {
         "type": "Transform",
         "properties": {
-         "position": [24.58, 1.5, 4.2],
-         "scale": [0.02, 0.6, 1.6]
+         "position": [18.01, 1, 5.4],
+         "scale": [0.02, 1.92, 1.88]
         }
        },
        "geometry": {
@@ -7587,7 +7660,135 @@
        "material": {
         "type": "Material",
         "properties": {
-         "materialId": "monitor"
+         "materialId": "rack"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "srv-vc-n-rack-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [24.59, 1, -4.2],
+         "scale": [0.02, 1.92, 1.88]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "rack"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "srv-vc-n-rack-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [25.41, 1, -4.2],
+         "scale": [0.02, 1.92, 1.88]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "rack"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "srv-vc-s-rack-w",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [24.59, 1, 4.2],
+         "scale": [0.02, 1.92, 1.88]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "rack"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "srv-vc-s-rack-e",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [25.41, 1, 4.2],
+         "scale": [0.02, 1.92, 1.88]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "rack"
         }
        },
        "mesh": {

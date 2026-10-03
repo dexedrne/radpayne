@@ -14,7 +14,7 @@
 //                       one, through the other, and never appearing in an open lift he is watching);
 //                       6 of them on Normal, 9 on Hard, 14 on Hardcore
 //   more cover          tall gold-bar stacks (they stop both beams) by the north shelf and either side of
-//                       the way in from the vault door
+//                       the way in from the vault door (all the gold drawn as stacked bars: gold_bars)
 //   secrets             a sliding shelf (E) in the north-west wall (the pin), a case of bearer bonds (it
 //                       breaks: frags), the teller's cage off the entry corridor
 // Room settings: stage (the vault: the desk, the beams' reach, the door she runs for, the waves), later
@@ -200,7 +200,8 @@ const materials: Record<string, Record<string, unknown>> = {
   plinth: tex(`${E2}marble_grey.webp`, 1.5, { roughness: 0.3, color: "#e8e0d0" }),
   ledgerDesk: { color: "#1e1715", roughness: 0.35 },
   paper: glow("#f4ecd8", 0.7),
-  gold: glow("#ffc24a", 0.55),
+  // (stacked bars: tools/textures.ts gold_bars; lit like the plain gold it was)
+  gold: { ...glow("#ffffff", 0.6, "", "/textures/gold_bars.webp"), repeat: true, repeatCount: [1 / 0.6, 1 / 0.3] },
   pillar: tex(`${E2}marble_grey.webp`, 2, { roughness: 0.3, color: "#d8d0c0" }),
   shelfBags: tex(`${B}boxes_cardboard.webp`, 0.8, { roughness: 0.85, color: "#8a6a4a" }),
   case: { color: "#3a2a1a", roughness: 0.5 },

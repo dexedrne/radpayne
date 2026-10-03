@@ -145,8 +145,20 @@ for (const [x, z] of [[-10, -10], [10, 11], [-18, 14.5], [18, -8], [-2.5, 14.5],
   k.cover(`palm-${x}-${z}`, [x - 0.25, 0, z - 0.25], [x + 0.25, 6, z + 0.25], "trunk", { data: { surface: "wood" } });
   k.decor.push(prim(`frond-${x}-${z}`, "sphere", [x, 6.4, z], [1.8, 10, 6], "leaves"));
 }
-// (the benches have high backs: low cover)
-for (const [id, x, z] of [["b1", -10.5, 15.5], ["b2", 10.5, -16.5], ["b3", 0, 9]] as const) k.cover(`bench-${id}`, [x - 1.1, 0, z - 0.35], [x + 1.1, 1.0, z + 0.35], "wood", { data: { surface: "wood" } });
+// (the benches have high backs: low cover) back-to-back park benches: a collider the camera knows
+// (unchanged: 2.2 x 0.7 x 1.0), drawn as two slatted seats on a stone base, the high back between them,
+// iron end frames
+for (const [id, x, z] of [["b1", -10.5, 15.5], ["b2", 10.5, -16.5], ["b3", 0, 9]] as const) {
+  k.cover(`bench-${id}`, [x - 1.1, 0, z - 0.35], [x + 1.1, 1.0, z + 0.35], "wood", { hidden: true, data: { surface: "wood", camera: true } });
+  k.deco(`bench-${id}-base`, [x - 1.02, 0, z - 0.26], [x + 1.02, 0.4, z + 0.26], "benchBase");
+  for (const sz of [-1, 1]) {
+    k.deco(`bench-${id}-seat${sz > 0 ? "s" : "n"}`, [x - 1.04, 0.4, sz > 0 ? z + 0.07 : z - 0.35], [x + 1.04, 0.47, sz > 0 ? z + 0.35 : z - 0.07], "benchSlats");
+    for (const sl of [0.62, 0.84]) k.deco(`bench-${id}-rail${sz > 0 ? "s" : "n"}${sl}`, [x - 1.02, sl, sz > 0 ? z + 0.07 : z - 0.11], [x + 1.02, sl + 0.1, sz > 0 ? z + 0.11 : z - 0.07], "benchSlats");
+  }
+  k.deco(`bench-${id}-back`, [x - 1.02, 0.47, z - 0.05], [x + 1.02, 0.94, z + 0.05], "wood");
+  k.deco(`bench-${id}-top`, [x - 1.06, 0.94, z - 0.09], [x + 1.06, 1.0, z + 0.09], "benchSlats");
+  for (const sx of [-1, 1]) k.deco(`bench-${id}-end${sx > 0 ? "e" : "w"}`, [sx > 0 ? x + 1.02 : x - 1.1, 0, z - 0.35], [sx > 0 ? x + 1.1 : x - 1.02, 0.98, z + 0.35], "benchIron");
+}
 // the fountain on the east lawn (its rim is cover), a low garden wall in the south, planters along the
 // gallery's glass
 k.cover("fountain", [15, 0, -1.5], [18, 0.95, 1.5], "planter");
@@ -295,6 +307,9 @@ const materials: Record<string, Record<string, unknown>> = {
   pond: glow("#1f6f6a", 0.7),
   waterfall: glow("#9ff0ff", 0.55, "flicker"),
   wood: tex(`${B}wood_desk.webp`, 1.5, { roughness: 0.6 }),
+  benchSlats: tex(`${B}wood_desk.webp`, [1.5, 0.4], { roughness: 0.55, color: "#c89a68" }),
+  benchBase: tex(`${E2}concrete_bare.webp`, 1.2, { roughness: 0.85, color: "#a8a294" }),
+  benchIron: { color: "#26282c", roughness: 0.4, metalness: 0.7 },
   whiteWood: { color: "#e9e4da", roughness: 0.7 },
   planter: tex(`${E2}concrete_bare.webp`, 1.2, { roughness: 0.8, color: "#b8b2a4" }),
   leaves: { color: "#2f6a3a", roughness: 0.9 },

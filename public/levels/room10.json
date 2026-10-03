@@ -51,9 +51,12 @@
   },
   "gold": {
    "materialType": "basic",
-   "color": "#ffc24a",
+   "color": "#ffffff",
    "toneMapped": false,
-   "name": "glow 0.55"
+   "name": "glow 0.6",
+   "texture": "/textures/gold_bars.webp",
+   "repeat": true,
+   "repeatCount": [1.6666666666666667, 3.3333333333333335]
   },
   "pillar": {
    "color": "#d8d0c0",

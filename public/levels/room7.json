@@ -93,6 +93,25 @@
    "repeatCount": [0.6666666666666666, 0.6666666666666666],
    "roughness": 0.6
   },
+  "benchSlats": {
+   "color": "#c89a68",
+   "texture": "/textures/backrooms/wood_desk.webp",
+   "repeat": true,
+   "repeatCount": [0.6666666666666666, 2.5],
+   "roughness": 0.55
+  },
+  "benchBase": {
+   "color": "#a8a294",
+   "texture": "/textures/elevator/concrete_bare.webp",
+   "repeat": true,
+   "repeatCount": [0.8333333333333334, 0.8333333333333334],
+   "roughness": 0.85
+  },
+  "benchIron": {
+   "color": "#26282c",
+   "roughness": 0.4,
+   "metalness": 0.7
+  },
   "whiteWood": {
    "color": "#e9e4da",
    "roughness": 0.7
@@ -5520,14 +5539,16 @@
         "type": "Mesh",
         "properties": {
          "castShadow": false,
-         "receiveShadow": false
+         "receiveShadow": false,
+         "visible": false
         }
        },
        "data": {
         "type": "Data",
         "properties": {
          "data": {
-          "surface": "wood"
+          "surface": "wood",
+          "camera": true
          }
         }
        }
@@ -5560,14 +5581,16 @@
         "type": "Mesh",
         "properties": {
          "castShadow": false,
-         "receiveShadow": false
+         "receiveShadow": false,
+         "visible": false
         }
        },
        "data": {
         "type": "Data",
         "properties": {
          "data": {
-          "surface": "wood"
+          "surface": "wood",
+          "camera": true
          }
         }
        }
@@ -5600,14 +5623,16 @@
         "type": "Mesh",
         "properties": {
          "castShadow": false,
-         "receiveShadow": false
+         "receiveShadow": false,
+         "visible": false
         }
        },
        "data": {
         "type": "Data",
         "properties": {
          "data": {
-          "surface": "wood"
+          "surface": "wood",
+          "camera": true
          }
         }
        }
@@ -8989,6 +9014,1062 @@
         "type": "Material",
         "properties": {
          "materialId": "leaves"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-base",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 4.2, 15.5],
+         "scale": [2.04, 0.4, 0.52]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchBase"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-seatn",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 4.435, 15.29],
+         "scale": [2.08, 0.07, 0.28]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-railn0.62",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 4.67, 15.41],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-railn0.84",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 4.89, 15.41],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-seats",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 4.435, 15.71],
+         "scale": [2.08, 0.07, 0.28]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-rails0.62",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 4.67, 15.59],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-rails0.84",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 4.89, 15.59],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-back",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 4.705, 15.5],
+         "scale": [2.04, 0.47, 0.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "wood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-top",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-10.5, 4.97, 15.5],
+         "scale": [2.12, 0.06, 0.18]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-endw",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-11.56, 4.49, 15.5],
+         "scale": [0.08, 0.98, 0.7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchIron"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b1-ende",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-9.44, 4.49, 15.5],
+         "scale": [0.08, 0.98, 0.7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchIron"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-base",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 4.2, -16.5],
+         "scale": [2.04, 0.4, 0.52]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchBase"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-seatn",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 4.435, -16.71],
+         "scale": [2.08, 0.07, 0.28]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-railn0.62",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 4.67, -16.59],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-railn0.84",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 4.89, -16.59],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-seats",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 4.435, -16.29],
+         "scale": [2.08, 0.07, 0.28]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-rails0.62",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 4.67, -16.41],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-rails0.84",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 4.89, -16.41],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-back",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 4.705, -16.5],
+         "scale": [2.04, 0.47, 0.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "wood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-top",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [10.5, 4.97, -16.5],
+         "scale": [2.12, 0.06, 0.18]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-endw",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [9.44, 4.49, -16.5],
+         "scale": [0.08, 0.98, 0.7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchIron"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b2-ende",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [11.56, 4.49, -16.5],
+         "scale": [0.08, 0.98, 0.7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchIron"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-base",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 4.2, 9],
+         "scale": [2.04, 0.4, 0.52]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchBase"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-seatn",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 4.435, 8.79],
+         "scale": [2.08, 0.07, 0.28]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-railn0.62",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 4.67, 8.91],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-railn0.84",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 4.89, 8.91],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-seats",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 4.435, 9.21],
+         "scale": [2.08, 0.07, 0.28]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-rails0.62",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 4.67, 9.09],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-rails0.84",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 4.89, 9.09],
+         "scale": [2.04, 0.1, 0.04]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-back",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 4.705, 9],
+         "scale": [2.04, 0.47, 0.1]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "wood"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-top",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [0, 4.97, 9],
+         "scale": [2.12, 0.06, 0.18]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchSlats"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-endw",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [-1.06, 4.49, 9],
+         "scale": [0.08, 0.98, 0.7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchIron"
+        }
+       },
+       "mesh": {
+        "type": "Mesh",
+        "properties": {
+         "castShadow": false,
+         "receiveShadow": false
+        }
+       }
+      }
+     },
+     {
+      "id": "bench-b3-ende",
+      "components": {
+       "transform": {
+        "type": "Transform",
+        "properties": {
+         "position": [1.06, 4.49, 9],
+         "scale": [0.08, 0.98, 0.7]
+        }
+       },
+       "geometry": {
+        "type": "Geometry",
+        "properties": {
+         "geometryType": "box",
+         "args": [1, 1, 1]
+        }
+       },
+       "material": {
+        "type": "Material",
+        "properties": {
+         "materialId": "benchIron"
         }
        },
        "mesh": {
