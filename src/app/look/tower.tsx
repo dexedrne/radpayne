@@ -23,6 +23,7 @@ import { MarkerLights } from "./lights.tsx";
 import { CombatRead, enemyMaskPass, enemyOutline, syncMaskCamera, tagForMask, neonDim } from "./read.tsx";
 import { CameraKey, WORLD_UV, hostileEmissive, isActor, readTokens, type Tokens } from "./tokens.ts";
 import { useGfx, type Bloom } from "./gfx.ts";
+import { cutGrade } from "./cutGrade.ts";
 import { registerLook } from "./compile.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -145,6 +146,7 @@ function Post({ msaa, level, L }: { msaa: boolean; level: Bloom; L: LookNumbers 
     }
     c = enemyOutline(c, maskPass, RIM_EDGE, 0.12, 0.35);
     c = neutralToneMapping(c, float(L.exposure));
+    c = cutGrade(c); // RetardioPayne's split tone (cutGrade.ts); RadPayne: as it is
     const v = smoothstep(0.5, 1.05, length(uv().sub(0.5).mul(vec2(1.0, 0.8))));
     c = c.mul(float(1).sub(v.mul(L.vignette)));
     pipeline.outputNode = vec4(c, 1);

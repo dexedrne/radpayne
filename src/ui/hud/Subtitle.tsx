@@ -4,6 +4,7 @@ import { Keycap, usePadPrompts } from "./Keycap.tsx";
 import { padKeys } from "../../input/pad.ts";
 import { parseHint, subtitleWidth } from "./logic.ts";
 import { hudScaleNow } from "./scale.ts";
+import { textFor } from "../cutText.ts";
 
 export function HintRow({ hint }: { hint: string }) {
   const pad = usePadPrompts();
@@ -29,7 +30,7 @@ export function Subtitle({ text, hint, until, show, now }: { text: string; hint:
   const width = subtitleWidth(innerWidth, hudScaleNow(), narrow);
   return (
     <div className={`rp-sub rp-z${narrow ? " narrow" : ""}`} style={{ opacity: o, width }}>
-      <Caption text={text} className={show ? "" : "hide"} />
+      <Caption text={textFor(text)} className={show ? "" : "hide"} />
       {hint && <HintRow hint={hint} />}
     </div>
   );

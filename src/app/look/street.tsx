@@ -50,6 +50,7 @@ import { FRAME, renderGate } from "../frame.ts";
 import { clubPulse } from "../../audio/sfx.ts";
 import { MarkerLights } from "./lights.tsx";
 import { RAIN, useGfx, type Bloom, type Reflections } from "./gfx.ts";
+import { cutGrade } from "./cutGrade.ts";
 import { registerLook } from "./compile.ts";
 import { COMBAT, CombatRead, enemyMaskPass, enemyOutline, syncMaskCamera, tagForMask, neonDim } from "./read.tsx";
 import { CameraKey, WORLD_UV, isActor, readTokens, type Tokens } from "./tokens.ts";
@@ -545,6 +546,7 @@ function StreetPost({ msaa, level, ground }: { msaa: boolean; level: Bloom; grou
     c = c.add(gradeFx.lift);
     c = enemyOutline(c, maskPass); // the goons read at range (read.tsx), whatever the graphics settings
     c = neutralToneMapping(c, gradeFx.exposure);
+    c = cutGrade(c); // RetardioPayne's split tone (cutGrade.ts); RadPayne: as it is
     const v = smoothstep(gradeFx.vignetteIn, gradeFx.vignetteOut, length(uv().sub(0.5).mul(vec2(1.0, 0.8))));
     c = c.mul(float(1).sub(v.mul(gradeFx.vignette)));
     pipeline.outputNode = vec4(c, 1);

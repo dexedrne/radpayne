@@ -5,6 +5,8 @@ import { create } from "zustand";
 import type { Difficulty } from "../sim/tuning.ts";
 import type { Stats } from "../sim/game.ts";
 import type { BaseWeapon, WeaponId } from "../combat/weapons.ts";
+import type { GameId } from "../brands.ts";
+import { GAME } from "../product.ts";
 
 export type RadbroId = "652" | "4764" | "2564" | "723" | "3171" | "250";
 /** The owner's two Retardios (#555 the cousin, #85 the classic): built on the Radbro rig with the
@@ -29,7 +31,18 @@ export const RETARDIOS: Array<Hero<RetardioId>> = [
 ];
 /** The character select, in order (the pins stay the six Radbros'). */
 export const HEROES: Hero[] = [...RADBROS, ...RETARDIOS];
-export const heroOf = (id: HeroId): Hero => HEROES.find(h => h.id === id) ?? RADBROS[1];
+/** Who a game lets you play, in its character select's order, and its default pick: RadPayne everyone
+ *  (#4764 first: he is the hero of the comic panels); RetardioPayne only the two Retardios. */
+export const rosterOf = (game: GameId): Hero[] => (game === "retardiopayne" ? RETARDIOS : HEROES);
+export const defaultHeroOf = (game: GameId): HeroId => (game === "retardiopayne" ? "retardio555" : "4764");
+/** The difficulty a game plays: RadPayne's is the player's (remembered); RetardioPayne has its one. */
+export const fixedDifficultyOf = (game: GameId): Difficulty | null => (game === "retardiopayne" ? "retardio" : null);
+/** This page's roster (product.ts). */
+export const ROSTER: Hero[] = rosterOf(GAME);
+const FIXED_DIFF = fixedDifficultyOf(GAME);
+export const heroOf = (id: HeroId): Hero => HEROES.find(h => h.id === id) ?? ROSTER.find(h => h.id === defaultHeroOf(GAME)) ?? RADBROS[1];
+/** A hero id this page may play (else its default). */
+export const pickFor = (game: GameId, v: string | null | undefined): HeroId => (rosterOf(game).some(h => h.id === v) ? (v as HeroId) : defaultHeroOf(game));
 /** File stem of a hero's models and portrait: radbro652, retardio555. */
 export const heroFile = (id: HeroId): string => (id.startsWith("retardio") ? id : `radbro${id}`);
 
@@ -208,9 +221,9 @@ export const HUD_INITIAL: Hud = {
 
 export const useUi = create<Ui>(() => ({
   screen: "title",
-  // #4764 is the hero of the comic panels, so he is the default pick
-  radbro: ((v => (HEROES.some(h => h.id === v) ? v : "4764"))(stored("radbro", "4764")) as HeroId),
-  difficulty: (stored("difficulty", "normal") as Difficulty),
+  // RadPayne: #4764 is the hero of the comic panels, so he is the default pick; RetardioPayne: #555
+  radbro: pickFor(GAME, stored("radbro", defaultHeroOf(GAME))),
+  difficulty: FIXED_DIFF ?? (stored("difficulty", "normal") as Difficulty),
   quality: (stored("quality", "high") as Quality),
   sensitivity: Number(stored("sensitivity", "1")) || 1,
   invertY: stored("invertY", "0") === "1",
@@ -245,6 +258,7 @@ export const useUi = create<Ui>(() => ({
 
 /** Change a persisted setting (applies at once). */
 export function setSetting<K extends "hudSize" | "threats" | "dmgColour" | "subs" | "quality" | "sensitivity" | "invertY" | "muted" | "difficulty" | "chatter" | "killcam" | "padSens" | "padInvertY" | "deadZone" | "vibration" | "aimAssist">(k: K, v: Ui[K]): void {
+  if (k === "difficulty" && FIXED_DIFF) return; // RetardioPayne: one difficulty, never stored over RadPayne's
   useUi.setState({ [k]: v } as Pick<Ui, K>);
   store(k, typeof v === "boolean" ? (v ? "1" : "0") : String(v));
 }

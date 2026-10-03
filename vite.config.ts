@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import crypto from "node:crypto";
+import { BRANDS, brandHtml, resolveGame, type GameId } from "./src/brands.ts";
 
 /**
  * Dev-only: POST /__radpayne/save?room=<id> writes public/levels/<id>.json (the editor's Save) and
@@ -78,11 +79,53 @@ function fontVersions(hashes: Record<string, string>): Plugin {
   };
 }
 
-export default defineConfig(({ command }) => {
+/**
+ * The game this build is (src/brands.ts): VITE_GAME=retardiopayne builds RetardioPayne, anything else
+ * RadPayne. RetardioPayne's page head is its own (brandHtml), and its build puts brand/retardiopayne/*
+ * (the favicon, the share image og.jpg) over public's at the root of dist. A dev or test page switched
+ * with ?game= takes its icon from /brand/<game>/favicon.svg (served here in dev, copied into a test
+ * build). A plain production build is RadPayne's, file for file.
+ */
+function gameBrand(game: GameId, mode: string): Plugin {
+  const root = import.meta.dirname;
+  const brandFile = (g: GameId, f: string) => {
+    const own = path.join(root, "brand", g, f);
+    return fs.existsSync(own) ? own : g === "radpayne" ? path.join(root, "public", f) : null;
+  };
+  let outDir = path.join(root, "dist"), build = false;
+  return {
+    name: "radpayne-game-brand",
+    configResolved(c) { outDir = path.resolve(c.root, c.build.outDir); build = c.command === "build"; },
+    transformIndexHtml: html => brandHtml(html, game),
+    configureServer(server) {
+      server.middlewares.use("/brand", (req, res, next) => {
+        const m = /^\/(radpayne|retardiopayne)\/(favicon\.svg|og\.jpg)$/.exec((req.url ?? "").split("?")[0]);
+        const file = m ? brandFile(m[1] as GameId, m[2]) : null;
+        if (!file) return next();
+        res.setHeader("content-type", file.endsWith(".svg") ? "image/svg+xml" : "image/jpeg");
+        res.end(fs.readFileSync(file));
+      });
+    },
+    closeBundle() {
+      // (a dev server calls this too when it closes: only a build writes into dist)
+      if (!build || !fs.existsSync(outDir)) return;
+      if (game !== "radpayne") for (const f of fs.readdirSync(path.join(root, "brand", game))) fs.copyFileSync(path.join(root, "brand", game, f), path.join(outDir, f));
+      if (mode !== "production") for (const g of Object.keys(BRANDS) as GameId[]) {
+        const file = brandFile(g, "favicon.svg");
+        if (!file) continue;
+        fs.mkdirSync(path.join(outDir, "brand", g), { recursive: true });
+        fs.copyFileSync(file, path.join(outDir, "brand", g, "favicon.svg"));
+      }
+    },
+  };
+}
+
+export default defineConfig(({ command, mode }) => {
+  const game = resolveGame(process.env.VITE_GAME, "production", "");
   // dev: no hashes (the editor saves levels while the page is open); build: every public runtime file
   const hashes = command === "build" ? assetHashes(import.meta.dirname) : null;
   return {
-    plugins: [react(), devSave(), ...(hashes ? [fontVersions(hashes)] : [])],
+    plugins: [react(), devSave(), gameBrand(game, mode), ...(hashes ? [fontVersions(hashes)] : [])],
     define: { __ASSET_V__: hashes ? JSON.stringify(hashes) : "undefined" },
     resolve: {
       alias: [

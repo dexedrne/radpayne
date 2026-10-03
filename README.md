@@ -488,6 +488,75 @@ input log. Bullet time is a time scale on it.
   .local/shots/tour1` shoots the first shot with each gun, a melee, a grenade, the scope, the drops
   picked up, and each secret, door and egg.
 
+## RetardioPayne
+
+The same code ships a second game: **RetardioPayne**, the harder cut, at retardiopayne.vyvanse.beer. Only
+the two Retardios are there to play (Retardio Cousin #555 and Retardio Classic #85; no Radbro in the
+select, and the player is a Retardio wherever the game shows or spawns him), on one fixed difficulty, with
+its own wordmark, palette, scene grade, favicon and share image. The gang, the rival heavies and the rooms
+are RadPayne's. Each title has a small link to the other game.
+
+```bash
+npm run dev:retardiopayne     # the dev server as RetardioPayne (or any dev page with ?game=retardiopayne)
+npm run build:retardiopayne   # its production build in dist/ (VITE_GAME=retardiopayne)
+```
+
+- **One switch:** `VITE_GAME=retardiopayne` at build time (`src/brands.ts`, `src/product.ts`); a plain
+  `npm run build` is RadPayne. Dev and test builds also take `?game=retardiopayne` / `?game=radpayne` for one
+  page load (a production build ignores it), and the titles' links go there with `?game=`.
+- **The page:** `brandHtml` swaps RetardioPayne's title, description, canonical URL and og / twitter tags
+  into `index.html` at build time; `brand/retardiopayne/` (its `favicon.svg` and the share image `og.jpg`)
+  goes over `public/`'s at the root of its `dist/`. The `og.jpg` there is a placeholder, composed from
+  RadPayne's key art with the new wordmark, until proper Retardio key art is made.
+- **The look:** `<html data-game="retardiopayne">` picks its palette in `src/ui/hud/tokens.css` (from the
+  Retardios: #85's pink and blue eyeshadow and purple freckles, #555's heart blush); `src/app/look/cutGrade.ts`
+  puts a light split tone (violet shadows, a touch of blush in the lights) over each look's grade after its
+  tone map. The rain, the neon and the gold vs red gunfire stay. The on-screen lines that call him a Radbro
+  read differently there (`src/ui/cutText.ts`); the recorded voices are RadPayne's.
+- **The harder cut** is the difficulty `retardio`, every number of it in `src/sim/cut.ts` (deterministic like
+  the others; RadPayne's four never read it). Against RadPayne's Normal:
+
+| | Normal | Hard | the cut |
+|---|---|---|---|
+| their accuracy, reaction (s), wake (s) | 1.1, 0.45, 0.35 | 1.3, 0.35, 0.25 | **1.35, 0.32, 0.22** |
+| shooting at once, pinning fire, flankers | 2, 0.5, 1 | 3, 0.8, 2 | **3, 0.85, 2** |
+| a frag at a held spot after, a rusher round after (s) | 6, 9 | 4.5, 6 | **4.5, 6** |
+| damage to him, their health | x1.15, x1 | x1.6, x1.1 | **x1.45, x1.1** |
+| bullet time: a kill refills, the drain | x1.2, x1.25 | x1.3, x1.5 | **x0.9, x1.25** (about 1.1 s a kill, Normal 1.4) |
+| cans in the room, to start | 80 %, 1 | 55 %, 1 | **50 %, 1** |
+| Madame Pockit: health, adds a door, her pace | 2300, 2, x1.3 | 2600, 3, x1 | **2900, 3, x1.15** |
+| the Countess: health, her lifts (first, standing) | 2300, 2 / 2 | 2800, 3 / 4 | **3000, 3 / 3** |
+| chapter 2's gang (`minDiff: "hard"` girls) | left out | in | **in** |
+
+  Chapter 2 eases off for the cut as it does for RadPayne's Normal (`CUT.ch2`: x1.3 damage, frags and
+  rushers a little less often, 90 % of the cans; the snipers', the Countess's and the beams' tells between
+  Normal's and Hard's).
+- **Fair:** the bots clear every room on the cut. `node tools/balance.ts --diffs normal,hard,retardio --seeds
+  1,...,12 --bot cover|plain` (rooms 1-5, five attempts a seed) and `node tools/ch2bot.ts room6,... 1,...,12
+  retardio` (rooms 6-10, six tries); clears out of 12 seeds, deaths a run:
+
+| room | cover bot: Normal / Hard / cut | plain bot: Normal / Hard / cut | chapter 2 bot: Normal / Hard / cut |
+|---|---|---|---|
+| 1 | 12 / 12 / 12 (0, 0, 0) | 12 / 12 / 12 | |
+| 2 | 12 / 12 / 12 (0, 0.1, 0.1) | 12 / 12 / 12 | |
+| 3 | 12 / 12 / 12 (0.2, 0.6, 0.5) | 12 / 11 / 12 | |
+| 4 | 12 / 10 / 10 (0.6, 2.4, 2.5) | 12 / 6 / 11 | |
+| 5 | 12 / 9 / 12 (0, 1.8, 1.7) | 12 / 7 / 12 | |
+| 6 | | | 12 / 10 / 10 (0.1, 2.8, 1.8) |
+| 7 | | | 12 / 3 / 11 (0, 5.7, 2.2) |
+| 8 | | | 12 / 8 / 12 (0, 4.0, 0.8) |
+| 9 | | | 12 / 10 / 12 (0.2, 2.2, 0.9) |
+| 10 | | | 12 / 5 / 12 (0, 4.5, 0.4) |
+
+  Health lost over rooms 1-5 (cover bot): Normal 339, Hard 809, the cut 858; rooms 6-10: Normal 356, the
+  cut 1135. With ten attempts every seed clears but one: the cover bot on room 4's seed 4 keeps dying at the
+  last stop (back at 60 health with no cans), the same wall it meets on Hard's seed 12; the plain bot clears
+  room 4 on every seed.
+- **Deploy:** a second Vercel project (`retardiopayne`) on this repo with the environment variable
+  `VITE_GAME=retardiopayne` (Production and Preview) and the domain retardiopayne.vyvanse.beer.
+  `vercel.json` (its `npm run build` and its cache headers) serves both projects: the variable is what
+  makes the build RetardioPayne's.
+
 ## Use it
 
 RadPayne is under the [Viral Public License](LICENSE), the same license as Milady, Remilio and
