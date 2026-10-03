@@ -25,17 +25,31 @@ chandelier over the rug. Cutscene 4 brings the bag back. TO BE CONTINUED, then t
 After chapter 1's results, CHAPTER 2 starts it (and once chapter 1 is cleared on this browser, the title
 has a chapter select). Its intro cutscene, then room 6, the tower's roof in the storm: a helicopter off
 the edge sweeps the roof with its searchlight (standing in it, they aim better; shoot the lamp out and it
-leaves) and lowers two squads onto the helipad on ropes (shoot them on the way down); snipers on the water
-tower and the billboard. Over a glass bridge to room 7, the sky garden under glass: the walkway over the
-koi pit cracks and gives way. Room 8, the private airship a mile up: the cargo door blows and the hold
-pulls everything toward the sky (run against it; the girls go out). Room 9, the counting floor above the
-clouds: shutters cut the floor in two (the way round is the catwalk) and the lights go out. Room 10, the
-vault at sunrise: the Countess, who keeps the score, three phases (her rifle's white laser tell: move or
-dive; shooting her while she aims hurts her more, and enough breaks her aim; red security beams sweep the
-floor from phase 2: dive under the high one, jump the low one), her girls through two lifts, her last
-stand. Every cutscene is rhymed; the panels and voices are placeholders for now (painted tones and
-captions): `docs/chapter2-assets.md` lists what is still to make. Each room hides three secrets, a gold
-Webring pin and an egg.
+leaves) and lowers two squads on ropes, onto the helipad (or the open roof in the south while you are by
+the pad: shoot them on the way down); snipers on the water tower and the billboard. Over a glass bridge
+to room 7, the sky garden under glass: the walkway over the koi pit cracks and gives way. Room 8, the
+private airship a mile up: the cargo door blows and the hold pulls everything toward the sky (run against
+it; the girls go out). Room 9, the counting floor above the clouds: shutters cut the floor in two (the
+way round is the catwalk) and the lights go out. Room 10, the vault at sunrise: the Countess, who keeps
+the score, three phases (her rifle's white laser tell: move or dive; shooting her while she aims hurts
+her more, and enough breaks her aim; red security beams sweep the floor from phase 2: dive under the high
+one, jump the low one), her girls through two lifts, her last stand. Every cutscene is rhymed; the panels
+and voices are placeholders for now (painted tones and captions): `docs/chapter2-assets.md` lists what is
+still to make. Each room hides three secrets, a gold Webring pin and an egg.
+
+**Fair fights up there** (2026-10-03, after "chapter 2 is way too hard, no cover, too many enemies, they
+even spawn in places where you hide"): the gang comes in only by a way in (a door, a stair, a lift, the
+helicopter's ropes, the far end of a bridge), never within 12 m of you, never at or next to the cover you
+are in or could reach in a step, and never behind your back closer than 20 m; a way that fails that takes
+her through another of her wave's, else she waits until one passes. They come in one at a time (1.6 s
+apart on Normal) and only while fewer than six of the gang stand (Chill four, Hard eight, Hardcore nine).
+Normal has a third fewer of them than it had (16, 15, 18, 17 and 9 in rooms 6-10), Hard a fifth fewer
+(Hardcore has them all). Every room has more cover along its fights, built from its own props: AC units,
+crate stacks, a blast wall by the helipad and the water tower's concrete base on the roof; planters,
+benches with high backs, a fountain, a garden wall and the gallery's planters in the sky garden;
+banquettes and booth backs, a cargo pallet under a net on the airship; server cabinets and a raised
+boardroom table on the counting floor; tall gold-bar stacks (they stop both security beams) in the vault.
+On the airship the bar and the hold sleep behind their bulkheads until you walk in.
 
 **The arsenal:** every hostile drops the gun she carried, and guns lie in the rooms from the first street
 on: the hand cannon, a sawed-off, an assault rifle, a sniper rifle with a scope, frag grenades, #4764's
@@ -83,9 +97,10 @@ quarter faster and a kill refills a little more), **Hard** (all of it harder: ru
 spoils their aim less, two flank at once; you need cover) and **Hardcore** (no second chances: one can
 to start, half the cans, bullet time drains almost twice as fast). Madame Pockit keeps her own, gentler
 factor on every setting. Chapter 2's rooms are long and each has a set piece on top, so its Normal eases
-off: about a quarter fewer of the gang (Hard brings the rest), their frags and rushers a little less
+off: about half of Hardcore's gang (Hard has four in five of them), their frags and rushers a little less
 often, every can in the room, the snipers' laser and the vault's beams on a longer tell, the
-Countess's lifts two girls at a time; Hard and Hardcore keep theirs.
+Countess's lifts two girls at a time; Hard and Hardcore keep their own dials. On every setting the gang
+comes in by the arrivals' rule (above: never near you, never where you hide, a few at a time).
 
 | Input | Action |
 |---|---|
@@ -225,25 +240,35 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
     tools/arsenal-levels.ts` patches the JSONs in place, idempotently).
   - Chapter 2 (`node tools/room6.ts` .. `room10.ts`, on `tools/levels/kit2.ts`: cover points around the
     boxes meant as cover, waypoint grids, stairs with rails): a room's `stage` (`src/sim/stage.ts`,
-    `src/sim/ch2/*`: `roof` the searchlight and rope `drops`, `garden` the glass that gives way, `airship`
-    the cargo door, `counting` the shutters and the blackout, `vault` the Countess's room: its lifts'
-    `waves`, the beams, the gate `lock`) starts its set pieces from trigger markers with action `setpiece`
-    and a `cue`. `maxRise` (a room with floors above each other: no auto-link across more height; stairs
-    link explicitly), a waypoint's `solo`. The enemy kind `countess` is the boss (`src/ai/countess.ts`,
-    her numbers and the set pieces' in `src/sim/tuning2.ts`). The looks are `src/app/look/sky.tsx`, the
-    moving parts `src/app/Chapter2View.tsx`, the lines `src/app/chapter2Lines.ts`, the cutscenes
-    `node tools/chapter2-script.ts` (it writes `public/cutscenes/ch2a..ch2f.json` and the assets list).
-    `node tools/ch2bot.ts [rooms] [seeds] [difficulty]`: the bot through each room (clear time, deaths,
-    health lost, the set pieces that fired). Per difficulty: an enemy's `minDiff: "hard"` leaves her out
-    below Hard, and an `afterKills` may be `{normal: N, hard: M}` (the waves still come in when Normal
-    has fewer of the gang: the chapter 2 test checks every count is reachable on every difficulty);
-    `CH2_DIFF` and `SNIPER2` in `src/sim/tuning2.ts` are chapter 2's own Normal. The roof's searchlight
-    is drawn by `src/app/look/searchlight.ts`: a soft beam, its pool lit on the level's surfaces (the
-    roof look's materials) and one SpotLight that never leaves the scene (only its aim and intensity
-    move, so no shader rebuilds while it sweeps). The counting floor's blackout dims the lights whose
-    marker has `dim` and the look's fill (`src/app/look/sky.tsx`). The storm's lightning and the
-    blackout's levels are `src/app/look/weather.ts`: per second of world time, so the flash is the same
-    at any frame rate and in bullet time, and each light's own level is kept off its userData.
+    `src/sim/ch2/*`: `roof` the searchlight and rope `drops`, `garden` the glass that gives way,
+    `airship` the cargo door, `counting` the shutters and the blackout, `vault` the Countess's room: its
+    lifts' `waves`, the beams, the gate `lock`) starts its set pieces from trigger markers with action
+    `setpiece` and a `cue`. `maxRise` (a room with floors above each other: no auto-link across more
+    height; stairs link explicitly), a waypoint's `solo`. The enemy kind `countess` is the boss
+    (`src/ai/countess.ts`, her numbers and the set pieces' in `src/sim/tuning2.ts`). The looks are
+    `src/app/look/sky.tsx`, the moving parts `src/app/Chapter2View.tsx`, the lines
+    `src/app/chapter2Lines.ts`, the cutscenes `node tools/chapter2-script.ts` (it writes
+    `public/cutscenes/ch2a..ch2f.json` and the assets list). `node tools/ch2bot.ts [rooms] [seeds]
+    [difficulty]`: the bot through each room (clear time, deaths, health lost, the set pieces that
+    fired); `node tools/ch2spawns.ts [rooms] [seeds] [diffs] [--static]`: the same runs with every
+    arrival measured (her distance from him, in or next to his cover, behind his back) and the most of
+    the gang standing and awake at once. Per difficulty: an enemy's `minDiff: "hard"` (or `"hardcore"`)
+    leaves her out below it (RetardioPayne's cut plays Normal's roster), and an `afterKills` may be
+    `{normal: N, hard: M}` (the waves still come in when Normal has fewer of the gang: the chapter 2 test
+    checks every count is reachable on every difficulty); `CH2_DIFF` and `SNIPER2` in
+    `src/sim/tuning2.ts` are chapter 2's own Normal. The arrivals (`src/sim/arrive.ts`, numbers in
+    `ARRIVE`): a spawn trigger queues its group and they come in by the rule; the room's `arrive: {ways:
+    {name: [[x, y, z], ...]}, groups: {group: ["self", name, ...]}}` names the ways in (slots inside a
+    doorway) and each wave's, in order ("self": her own marker); the roof's `ropes: {zone: {at, slots}}`
+    are ways of the stage's own (the helicopter flies over a zone, then lowers them one at a time); the
+    vault's lifts answer to the same rule (a girl takes the other lift when hers fails it). The test
+    `test/arrivals.test.ts` puts him at every cover spot of every chapter 2 room and runs every wave. The
+    roof's searchlight is drawn by `src/app/look/searchlight.ts`: a soft beam, its pool lit on the
+    level's surfaces (the roof look's materials) and one SpotLight that never leaves the scene (only its
+    aim and intensity move, so no shader rebuilds while it sweeps). The counting floor's blackout dims
+    the lights whose marker has `dim` and the look's fill (`src/app/look/sky.tsx`). The storm's lightning
+    and the blackout's levels are `src/app/look/weather.ts`: per second of world time, so the flash is
+    the same at any frame rate and in bullet time, and each light's own level is kept off its userData.
   - Round 3: a room's `later: [groups]` makes those groups wait unseen until the room's own mechanism
     brings them in. Room 4 (`node tools/room4.ts`) has `ride` in its settings (`src/sim/ride.ts`): the
     car (`car`, `hatch`) and the steps, legs (`t` seconds; `roof` + `group`: the heavy through the
@@ -526,16 +551,20 @@ npm run build:retardiopayne   # its production build in dist/ (VITE_GAME=retardi
 | bullet time: a kill refills, the drain | x1.2, x1.25 | x1.3, x1.5 | **x1, x1.25** (about 1.2 s a kill, Normal 1.4) |
 | cans in the room, to start | 80 %, 1 | 55 %, 1 | **65 %, 1** |
 | Madame Pockit: health, adds a door, her pace | 2300, 2, x1.3 | 2600, 3, x1 | **2600, 3, x1.2** |
-| the Countess: health, her lifts (first, standing) | 2300, 2 / 2 | 2800, 3 / 4 | **2600, 3 / 3** |
-| chapter 2's gang (`minDiff: "hard"` girls) | left out | in | **in** |
+| the Countess: health, her lifts (first, standing, pace) | 2300, 2 / 2, x1.3 | 2800, 3 / 4, x1 | **2600, 2 / 2, x1.15** |
+| chapter 2's gang (`minDiff: "hard"` girls) | left out | in | **left out** (Normal's rosters) |
+| chapter 2: shooting at once, standing at most, between arrivals | 2, 6, 1.6 s | 3, 8, 1.1 s | **2, 6, 1.4 s** |
 
   Chapter 2 eases off for the cut as it does for RadPayne's Normal (`CUT.ch2`: x1.2 damage, frags and
   rushers a little less often, 95 % of the cans; the snipers', the Countess's and the beams' tells between
-  Normal's and Hard's).
-- **Fair:** the bots clear every room on the cut (these runs were on its first, harder numbers; the eased cut
-  is easier on every dial). `node tools/balance.ts --diffs normal,hard,retardio --seeds
-  1,...,12 --bot cover|plain` (rooms 1-5, five attempts a seed) and `node tools/ch2bot.ts room6,... 1,...,12
-  retardio` (rooms 6-10, six tries); clears out of 12 seeds, deaths a run:
+  Normal's and Hard's). Since 2026-10-03 it plays Normal's rosters there with two shooting at once (the owner
+  found chapter 2 way too hard); its aim, reaction, damage, health and bullet time keep it a bit harder than
+  RadPayne's Normal.
+- **Fair:** the bots clear every room on the cut (rooms 1-5: these runs were on its first, harder numbers;
+  the eased cut is easier on every dial; rooms 6-10: after the chapter 2 fix of 2026-10-03). `node
+  tools/balance.ts --diffs normal,hard,retardio --seeds 1,...,12 --bot cover|plain` (rooms 1-5, five
+  attempts a seed) and `node tools/ch2spawns.ts room6,... 1,...,12 normal,hard,retardio` (rooms 6-10,
+  `tools/ch2bot.ts`'s runs, six tries); clears out of 12 seeds, deaths a run:
 
 | room | cover bot: Normal / Hard / cut | plain bot: Normal / Hard / cut | chapter 2 bot: Normal / Hard / cut |
 |---|---|---|---|
@@ -544,16 +573,19 @@ npm run build:retardiopayne   # its production build in dist/ (VITE_GAME=retardi
 | 3 | 12 / 12 / 12 (0.2, 0.6, 0.5) | 12 / 11 / 12 | |
 | 4 | 12 / 10 / 10 (0.6, 2.4, 2.5) | 12 / 6 / 11 | |
 | 5 | 12 / 9 / 12 (0, 1.8, 1.7) | 12 / 7 / 12 | |
-| 6 | | | 12 / 10 / 10 (0.1, 2.8, 1.8) |
-| 7 | | | 12 / 3 / 11 (0, 5.7, 2.2) |
-| 8 | | | 12 / 8 / 12 (0, 4.0, 0.8) |
-| 9 | | | 12 / 10 / 12 (0.2, 2.2, 0.9) |
-| 10 | | | 12 / 5 / 12 (0, 4.5, 0.4) |
+| 6 | | | 12 / 10 / 12 (0, 2.7, 0) |
+| 7 | | | 12 / 10 / 12 (0, 3.4, 0.1) |
+| 8 | | | 12 / 11 / 12 (0, 1.3, 0.1) |
+| 9 | | | 12 / 9 / 12 (0, 1.7, 0) |
+| 10 | | | 12 / 7 / 12 (0, 3.8, 0.2) |
 
-  Health lost over rooms 1-5 (cover bot): Normal 339, Hard 809, the cut 858; rooms 6-10: Normal 356, the
-  cut 1135. With ten attempts every seed clears but one: the cover bot on room 4's seed 4 keeps dying at the
-  last stop (back at 60 health with no cans), the same wall it meets on Hard's seed 12; the plain bot clears
-  room 4 on every seed.
+  Health lost over rooms 1-5 (cover bot): Normal 339, Hard 809, the cut 858; rooms 6-10: Normal 184 (356
+  before the fix), the cut 332 (796 on the eased cut before it, 1135 on its first numbers), Hard 1451 (1924).
+  Before the fix the bot met girls coming in under 12 m from it 73 times in 12 Normal runs of each room
+  (nearest 4.5 m) and behind its back up close 122 times; after it, none (nearest 12.0 m). With ten
+  attempts every seed clears but one: the cover bot on room 4's seed 4 keeps dying at the last stop (back
+  at 60 health with no cans), the same wall it meets on Hard's seed 12; the plain bot clears room 4 on
+  every seed.
 - **Deploy:** a second Vercel project (`retardiopayne`) on this repo with the environment variable
   `VITE_GAME=retardiopayne` (Production and Preview) and the domain retardiopayne.vyvanse.beer.
   `vercel.json` (its `npm run build` and its cache headers) serves both projects: the variable is what
