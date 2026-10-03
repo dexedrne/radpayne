@@ -2,7 +2,8 @@
 // him: deaths (a death retries from the last checkpoint with the next seed, up to 4 retries), health lost,
 // copium used, the time in the room, and for the elevator the spawn-kill rate (hostiles killed within
 // 1.5 s real of stepping into the fight).
-//   node tools/balance.ts [--rooms room1,room4] [--diffs normal,hard] [--seeds 1,2,3] [--bot cover|plain] [--json out.json]
+//   node tools/balance.ts [--rooms room1,room4] [--diffs normal,hard] [--seeds 1,2,3] [--bot cover|plain] [--retries 4] [--json out.json]
+// (--diffs retardio: RetardioPayne's harder cut, sim/cut.ts)
 import fs from "node:fs";
 import path from "node:path";
 import { readLevel, type LevelData } from "../src/world/level.ts";
@@ -16,7 +17,7 @@ const diffs = arg("diffs", "normal").split(",");
 const seeds = arg("seeds", "1,2,3").split(",").map(Number);
 const botKind = arg("bot", "cover");
 const out = arg("json", "");
-const RETRIES = 4;
+const RETRIES = Number(arg("retries", "4"));
 const SPAWN_KILL = 1.5;
 
 const levels = new Map<string, LevelData>();
@@ -36,7 +37,8 @@ for (const room of rooms) for (const diff of diffs) for (const seed of seeds) {
     if (botKind === "plain") (bot as unknown as { cover: boolean }).cover = false;
     const seen: number[] = g.enemies.map(e => (e.state === "inactive" ? -1 : 0));
     const statsAt = resume ? { ...resume.stats } : null;
-    for (let i = 0; i < 600 / DT && g.phase !== "done" && g.phase !== "dead"; i++) {
+    // (down in the same moment as the room's last kill counts as a death: he is not walking out)
+    for (let i = 0; i < 600 / DT && g.phase !== "done" && g.phase !== "dead" && !(g.player.mode === "dead" && g.player.modeT > 2); i++) {
       g.step(bot.next(g));
       g.drain();
       if ((g.player as unknown as { cover?: number }).cover !== undefined && (g.player as unknown as { cover: number }).cover >= 0) row.coverT += DT;

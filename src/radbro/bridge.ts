@@ -8,6 +8,7 @@
 // Framed, the first click also focuses the frame (so the keys reach the game) and unlocks the audio.
 // Opened on its own (not framed), none of this does anything.
 import { padControlsText } from "../input/pad.ts";
+import { IS_CUT } from "../product.ts";
 
 export type GameInfo = {
   game: string;
@@ -60,6 +61,17 @@ export const RADPAYNE: GameInfo = {
   padControls: padControlsText(),
   viewport: { width: 1280, height: 720 },
 };
+
+/** RetardioPayne (product.ts): the same game, the harder cut, the two Retardios (no #4764: no katana). */
+export const RETARDIOPAYNE: GameInfo = {
+  ...RADPAYNE,
+  game: "retardiopayne",
+  title: "RetardioPayne",
+  objective: "The harder cut: as Retardio #555 or #85, shoot your way through the Milady gang's club and up to Madame Pockit's penthouse in bullet time: clear every room, then walk to the door.",
+  controls: RADPAYNE.controls.filter(c => !c.includes("#4764")).map(c => (c.startsWith("F: melee") ? "F: melee" : c)),
+};
+/** This page's game. */
+export const GAME_INFO: GameInfo = IS_CUT ? RETARDIOPAYNE : RADPAYNE;
 
 /** Framed by another page (the portal's iframe). */
 export function isFramed(win: BridgeWindow | undefined = typeof window === "undefined" ? undefined : (window as unknown as BridgeWindow)): boolean {
@@ -126,7 +138,7 @@ let current: Bridge = INERT;
 /** The page's bridge (main.tsx starts it once). */
 export function startBridge(opts: { onFirstGesture?: () => void } = {}): Bridge {
   current.dispose();
-  current = createBridge(RADPAYNE, undefined, opts);
+  current = createBridge(GAME_INFO, undefined, opts);
   return current;
 }
 export const bridge = (): Bridge => current;

@@ -319,6 +319,10 @@
 .rp-controls .ks { display: inline-flex; gap: 6px; min-width: 104px; flex-wrap: nowrap; }
 .rp-credits { opacity: 0.55; font: 700 17px/1.4 var(--type); }
 .rp-credits a { color: var(--paper); }
+/* the small link to the other game (RadPayne <-> RetardioPayne), under the credits */
+.rp-other { display: inline-block; margin-top: 12px; font: 400 22px/1 var(--display); letter-spacing: 2px; color: rgba(243, 234, 216, 0.72); text-decoration: none; border-bottom: 2px solid rgba(243, 234, 216, 0.25); padding-bottom: 3px; }
+.rp-other:hover, .rp-other:focus-visible { color: var(--paper); border-bottom-color: var(--paper); outline: none; }
+.rp-other b { font-weight: 400; }
 .rp-loading { width: 380px; text-align: center; }
 .rp-loading .t { font: 400 42px/1 var(--display); letter-spacing: 3px; }
 .rp-loading .bar { height: 8px; border: 2px solid var(--ink); outline: 1px solid rgba(243, 234, 216, 0.35); background: rgba(243, 234, 216, 0.12); margin: 12px 0; }
@@ -386,3 +390,35 @@
 .rp-slot .rp-slot-g .rp-padg svg { width: 18px; height: 18px; }
 /* a goon's frag near him: round the crosshair on its side */
 .rp-frag { position: fixed; left: 50%; top: 50%; z-index: 9; pointer-events: none; }
+
+/* ---------- RetardioPayne (product.ts sets <html data-game="retardiopayne">) ----------
+   Its own accents from the two Retardios: #85's pink and blue eyeshadow and his purple freckles, #555's
+   heart blush. The jobs stay the same (paper text, red harm, sand time, the cream captions); the pink
+   accent turns into theirs and the blue takes the headings, the focus bars and the room tag. */
+:root[data-game="retardiopayne"] {
+  --pink: #ef8fae;
+  --rt-blue: #8fb8ee;
+  --rt-blush: #f2899a;
+  --rt-freckle: #a58bd6;
+}
+.rp-wordrow { display: flex; align-items: flex-end; gap: 26px; flex-wrap: wrap; }
+:root[data-game="retardiopayne"] .rp-wordmark { font-size: 132px; color: var(--rt-blue); text-shadow: 0 0 30px rgba(165, 139, 214, 0.42); }
+:root[data-game="retardiopayne"] .rp-wordmark span { color: var(--rt-blush); }
+/* his freckles: a row of purple dots under the wordmark */
+:root[data-game="retardiopayne"] .rp-wordrow .rp-wordmark::after { content: ""; display: block; height: 8px; margin: 2px 0 0 4px; width: 62%; background: radial-gradient(circle, var(--rt-freckle) 2.6px, transparent 3.2px) 0 50% / 22px 8px repeat-x; opacity: 0.85; }
+.rp-cutbadge { margin-bottom: 24px; font: 400 30px/1 var(--display); letter-spacing: 4px; color: var(--ink); background: var(--rt-blush); padding: 8px 14px 5px; border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); transform: rotate(-2deg); white-space: nowrap; }
+.rp-cutnote { max-width: 860px; margin: -14px 0 22px; font: 700 17px/1.35 var(--type); color: rgba(243, 234, 216, 0.75); }
+:root[data-game="retardiopayne"] .rp-cards { grid-template-columns: repeat(2, minmax(0, 420px)); }
+:root[data-game="retardiopayne"] .rp-card img { width: 132px; min-height: 168px; }
+:root[data-game="retardiopayne"] .rp-row .grp .h,
+:root[data-game="retardiopayne"] .rp-settings h3 { color: var(--rt-blue); }
+:root[data-game="retardiopayne"] .rp-focusrow::before { background: var(--rt-blue); }
+:root[data-game="retardiopayne"] .rp-row .grp.focus .rp-seg,
+:root[data-game="retardiopayne"] .rp-seg button:focus-visible { outline-color: var(--rt-blue); }
+:root[data-game="retardiopayne"] .rp-set.focus { background: rgba(143, 184, 238, 0.13); box-shadow: inset 5px 0 0 var(--rt-blue); }
+:root[data-game="retardiopayne"] .rp-mbtn.primary,
+:root[data-game="retardiopayne"] .rp-mbtn.primary.sel { color: var(--ink); }
+:root[data-game="retardiopayne"] .rp-mbtn.primary.sel { box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.7), 0 0 22px rgba(239, 143, 174, 0.55); }
+:root[data-game="retardiopayne"] .rp-tag { border-left-color: var(--rt-blue); }
+:root[data-game="retardiopayne"] .rp-tbc { color: var(--ink); }
+:root[data-game="retardiopayne"] .rp-ctx b.p { color: var(--rt-blush); }

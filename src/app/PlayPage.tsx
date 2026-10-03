@@ -50,7 +50,8 @@ import { frames, prefetchGoons, roomWarm, warmRoom } from "./warmup.ts";
 import { renderGate } from "./frame.ts";
 import { HOLDCHECK, HoldScript, holdDev } from "./dev/holdcheck.ts";
 import { TOUR, TourDriver } from "./dev/tour.ts";
-import { HEROES } from "../ui/store.ts";
+import { ROSTER } from "../ui/store.ts";
+import { IS_CUT } from "../product.ts";
 import { roomText } from "../ui/rooms.ts";
 import { bridge, roomResult } from "../radbro/bridge.ts";
 import { BossBar } from "../ui/hud/BossBar.tsx";
@@ -65,8 +66,11 @@ const BOT = DEV && params.has("bot");
 /** ?bot=demo: the bot shows off bullet time, a shootdodge and the full kill cam (browser check). */
 const BOT_DEMO = params.get("bot") === "demo";
 const SKIP = DEV && (params.has("skip") || BOT || !!HOLDCHECK);
-/** Dev: ?radbro=<id> plays that Radbro for this page load (the hold check loops over them). */
-const RADBRO_PARAM = DEV ? HEROES.find(r => r.id === params.get("radbro"))?.id : undefined;
+/** Dev: ?radbro=<id> plays that Radbro for this page load (the hold check loops over them); RetardioPayne
+ *  takes only its two Retardios. */
+const RADBRO_PARAM = DEV ? ROSTER.find(r => r.id === params.get("radbro"))?.id : undefined;
+/** The loading card's word for his files. */
+const HERO_LOAD = IS_CUT ? "retardio" : "radbro";
 if (RADBRO_PARAM) useUi.setState({ radbro: RADBRO_PARAM });
 /** ?ending: play the ending cutscene even with ?skip / ?bot (it plays anyway with ?bot=demo);
  *  ?cutscene: play cutscene 1 even with ?bot (the headless run: cutscene, fight, ending, results). */
@@ -309,7 +313,7 @@ export default function PlayPage() {
     let live = true;
     const tryLoad = async () => {
       for (let i = 0; i < 50 && !assetsRef.current; i++) await wait(50);
-      const failed = await loadManifest(manifestFor(radbro), f => { if (useUi.getState().screen === "loading") useUi.setState({ load: { progress: f, label: "radbro", error: null } }); });
+      const failed = await loadManifest(manifestFor(radbro), f => { if (useUi.getState().screen === "loading") useUi.setState({ load: { progress: f, label: HERO_LOAD, error: null } }); });
       // his pistol clips, the shotgun set (a Radbro whose own gun is a long gun holds it with it) and the
       // Miladys' shooter clips; the rave's pack (rooms 2+) loads once room 1 runs (loadLater)
       await Promise.all([loadOptional(gunClipsPath(radbro)), loadOptional(r2ClipsPath(radbro)), loadOptional(MILADY_CLIPS)]);
@@ -440,7 +444,7 @@ export default function PlayPage() {
     prep.promise = (async () => {
       const t0 = performance.now();
       if (!useUi.getState().assetsVersion) {
-        step(0, "radbro");
+        step(0, HERO_LOAD);
         await until(() => useUi.getState().assetsVersion > 0, HOLD_CAP_MS);
       }
       if (!roomWarm(s)) {

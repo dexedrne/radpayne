@@ -12,6 +12,8 @@
     "dev": "vite",
     "build": "vite build && node tools/postbuild.ts",
     "build:test": "vite build --mode test && node tools/postbuild.ts",
+    "dev:retardiopayne": "VITE_GAME=retardiopayne vite",
+    "build:retardiopayne": "VITE_GAME=retardiopayne vite build && node tools/postbuild.ts",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "node --test test/*.test.ts",

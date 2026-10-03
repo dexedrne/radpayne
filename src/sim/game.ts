@@ -26,7 +26,8 @@ import { Boss } from "./boss.ts";
 import { makeStage, type Stage } from "./stage.ts";
 import { COUNTESS, SNIPER2, diffFor, killsFor, perDiff } from "./tuning2.ts";
 
-const DIFF_RANK: Difficulty[] = ["easy", "normal", "hard", "hardcore"];
+/** A marker's minDiff leaves her out below that difficulty; RetardioPayne's harder cut has every one. */
+const DIFF_RANK: Difficulty[] = ["easy", "normal", "hard", "hardcore", "retardio"];
 
 export const POCKIT_COUNT = 3333;
 

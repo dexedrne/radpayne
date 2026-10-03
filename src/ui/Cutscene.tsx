@@ -15,6 +15,7 @@
 // caption off the faces next to the painted box, and its `push` (the push-in's end scale, default
 // 1.07) keeps the box's corner in the frame through a long hold.
 import { useCallback, useEffect, useRef, useState } from "react";
+import { textFor } from "./cutText.ts";
 import { narrate, sampleDuration, samplesFor, stopNarration } from "../audio/sfx.ts";
 import { assetUrl } from "../app/assets.ts";
 import { FIRST, GAP, holdAfter, lineLen, onScreen, ORIGIN, planPanel, PUSH, PUSH_S, type Shown, type TimedLine } from "./cutsceneTiming.ts";
@@ -148,7 +149,7 @@ export function Cutscene({ data, onDone }: { data: CutsceneData; onDone: () => v
           font: `italic 700 clamp(${Math.round(12 * (p.size ?? 1))}px, ${(1.55 * (p.size ?? 1)).toFixed(2)}vw, ${Math.round(21 * (p.size ?? 1))}px)/1.3 ${serif}`, display: "flex", flexDirection: "column", gap: "0.35em",
           boxSizing: "border-box", animation: "rp-line 0.3s ease-out",
         }}>
-          {lines.map((ln, k) => <div key={k} style={{ animation: "rp-line 0.4s ease-out", ...(ln.speaker ? { fontStyle: "normal" } : {}) }}>{ln.text}</div>)}
+          {lines.map((ln, k) => <div key={k} style={{ animation: "rp-line 0.4s ease-out", ...(ln.speaker ? { fontStyle: "normal" } : {}) }}>{textFor(ln.text)}</div>)}
         </div>}
         </div>
       </div>

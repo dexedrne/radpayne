@@ -5,8 +5,9 @@
 import "./hud/tokens.css";
 import { useEffect, useMemo, useState } from "react";
 import { loadPins } from "./pins.ts";
-import { HEROES, RADBROS, heroFile, heroOf, setSetting, setVolume, store, useUi, type AimAssist, type DmgColour, type HudSize, type HeroId, type Results, type ThreatMode, type Chatter, type KillcamMode } from "./store.ts";
-import { DIFFICULTY, type Difficulty } from "../sim/tuning.ts";
+import { RADBROS, ROSTER, heroFile, heroOf, setSetting, setVolume, store, useUi, type AimAssist, type DmgColour, type HudSize, type HeroId, type Results, type ThreatMode, type Chatter, type KillcamMode } from "./store.ts";
+import { DIFFICULTY, RADPAYNE_DIFFICULTIES, type Difficulty } from "../sim/tuning.ts";
+import { BRAND, IS_CUT, OTHER } from "../product.ts";
 import { setGfx, setPreset, useGfx, type Bloom, type Preset, type Rain, type Reflections, type Res } from "../app/look/gfx.ts";
 import type { Session } from "../app/session.ts";
 import { BtnKey, Keycap, usePadPrompts } from "./hud/Keycap.tsx";
@@ -37,7 +38,9 @@ export const btn = (primary = false): React.CSSProperties => ({
   border: primary ? "3px solid #fff" : "3px solid rgba(243,234,216,0.55)", background: primary ? "#ff3fa8" : "rgba(11,10,13,0.84)", color: primary ? "#fff" : INK, zoom: "var(--s)",
 });
 
-const DIFFS: ReadonlyArray<readonly [Difficulty, string]> = (Object.keys(DIFFICULTY) as Difficulty[]).map(d => [d, DIFFICULTY[d].label.toUpperCase()] as const);
+const DIFFS: ReadonlyArray<readonly [Difficulty, string]> = RADPAYNE_DIFFICULTIES.map(d => [d, DIFFICULTY[d].label.toUpperCase()] as const);
+/** RetardioPayne's one difficulty, as the title, the pause menu and the results name it. */
+const CUT_LABEL = DIFFICULTY.retardio.label.toUpperCase();
 const PRESETS: ReadonlyArray<readonly [Preset, string]> = [["low", "LOW"], ["medium", "MEDIUM"], ["high", "HIGH"], ["cinematic", "CINEMATIC"]];
 const PRESETS_SHORT: ReadonlyArray<readonly [Preset, string]> = [["low", "LOW"], ["medium", "MED"], ["high", "HIGH"], ["cinematic", "CINEMA"]];
 const BLOOMS: ReadonlyArray<readonly [Bloom, string]> = [["off", "OFF"], ["subtle", "SUBTLE"], ["original", "ORIGINAL"]];
@@ -69,6 +72,7 @@ const NOTES = {
   killcam: "Special shots: sniper kills, long headshots, two with one round, a grenade's double, the room's last kill. Any key skips.",
   assist: "Gamepad only: the stick slows near a target you can see, and holding L2 / LT (or firing) pulls the aim lightly onto her. Never through walls; the mouse never gets it.",
   difficulty: "From the next restart or room. Normal: they aim better at range, hit harder, pin you down and come round the side, frags flush you out; fewer cans. Hard: you need cover. Hardcore: no cans to start, bullet time drains fast.",
+  cut: "RetardioPayne has one difficulty: they aim better, react faster, hit harder and push in; half the cans; bullet time refills slower; the bosses take more.",
   deadZone: "How far the sticks move before they count (radial). Raise it if the aim drifts.",
   hitFeel: "The hitmarker, the hit / kill sounds, the flash and burst on a struck girl, the camera punch on kills and the pad's hit pulses. Subtle: all of it, quieter. Off: none of it (she still flinches).",
 };
@@ -79,6 +83,9 @@ export const CONTROLS: Array<[string[], string]> = [
   [["E"], "use"], [["RMB"], "scope (sniper, hold)"], [["ESC"], "pause"], [["M"], "mute"],
 ];
 
+/** A controls line as this game shows it (RetardioPayne has no #4764, so no katana). */
+const ctl = (v: string): string => (IS_CUT ? v.replace(/ \(#4764: [^)]*\)/, "") : v);
+
 /** The controls list: the keys, or the pad's buttons when a pad was used last. The keycaps here are
  *  the keyboard's own (a list of keys is never translated). */
 function KeyList({ className }: { className: string }) {
@@ -87,14 +94,14 @@ function KeyList({ className }: { className: string }) {
   if (pad) return (
     <div className={className} data-testid="pad-controls">
       {PAD_CONTROLS.map(([gs, v]) => (
-        <div key={v}><span className="ks"><PadGlyphs gs={gs} kind={kind} /></span>{v}</div>
+        <div key={v}><span className="ks"><PadGlyphs gs={gs} kind={kind} /></span>{ctl(v)}</div>
       ))}
     </div>
   );
   return (
     <div className={className}>
       {CONTROLS.map(([ks, v]) => (
-        <div key={v}><span className="ks">{ks.map(k => <span key={k} className="rp-key">{k}</span>)}</span>{v}</div>
+        <div key={v}><span className="ks">{ks.map(k => <span key={k} className="rp-key">{k}</span>)}</span>{ctl(v)}</div>
       ))}
     </div>
   );
@@ -123,9 +130,19 @@ const portraitPath = (id: HeroId) => assetUrl(`/ui/${heroFile(id)}.webp`);
 
 // ---- title ---------------------------------------------------------------------------------------
 
-/** The title's focus rows, top to bottom (↑↓ / Tab / D-pad move, ←→ change, Enter / A plays from any). */
+/** The title's focus rows, top to bottom (↑↓ / Tab / D-pad move, ←→ change, Enter / A plays from any).
+ *  RetardioPayne's title has no difficulty to change. */
 const TITLE_ROWS = ["chapter", "radbro", "difficulty", "graphics", "play"] as const;
 type TitleRow = (typeof TITLE_ROWS)[number];
+
+/** The small link to the other game (RadPayne <-> RetardioPayne): its site, or ?game= in a dev build. */
+function OtherGame() {
+  return (
+    <a className="rp-other" href={OTHER.href} data-testid="other-game">
+      {IS_CUT ? "← " : ""}<b style={{ color: OTHER.brand.accent }}>{OTHER.brand.name.toUpperCase()}</b>: {OTHER.blurb}{IS_CUT ? "" : " →"}
+    </a>
+  );
+}
 
 export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean }) {
   const radbro = useUi(s => s.radbro);
@@ -137,7 +154,7 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
   // the chapter select, once chapter 1 is cleared on this browser
   const chapterOpen = useMemo(() => clearedChapters().includes(1), []);
   const chapter = useUi(s => s.chapter);
-  const rows = TITLE_ROWS.filter(r => r !== "chapter" || chapterOpen);
+  const rows = TITLE_ROWS.filter(r => (r !== "chapter" || chapterOpen) && (r !== "difficulty" || !IS_CUT));
   const pick = (id: HeroId) => { useUi.setState({ radbro: id }); store("radbro", id); };
   const move = (d: number) => setRow(r => rows[(rows.indexOf(r) + d + rows.length) % rows.length]);
   useMenuInput(a => {
@@ -148,8 +165,8 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
       const d = a === "right" ? 1 : -1;
       if (row === "chapter") { useUi.setState({ chapter: (chapter === 1 ? 2 : 1) as ChapterId }); return; }
       if (row === "radbro") {
-        const i = HEROES.findIndex(r => r.id === radbro);
-        pick(HEROES[(i + d + HEROES.length) % HEROES.length].id);
+        const i = ROSTER.findIndex(r => r.id === radbro);
+        pick(ROSTER[(i + d + ROSTER.length) % ROSTER.length].id);
       } else if (row === "difficulty") setSetting("difficulty", stepOption(DIFFS, diff, d));
       else if (row === "graphics") setPreset(stepOption(PRESETS, preset === "custom" ? "high" : preset, d));
       return;
@@ -160,7 +177,12 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
   return (
     <div className="rp-layer" style={{ background: "linear-gradient(180deg, rgba(5,6,12,0.55), rgba(5,6,12,0.9) 70%)", overflowY: "auto" }}>
       <div className="rp-title rp-z" style={{ visibility: fonts ? "visible" : "hidden" }}>
-        <div className="rp-wordmark">RAD<span>PAYNE</span></div>
+        {IS_CUT ? (
+          <div className="rp-wordrow">
+            <div className="rp-wordmark" data-testid="wordmark">{BRAND.wordmark[0]}<span>{BRAND.wordmark[1]}</span></div>
+            <div className="rp-cutbadge" data-testid="harder-cut">THE HARDER CUT</div>
+          </div>
+        ) : <div className="rp-wordmark" data-testid="wordmark">{BRAND.wordmark[0]}<span>{BRAND.wordmark[1]}</span></div>}
         {chapterOpen ? (
           <div className={`rp-chapter rp-focusrow${row === "chapter" ? " focus" : ""}`} {...focus("chapter")} data-testid="title-chapter" style={{ display: "flex", gap: 10 }}>
             {([1, 2] as ChapterId[]).map(n => (
@@ -168,8 +190,9 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
             ))}
           </div>
         ) : <div className="rp-chapter">CHAPTER 1: RUGGED</div>}
+        {IS_CUT && <div className="rp-cutnote">{NOTES.cut.replace(/^RetardioPayne has one difficulty: /, "the harder cut: ")}</div>}
         <div className={`rp-cards rp-focusrow${row === "radbro" ? " focus" : ""}`} {...focus("radbro")}>
-          {HEROES.map(r => (
+          {ROSTER.map(r => (
             <button key={r.id} type="button" onClick={() => pick(r.id)} data-testid={`pick-${r.id}`} className={`rp-panel rp-card${radbro === r.id ? " on" : ""}`} style={radbro === r.id ? { borderColor: r.color } : undefined}>
               <img src={portraitPath(r.id)} alt="" style={radbro === r.id ? { borderRightColor: r.color } : undefined} />
               <div className="who">
@@ -180,7 +203,9 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
           ))}
         </div>
         <div className="rp-row">
-          <div className={`grp rp-focusrow${row === "difficulty" ? " focus" : ""}`} {...focus("difficulty")} data-testid="title-difficulty"><span className="h">DIFFICULTY</span><Seg value={diff} options={DIFFS} onChange={d => setSetting("difficulty", d)} /></div>
+          {IS_CUT
+            ? <div className="grp" data-testid="title-difficulty"><span className="h">DIFFICULTY</span><span className="rp-fixed">{CUT_LABEL}</span></div>
+            : <div className={`grp rp-focusrow${row === "difficulty" ? " focus" : ""}`} {...focus("difficulty")} data-testid="title-difficulty"><span className="h">DIFFICULTY</span><Seg value={diff} options={DIFFS} onChange={d => setSetting("difficulty", d)} /></div>}
           <div className={`grp rp-focusrow${row === "graphics" ? " focus" : ""}`} {...focus("graphics")} data-testid="title-graphics"><span className="h">GRAPHICS</span><Seg value={preset as Preset} options={PRESETS_SHORT} onChange={setPreset} /></div>
           <div className="grp" style={{ maxWidth: 330, font: "700 17px/1.3 var(--type)", opacity: 0.7, alignSelf: "flex-end" }}>
             {PRESET_NOTES[preset]}{preset === "custom" ? "" : " the rest: pause menu."}
@@ -196,8 +221,9 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
         <div className="rp-credits">
           desktop: keyboard + mouse, or a gamepad (PlayStation or Xbox). built on{" "}
           <a href="https://prnth.com/react-three-game/" target="_blank" rel="noreferrer">react-three-game</a> and the Pockit Miladys by prnth,
-          used with permission · Radbros by dexedrne, used with the Radbro Webring dev's permission
+          used with permission · Radbros by dexedrne, used with the Radbro Webring dev's permission{IS_CUT ? " · Retardio #555 and #85 by dexedrne" : ""}
         </div>
+        <OtherGame />
       </div>
     </div>
   );
@@ -275,7 +301,9 @@ function useSettingRows(tab: Tab): Row[] {
       step: dir => setVolume(k, ui.vol[k] + dir * 5),
     });
     if (tab === "display") return [
-      seg("difficulty", "GAME", "Difficulty", ui.difficulty, DIFFS, v => setSetting("difficulty", v), { note: NOTES.difficulty }),
+      IS_CUT
+        ? { id: "difficulty", section: "GAME", name: "Difficulty", control: <span className="rp-fixed">{CUT_LABEL}</span>, note: NOTES.cut }
+        : seg("difficulty", "GAME", "Difficulty", ui.difficulty, DIFFS, v => setSetting("difficulty", v), { note: NOTES.difficulty }),
       seg("preset", "GRAPHICS", "Preset", gfx.preset as Preset, PRESETS, setPreset, { note: PRESET_NOTES[gfx.preset] }),
       seg("bloom", undefined, "Bloom", gfx.bloom, BLOOMS, v => setGfx("bloom", v)),
       seg("reflections", undefined, "Reflections", gfx.reflections, REFLS, v => setGfx("reflections", v)),
@@ -412,7 +440,7 @@ export function Pause({ s: sProp, onResume, onRestart, onQuit }: { s?: Session |
           </div>
           <div className="rp-ctx">
             <span>MILADYS <b>{h.total - h.alive}/{h.total}</b> · TIME <b>{fmtTime(g?.stats.time ?? 0)}</b></span>
-            <span><b>{DIFFICULTY[diff].label.toUpperCase()}</b> · RADBRO <b className="p">#{radbro}</b></span>
+            <span><b>{DIFFICULTY[diff].label.toUpperCase()}</b> · {heroOf(radbro).kind} <b className="p">{heroOf(radbro).name}</b></span>
           </div>
           {buttons.map((b, i) => (
             <button
