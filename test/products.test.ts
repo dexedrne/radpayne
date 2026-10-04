@@ -121,7 +121,7 @@ test("the page head: RadPayne's index.html as it is; RetardioPayne's own title, 
   assert.ok(rp.includes('<meta property="og:url" content="https://retardiopayne.vyvanse.beer/"'));
   // nothing of RadPayne's left in the head's text or tags (the fonts, the icon path and the rest stay)
   const head = rp.slice(0, rp.indexOf("</head>"));
-  assert.ok(!/radpayne\.vyvanse|og3\.jpg|>RadPayne<|"RadPayne"/.test(head), "a RadPayne tag left in RetardioPayne's head");
+  assert.ok(!/radpayne\.vyvanse|og4\.jpg|>RadPayne<|"RadPayne"/.test(head), "a RadPayne tag left in RetardioPayne's head");
   assert.ok(!/Radbros #4764/.test(head));
   // its favicon and its placeholder share image (a 1200 x 630 JPEG), put over public's at the build
   assert.match(read("brand/retardiopayne/favicon.svg"), /^<svg /);
