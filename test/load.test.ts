@@ -1,9 +1,11 @@
 // The load audit's fixes that have logic of their own: the graphics settings (presets, saved values,
-// the URL and old-setting mappings), the gang picks that reuse cached Pockit models, the sound groups
-// that decide what loads when, and the goon slots the picks are made for.
+// the URL and old-setting mappings, which changes build shaders again and the warm-up they ask for), the
+// gang picks that reuse cached Pockit models, the sound groups that decide what loads when, and the goon
+// slots the picks are made for.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { CLEAN, DEFAULT_PRESET, DEFAULT_WEBGL2, PRESETS, PRESET_ORDER, RAIN, dprFor, fromPreset, initialGfx, parseGfx, presetOf } from "../src/app/look/gfx.ts";
+import { CLEAN, DEFAULT_PRESET, DEFAULT_WEBGL2, PRESETS, PRESET_ORDER, RAIN, dprFor, fromPreset, initialGfx, parseGfx, presetOf, rebuildsShaders } from "../src/app/look/gfx.ts";
+import { coalesce } from "../src/app/look/compile.ts";
 import { shareShaders } from "../src/app/look/shaderShare.ts";
 import { readTokens } from "../src/app/look/tokens.ts";
 import fs from "node:fs";
@@ -62,6 +64,37 @@ test("graphics settings: URL overrides, saved values, old Effects / Quality, bac
   assert.equal(dprFor(75, 1.25), 1);
   assert.equal(dprFor(75, 0.8), 0.8);
   assert.ok(dprFor(50, 1.5) < dprFor(75, 1.5) && dprFor(75, 1.5) < dprFor(100, 1.5));
+});
+
+test("graphics changes: only the street's mirror going on or off (or MSAA) builds the shaders again", () => {
+  for (const a of PRESET_ORDER) for (const b of PRESET_ORDER) {
+    const flip = (PRESETS[a].reflections !== "off") !== (PRESETS[b].reflections !== "off");
+    assert.equal(rebuildsShaders(PRESETS[a], PRESETS[b], true), flip, `${a} -> ${b} on the street`);
+    assert.equal(rebuildsShaders(PRESETS[a], PRESETS[b], false), false, `${a} -> ${b} in a room without the mirror`);
+  }
+  assert.equal(rebuildsShaders(PRESETS.high, { ...PRESETS.high, msaa: false }, false), true);
+});
+
+test("a graphics change's warm-up: changes in a row hold the room once and compile at most once more", async () => {
+  let passes = 0, held = 0, most = 0;
+  const gates: Array<() => void> = [];
+  const rewarm = coalesce(() => { passes++; return new Promise<void>(r => gates.push(r)); }, () => { held++; most = Math.max(most, held); }, () => { held--; });
+  const settle = () => new Promise<void>(r => setTimeout(r, 0));
+  const first = rewarm();
+  assert.equal(held, 1, "held from the call itself, before any frame");
+  for (let i = 0; i < 7; i++) void rewarm(); // every level and back, clicked through
+  gates.shift()!();
+  await settle();
+  assert.equal(passes, 2, "one more pass for the look as it ended up");
+  gates.shift()!();
+  await first;
+  assert.deepEqual({ passes, held, most }, { passes: 2, held: 0, most: 1 });
+  // a change after that is a warm-up of its own
+  const next = rewarm();
+  assert.equal(held, 1);
+  gates.shift()!();
+  await next;
+  assert.deepEqual({ passes, held }, { passes: 3, held: 0 });
 });
 
 test("Bloom: Original's emitters: room 1's toned-down windows carry the first preview's gain", () => {

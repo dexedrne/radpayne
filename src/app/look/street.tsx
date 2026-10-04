@@ -51,7 +51,7 @@ import { clubPulse } from "../../audio/sfx.ts";
 import { MarkerLights } from "./lights.tsx";
 import { RAIN, useGfx, type Bloom, type Reflections } from "./gfx.ts";
 import { cutGrade } from "./cutGrade.ts";
-import { registerLook } from "./compile.ts";
+import { registerLook, warmIdle } from "./compile.ts";
 import { COMBAT, CombatRead, enemyMaskPass, enemyOutline, syncMaskCamera, tagForMask, neonDim } from "./read.tsx";
 import { CameraKey, WORLD_UV, isActor, readTokens, type Tokens } from "./tokens.ts";
 
@@ -594,8 +594,10 @@ export function StreetLook({ level, s }: { level: LevelData; s?: Session; lowQua
     scene.add(refl.target);
     return () => {
       scene.remove(refl.target);
-      // the level materials switch to the new ground within a frame; free the old mirror after that
-      setTimeout(() => refl.dispose?.(), 1000);
+      // the level materials switch to the new ground within a frame; free the old mirror after that, and
+      // never under a shader warm-up still compiling for it (compile.ts warmIdle: clicking through the
+      // presets turns the mirror off again while the warm-up that turning it on asked for still runs)
+      setTimeout(() => void warmIdle().then(() => refl.dispose?.()), 1000);
     };
   }, [scene, ground]);
   useEffect(() => {

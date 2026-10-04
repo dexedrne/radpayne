@@ -99,12 +99,36 @@ let tail: Promise<unknown> = Promise.resolve();
  *  (and a root) is marked userData.rpWarmed. */
 export type WarmOpts = { onProgress?: (f: number) => void; root?: Object3D; hidden?: boolean };
 
-/** Compile for every render context of the active look. One warm-up at a time. Resolves when done
- *  (errors are logged, never thrown). */
+/** A warm-up still compiling after this long lets go: the room renders again and the next warm-up starts
+ *  (it may still finish later, and marks its models then). An answer from the GPU that never comes must
+ *  not hold the room's render, nor every warm-up queued behind it (a goon is shown only once hers is
+ *  done), for good: three r186 asks a failed pipeline's shader modules for their messages, and in
+ *  Chromium that answer can fail to come, so the pipeline's promise and compileAsync never settle. */
+export const WARM_CAP_MS = 20_000;
+
+/** Compile for every render context of the active look. One warm-up at a time. Resolves when done, or
+ *  after WARM_CAP_MS (errors are logged, never thrown). */
 export function warmLook(opts: WarmOpts = {}): Promise<void> {
-  const run = tail.then(() => warmNow(opts));
+  const run = tail.then(() => capped(opts));
   tail = run.catch(() => undefined);
   return run;
+}
+
+/** Resolves once every warm-up asked for so far is done (or let go). A look frees a render target it has
+ *  dropped (the puddle mirror going off) only then: three keeps one render context per kind of target, and
+ *  a warm-up still compiling for a freed one builds its pipelines without a depth format; they fail. */
+export function warmIdle(): Promise<void> {
+  return tail.then(() => undefined);
+}
+
+function capped(opts: WarmOpts): Promise<void> {
+  const gate = !opts.root; // a whole-scene warm-up holds the room's render; one object (not shown yet) needs no gate
+  if (gate) renderGate.warming++;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const cap = new Promise<void>(r => {
+    timer = setTimeout(() => { console.info(`[warm] ${gate ? "room" : "model"} shaders still compiling after ${WARM_CAP_MS / 1000} s: going on`); r(); }, WARM_CAP_MS);
+  });
+  return Promise.race([warmNow(opts), cap]).finally(() => { clearTimeout(timer); if (gate) renderGate.warming--; });
 }
 
 /** A goon's model before she is shown (gate-free: the room keeps rendering). */
@@ -112,13 +136,28 @@ export function warmObject(root: Object3D): Promise<void> {
   return warmLook({ root });
 }
 
+/** A warm-up asked for again and again (a graphics change each time): the first ask runs `pass` at once;
+ *  asks while it runs fold into one more pass after it (of the look as it is by then), never one pass
+ *  each. `hold` comes with the first ask (before any frame), `release` after the last pass. */
+export function coalesce(pass: () => Promise<void>, hold: () => void, release: () => void): () => Promise<void> {
+  let job: { again: boolean; done: Promise<void> } | null = null;
+  return () => {
+    if (job) { job.again = true; return job.done; }
+    const j = { again: true, done: Promise.resolve() };
+    job = j;
+    hold();
+    j.done = (async () => {
+      try { while (j.again) { j.again = false; await pass(); } } finally { job = null; release(); }
+    })();
+    return j.done;
+  };
+}
+
 async function warmNow({ onProgress, root, hidden = false }: WarmOpts): Promise<void> {
   const look = activeLook.current;
   if (!look) { onProgress?.(1); return; }
   const { gl, scene } = look;
   const t0 = performance.now();
-  const gate = !root; // a whole-scene warm-up holds the room's render; one object (not shown yet) needs no gate
-  if (gate) renderGate.warming++;
   try {
     if ((gl as R)._initialized === false) await (gl as R).init();
     const ctxs = look.contexts();
@@ -144,8 +183,6 @@ async function warmNow({ onProgress, root, hidden = false }: WarmOpts): Promise<
     if (DEBUG) console.info(`[warm] lanes: ${JSON.stringify(parts.map(p => p.total))}`);
   } catch (e) {
     console.info(`[warm] shader warm-up failed: ${String(e)}`);
-  } finally {
-    if (gate) renderGate.warming--;
   }
 }
 
