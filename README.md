@@ -132,8 +132,8 @@ shooters' (PlayStation names, Xbox in brackets):
 | Button | Action |
 |---|---|
 | Left stick / right stick | move / aim |
-| R2 (RT) | fire (analog: pull past a third) |
-| L2 (LT) | aim: a steadier stick and the aim assist's pull; with the sniper in hand, hold to scope |
+| R2 (RT) | fire (analog: pull past a fifth) |
+| L2 (LT) | aim: the view zooms in (a tighter lens, a little further out over his shoulder), a steadier stick and the aim assist's pull; with the sniper in hand, hold to scope |
 | R3 or L3 (click a stick) | bullet time |
 | R1 (RB) | shootdodge |
 | L1 (LB) | cover (again, in cover: dash to the marked cover) |
@@ -145,6 +145,20 @@ shooters' (PlayStation names, Xbox in brackets):
 | D-pad left-right | weapon (next / previous, twins included; the weapon tabs show which way reaches which) |
 | D-pad up / down | copium / use |
 | Options (Menu) | pause |
+
+**The triggers in every browser.** Both triggers are read by their analog value, never by `pressed` alone:
+under WebKit (Safari, and every browser on an iPad, Chrome there too) a DualSense's L2 and R2 report their
+pull in `buttons[6].value` / `buttons[7].value` as they go down while `pressed` comes on only at the
+controller's own click point. A trigger counts from a fifth of its pull and lets go under 0.12
+(`TRIGGER` in `src/input/pad.ts`); a pad that reports `pressed` alone counts as pulled all the way. Every pad
+read goes through `readPad` (the game's input, the menus, the device watcher): the standard mapping's
+layout whatever the browser lists, and a Sony pad listed without the standard mapping (WebKit's and
+Firefox's HID path on a Mac: Square, Cross, Circle, Triangle on buttons 0-3, the triggers' pull on axes 3
+and 4 from -1 at rest, the right stick's y on axis 5, the d-pad a hat on axis 9) is remapped to it; any
+other pad without it is read as if standard. L2 is the aim with every gun: the view zooms in (`FOV_AIM`,
+`AIM_CAM` in `src/app/CameraView.tsx`; presentation only, the crosshair stays where shots go), the
+sniper's scope with the sniper. Before this, L2 only slowed the stick and fed the aim assist outside the
+scope, so on the pad there was "no way to zoom in with the left trigger".
 
 Every screen works on the pad alone: the title (d-pad or left stick to choose, Cross to play), the fight
 prompt (Cross), the cutscenes (Cross next, Circle or Options skip), the pause menu and its settings
@@ -210,7 +224,7 @@ open himself. Clearing the security office is a checkpoint: dying after it retri
 ## Develop
 
 ```bash
-npm test           # node --test: time scale, weapons, hitboxes, projectiles vs hitscan, AI, the breach, checkpoints, replay, smoke bots, kill-cam framing and picks, the talk budget, the pad (layout, sticks, triggers, glyphs, aim assist, vibration, a pad-played replay)
+npm test           # node --test: time scale, weapons, hitboxes, projectiles vs hitscan, AI, the breach, checkpoints, replay, smoke bots, kill-cam framing and picks, the talk budget, the pad (layout, sticks, triggers by value, WebKit's and the HID layout, glyphs, aim assist, vibration, a pad-played replay)
 npm run typecheck
 npm run build      # production build in dist/
 npm run greybox    # regenerate public/levels/greybox.json
@@ -512,6 +526,13 @@ input log. Bullet time is a time scale on it.
   1, the fight prompt, room 1 (the bot's intent turned into sticks and buttons: the aim is the right
   stick with the aim assist, the fire is R2), the pause menu and its GAMEPAD settings, the quit to the
   title; then the same title with an Xbox pad. It shoots each screen and prints the frames the pad fed.
+- **Triggers as WebKit gives them:** with the dev server up, `RADPAYNE_CHROME_PROFILE=<throwaway dir>
+  RADPAYNE_GPU=webgpu node tools/padwebkit.ts http://localhost:4880/ .local/shots/padwebkit` plays both games
+  at an iPad's screen on a scripted DualSense whose triggers report their pull in their value alone (and on
+  the same pad as the HID layout, no standard mapping; RadPayne's run there as #250, with the AK): the title,
+  cutscene 1 and the prompt on the pad, then every gun in turn with L2 a third down (the lens must narrow
+  to the aim's, the sniper's scope come up, and both let go again), R2 a third down (a shot) and the pause
+  menu on Options.
 - **Hold check:** with the dev server up, `RADPAYNE_CHROME_PROFILE=<throwaway dir> node tools/holdcheck.ts
   http://localhost:4880 [rigs] [guns] [states]` walks every Radbro through stand, aim up / down, turn,
   walk, back-pedal, strafe, run, fire, reload, jump, dive, prone, get-up and roll with each long gun. It

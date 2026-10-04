@@ -1,9 +1,12 @@
 // Menu input: keyboard (arrows, Enter / Space, Esc, Tab / Shift+Tab) and gamepad (d-pad or left stick,
 // Cross / A confirm, Circle / B back, L1 / R1 pages, Options / Start back out of a menu) turned into menu
 // actions. Keys are taken in the capture phase so the page's own Esc handler (pause while playing)
-// never sees a key a menu used. The pad read is the last one used (input/device.ts).
+// never sees a key a menu used. The pad read is the last one used (input/device.ts), in the standard
+// layout whatever the browser lists (input/pad.ts readPad: a Sony pad's HID layout remapped, the
+// triggers by their analog value).
 import { useEffect, useRef } from "react";
 import { activePad, useDevice } from "../input/device.ts";
+import { readPad } from "../input/pad.ts";
 
 export type MenuAction = "up" | "down" | "left" | "right" | "enter" | "back" | "tabNext" | "tabPrev";
 
@@ -48,26 +51,24 @@ export function usePadInput(on: (a: MenuAction) => void, opts: { enabled?: boole
   useEffect(() => {
     if (!enabled) return;
     let raf = 0;
-    const prev: boolean[] = [];
+    let prev: boolean[] = [];
     let stickDir = "", stickNext = 0;
     const poll = () => {
       raf = requestAnimationFrame(poll);
       const p = activePad();
       if (!p) return;
-      for (const [b, a] of buttons) {
-        const down = !!p.buttons[b]?.pressed;
-        if (down && !prev[b]) cb.current(a);
-        prev[b] = down;
-      }
+      const r = readPad(p, prev);
+      for (const [b, a] of buttons) if (r.pressed[b] && !prev[b]) cb.current(a);
+      prev = r.pressed;
       if (!stick) return;
-      const x = p.axes[0] ?? 0, y = p.axes[1] ?? 0;
+      const x = r.axes[0], y = r.axes[1];
       const dir = Math.abs(y) > 0.6 ? (y < 0 ? "up" : "down") : Math.abs(x) > 0.6 ? (x < 0 ? "left" : "right") : "";
       const t = performance.now();
       if (dir && (dir !== stickDir || t >= stickNext)) { cb.current(dir as MenuAction); stickNext = t + (dir !== stickDir ? 380 : 140); }
       stickDir = dir;
     };
     const first = activePad();
-    if (first) for (const [b] of buttons) prev[b] = !!first.buttons[b]?.pressed;
+    if (first) prev = readPad(first).pressed;
     raf = requestAnimationFrame(poll);
     return () => cancelAnimationFrame(raf);
     // the button map is a module constant at every call site
