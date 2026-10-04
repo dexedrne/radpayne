@@ -2,7 +2,7 @@
 // re-renders for gameplay. Event stamps (hits, kills, refills, refused bullet time, hurts) are set
 // from the event handler the moment they happen. Settings persist as localStorage `radpayne.<key>`.
 import { create } from "zustand";
-import type { Difficulty } from "../sim/tuning.ts";
+import { RADPAYNE_DIFFICULTIES, type Difficulty } from "../sim/tuning.ts";
 import type { Stats } from "../sim/game.ts";
 import type { BaseWeapon, WeaponId } from "../combat/weapons.ts";
 import type { GameId } from "../brands.ts";
@@ -219,11 +219,16 @@ export const HUD_INITIAL: Hud = {
   katana: false, guard: 1, guardUp: false, guardBroken: false, cover: "", coverDash: false,
 };
 
+// a saved difficulty this build doesn't know (an older or newer name) falls back to Normal: an unknown one left PLAY disabled
+function knownDifficulty(v: string): Difficulty {
+  return (RADPAYNE_DIFFICULTIES as readonly string[]).includes(v) ? (v as Difficulty) : "normal";
+}
+
 export const useUi = create<Ui>(() => ({
   screen: "title",
   // RadPayne: #4764 is the hero of the comic panels, so he is the default pick; RetardioPayne: #555
   radbro: pickFor(GAME, stored("radbro", defaultHeroOf(GAME))),
-  difficulty: FIXED_DIFF ?? (stored("difficulty", "normal") as Difficulty),
+  difficulty: FIXED_DIFF ?? knownDifficulty(stored("difficulty", "normal")),
   quality: (stored("quality", "high") as Quality),
   sensitivity: Number(stored("sensitivity", "1")) || 1,
   invertY: stored("invertY", "0") === "1",
