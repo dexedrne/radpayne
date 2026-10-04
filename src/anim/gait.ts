@@ -20,9 +20,9 @@ export const RADBRO_GAIT: Record<HeroId, Gait> = {
   "3171": { run: 2.89, walk: 0.52 },
   "250": { run: 3.28, walk: 0.59 },
   // the Retardios: #723's own cycles retargeted onto their legs, so #723's numbers times their measured
-  // stride against his (#555: run x1.13, walk x1.03; #85: run x1.03, walk x0.96)
-  retardio555: { run: 3.53, walk: 0.59 },
-  retardio85: { run: 3.21, walk: 0.55 },
+  // stride against his (#555: run x1.22, walk x1.12; #85: run x1.11, walk x1.08)
+  retardio555: { run: 3.81, walk: 0.64 },
+  retardio85: { run: 3.46, walk: 0.62 },
 };
 
 /** The Miladys' clips come from #723's rig; scale by her leg length (hips height) against #723's. */
