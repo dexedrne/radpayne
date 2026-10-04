@@ -553,6 +553,8 @@ function StreetPost({ msaa, level, ground }: { msaa: boolean; level: Bloom; grou
     pipeline.needsUpdate = true;
     return b;
   }, [passes, bloomOn]);
+  // (a bloom built for the last setting is let go when it is replaced: each one holds its own render targets)
+  useEffect(() => () => { (bloomNode as { dispose?: () => void } | null)?.dispose?.(); }, [bloomNode]);
   useEffect(() => { setGrade(level); }, [level]);
   useEffect(() => {
     if (!bloomNode) return;
