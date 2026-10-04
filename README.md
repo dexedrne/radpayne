@@ -224,7 +224,7 @@ open himself. Clearing the security office is a checkpoint: dying after it retri
 ## Develop
 
 ```bash
-npm test           # node --test: time scale, weapons, hitboxes, projectiles vs hitscan, AI, the breach, checkpoints, replay, smoke bots, kill-cam framing and picks, the talk budget, the pad (layout, sticks, triggers by value, WebKit's and the HID layout, glyphs, aim assist, vibration, a pad-played replay)
+npm test           # node --test: time scale, weapons, hitboxes, projectiles vs hitscan, AI, the breach, checkpoints, replay, smoke bots, kill-cam framing and picks, the talk budget, the pad (layout, sticks, triggers by value, WebKit's and the HID layout, glyphs, aim assist, vibration, a pad-played replay), phones and tablets (the Low start, the canvas cap, the culling spheres, the matrices' walk)
 npm run typecheck
 npm run build      # production build in dist/
 npm run greybox    # regenerate public/levels/greybox.json
@@ -357,6 +357,33 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
     warm-up is done (`warmIdle` in `src/app/look/compile.ts`: freed under it, its pipelines failed and the
     picture could stay frozen), and a warm-up still not done after 20 s lets the room render on
     (`WARM_CAP_MS`). `tools/gfxcheck.ts` checks the characters through every change.
+- **Phones and tablets** (an iPad, an iPhone, an Android phone or tablet: `src/ui/mobile.ts`; an iPad asks
+  for the desktop site by default, so its user agent is a Mac's and only its touch points tell it apart;
+  `?mobile=1` / `?mobile=0` forces it for one page load): the first visit starts on Low (a choice made in
+  the menus is kept), and the canvas stays at 1.25 pixels a point at most whatever the Resolution
+  (`MOBILE_DPR`: on an iPad's 2x screen Low draws one pixel a point, 1080 x 810, where it drew 1417 x 1063,
+  and High 1350 x 1013 where it drew 1890 x 1417). On every device the frame does less on the CPU, the
+  picture the same: the crowd's and the gang's bodies are culled out of view (`src/app/cull.ts`: each
+  skinned mesh by its bind pose's sphere grown 2.5 times; they were drawn wherever the camera looked), a
+  dancer's mixer waits while she is out of view, and the scene's matrices are walked once a frame
+  (`src/app/look/matrices.ts`: three's renderer walked the whole scene, some 4,500 objects in the rave,
+  for each of the frame's two or three passes), never under a hidden actor (Low's every other crowd
+  girl, a goon still waiting for her trigger). An iPad 10th gen as `tools/perf.ts --ipad` emulates it
+  (1080 x 810 at 2x, touch, its user agent, the CPU throttled 4x, 30 Mbit, WebGPU; this machine's GPU
+  draws, so a tablet GPU's share is not in the times; the frames are the bot's first 20 s in the rave,
+  medians of three runs taken turn about, a frame's time in whole screen refreshes; the loads the mean of
+  two):
+
+  | on the iPad | canvas | MB before the fight prompt | to the prompt | rave fps p50 / p95 | draws, triangles |
+  |---|---|---|---|---|---|
+  | a new player, before (High) | 1890 x 1417 | 26.4 | 42 s | 8.6 / 6.7 | 640, 730k |
+  | a new player, now (Low) | 1080 x 810 | 26.3 | 32 s | 15 / 10 | 405, 330k |
+  | Low, before | 1417 x 1063 | 26.3 | 34 s | 10 / 7.5 | 495, 515k |
+  | Low, now | 1080 x 810 | 26.3 | 26 s | 15 / 10 | 405, 335k |
+
+  The bytes are the same: what loads before the prompt is room 1's own (the gang's Pockit models, its
+  sounds, his files); most of the time to it is the shaders' warm-up on the slow CPU. The desktop's
+  default looks as it did (the same frames before and after, the rain apart).
 - **Loading:** the title only needs the page. The room's shaders compile in the background while the
   title is up (the street fades in behind it), and PLAY works at once. The Radbro files, the gang's
   models and the sounds load behind the title and cutscene 1, and each room gets ready (its gang, its
@@ -516,8 +543,9 @@ input log. Bullet time is a time scale on it.
   TITLE, the preset, PLAY). After each switch every character drawn before (him, the gang, the heavies,
   the bosses, the crowd: Low keeps every other girl) must still be drawn, not as her stand-in, with a
   bone matrix per bone, finite and off the bind pose; the room must be drawn again (the dev probe's
-  `window.__rp.gate` / `gfx`), with no WebGL / WebGPU error in the console. It shoots each switch and
-  prints how long the picture held. `RADPAYNE_GPU=1` with `&webgl2` checks the WebGL2 renderer. Run it
+  `window.__rp.gate` / `gfx`), with no WebGL / WebGPU error in the console. A body out of the camera's
+  view is culled (its bone matrices are not computed): it counts as drawn and posed (`window.__inView`).
+  It shoots each switch and prints how long the picture held. `RADPAYNE_GPU=1` with `&webgl2` checks the WebGL2 renderer. Run it
   on a dev server started after the last edit: hot reloads of the graphics modules can leave a page with
   two copies of the settings store, and the menus and the look then disagree.
 - **Pad check:** with the dev server up, `RADPAYNE_CHROME_PROFILE=<throwaway dir> RADPAYNE_GPU=1 node
@@ -533,6 +561,12 @@ input log. Bullet time is a time scale on it.
   cutscene 1 and the prompt on the pad, then every gun in turn with L2 a third down (the lens must narrow
   to the aim's, the sniper's scope come up, and both let go again), R2 a third down (a shot) and the pause
   menu on Options.
+- **Speed on a tablet:** `RADPAYNE_CHROME_PROFILE=<throwaway dir> RADPAYNE_GPU=webgpu node tools/perf.ts
+  <url> --ipad --load-only` on a production build (`npx vite preview`) times a first visit at an iPad's
+  screen (1080 x 810 at 2x, touch, the iPad's user agent, the CPU throttled 4x, 30 Mbit): the title, PLAY,
+  cutscene 1 skipped, the fight prompt, and what was downloaded before it; `--fps-only` on a test build
+  (`npm run build:test`) times the bot's frames in the rave (room 2) and samples the draws and triangles;
+  `--gfx=low` saves a preset first, `--profile` adds where the main thread went, `--files` every file.
 - **Hold check:** with the dev server up, `RADPAYNE_CHROME_PROFILE=<throwaway dir> node tools/holdcheck.ts
   http://localhost:4880 [rigs] [guns] [states]` walks every Radbro through stand, aim up / down, turn,
   walk, back-pedal, strafe, run, fire, reload, jump, dive, prone, get-up and roll with each long gun. It

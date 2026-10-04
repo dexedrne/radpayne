@@ -7,13 +7,16 @@
 //   and until then she is the stand-in girl (standIn.ts), who dances, sits and runs like the sim says.
 //   dance / drink / sit -> Startle -> Flee_Run(_2) at the body speed over the clip's ground speed
 //   (scaled to her legs: no skating) -> gone at the door; Cower_Idle when there is no way out.
+// Out of view (cull.ts) a girl is not drawn, and her mixer waits (its time adds up) until she is back in
+// view: the camera sees a third of the floor at a time. A hidden girl's bones are not walked
+// (look/matrices.ts).
 // They must never read as a threat: empty hands (the dancers hold a cyan glow stick, the only cyan
 // light on any body), no hostile rim (not "goon-" roots), a small lift (0.12 against the gang's 0.32)
 // and 25 % less colour. Quality Low shows at most 12 of them.
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useAssetRuntime } from "react-three-game";
-import { AnimationMixer, CapsuleGeometry, Color, Group, LoopOnce, LoopRepeat, Mesh, MeshBasicMaterial, Quaternion, type AnimationAction, type Material, type Object3D, type SkinnedMesh } from "three";
+import { AnimationMixer, CapsuleGeometry, Color, Frustum, Group, LoopOnce, LoopRepeat, Mesh, MeshBasicMaterial, Quaternion, Sphere, Vector3, type AnimationAction, type Material, type Object3D, type SkinnedMesh } from "three";
 import type { MeshStandardNodeMaterial } from "three/webgpu";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 import type { Session } from "./session.ts";
@@ -26,6 +29,8 @@ import { useGfx } from "./look/gfx.ts";
 import { CROWD } from "../sim/tuning.ts";
 import { crowdClipsFor, crowdModel, crowdNumbers } from "./warmup.ts";
 import { CROWD_LOOK, animateStandIn, makeStandIn, type StandIn } from "./standIn.ts";
+import { cullBody, viewFrustum } from "./cull.ts";
+import { walkWhenShown } from "./look/matrices.ts";
 
 const NO_MILADY = new URLSearchParams(location.search).get("milady") === "0";
 /** Each dance's rate at the club's 128 BPM (the clip manifest's rate128), clamped so no girl looks
@@ -36,6 +41,9 @@ const DANCE_RATE = [0.85, 1.15] as const;
 const FLEE_SPEED: Record<string, number> = { Flee_Run: 3.12, Flee_Run_2: 2.71 };
 const LOW_MAX = 12;
 const MIXER_HZ = 30;
+/** A girl's sphere for the mixer's view test: her middle over her feet, and well past her culling sphere
+ *  (cull.ts: about 2.2 m), so a girl the renderer may draw is always animated, a fast turn's frame too. */
+const VIEW_SPHERE = { y: 0.9, r: 3.5 } as const;
 
 type Girl = {
   i: number;
@@ -80,6 +88,7 @@ export function CrowdView({ s }: { s: Session }) {
     const root = new Group();
     root.name = `crowd-${i}`;
     root.userData.rpActor = true;
+    walkWhenShown(root);
     const si = makeStandIn(CROWD_LOOK);
     root.add(si.root);
     const tint = new Color().setHSL(k01(i, 3), 0.25, 0.5).lerp(new Color(1, 1, 1), 0.82);
@@ -102,8 +111,8 @@ export function CrowdView({ s }: { s: Session }) {
           if (!mesh.isMesh) return;
           const conv = (mm: Material) => { const c = mm.clone() as MeshStandardNodeMaterial; c.color.multiply(g.tint); g.materials.push(c); return c; };
           mesh.material = Array.isArray(mesh.material) ? mesh.material.map(conv) : conv(mesh.material);
-          mesh.frustumCulled = false;
         });
+        cullBody(body);
         const mixer = new AnimationMixer(body);
         for (const c of m.clips) g.actions.set(c.name, mixer.clipAction(c));
         // the dancers' glow stick in the right hand (not the bar, the booths or the bouncer)
@@ -160,8 +169,10 @@ export function CrowdView({ s }: { s: Session }) {
   }, [girls, group, source, people, s]);
 
   const run = useRef(-1);
-  useFrame((_, raw) => {
+  const view = useMemo(() => ({ f: new Frustum(), sphere: new Sphere(new Vector3(), VIEW_SPHERE.r) }), []);
+  useFrame((state, raw) => {
     const crowd = s.game.crowd;
+    viewFrustum(state.camera, view.f);
     const dt = Math.min(raw, 0.1);
     const wdt = dt * s.viewScale;
     if (run.current !== s.run) { run.current = s.run; for (const g of girls) g.clip = ""; }
@@ -206,9 +217,12 @@ export function CrowdView({ s }: { s: Session }) {
         changed = true;
       } else next?.setEffectiveTimeScale(rate);
       // mixers at 30 Hz of world time (bullet time slows them with the rest); at once for a new clip
-      // or a girl not yet shown, so no frame ever draws her in the bind pose
+      // or a girl not yet shown, so no frame ever draws her in the bind pose; out of view a posed girl's
+      // mixer waits, her time adding up, until she is back in view
       g.acc += wdt;
-      if (g.acc >= 1 / MIXER_HZ || changed || !g.posed) {
+      view.sphere.center.set(p.x, p.y + VIEW_SPHERE.y, p.z);
+      const seen = view.f.intersectsSphere(view.sphere);
+      if ((g.acc >= 1 / MIXER_HZ && (seen || !g.posed)) || changed || !g.posed) {
         g.mixer.update(g.acc);
         g.acc = 0;
         const bind = g.arms.length > 0 && g.arms.every(([b, q]) => Math.abs(b.quaternion.dot(q)) > 0.9997);

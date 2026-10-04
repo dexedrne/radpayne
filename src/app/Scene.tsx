@@ -32,6 +32,10 @@ import { HudFrame } from "../ui/hud/HudFrame.tsx";
 import { backendIs, dprFor, useGfx } from "./look/gfx.ts";
 import { shareShaders } from "./look/shaderShare.ts";
 import type { WebGPURenderer } from "three/webgpu";
+import { Frustum, type Object3D } from "three";
+import { viewFrustum } from "./cull.ts";
+
+const probeFrustum = new Frustum();
 
 const FORCE_WEBGL = new URLSearchParams(location.search).has("webgl2");
 /** ?noshare: every object its own shaders again (look/shaderShare.ts off: the A/B check). */
@@ -81,7 +85,9 @@ export function Scene({ s, onPhase, bootRef }: { s: Session; onPhase: (p: string
         useUi.setState({ backend: name });
         backendIs(name === "WebGL2");
         if (!NO_SHARE) shareShaders(st.gl as unknown as WebGPURenderer); // one program per material + buffer layout, not per object
-        if (import.meta.env.MODE !== "production") Object.assign(window, { __gl: st.gl, __scene: st.scene }); // dev probe
+        // dev probe (__inView: whether the renderer draws this mesh from the camera as it was last drawn, or
+        // culls it: cull.ts)
+        if (import.meta.env.MODE !== "production") Object.assign(window, { __gl: st.gl, __scene: st.scene, __inView: (o: Object3D) => !o.frustumCulled || !!(o as Object3D & { intersectsFrustum?: (f: Frustum) => boolean }).intersectsFrustum?.(viewFrustum(st.camera, probeFrustum)) });
         console.info("[radpayne] renderer:", name);
         if (!booted.current) { booted.current = true; bootRef?.(true); }
       }}
