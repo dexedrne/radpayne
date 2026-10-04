@@ -9,7 +9,8 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { Session } from "./session.ts";
 import { useUi } from "../ui/store.ts";
-import { FRAME } from "./frame.ts";
+import { FRAME, renderGate } from "./frame.ts";
+import { useGfx } from "./look/gfx.ts";
 import { WEAPONS } from "../combat/weapons.ts";
 import { gunLog, setAmbience, setClubBass, setCrowd, setFootsteps, setHeartbeat, setIndoor, setMusic, setNeonBuzz, setRoomTone, setSpace, setTimeScaleAudio, sfx, sfxArsenal, voiceLog } from "../audio/sfx.ts";
 import { audioState } from "../audio/engine.ts";
@@ -27,7 +28,8 @@ import { bossBusy, cine, rideMoving } from "./cine.ts";
 import { sfxCine } from "../audio/sfx.ts";
 import { hitFeelMode } from "../ui/feel.ts";
 
-/** Dev builds: window.__rp.cineCtl is the kill cam (a browser check can stage one). */
+/** Dev builds: window.__rp.cineCtl is the kill cam (a browser check can stage one); gate / gfx are the
+ *  room's render gate (true: held, the last frame stays) and the graphics preset (tools/gfxcheck.ts). */
 const DEV = import.meta.env.MODE !== "production";
 
 /** Guns whose reloads have their own sounds in the arsenal block. */
@@ -35,7 +37,7 @@ const ARSENAL_GUNS = new Set(["handcannon", "sawedoff", "sniper"]);
 
 declare global {
   interface Window {
-    __rp?: { session: Session; fps: number; frames: number; audio: string; voices: string[]; guns: string[]; cine: { phase: string; kind: string; tag: string; n: number; t: number; flight: number }; cineCtl?: typeof cine };
+    __rp?: { session: Session; fps: number; frames: number; audio: string; voices: string[]; guns: string[]; cine: { phase: string; kind: string; tag: string; n: number; t: number; flight: number }; cineCtl?: typeof cine; gate?: boolean; gfx?: string };
   }
 }
 
@@ -300,7 +302,7 @@ export function SimDriver({ s, onPhase }: { s: Session; onPhase: (phase: string)
       }
       if (!s.paused) director.frame();
     } else setFootsteps(0);
-    window.__rp = { session: s, fps: fps.current, frames: frames.current, audio: audioState(), voices: voiceLog, guns: gunLog, cine: { phase: cine.cur?.phase ?? "", kind: cine.cur?.kind ?? "", tag: cine.cur?.tag ?? "", n: kc.n, t: cine.cur?.t ?? 0, flight: cine.cur?.flight ?? 0 }, ...(DEV ? { cineCtl: cine } : {}) };
+    window.__rp = { session: s, fps: fps.current, frames: frames.current, audio: audioState(), voices: voiceLog, guns: gunLog, cine: { phase: cine.cur?.phase ?? "", kind: cine.cur?.kind ?? "", tag: cine.cur?.tag ?? "", n: kc.n, t: cine.cur?.t ?? 0, flight: cine.cur?.flight ?? 0 }, ...(DEV ? { cineCtl: cine, gate: renderGate.skip, gfx: useGfx.getState().preset } : {}) };
     if (g.phase !== lastPhase.current) {
       lastPhase.current = g.phase;
       onPhase(g.phase);

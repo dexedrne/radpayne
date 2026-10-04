@@ -153,6 +153,8 @@ function Post({ msaa, level, L }: { msaa: boolean; level: Bloom; L: LookNumbers 
     pipeline.needsUpdate = true;
     return b;
   }, [passes, bloomOn, L]);
+  // (a bloom built for the last setting is let go when it is replaced: each one holds its own render targets)
+  useEffect(() => () => { (bloomNode as { dispose?: () => void } | null)?.dispose?.(); }, [bloomNode]);
   useEffect(() => {
     if (!bloomNode) return;
     const B = level === "original" ? L.bloom.original : L.bloom.subtle;

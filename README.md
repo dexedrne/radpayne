@@ -338,7 +338,11 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
     Rain (Off / Thin / Light: a drizzle; never denser than the thin default) and Resolution (50-100 %;
     75 % never drops under the screen's own pixels, so the thin neon stays whole on a standard screen).
   - Changing one applies at once. Turning the puddle mirror on or off recompiles the street's shaders
-    in the background, so the picture holds for a moment.
+    in the background, so the picture holds for a moment (room 1 only: no other room has the mirror).
+    Clicking through the presets holds it once, not once a click; the old mirror is freed only once that
+    warm-up is done (`warmIdle` in `src/app/look/compile.ts`: freed under it, its pipelines failed and the
+    picture could stay frozen), and a warm-up still not done after 20 s lets the room render on
+    (`WARM_CAP_MS`). `tools/gfxcheck.ts` checks the characters through every change.
 - **Loading:** the title only needs the page. The room's shaders compile in the background while the
   title is up (the street fades in behind it), and PLAY works at once. The Radbro files, the gang's
   models and the sounds load behind the title and cutscene 1, and each room gets ready (its gang, its
@@ -491,6 +495,17 @@ input log. Bullet time is a time scale on it.
   counted per fight minute by speaker (`VOICE RATE`).
   `RADPAYNE_GPU=1` uses the machine's GPU (WebGL2); without it Chromium falls back to SwiftShader
   (very slow).
+- **Graphics check:** with the dev server up, `RADPAYNE_CHROME_PROFILE=<throwaway dir> RADPAYNE_GPU=webgpu
+  node tools/gfxcheck.ts "http://localhost:4880/?game=retardiopayne&seed=1" .local/shots/gfx room1,room2`
+  opens each room (all ten: `room1,...,room10`) and switches the graphics preset through every level and
+  back in the pause menu, then all of them in one burst, and in room 1 from the title too (QUIT TO
+  TITLE, the preset, PLAY). After each switch every character drawn before (him, the gang, the heavies,
+  the bosses, the crowd: Low keeps every other girl) must still be drawn, not as her stand-in, with a
+  bone matrix per bone, finite and off the bind pose; the room must be drawn again (the dev probe's
+  `window.__rp.gate` / `gfx`), with no WebGL / WebGPU error in the console. It shoots each switch and
+  prints how long the picture held. `RADPAYNE_GPU=1` with `&webgl2` checks the WebGL2 renderer. Run it
+  on a dev server started after the last edit: hot reloads of the graphics modules can leave a page with
+  two copies of the settings store, and the menus and the look then disagree.
 - **Pad check:** with the dev server up, `RADPAYNE_CHROME_PROFILE=<throwaway dir> RADPAYNE_GPU=1 node
   tools/padsmoke.ts "http://localhost:4880/?seed=1&webgl2" .local/shots/pad` plays with a fake
   DualSense only (`navigator.getGamepads` replaced in the page; no key, no click): the title, cutscene

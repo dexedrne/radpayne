@@ -22,15 +22,15 @@
 // the start, their shaders, the sounds) under the cutscene before it (room 4: under cs3a, the elevator
 // panels, after room 3's doors have opened); its start (holdRoom) waits behind the loading card, with the
 // progress, only for what is not done by then.
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Session } from "./session.ts";
 import { Scene } from "./Scene.tsx";
 import { assetsRef, loadManifest, manifestFor, loadOptional, gunClipsPath, r2ClipsPath, MILADY_CLIPS, MILADY_R2 } from "./characters.ts";
 import { assetExists, assetUrl } from "./assets.ts";
 import { goonSlots } from "../sim/game.ts";
 import { cachedPockits, pickPockits } from "../vrm/pockit.ts";
-import { warmLook } from "./look/compile.ts";
-import { useGfx } from "./look/gfx.ts";
+import { coalesce, warmLook } from "./look/compile.ts";
+import { rebuildsShaders, useGfx } from "./look/gfx.ts";
 import { scenePending } from "./Scene.tsx";
 import { readLevel } from "../world/level.ts";
 import { baseWeaponOf, startLoadoutOf, useUi, type HeroId } from "../ui/store.ts";
@@ -337,13 +337,14 @@ export default function PlayPage() {
 
   useEffect(() => { setMuted(muted); }, [muted]);
 
-  // a graphics change that rebuilds shaders (the puddle mirror on / off, MSAA): the room's render holds
-  // (from this very call, before any frame) while they compile off the frame
+  // a graphics change that rebuilds shaders (room 1's puddle mirror on / off, MSAA): the room's render
+  // holds (from this very call, before any frame) while they compile off the frame. Changes in a row
+  // (clicking through the presets) hold it once and compile at most once more, for the look as it ends
+  // up; in the rooms without the mirror, Reflections changes no shader and holds nothing
+  const rewarm = useMemo(() => coalesce(() => frames(4).then(() => warmLook()), () => { renderGate.warming++; }, () => { renderGate.warming--; }), []);
   useEffect(() => useGfx.subscribe((g, prev) => {
-    if ((g.reflections !== "off") === (prev.reflections !== "off") && g.msaa === prev.msaa) return;
-    renderGate.warming++;
-    void frames(4).then(() => warmLook()).finally(() => { renderGate.warming--; });
-  }), []);
+    if (rebuildsShaders(prev, g, mounted.current?.level.room.look === "street")) void rewarm();
+  }), [rewarm]);
   useEffect(() => { if (session) { session.input.sensitivity = sensitivity; session.input.invertY = invertY; } }, [session, sensitivity, invertY]);
   // the pad's settings (pause menu, Controls: GAMEPAD)
   const padSens = useUi(s => s.padSens);
