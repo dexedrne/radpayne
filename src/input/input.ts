@@ -2,10 +2,12 @@
 // integrates mouse and right-stick motion in real time, every frame, whatever the time scale. Press
 // edges latch until a step consumes them, so a frame with zero steps never loses a press. The pad feeds
 // the same frame as the keys (a recorded log replays the same whatever played it); its layout is
-// pad.ts's: L2 aims (steadier, the aim assist's pull; the scope with the sniper), R2 fires (analog, with
-// hysteresis), R1 dives, R3 / L3 bullet time, Cross jumps, Square reloads (or uses what is in reach),
-// Triangle throws, Circle strikes, L1 takes cover (sim/cover.ts; in cover L2 pops out), the d-pad's
-// left-right change the gun, up copium, down use. On the keys C is cover, and in cover the right mouse
+// pad.ts's, read through readPad (the standard layout whatever the browser lists; both triggers by their
+// analog value, never `pressed` alone: WebKit's comes on only at the trigger's click point): L2 aims (the
+// view zooms in, steadier, the aim assist's pull; the scope with the sniper), R2 fires (with hysteresis),
+// R1 dives, R3 / L3 bullet time, Cross jumps, Square reloads (or uses what is in reach), Triangle throws,
+// Circle strikes, L1 takes cover (sim/cover.ts; in cover L2 pops out), the d-pad's left-right change the
+// gun, up copium, down use. On the keys C is cover, and in cover the right mouse
 // pops out (held) instead of toggling bullet time (Q still does).
 // #4764's katana: the melee button (F / Circle) held is his guard, a tap the cut (the sim decides which
 // from the held level in the frame, `guard`). The grenade button (G / Triangle) held raises the frag and
@@ -14,7 +16,7 @@ import { PITCH_MAX, PITCH_MIN } from "../sim/aim.ts";
 import { emptyInput, type InputFrame } from "../sim/types.ts";
 import { assistStep, type AssistLevel, type AssistTarget } from "./assist.ts";
 import { activePad, noteKbm, notePad } from "./device.ts";
-import { BTN, lookCurve, radial, triggerDown, triggerValue } from "./pad.ts";
+import { BTN, lookCurve, radial, readPad } from "./pad.ts";
 
 /** Radians per mouse pixel at sensitivity 1. */
 const MOUSE_K = 0.0022;
@@ -50,7 +52,7 @@ export class InputLatch {
   private edges = { bt: false, dodge: false, jump: false, reload: false, copium: false, skip: false, slot: 0, melee: false, throw: false, interact: false, cover: false, stow: false };
   /** In cover (the game sets it): right mouse pops him out while held instead of toggling bullet time. */
   coverMode = false;
-  private pad = { lx: 0, ly: 0, fire: false, l2: 0, active: false, start: false, a: false, circle: false, triangle: false, prev: [] as boolean[], sticks: [0, 0, 0, 0] };
+  private pad = { lx: 0, ly: 0, fire: false, aim: false, l2: 0, active: false, start: false, a: false, circle: false, triangle: false, prev: [] as boolean[], sticks: [0, 0, 0, 0] };
   readonly frame: InputFrame = emptyInput();
   /** Any key / button this frame (skips cutscenes and the kill cam). */
   anyPress = false;
@@ -123,33 +125,36 @@ export class InputLatch {
   poll(dt: number): void {
     const gp = activePad();
     const pd = this.pad;
-    if (!gp) { pd.active = false; pd.lx = pd.ly = 0; pd.fire = false; pd.l2 = 0; pd.start = false; pd.a = false; pd.circle = false; pd.triangle = false; pd.prev = []; pd.sticks = [0, 0, 0, 0]; this.assistOn = null; return; }
-    const [lx, ly] = radial(gp.axes[0] ?? 0, gp.axes[1] ?? 0, this.deadZone);
-    const [rx, ry] = radial(gp.axes[2] ?? 0, gp.axes[3] ?? 0, this.deadZone);
+    if (!gp) { pd.active = false; pd.lx = pd.ly = 0; pd.fire = false; pd.aim = false; pd.l2 = 0; pd.start = false; pd.a = false; pd.circle = false; pd.triangle = false; pd.prev = []; pd.sticks = [0, 0, 0, 0]; this.assistOn = null; return; }
+    // (the pad in the standard layout whatever the browser lists, its triggers by their analog value: pad.ts)
+    const rp = readPad(gp, pd.prev);
+    const [lx, ly] = radial(rp.axes[0], rp.axes[1], this.deadZone);
+    const [rx, ry] = radial(rp.axes[2], rp.axes[3], this.deadZone);
     pd.lx = lx;
     pd.ly = ly;
-    const now = gp.buttons.map(x => !!x?.pressed);
+    const now = rp.pressed;
     const hit = (i: number) => !!now[i] && !pd.prev[i];
-    // the triggers are analog: R2 fires past a threshold (with hysteresis), L2's pull steadies the aim
-    const r2 = triggerValue(gp.buttons[BTN.r2]), l2 = triggerValue(gp.buttons[BTN.l2]);
+    // the triggers are analog: R2 fires past a threshold, L2 aims past it (both with hysteresis); L2's pull
+    // steadies the stick
+    const l2 = rp.value[BTN.l2];
     const fireWas = pd.fire;
-    pd.fire = triggerDown(r2, pd.fire);
-    const l2Was = pd.l2 >= 0.3;
+    pd.fire = now[BTN.r2];
+    pd.aim = now[BTN.l2];
     pd.l2 = l2;
     // a stick counts as used on an edge only: pushed out of the dead zone, or moved well away from where it
     // was last noted (a stick that drifts, or rests just past the dead zone, does not keep the pad's glyphs
-    // on screen after a key brought the keys back)
+    // on screen after a key brought the keys back); the triggers' pulls are edges of `now`
     const sticks = stickUse(pd.sticks, lx, ly, rx, ry);
-    const used = sticks || now.some((d, i) => d && !pd.prev[i]) || (pd.fire && !fireWas) || (l2 >= 0.3 && !l2Was);
+    const used = sticks || now.some((d, i) => d && !pd.prev[i]);
     if (used) { pd.active = true; this.via = "pad"; notePad(gp); }
     // right stick: radial dead zone, the response curve, sensitivity, L2's steadiness, the assist's friction
-    const aiming = this.via === "pad" ? Math.max(l2 >= 0.3 ? l2 : 0, pd.fire ? 0.6 : 0) : 0;
+    const aiming = this.via === "pad" ? Math.max(pd.aim ? l2 : 0, pd.fire ? 0.6 : 0) : 0;
     const t = this.via === "pad" && this.assistLevel !== "off" && this.assistQuery ? this.assistQuery(this.yaw, this.pitch) : null;
     this.assistOn = t;
     const a = assistStep(this.assistLevel, t, aiming, dt);
     const m = Math.hypot(rx, ry);
     const c = m > 0 ? lookCurve(m) / m : 0;
-    const k = this.padSens * this.fovK * (1 - AIM_STEADY * (l2 >= 0.3 ? l2 : 0)) * a.slow * dt;
+    const k = this.padSens * this.fovK * (1 - AIM_STEADY * (pd.aim ? l2 : 0)) * a.slow * dt;
     this.yaw -= rx * c * PAD_YAW * k;
     this.pitch -= ry * c * PAD_PITCH * k * (this.padInvertY ? -1 : 1);
     this.yaw += a.dyaw;
@@ -180,6 +185,10 @@ export class InputLatch {
   get padAim(): number {
     return this.pad.l2;
   }
+  /** The pad's L2 held past its threshold (the aim: the camera zooms in, the sniper scopes). */
+  get padAiming(): boolean {
+    return this.pad.aim;
+  }
 
   get padActive(): boolean {
     return this.pad.active;
@@ -206,10 +215,10 @@ export class InputLatch {
     f.yaw = this.yaw;
     f.pitch = this.pitch;
     f.fire = this.lmb || this.pad.fire;
-    f.zoom = this.zoomMode && (this.rmb || this.pad.l2 >= 0.3);
+    f.zoom = this.zoomMode && (this.rmb || this.pad.aim);
     f.guard = this.keys.has("KeyF") || this.pad.circle;
     f.nade = this.keys.has("KeyG") || this.pad.triangle;
-    f.aim = this.rmb || this.pad.l2 >= 0.3;
+    f.aim = this.rmb || this.pad.aim;
     const e = this.edges;
     f.bt = e.bt; f.dodge = e.dodge; f.jump = e.jump; f.reload = e.reload; f.copium = e.copium; f.skip = e.skip; f.slot = e.slot;
     f.melee = e.melee; f.throw = e.throw; f.interact = e.interact; f.cover = e.cover; f.stow = e.stow;

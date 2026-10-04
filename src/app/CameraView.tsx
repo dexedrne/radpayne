@@ -21,6 +21,10 @@
 // dive or prone (LONG_CAM_LYING) it climbs and swings wide of him, so the gun ahead of his head shows. The
 // view always turns onto the sim's aim point, so the crosshair stays exactly where shots go (the sim's
 // SHOULDER is unchanged). A one-handed gun gets part of the long-gun lens (ONE_HAND_CAM).
+// The pad's L2 held (any gun but the sniper, whose L2 is the scope): the console shooters' aim, the lens
+// tightens to FOV_AIM and goes a little further out over his right shoulder (eased over AIM_CAM's in /
+// out); the view still turns onto the sim's aim point, so the crosshair stays exactly where shots go.
+// Presentation only: the sim never knows (its frame's `aim` is what it always was, the pop out of cover).
 // Room 4's car (6 x 6 m): a shorter, higher arm with a wider lens that never leaves the car while he is
 // in it (the lens keeps CAR_CAM.margin off the walls and gates, measured square to them), the left
 // shoulder when a wall takes the right one (never his head in the crosshair), and a crane up over his
@@ -63,8 +67,13 @@ export const LONG_CAM_AIMED = { right: 0.15, arm: -0.3, down: 0.1, in: 0.15, out
 export const LONG_CAM_LYING = { right: 0.2, arm: -0.55, up: 0.3, getup: 0, in: 0.2, out: 0.35 };
 /** The current camera arm and shoulder offset, and the offset it would have with no wall (the player fades
  *  out when a wall pulls the camera into his head or slides the pivot in); the lens this frame (probes). */
-export const camView = { arm: SHOULDER.arm as number, right: SHOULDER.right as number, baseRight: SHOULDER.right as number, eye: { x: 0, y: 0, z: 0 } };
+export const camView = { arm: SHOULDER.arm as number, right: SHOULDER.right as number, baseRight: SHOULDER.right as number, eye: { x: 0, y: 0, z: 0 }, fov: FOV as number, aim: 0 };
 const FOV_BT = 60;
+/** The pad's aim (L2 held, not the sniper): the lens's width (deg, against FOV; bullet time and the car
+ *  narrow in proportion), its ease in / out (s), and how much further out to his right the lens goes (m:
+ *  the tighter view would otherwise put more of his head and hair by the crosshair). */
+export const FOV_AIM = 50;
+export const AIM_CAM = { in: 0.12, out: 0.16, right: 0.2 } as const;
 /** The sniper's scope: the lens at the sim's pivot, looking down the aim ray (the crosshair is exact). */
 export const FOV_SCOPE = 17;
 /** Round 3: a short jolt of the whole view (the thud on the car's roof, the brakes catching): `t` real
@@ -88,6 +97,8 @@ export function CameraView({ s }: { s: Session }) {
     plan: null as KcPlan | null,
     /** Room 4's car: its weight (eased), over the left shoulder, the crane up. */
     carK: 0, swap: false, crane: 0,
+    /** The pad's aim lens (0..1, eased). */
+    ads: 0,
     /** The kill cam's plan and the cam it is for. */
     cplan: null as KcPlan | null,
     cfor: null as Cine | null,
@@ -117,6 +128,8 @@ export function CameraView({ s }: { s: Session }) {
     const p = g.player;
     const k = g.killcam;
     let fovWant = g.timeScale < 0.99 ? FOV_BT : FOV;
+    /** The fight's own view this frame (the pad's aim lens applies there only). */
+    let adsOn = false;
     const dev = DEV_CAM ? g.level.markers.find(m => m.kind === "camera" && m.id === DEV_CAM) : undefined;
     if (holdDev.on) {
       for (const k of ["right", "arm", "down"] as const) if (holdDev.tweak["cam." + k] !== undefined) LONG_CAM[k] = holdDev.tweak["cam." + k];
@@ -128,8 +141,12 @@ export function CameraView({ s }: { s: Session }) {
     tmp.long = ease(tmp.long, isLongGun(p.weapon.id) ? 1 : isOneHand(p.weapon.id) ? ONE_HAND_CAM : 0, LONG_CAM.ease, LONG_CAM.ease);
     tmp.aimed = ease(tmp.aimed, holdView.aimed, LONG_CAM_AIMED.in, LONG_CAM_AIMED.out);
     tmp.lying = ease(tmp.lying, p.mode === "dive" || p.mode === "prone" ? 1 : p.mode === "getup" ? LONG_CAM_LYING.getup : 0, LONG_CAM_LYING.in, LONG_CAM_LYING.out);
+    // the pad's aim: L2 held with a gun the scope is not (the fight's own view only: the branches below
+    // that are not it let it go)
+    const adsWant = s.input.padAiming && p.weapon.id !== "sniper" && p.mode !== "dead" && !p.zoom ? 1 : 0;
+    tmp.ads = ease(tmp.ads, adsWant, AIM_CAM.in, AIM_CAM.out);
     const ll = tmp.long * tmp.lying, la = tmp.long * tmp.aimed * (1 - tmp.lying);
-    const baseRight = SHOULDER.right + (LONG_CAM.right - SHOULDER.right) * tmp.long + LONG_CAM_AIMED.right * la + LONG_CAM_LYING.right * ll;
+    const baseRight = SHOULDER.right + (LONG_CAM.right - SHOULDER.right) * tmp.long + LONG_CAM_AIMED.right * la + LONG_CAM_LYING.right * ll + AIM_CAM.right * tmp.ads;
     const baseArm = SHOULDER.arm + (LONG_CAM.arm - SHOULDER.arm) * tmp.long + LONG_CAM_AIMED.arm * la + LONG_CAM_LYING.arm * ll;
     const eyeDown = LONG_CAM.down * tmp.long + LONG_CAM_AIMED.down * la - LONG_CAM_LYING.up * ll;
     camView.baseRight = baseRight;
@@ -240,6 +257,7 @@ export function CameraView({ s }: { s: Session }) {
       camView.arm = SHOULDER.arm;
     } else {
       tmp.plan = null;
+      adsOn = true;
       const r = s.renderP;
       const d = aimDir(p.yaw, p.pitch, tmp.d);
       const c = Math.cos(p.yaw), sn = Math.sin(p.yaw);
@@ -384,7 +402,10 @@ export function CameraView({ s }: { s: Session }) {
     // the scope snaps in (a tiny ease), the rest glides; look sensitivity follows the view's width
     tmp.fov += (fovWant - tmp.fov) * Math.min(1, (p.zoom || fovWant === FOV_SCOPE ? 30 : 8) * dt);
     s.input.fovK = p.zoom ? Math.tan((tmp.fov * Math.PI) / 360) / Math.tan((FOV * Math.PI) / 360) : 1;
-    const fovNow = tmp.fov * (1 - pk * PUNCH.zoom);
+    if (!adsOn) tmp.ads = 0;
+    const fovNow = tmp.fov * (1 - tmp.ads * (1 - FOV_AIM / FOV)) * (1 - pk * PUNCH.zoom);
+    camView.fov = fovNow;
+    camView.aim = tmp.ads;
     if (cam instanceof PerspectiveCamera && Math.abs(cam.fov - fovNow) > 0.01) {
       cam.fov = fovNow;
       cam.updateProjectionMatrix();

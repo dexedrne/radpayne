@@ -6,7 +6,8 @@
 // skinned meshes has a bone matrix per bone (finite, and not every bone on the bind pose), the room
 // renders again (the render gate opens, frames go on) and the page logs no error (nor a WebGL / WebGPU
 // complaint). Low's lighter scene shows every other crowd girl (12 at most): the crowd only has to keep
-// that many. Saves a shot after each switch and prints how long the picture held.
+// that many. A skinned mesh out of the camera's view is culled (src/app/cull.ts): its bone matrices are
+// not computed, so it counts as drawn and posed (the dev probe's window.__inView). Saves a shot after each switch and prints how long the picture held.
 //   RADPAYNE_CHROME_PROFILE=<throwaway dir> RADPAYNE_GPU=1|webgpu node tools/gfxcheck.ts [url] [outDir] [rooms]
 //   url    the dev server (default http://localhost:4880/?seed=1); ?game=retardiopayne for RetardioPayne,
 //          &webgl2 with RADPAYNE_GPU=1
@@ -43,14 +44,14 @@ const LOW_CROWD = 12;
 
 /** Per actor: skinned meshes (all, drawn, posed, without usable bone matrices) and whether its stand-in
  *  (standIn.ts: the plain figure a model replaces) is what is drawn. */
-type Actor = { meshes: number; drawn: number; posed: number; bad: number; standIn: boolean };
+type Actor = { meshes: number; drawn: number; posed: number; bad: number; standIn: boolean; culled: number };
 type Probe = { actors: Record<string, Actor>; frames: number; gate: boolean; gfx: string; phase: string; room: string; screen: string };
 
 /** In the page: the actors and their skinned meshes (dev probes: window.__scene, window.__rp). It also
  *  keeps the fight still (the sim paused, the room still drawn): a resume can take the pointer lock, and
  *  a boss does not wait for the check. */
 function probe(): Probe | null {
-  const w = window as unknown as { __scene?: { traverse(f: (o: never) => void): void }; __rp?: { frames: number; gate?: boolean; gfx?: string; session: { roomId: string; paused: boolean; game: { phase: string } } } };
+  const w = window as unknown as { __inView?: (o: unknown) => boolean; __scene?: { traverse(f: (o: never) => void): void }; __rp?: { frames: number; gate?: boolean; gfx?: string; session: { roomId: string; paused: boolean; game: { phase: string } } } };
   if (!w.__scene || !w.__rp) return null;
   type O = { name: string; visible: boolean; parent: O | null; isMesh?: boolean; isSkinnedMesh?: boolean; skeleton?: { bones: unknown[]; boneMatrices: Float32Array | null } };
   const actors: Record<string, Actor> = {};
@@ -60,11 +61,14 @@ function probe(): Probe | null {
     let a: O | null = o;
     while (a && !/^(radbro|goon|crowd)-/.test(a.name)) a = a.parent;
     if (!a) return;
-    const e = (actors[a.name] ??= { meshes: 0, drawn: 0, posed: 0, bad: 0, standIn: false });
+    const e = (actors[a.name] ??= { meshes: 0, drawn: 0, posed: 0, bad: 0, standIn: false, culled: 0 });
     if (!o.isSkinnedMesh) { if (o.name === "head" && shown(o)) e.standIn = true; return; }
     e.meshes++;
     if (!shown(o)) return;
     e.drawn++;
+    // out of the camera's view the renderer culls her (cull.ts): never drawn, her skin's bone matrices are
+    // not computed; she counts as drawn and posed (her pose is checked once she is in view)
+    if (w.__inView && !w.__inView(o)) { e.culled++; e.posed++; return; }
     const bm = o.skeleton?.boneMatrices;
     if (!bm || bm.length !== (o.skeleton?.bones.length ?? 0) * 16) { e.bad++; return; }
     let finite = true, moved = false;
@@ -84,15 +88,16 @@ function probe(): Probe | null {
 
 const kind = (name: string) => name.split("-")[0];
 const summary = (p: Probe) => {
-  const by: Record<string, { n: number; drawn: number; posed: number }> = {};
+  const by: Record<string, { n: number; drawn: number; posed: number; culled: number }> = {};
   for (const [name, a] of Object.entries(p.actors)) {
-    const k = (by[kind(name)] ??= { n: 0, drawn: 0, posed: 0 });
+    const k = (by[kind(name)] ??= { n: 0, drawn: 0, posed: 0, culled: 0 });
     if (!a.drawn) continue;
     k.n++;
     k.drawn += a.drawn;
     k.posed += a.posed;
+    k.culled += a.culled;
   }
-  return Object.entries(by).map(([k, v]) => `${k} ${v.n} (${v.posed}/${v.drawn} posed)`).join(", ");
+  return Object.entries(by).map(([k, v]) => `${k} ${v.n} (${v.posed}/${v.drawn} posed${v.culled ? `, ${v.culled} out of view` : ""})`).join(", ");
 };
 
 /** What broke between the baseline and now (lite: Low's every-other crowd girl). */

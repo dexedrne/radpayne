@@ -23,6 +23,7 @@ import { CameraKey, WORLD_UV, hostileEmissive, isActor, readTokens, type Tokens 
 import { useGfx, type Bloom } from "./gfx.ts";
 import { cutGrade } from "./cutGrade.ts";
 import { registerLook } from "./compile.ts";
+import { renderFrame } from "./matrices.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type N = any;
@@ -148,7 +149,7 @@ function Post({ msaa, level }: { msaa: boolean; level: Bloom }) {
     passes.scenePass.camera = st.camera;
     syncMaskCamera(passes.maskPass, st.camera);
     if (renderGate.skip) return; // a card hides the canvas: the last frame stays
-    passes.pipeline.render();
+    renderFrame(scene, () => passes.pipeline.render()); // (the scene's matrices walked once: matrices.ts)
   }, 1);
   return null;
 }

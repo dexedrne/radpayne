@@ -34,6 +34,8 @@ import { heldByCam } from "./cine.ts";
 import { VRM_JOINTS, boneReader, xrayRigs } from "./xray.ts";
 import type { VRMHumanBoneName } from "@pixiv/three-vrm";
 import { applyReactBones, reactOf, rootOffset, startSlide, tickReact } from "./hitReact.ts";
+import { cullBody } from "./cull.ts";
+import { walkWhenShown } from "./look/matrices.ts";
 
 const UP = new Vector3(0, 1, 0);
 const params = new URLSearchParams(location.search);
@@ -102,6 +104,7 @@ const LASER_GEO = new BoxGeometry(1, 1, 1).translate(0, 0, 0.5);
 function makeView(e: Enemy, idleClip: string): GoonView {
   const root = new Group();
   root.name = e.kind === "heavy" ? `skip-${e.idx}` : `goon-${e.idx}`;
+  walkWhenShown(root); // (a goon still waiting for her trigger: her bones are not walked, look/matrices.ts)
   const si = makeStandIn(GOON_LOOK);
   const standIn = si.root;
   root.add(standIn);
@@ -146,6 +149,7 @@ export function EnemiesView({ s }: { s: Session }) {
         v.warm = false;
         v.tposeFrames = 0;
         m.body.visible = false;
+        cullBody(m.body); // not drawn while out of view (cull.ts)
         m.body.userData.rpWarm = true; // a room's hold warms her with the rest (compile.ts hidden)
         v.root.add(m.body);
         // her shaders compile off the frame once the look's material rules have reached her (they walk

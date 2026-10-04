@@ -5,7 +5,7 @@
 // polls the pads every frame for this and listens for hot-plug; the game's and the menus' own polls
 // read activePad().
 import { create } from "zustand";
-import { padKind, type PadKind } from "./pad.ts";
+import { padKind, readPad, type PadKind } from "./pad.ts";
 
 export type Device = "kbm" | "pad";
 type DeviceState = { device: Device; kind: PadKind; id: string; connected: boolean };
@@ -46,10 +46,12 @@ export function noteKbm(): void {
   if (useDevice.getState().device !== "kbm") useDevice.setState({ device: "kbm" });
 }
 
-/** Whether this pad state is someone using it (a button down, a stick well off centre). */
+/** Whether this pad state is someone using it (a button down, a trigger pulled by its value, a stick well
+ *  off centre; read in the standard layout, pad.ts readPad). */
 export function padBusy(gp: Gamepad, stick = 0.5): boolean {
-  for (const b of gp.buttons) if (b?.pressed) return true;
-  for (let i = 0; i < Math.min(4, gp.axes.length); i++) if (Math.abs(gp.axes[i] ?? 0) > stick) return true;
+  const r = readPad(gp);
+  if (r.pressed.some(Boolean)) return true;
+  for (const a of r.axes) if (Math.abs(a) > stick) return true;
   return false;
 }
 

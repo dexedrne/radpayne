@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { InputLatch } from "../src/input/input.ts";
 import { Session } from "../src/app/session.ts";
 import { Game } from "../src/sim/game.ts";
-import { BTN, PAD_CONTROLS, PAD_GLYPHS, keyAct, lookCurve, padKeys, padKind, radial, triggerDown } from "../src/input/pad.ts";
-import { activePad, resetDevices, useDevice } from "../src/input/device.ts";
+import { BTN, PAD_CONTROLS, PAD_GLYPHS, TRIGGER, keyAct, lookCurve, padKeys, padKind, radial, readPad, triggerDown } from "../src/input/pad.ts";
+import { activePad, padBusy, resetDevices, useDevice } from "../src/input/device.ts";
 import { ASSIST, assistStep, assistTarget } from "../src/input/assist.ts";
 import { rumbleOf } from "../src/input/rumble.ts";
 import { PLAYER_ID, emptyInput, type InputFrame } from "../src/sim/types.ts";
@@ -114,10 +114,10 @@ test("gamepad: R2 is an analog trigger with hysteresis; L2 is the scope with the
   withPad(b => {
     const l = new InputLatch();
     const r2 = (v: number) => { b[BTN.r2].value = v; b[BTN.r2].pressed = v > 0.1; l.poll(1 / 60); return l.consume().fire; };
-    assert.equal(r2(0.25), false);
-    assert.equal(r2(0.35), true);
-    assert.equal(r2(0.25), true, "held past the release point");
     assert.equal(r2(0.15), false);
+    assert.equal(r2(0.22), true);
+    assert.equal(r2(0.14), true, "held past the release point");
+    assert.equal(r2(0.1), false);
     const l2 = (v: number) => { b[BTN.l2].value = v; b[BTN.l2].pressed = v > 0.1; l.poll(1 / 60); return { ...l.consume() }; };
     let f = l2(1);
     assert.equal(f.zoom, false, "no scope without the sniper");
@@ -128,9 +128,147 @@ test("gamepad: R2 is an analog trigger with hysteresis; L2 is the scope with the
     f = l2(0);
     assert.equal(f.zoom, false);
   });
-  assert.equal(triggerDown(0.31, false), true);
-  assert.equal(triggerDown(0.21, true), true);
-  assert.equal(triggerDown(0.19, true), false);
+  assert.equal(triggerDown(TRIGGER.on + 0.01, false), true);
+  assert.equal(triggerDown(TRIGGER.on - 0.01, false), false);
+  assert.equal(triggerDown(TRIGGER.off + 0.01, true), true);
+  assert.equal(triggerDown(TRIGGER.off - 0.01, true), false);
+});
+
+// ---- the triggers under WebKit, pads without the standard mapping --------------------------------
+
+/** WebKit's DualSense (Safari, and every browser on an iPad): a trigger's pull is in its value while
+ *  `pressed` stays false until the controller's click point (here: all the way down). */
+const webkitPull = (b: Btn[], i: number, v: number) => { b[i].value = v; b[i].pressed = v >= 0.999; };
+
+test("gamepad (WebKit): a light pull on a trigger whose `pressed` stays false aims, scopes and fires; it skips and counts as the pad", () => {
+  withPad(b => {
+    const l = new InputLatch();
+    l.poll(1 / 60);
+    l.consume();
+    webkitPull(b, BTN.l2, 0.33);
+    l.poll(1 / 60);
+    let f = { ...l.consume() };
+    assert.equal(f.aim, true, "L2 at a third: the aim");
+    assert.equal(l.padAiming, true);
+    assert.equal(f.skip, true, "a trigger's pull skips the kill cam like any button");
+    assert.equal(useDevice.getState().device, "pad", "and brings the pad's glyphs");
+    l.zoomMode = true;
+    l.poll(1 / 60);
+    assert.equal({ ...l.consume() }.zoom, true, "with the sniper: the scope");
+    webkitPull(b, BTN.l2, 0);
+    webkitPull(b, BTN.r2, 0.33);
+    l.poll(1 / 60);
+    f = { ...l.consume() };
+    assert.equal(f.zoom, false);
+    assert.equal(f.fire, true, "R2 at a third fires");
+  });
+  // a pad with digital triggers (pressed, no value): all the way
+  assert.equal(readPad({ id: "x", mapping: "standard", buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: i === BTN.l2, value: 0 })), axes: [0, 0, 0, 0] }).value[BTN.l2], 1);
+});
+
+test("gamepad (WebKit): the device watcher and the menus see a trigger by its value", () => {
+  withPad((b, pad) => {
+    assert.equal(padBusy(pad as unknown as Gamepad), false);
+    webkitPull(b, BTN.r2, 0.4);
+    assert.equal(padBusy(pad as unknown as Gamepad), true, "a pulled trigger is someone using the pad");
+  });
+});
+
+/** A DualSense as WebKit's and Firefox's HID path on a Mac list it: no standard mapping, 14 buttons
+ *  (Square, Cross, Circle, Triangle, L1, R1, L2, R2, Create, Options, L3, R3, PS, touchpad), the sticks on
+ *  axes 0, 1 and 2, 5, the triggers' pull on axes 3 and 4 from -1, the d-pad a hat on axis 9. */
+function hidPad(): FakePad {
+  const p = makePad("054c-0ce6-DualSense Wireless Controller", 0, "");
+  p.buttons = Array.from({ length: 14 }, () => ({ pressed: false, value: 0 }));
+  p.axes = [0, 0, 0, -1, -1, 0, 0, 0, 0, 1.2857];
+  return p;
+}
+
+test("gamepad (no standard mapping): a Sony pad's HID layout is remapped; its triggers' pull comes off their axes", () => {
+  const pad = hidPad();
+  withPads([pad], () => {
+    const l = new InputLatch();
+    l.poll(1 / 60);
+    l.consume();
+    // Cross is the HID's button 1
+    pad.buttons[1] = { pressed: true, value: 1 };
+    l.poll(1 / 60);
+    let f = { ...l.consume() };
+    assert.equal(f.jump, true, "Cross (HID button 1) jumps");
+    pad.buttons[1] = { pressed: false, value: 0 };
+    // L2 a third down: axis 3 from -1
+    pad.axes[3] = -1 + 2 * 0.33;
+    l.poll(1 / 60);
+    f = { ...l.consume() };
+    assert.equal(f.aim, true, "L2 off axis 3");
+    pad.axes[3] = -1;
+    pad.axes[4] = -1 + 2 * 0.33;
+    l.poll(1 / 60);
+    f = { ...l.consume() };
+    assert.equal(f.aim, false);
+    assert.equal(f.fire, true, "R2 off axis 4");
+    pad.axes[4] = -1;
+    // the hat: right is 2/7 clockwise from up (-1)
+    pad.axes[9] = -1 + 4 / 7;
+    l.poll(1 / 60);
+    assert.equal({ ...l.consume() }.slot, 9, "the hat's right: the next gun");
+    pad.axes[9] = 1.2857;
+    // the right stick's y on axis 5
+    pad.axes[5] = -1;
+    const p0 = l.pitch;
+    l.poll(0.1);
+    assert.ok(l.pitch > p0, "axis 5 up looks up");
+  });
+  const r = readPad(hidPad());
+  assert.equal(r.how, "sony-hid");
+  assert.deepEqual([r.value[BTN.l2], r.value[BTN.r2]], [0, 0], "triggers at rest");
+  // a pad not seen moving yet may list its trigger axes at 0: not a half pull
+  const fresh = hidPad();
+  fresh.axes[3] = 0; fresh.axes[4] = 0;
+  assert.equal(readPad(fresh).pressed[BTN.l2], false);
+  // any other pad without the mapping is read as if standard
+  const other = makePad("Generic USB Joystick (Vendor: 0079 Product: 0006)", 0, "");
+  other.buttons[0] = { pressed: true, value: 1 };
+  other.buttons[BTN.l2] = { pressed: false, value: 0.3 };
+  const ro = readPad(other);
+  assert.equal(ro.how, "raw");
+  assert.equal(ro.pressed[BTN.cross], true);
+  assert.equal(ro.pressed[BTN.l2], true, "its trigger by value too");
+});
+
+test("gamepad (WebKit): in the game a light L2 pull scopes the sniper and a light R2 pull fires it; with the pistols L2 is the aim", () => {
+  const lv = level([markerNode("spawn", "spawn", [0, 0, 0], {}, Math.PI), markerNode("e1", "enemy", [3, 0, -30])]);
+  for (const layout of ["webkit", "hid"] as const) {
+    const pad = layout === "hid" ? hidPad() : makePad();
+    withPads([pad], () => {
+      const s = new Session(lv, {}, "t", { seed: 1, ai: false, loadout: ["sniper"] });
+      s.paused = false;
+      for (let i = 0; i < 30; i++) s.frame(1 / 60);
+      assert.equal(s.game.player.weapon.id, "sniper", "the sniper in hand");
+      const l2 = (v: number) => { if (layout === "hid") pad.axes[3] = v > 0 ? -1 + 2 * v : -1; else webkitPull(pad.buttons, BTN.l2, v); };
+      const r2 = (v: number) => { if (layout === "hid") pad.axes[4] = v > 0 ? -1 + 2 * v : -1; else webkitPull(pad.buttons, BTN.r2, v); };
+      l2(0.3);
+      for (let i = 0; i < 30; i++) s.frame(1 / 60);
+      assert.equal(s.game.player.zoom, true, `${layout}: scoped on a light L2 pull`);
+      const shots = s.game.stats.shots;
+      r2(0.3);
+      for (let i = 0; i < 10; i++) s.frame(1 / 60);
+      assert.ok(s.game.stats.shots > shots, `${layout}: a light R2 pull fires`);
+      r2(0);
+      l2(0);
+      for (let i = 0; i < 10; i++) s.frame(1 / 60);
+      assert.equal(s.game.player.zoom, false, `${layout}: let go, out of the scope`);
+    });
+  }
+  withPad(b => {
+    const s = new Session(lv, {}, "t", { seed: 1, ai: false });
+    s.paused = false;
+    s.frame(1 / 60);
+    webkitPull(b, BTN.l2, 0.3);
+    s.frame(1 / 60);
+    assert.equal(s.input.padAiming, true, "the pistols: L2 is the aim (the camera's zoom reads it)");
+    assert.equal(s.game.player.zoom, false, "no scope");
+  });
 });
 
 test("gamepad: radial dead zone and the look curve", () => {

@@ -52,6 +52,7 @@ import { MarkerLights } from "./lights.tsx";
 import { RAIN, useGfx, type Bloom, type Reflections } from "./gfx.ts";
 import { cutGrade } from "./cutGrade.ts";
 import { registerLook, warmIdle } from "./compile.ts";
+import { renderFrame } from "./matrices.ts";
 import { COMBAT, CombatRead, enemyMaskPass, enemyOutline, syncMaskCamera, tagForMask, neonDim } from "./read.tsx";
 import { CameraKey, WORLD_UV, isActor, readTokens, type Tokens } from "./tokens.ts";
 
@@ -574,7 +575,7 @@ function StreetPost({ msaa, level, ground }: { msaa: boolean; level: Bloom; grou
     passes.scenePass.camera = st.camera;
     syncMaskCamera(passes.maskPass, st.camera);
     if (renderGate.skip) return; // a card hides the canvas: the last frame stays
-    passes.pipeline.render();
+    renderFrame(scene, () => passes.pipeline.render()); // (the scene's matrices walked once: matrices.ts)
   }, 1); // a positive priority: this frame callback renders instead of R3F
   return null;
 }

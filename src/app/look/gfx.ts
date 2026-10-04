@@ -21,8 +21,11 @@
 // full resolution, with the full crowd and lasers.
 // Default (nothing saved): High on WebGPU; Medium on the WebGL2 fallback (no puddle mirror: on WebGL2
 // every shader is linked through the GPU process one at a time and the mirror is ~a third of them, the
-// load audit's slowest path). Either can pick any preset; a choice is saved.
+// load audit's slowest path); Low on a phone or a tablet (ui/mobile.ts: an iPad, an iPhone, an Android
+// device), where the canvas also stays at MOBILE_DPR pixels a point at most whatever the Resolution. Any of
+// them can pick any preset; a choice is saved.
 import { create } from "zustand";
+import { MOBILE, MOBILE_DPR, MOBILE_WHY } from "../../ui/mobile.ts";
 
 export type Preset = "low" | "medium" | "high" | "cinematic";
 export type Bloom = "off" | "subtle" | "original";
@@ -43,6 +46,8 @@ export const CLEAN: Omit<Gfx, "preset"> = { bloom: "off", reflections: "off", ra
 export const DEFAULT_PRESET: Preset = "high";
 /** The default on the WebGL2 fallback (no WebGPU, or ?webgl2). */
 export const DEFAULT_WEBGL2: Preset = "medium";
+/** The default on a phone or a tablet (ui/mobile.ts). */
+export const DEFAULT_MOBILE: Preset = "low";
 
 /** Rain streaks drawn per setting (the mesh holds RAIN.max; thin is the default). */
 export const RAIN = { max: 2600, thin: 2600, light: 1100 } as const;
@@ -92,8 +97,9 @@ export function parseGfx(raw: string | null): Gfx | null {
 type Store = { getItem(k: string): string | null };
 
 /** The settings for this page load: URL overrides first (not saved), then the saved ones, then the
- *  old Effects / Quality settings, then the default for the backend. */
-export function initialGfx(search: string, st: Store | null, webgl2 = false): Gfx {
+ *  old Effects / Quality settings, then the default for the device (a phone or a tablet: Low) or the
+ *  backend. */
+export function initialGfx(search: string, st: Store | null, webgl2 = false, mobile = false): Gfx {
   const q = new URLSearchParams(search);
   const gp = q.get("gfx");
   if (gp && (PRESET_ORDER as readonly string[]).includes(gp)) return fromPreset(gp as Preset);
@@ -105,7 +111,7 @@ export function initialGfx(search: string, st: Store | null, webgl2 = false): Gf
   if (saved) return saved;
   if (get("radpayne.quality") === "low") return fromPreset("low"); // Low has everything Clean had, too
   if (get("radpayne.fx") === "clean") return clean();
-  return fromPreset(webgl2 ? DEFAULT_WEBGL2 : DEFAULT_PRESET);
+  return fromPreset(mobile ? DEFAULT_MOBILE : webgl2 ? DEFAULT_WEBGL2 : DEFAULT_PRESET);
 }
 
 /** Whether this browser will run the WebGL2 fallback (no WebGPU, or ?webgl2). */
@@ -127,12 +133,13 @@ function storage(): Storage | null {
   }
 }
 
-export const useGfx = create<Gfx>(() => initialGfx(typeof location === "undefined" ? "" : location.search, storage(), typeof location !== "undefined" && webgl2Likely()));
+export const useGfx = create<Gfx>(() => initialGfx(typeof location === "undefined" ? "" : location.search, storage(), typeof location !== "undefined" && webgl2Likely(), MOBILE));
+if (MOBILE) console.info(`[gfx] a phone or a tablet (${MOBILE_WHY}): ${useGfx.getState().preset}${useGfx.getState().preset === DEFAULT_MOBILE ? "" : " (saved)"}, the canvas at ${MOBILE_DPR} px a point at most`);
 
 /** The renderer came up (Scene): a WebGPU browser that fell back to WebGL2 gets the WebGL2 default,
  *  unless the settings were saved or picked in the URL or on this page. */
 export function backendIs(webgl2: boolean): void {
-  if (chosen || typeof location === "undefined") return;
+  if (chosen || MOBILE || typeof location === "undefined") return;
   const q = new URLSearchParams(location.search);
   if (["gfx", "q", "fx"].some(k => q.has(k))) return;
   try { if (storage()?.getItem("radpayne.gfx")) return; } catch { /* none */ }
@@ -173,11 +180,12 @@ export function setGfx<K extends "bloom" | "reflections" | "rain" | "res">(k: K,
   save(g);
 }
 
-/** Canvas pixel ratio for a resolution setting (100 % = the screen's own, capped at 1.75; 75 % never
- *  under one pixel per screen pixel, so the thin neon stays whole; 50 % the only one that goes under). */
-export function dprFor(res: Res, deviceRatio: number): number {
+/** Canvas pixel ratio for a resolution setting (100 % = the screen's own, capped at 1.75, or MOBILE_DPR on
+ *  a phone or a tablet; 75 % never under one pixel per screen pixel, so the thin neon stays whole; 50 %
+ *  the only one that goes under). */
+export function dprFor(res: Res, deviceRatio: number, mobile = MOBILE): number {
   const dr = deviceRatio || 1;
-  const full = Math.min(1.75, dr);
+  const full = Math.min(mobile ? MOBILE_DPR : 1.75, dr);
   const r = full * (res / 100);
   return Math.max(0.5, res >= 75 ? Math.max(Math.min(1, dr), r) : r);
 }
