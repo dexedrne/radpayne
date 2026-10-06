@@ -23,6 +23,22 @@ const surfaces: Record<string, string> = {
  'penthouse/wall_damask':'fabric','penthouse/wall_ebony_slats':'wood','penthouse/floor_marble_black':'marble','penthouse/ceiling_coffered':'wood','penthouse/bar_onyx':'marble','penthouse/rug_fur_white':'fabric',
 };
 export const PBR_SURFACES = Object.keys(surfaces).sort();
+// Close wall joints and broad wood grooves need the extra texels. Most surfaces are
+// viewed across a room or have very little relief; 512 retains their lighting detail.
+// Only subtle grain finishes share fields. Keep structural joints/folds source-aligned.
+export function pbrMaps(set: string) {
+ const normalSet = set === 'club/carpet_vip' ? 'backrooms/carpet_office'
+   : set === 'penthouse/floor_marble_black' ? 'elevator/marble_grey' : set;
+ const ormSet = set === 'elevator/shaft_concrete' ? 'elevator/concrete_bare' : normalSet;
+ const normalSize = ['backrooms/wall_cinderblock','backrooms/wall_wood_panel'].includes(normalSet) ? 1024 : 512;
+ return {normalSet, ormSet, normalSize, ormSize:512};
+}
+export function pbrMapPath(set: string, kind: 'normal' | 'orm', low: boolean): string {
+ const maps = pbrMaps(set);
+ const source = kind === 'normal' ? maps.normalSet : maps.ormSet;
+ const size = kind === 'normal' ? maps.normalSize : maps.ormSize / (low ? 2 : 1);
+ return `/textures/${source}_${kind}_${size}.webp`;
+}
 export function pbrProfile(set: string): PbrProfile | null {
  const kind = surfaces[set]; if (!kind) return null;
  return {kind,...kinds[kind],...(set==='club/floor_polished_concrete'?{roughness:0.48,strength:3}:{}),wet:set==='asphalt'?0.35:set==='sidewalk'?0.25:0};

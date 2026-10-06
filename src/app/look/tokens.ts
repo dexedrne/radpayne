@@ -45,7 +45,15 @@ export const worldUV = (): N => {
   const top = vec2(p.x, p.z);
   return select(abs(n.y).greaterThan(0.5), top, select(abs(n.x).greaterThan(abs(n.z)), wallX, wallZ));
 };
-export const WORLD_UV = replaceDefaultUV(() => worldUV());
+export const WORLD_UV = replaceDefaultUV((node: N, builder?: N) => {
+  const uv = worldUV();
+  // Surface maps share a GPU image even when materials tile it differently. The
+  // albedo supplies their transform; their own texture matrices stay identity.
+  const albedo = builder?.material.map;
+  if (!node.value?.name.startsWith('pbr:') || !albedo) return uv;
+  albedo.updateMatrix();
+  return (materialReference('map.matrix', 'mat3') as N).mul(vec3(uv, 1)).xy;
+});
 
 /** Characters (skinned rigs, the Milady / Radbro / crowd roots) are not level geometry: their textures
  *  keep their own UVs and the looks give them the actor lift instead of the level rules. */

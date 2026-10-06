@@ -7,7 +7,7 @@ import os from "node:os";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { PBR_SURFACES, pbrProfile, type PbrProfile } from "../src/app/look/pbrProfiles.ts";
+import { PBR_SURFACES, pbrMaps, pbrProfile, type PbrProfile } from "../src/app/look/pbrProfiles.ts";
 
 const clamp = (v: number, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, v));
 /** Separable box convolution on a torus. Sliding sums keep each pass linear in pixel count. */
@@ -113,17 +113,28 @@ export function halfField(a: Float32Array, w: number, h: number): Float32Array {
 export function encodePbr(f: PbrFields, w: number, h: number, strength: number): Record<"normal" | "roughness", Uint8Array> {
   return { normal: heightNormal(f.height, w, h, strength), roughness: Uint8Array.from(f.roughness, v => Math.round(v * 255)) };
 }
-function writeData(file: string, data: Uint8Array, size: number, gray = false): void {
-  execFileSync("magick", ["-size", `${size}x${size}`, "-depth", "8", gray ? "gray:-" : "RGB:-", "-define", "webp:lossless=true", "-define", "webp:method=0", file], { input: data, env: { ...process.env, MAGICK_THREAD_LIMIT: "1" } });
+/** No AO/metalness source is supplied: neutral R/B preserve the authored finish.
+ * Three samples roughness from G and AO from R in linear colour space. */
+export function packOrm(roughness: Float32Array): Uint8Array {
+  const out = new Uint8Array(roughness.length * 3);
+  for (let i = 0; i < roughness.length; i++) { out[i * 3] = 255; out[i * 3 + 1] = Math.round(roughness[i] * 255); out[i * 3 + 2] = 255; }
+  return out;
+}
+function writeData(file: string, data: Uint8Array, size: number, gray = false, lossless = false): void {
+  // ImageMagick also sets near_lossless from quality, even with lossless=true.
+  // Normals require quality 100 to keep all three encoded components exact.
+  execFileSync("magick", ["-size", `${size}x${size}`, "-depth", "8", gray ? "gray:-" : "RGB:-", "-quality", lossless ? "100" : "88", "-define", "webp:method=6", "-define", `webp:lossless=${lossless}`, "-define", "webp:use-sharp-yuv=true", file], { input: data, env: { ...process.env, MAGICK_THREAD_LIMIT: "1" } });
 }
 const hash = (b: Uint8Array) => createHash("sha256").update(b).digest("hex");
 export function main(): void {
   const root = path.resolve(import.meta.dirname, ".."), pub = path.join(root, "public");
   const args = process.argv.slice(2), check = args.includes("--check");
   const wanted = args.find(a => a.startsWith("--set="))?.slice(6);
+  if (wanted && !PBR_SURFACES.includes(wanted)) throw new Error(`No surface for ${wanted}`);
   const preview = args.find(a => a.startsWith("--preview="))?.slice(10);
-  const inputs = PBR_SURFACES.map(set => `textures/${set}.webp`);
-  const selected = inputs.filter(f => !wanted || f === `textures/${wanted}.webp`);
+  const targets = wanted ? [wanted] : PBR_SURFACES;
+  const inputs = [...new Set(targets.flatMap(set => { const m = pbrMaps(set); return [m.normalSet, m.ormSet]; }))].sort().map(set => `textures/${set}.webp`);
+  const selected = inputs;
   if (!selected.length) throw new Error(`No albedo for ${wanted}`);
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "rppbr-"));
   const records = [];
@@ -134,13 +145,15 @@ export function main(): void {
       const rgb = execFileSync("magick", [file, "-resize", "1024x1024!", "-alpha", "off", "-depth", "8", "RGB:-"], { maxBuffer: 32 * 2 ** 20, env: { ...process.env, MAGICK_THREAD_LIMIT: "1" } });
       const fields = estimatePbr(rgb, 1024, 1024, profile);
       const outputs: Record<string, { sha256: string; bytes: number }> = {};
-      for (const size of [1024, 512]) {
-        const f = size === 1024 ? fields : { height: halfField(fields.height, 1024, 1024), roughness: halfField(fields.roughness, 1024, 1024) };
-        const maps = size === 1024 ? encodePbr(f, size, size, profile.strength) : { roughness: Uint8Array.from(f.roughness, v => Math.round(v * 255)), normal: new Uint8Array() };
-        for (const kind of ["normal", "roughness"] as const) {
-          if (size === 512 && kind === "normal") continue;
+      const half = { height: halfField(fields.height, 1024, 1024), roughness: halfField(fields.roughness, 1024, 1024) };
+      for (const size of [1024, 512, 256]) {
+        const f = size === 1024 ? fields : size === 512 ? half : {height:halfField(half.height,512,512),roughness:halfField(half.roughness,512,512)};
+        for (const kind of ["normal", "orm"] as const) {
+          const used = PBR_SURFACES.some(s => { const m = pbrMaps(s); return kind === 'normal' ? m.normalSet === set && m.normalSize === size : m.ormSet === set && (m.ormSize === size || m.ormSize / 2 === size); });
+          if (!used) continue;
           const name = `${path.basename(set)}_${kind}_${size}.webp`, target = path.join(path.dirname(file), name), staged = path.join(tmp, name);
-          writeData(staged, maps[kind], size, kind === "roughness");
+          // Preserve normal components and matching edge pixels exactly; ORM is broad data.
+          writeData(staged, kind === 'normal' ? heightNormal(f.height, size, size, profile.strength) : packOrm(f.roughness), size, false, kind === 'normal');
           const content = fs.readFileSync(staged);
           if (check) { if (!fs.existsSync(target) || !content.equals(fs.readFileSync(target))) throw new Error(`Outdated PBR map: ${path.relative(root, target)}`); }
           else fs.copyFileSync(staged, target);
@@ -153,14 +166,14 @@ export function main(): void {
         writeData(path.join(preview, `${set.replaceAll("/", "-")}_height.webp`), gray, 1024, true);
       }
       records.push({ source, albedoSha256: hash(fs.readFileSync(file)), profile, outputs });
-      console.log(`${check ? "checked" : "made"} ${set} (${profile.kind}): normal at 1024; roughness at 1024 / 512`);
+      console.log(`${check ? "checked" : "made"} ${set} (${profile.kind}): ${Object.keys(outputs).join(', ')}`);
     }
     if (!check) {
       const manifest = path.join(root, "docs", "pbr-maps.json");
       const previous = wanted && fs.existsSync(manifest) ? JSON.parse(fs.readFileSync(manifest, "utf8")).records as typeof records : [];
       const bySource = new Map(previous.map(r => [r.source, r]));
       for (const r of records) bySource.set(r.source, r);
-      fs.writeFileSync(manifest, JSON.stringify({ version: 1, convention: "OpenGL +Y", encoding: "lossless WebP, linear data", records: [...bySource.values()].sort((a, b) => a.source.localeCompare(b.source)) }, null, 2) + "\n");
+      fs.writeFileSync(manifest, JSON.stringify({ version: 2, convention: "OpenGL +Y", encoding: "8-bit WebP, lossless normals / ORM q88, method 6, linear data; ORM R=neutral AO, G=roughness, B=neutral metalness multiplier", sets: Object.fromEntries(PBR_SURFACES.map(s => [s,pbrMaps(s)])), records: [...bySource.values()].sort((a, b) => a.source.localeCompare(b.source)) }, null, 2) + "\n");
     }
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 }
