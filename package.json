@@ -19,7 +19,9 @@
     "test": "node --test test/*.test.ts",
     "greybox": "node tools/greybox.ts",
     "check-level": "node tools/check-level.ts",
-    "smoke": "node tools/smoke.ts"
+    "smoke": "node tools/smoke.ts",
+    "pbr-maps": "node tools/pbr-maps.ts",
+    "pbr-shots": "node tools/pbr-shots.ts"
   },
   "dependencies": {
     "@pixiv/three-vrm": "3.5.5",

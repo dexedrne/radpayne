@@ -232,6 +232,7 @@ npm run check-level [room]   # parse a level like the game does and list its mar
 node tools/balance.ts [--rooms room1,room4] [--diffs normal,hard] [--seeds 1,2,3] [--bot cover|plain]   # bot runs: deaths, health lost, copium, time, spawn kills
 node tools/room1.ts      # regenerate public/levels/room1.json (overwrites hand edits made in the editor; room2.ts .. room5.ts likewise)
 node tools/textures.ts   # re-bake the procedural tiling textures in public/textures (needs ImageMagick)
+npm run pbr-maps         # derive seamless normal / roughness maps (needs ImageMagick)
 ```
 
 - **Levels** are engine prefabs in `public/levels/<room>.json`. Open `/?editor=<room>` on the dev server
@@ -341,6 +342,10 @@ node tools/textures.ts   # re-bake the procedural tiling textures in public/text
   - The kill cam keeps posts, pillars and steam away from its lens; when the bullet's path runs
     through steam it skips the ride and holds on the victim. Its X-ray is stylised (a clean
     skeleton, a crack line, no organs, no blood) and hides every HUD layer but its letterbox.
+- **Level surfaces:** repeating masonry, paneling and floors use albedo-derived normal and roughness
+  maps in both games. LOW and mobile keep 512 roughness and drop normals; other desktop presets
+  use 1024 maps. Characters and decals keep their own materials. See [the generator and memory
+  measurements](docs/pbr-walls.md).
 - **Graphics settings** (pause menu, Display; the preset is on the title too), saved in the browser:
   - Presets: Low (no bloom, no puddle reflections, a light drizzle, 75 % resolution, a smaller rave
     crowd and fewer lasers), Medium (subtle bloom, a plain wet road, thin rain; the default on the WebGL2

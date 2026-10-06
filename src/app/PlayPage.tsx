@@ -31,6 +31,7 @@ import { goonSlots } from "../sim/game.ts";
 import { cachedPockits, pickPockits } from "../vrm/pockit.ts";
 import { coalesce, warmLook } from "./look/compile.ts";
 import { rebuildsShaders, useGfx } from "./look/gfx.ts";
+import { preloadPbr } from "./look/pbr.tsx";
 import { scenePending } from "./Scene.tsx";
 import { readLevel } from "../world/level.ts";
 import { baseWeaponOf, startLoadoutOf, useUi, type HeroId } from "../ui/store.ts";
@@ -144,6 +145,7 @@ async function warmScene(onProgress?: (f: number) => void, settle = 3): Promise<
 /** The room's level textures, through the asset runtime the scene uses (a texture that lands later
  *  changes its material's shader: the warm-up waits for them, not for the Radbro's files). */
 async function levelTextures(s: Session): Promise<void> {
+  await preloadPbr(s.prefab);
   for (let i = 0; i < 50 && !assetsRef.current; i++) await wait(50);
   const a = assetsRef.current;
   if (!a) return;
@@ -337,11 +339,17 @@ export default function PlayPage() {
 
   useEffect(() => { setMuted(muted); }, [muted]);
 
-  // a graphics change that rebuilds shaders (room 1's puddle mirror on / off, MSAA): the room's render
+  // a graphics change that rebuilds shaders (surface normals, room 1's puddle mirror, MSAA): the room's render
   // holds (from this very call, before any frame) while they compile off the frame. Changes in a row
   // (clicking through the presets) hold it once and compile at most once more, for the look as it ends
   // up; in the rooms without the mirror, Reflections changes no shader and holds nothing
-  const rewarm = useMemo(() => coalesce(() => frames(4).then(() => warmLook()), () => { renderGate.warming++; }, () => { renderGate.warming--; }), []);
+  const rewarm = useMemo(() => coalesce(async () => {
+    await frames(4);
+    const s = mounted.current;
+    if (s) await preloadPbr(s.prefab);
+    await frames(2);
+    await warmLook();
+  }, () => { renderGate.warming++; }, () => { renderGate.warming--; }), []);
   useEffect(() => useGfx.subscribe((g, prev) => {
     if (rebuildsShaders(prev, g, mounted.current?.level.room.look === "street")) void rewarm();
   }), [rewarm]);

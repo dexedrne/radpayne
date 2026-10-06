@@ -1,0 +1,898 @@
+{
+  "version": 1,
+  "convention": "OpenGL +Y",
+  "encoding": "lossless WebP, linear data",
+  "records": [
+    {
+      "source": "textures/asphalt.webp",
+      "albedoSha256": "a64a86b5e9e006cd854c2e5095f88b1257ed4b7c788d58697f6871483252d038",
+      "profile": {
+        "kind": "asphalt",
+        "relief": "grain",
+        "strength": 4,
+        "roughness": 0.82,
+        "variation": 0.08,
+        "scale": 0.5,
+        "wet": 0.35
+      },
+      "outputs": {
+        "asphalt_normal_1024.webp": {
+          "sha256": "ea8ddc32459b42aa71bd37a2253eb613fac6414c01acc2f6e1d1b22f6ce8b551",
+          "bytes": 684092
+        },
+        "asphalt_roughness_1024.webp": {
+          "sha256": "532bc517401b495dd6c283c227dccef5d5399d80462610d7a84293218ff70129",
+          "bytes": 332760
+        },
+        "asphalt_roughness_512.webp": {
+          "sha256": "6889847d2891f885d27038e69cc45146130fcfd9d53c40a83cddbc484cde301f",
+          "bytes": 120494
+        }
+      }
+    },
+    {
+      "source": "textures/backrooms/boxes_cardboard.webp",
+      "albedoSha256": "2e53e63954fcd01268bff70e27d68e5e8eb513e2ba45f3b8d222497199c4874c",
+      "profile": {
+        "kind": "cardboard",
+        "relief": "grain",
+        "strength": 2.5,
+        "roughness": 0.91,
+        "variation": 0.03,
+        "scale": 0.4,
+        "wet": 0
+      },
+      "outputs": {
+        "boxes_cardboard_normal_1024.webp": {
+          "sha256": "e68bd11b2a97b750a9be8dc163c7789b06e48a50aa441e92b4c8721733bc691f",
+          "bytes": 472924
+        },
+        "boxes_cardboard_roughness_1024.webp": {
+          "sha256": "286a60a508885c496de0d06d753f9c6cc25f4919cccdfa777d047e0da9a6aea3",
+          "bytes": 174504
+        },
+        "boxes_cardboard_roughness_512.webp": {
+          "sha256": "7cf6841cf02be7f9f6ba85865b86ab85b33cbd9a3912d963640b69dfd35fe6d1",
+          "bytes": 63722
+        }
+      }
+    },
+    {
+      "source": "textures/backrooms/carpet_office.webp",
+      "albedoSha256": "2a40a79f2f46cb1e8a87d4d39f2a1546eec7f8383f060fe8204eb65a181db54a",
+      "profile": {
+        "kind": "fabric",
+        "relief": "grain",
+        "strength": 1.8,
+        "roughness": 0.95,
+        "variation": 0.025,
+        "scale": 0.35,
+        "wet": 0
+      },
+      "outputs": {
+        "carpet_office_normal_1024.webp": {
+          "sha256": "71aaec5f74c80edfeb6cd4d6522a7455c94b44e3a9ec1f27fa0554ca51481e7f",
+          "bytes": 449710
+        },
+        "carpet_office_roughness_1024.webp": {
+          "sha256": "1c1fce1e80b6399788d05372be704efde5c95e5b95b9f6e5606d8cd31ea45a48",
+          "bytes": 171586
+        },
+        "carpet_office_roughness_512.webp": {
+          "sha256": "601641805c074911aefc3fa86aebf1a584f7c6f1f5ae7a8ff018581aa52e0e68",
+          "bytes": 61372
+        }
+      }
+    },
+    {
+      "source": "textures/backrooms/ceiling_tiles.webp",
+      "albedoSha256": "7f4cb38f375248c615d92535931a748709f5b60348fb1972900a8e64ca3f2779",
+      "profile": {
+        "kind": "tile",
+        "relief": "seams",
+        "strength": 8,
+        "roughness": 0.58,
+        "variation": 0.09,
+        "scale": 0.5,
+        "wet": 0
+      },
+      "outputs": {
+        "ceiling_tiles_normal_1024.webp": {
+          "sha256": "4388a4b3eafc27c6e77d1dd45c9db228ca78ad39f2c20ceb60b3b4baf40f40d6",
+          "bytes": 687394
+        },
+        "ceiling_tiles_roughness_1024.webp": {
+          "sha256": "385ac3ae562db1335a0d581e2e618ed533e52629a7b13f292897e315570d64fd",
+          "bytes": 219200
+        },
+        "ceiling_tiles_roughness_512.webp": {
+          "sha256": "746462e73e6403ee1dcc0114b2bfef8816a646b72c5d37a5fdd2ec5781f4edb5",
+          "bytes": 80630
+        }
+      }
+    },
+    {
+      "source": "textures/backrooms/floor_vinyl.webp",
+      "albedoSha256": "bbc928cc5e8b43dbe24f90db022e6c9eb4d798859d93e8a16e62c956a6951d9a",
+      "profile": {
+        "kind": "tile",
+        "relief": "seams",
+        "strength": 8,
+        "roughness": 0.58,
+        "variation": 0.09,
+        "scale": 0.5,
+        "wet": 0
+      },
+      "outputs": {
+        "floor_vinyl_normal_1024.webp": {
+          "sha256": "c70788ba85fe88a460b80ac5c7a6f346503f6444bd81e835e1d7e04714711255",
+          "bytes": 725072
+        },
+        "floor_vinyl_roughness_1024.webp": {
+          "sha256": "9b1e3b1abe3bf0e96cb3113e793098806abe0e64745c65dbda361c2eb022f021",
+          "bytes": 268326
+        },
+        "floor_vinyl_roughness_512.webp": {
+          "sha256": "754f6bc352ad755f93c9c2ca7941616f1666105eb0647546f66d839f99811798",
+          "bytes": 100434
+        }
+      }
+    },
+    {
+      "source": "textures/backrooms/steel_panel.webp",
+      "albedoSha256": "e18b164a0bed21f121bfaab27c0e81d7667917ade407cfab441fb23882451089",
+      "profile": {
+        "kind": "metal",
+        "relief": "grooves",
+        "strength": 10,
+        "roughness": 0.65,
+        "variation": 0.1,
+        "scale": 0.5,
+        "wet": 0
+      },
+      "outputs": {
+        "steel_panel_normal_1024.webp": {
+          "sha256": "0e29785ed7862eecbe1db31db1b2d7d983088c7d0ccc67c3b3ec7115a7e19588",
+          "bytes": 200632
+        },
+        "steel_panel_roughness_1024.webp": {
+          "sha256": "06463ed5652378b956e2223bb53dfa8ef9b6af74c57aa8b5aceeedb4a870e6bd",
+          "bytes": 50070
+        },
+        "steel_panel_roughness_512.webp": {
+          "sha256": "cc708c84f3e6694a27f41a08455ec7d87c0d8129649a50ee857320fa33e06f17",
+          "bytes": 21396
+        }
+      }
+    },
+    {
+      "source": "textures/backrooms/wall_cinderblock.webp",
+      "albedoSha256": "cd757a92973df4efa807e06d6a775acdb6c685a1e489168802aa3f0b1aba4c77",
+      "profile": {
+        "kind": "block",
+        "relief": "seams",
+        "strength": 14,
+        "roughness": 0.92,
+        "variation": 0.045,
+        "scale": 0.65,
+        "wet": 0
+      },
+      "outputs": {
+        "wall_cinderblock_normal_1024.webp": {
+          "sha256": "8d567c9d2fd98a2aae026c10d84344f9f3445dedcdb11826b1a7dfddaea8d92b",
+          "bytes": 1239442
+        },
+        "wall_cinderblock_roughness_1024.webp": {
+          "sha256": "9f89889d6b930e59d6422e2cf0128bd5a672e254efd3ebc0c1f6b762fb3fcf3c",
+          "bytes": 216808
+        },
+        "wall_cinderblock_roughness_512.webp": {
+          "sha256": "eec829a8ad42ad61bed2811e957d6c94a4eae87cfd3e7e97f31c03085f537ca0",
+          "bytes": 83006
+        }
+      }
+    },
+    {
+      "source": "textures/backrooms/wall_wood_panel.webp",
+      "albedoSha256": "9f2b1efc2475fecf1b7ec81d4ff51f179b9db6bcc525a1abb68eeab5d797c83d",
+      "profile": {
+        "kind": "wood",
+        "relief": "grooves",
+        "strength": 9,
+        "roughness": 0.62,
+        "variation": 0.08,
+        "scale": 0.55,
+        "wet": 0
+      },
+      "outputs": {
+        "wall_wood_panel_normal_1024.webp": {
+          "sha256": "0f6a0e41cbe0630b490e269a7bda6178e969e005fd22a7a3ef411cea511a6b9a",
+          "bytes": 1189696
+        },
+        "wall_wood_panel_roughness_1024.webp": {
+          "sha256": "9289566d9a4f879893f7ce7a853b291e0ef773689bc277a053bbf5a2612fac18",
+          "bytes": 299738
+        },
+        "wall_wood_panel_roughness_512.webp": {
+          "sha256": "0842308e96d8afa5af308e3f04c18ee95f6efb8f5d3663a4ee8dff531b23d3a3",
+          "bytes": 111774
+        }
+      }
+    },
+    {
+      "source": "textures/backrooms/wood_desk.webp",
+      "albedoSha256": "4df52a20c32f87274766da030ec09f58234f352b01bcb71ce9c3b8d7d51c0a6c",
+      "profile": {
+        "kind": "wood",
+        "relief": "grooves",
+        "strength": 9,
+        "roughness": 0.62,
+        "variation": 0.08,
+        "scale": 0.55,
+        "wet": 0
+      },
+      "outputs": {
+        "wood_desk_normal_1024.webp": {
+          "sha256": "f117b5d85370051d0cf1b5fb3ed002cd9cef6c127e4d9afcdcae9e3ebec8b1e9",
+          "bytes": 490502
+        },
+        "wood_desk_roughness_1024.webp": {
+          "sha256": "65b0f04ff1a32c5dc8998df3bce0abcad2892ae2ca0f9790f48f78f315ccdfd2",
+          "bytes": 151396
+        },
+        "wood_desk_roughness_512.webp": {
+          "sha256": "d24705ad24838037c419e6e9ecdc78728f1f41c18452733e5374af2594255fd5",
+          "bytes": 60354
+        }
+      }
+    },
+    {
+      "source": "textures/club/bar_front.webp",
+      "albedoSha256": "b1e561c78e03b6d920024b37d4a40c3e193a8bc747f897b08fc399e6078bea42",
+      "profile": {
+        "kind": "wood",
+        "relief": "grooves",
+        "strength": 9,
+        "roughness": 0.62,
+        "variation": 0.08,
+        "scale": 0.55,
+        "wet": 0
+      },
+      "outputs": {
+        "bar_front_normal_1024.webp": {
+          "sha256": "7aa191d589db1e8ecfca5d8ebe22f1c0312064a669581935c227d207c56eba8b",
+          "bytes": 192434
+        },
+        "bar_front_roughness_1024.webp": {
+          "sha256": "ac6d3d0d3b799420a98112b17967d73c912b6abd0312fad96cf661e31e197026",
+          "bytes": 82186
+        },
+        "bar_front_roughness_512.webp": {
+          "sha256": "c2a42540635c1d2dcf9fc407d516636e2431cf6a825841e363654adc08f184ec",
+          "bytes": 33690
+        }
+      }
+    },
+    {
+      "source": "textures/club/bar_top_marble.webp",
+      "albedoSha256": "d970023ad4279560a7320a7849f03c8aa23c83f1e1b9d8c61a9284ca72ac034a",
+      "profile": {
+        "kind": "marble",
+        "relief": "grain",
+        "strength": 1.5,
+        "roughness": 0.34,
+        "variation": 0.07,
+        "scale": 0.3,
+        "wet": 0
+      },
+      "outputs": {
+        "bar_top_marble_normal_1024.webp": {
+          "sha256": "dba47070b312633d48a8c0471d1939dbc88357e35796a06a87fd0a580858435a",
+          "bytes": 265758
+        },
+        "bar_top_marble_roughness_1024.webp": {
+          "sha256": "44ab7b8bfbac71964e570727ba8c8e933a96803e36c3a32a8897d9298d5ddf6e",
+          "bytes": 217386
+        },
+        "bar_top_marble_roughness_512.webp": {
+          "sha256": "59273928cbe04e682d10dd4540345cf0a10ac5a03fe3945b39626d1845dc6bba",
+          "bytes": 83788
+        }
+      }
+    },
+    {
+      "source": "textures/club/booth_leather.webp",
+      "albedoSha256": "7e3ac5cf7ec3efe9c00e91f7f10e9d529bb84a84ae30d2780b5a6eaf8f0dabd7",
+      "profile": {
+        "kind": "leather",
+        "relief": "grain",
+        "strength": 3,
+        "roughness": 0.58,
+        "variation": 0.08,
+        "scale": 0.4,
+        "wet": 0
+      },
+      "outputs": {
+        "booth_leather_normal_1024.webp": {
+          "sha256": "b3fc1dcf47fa4958441c213fa20e233d7d729e6d9c8e6e2a6174850d8faddcad",
+          "bytes": 472302
+        },
+        "booth_leather_roughness_1024.webp": {
+          "sha256": "bdb0b3529b4170fbcf9ed1d1dcf4541fe1cd28fe8f6253a3a28e64b27d279521",
+          "bytes": 280334
+        },
+        "booth_leather_roughness_512.webp": {
+          "sha256": "fa99ec315664332d0ea645c60a12652138ddc861d382172e58176b9f3c93640f",
+          "bytes": 104820
+        }
+      }
+    },
+    {
+      "source": "textures/club/carpet_vip.webp",
+      "albedoSha256": "d51e71cbcde4446f0345842a72b4bd5b1422d2e869a74981e5bcf04dc09ef866",
+      "profile": {
+        "kind": "fabric",
+        "relief": "grain",
+        "strength": 1.8,
+        "roughness": 0.95,
+        "variation": 0.025,
+        "scale": 0.35,
+        "wet": 0
+      },
+      "outputs": {
+        "carpet_vip_normal_1024.webp": {
+          "sha256": "3ae07e1f434bda15551ee9cfaf36ba5d8f755c9f07868660675024d9e324f142",
+          "bytes": 197166
+        },
+        "carpet_vip_roughness_1024.webp": {
+          "sha256": "06eaffc83c3bb26d3b5b220b042fa14cde73fda1e21f55d034b245e237d141ef",
+          "bytes": 111752
+        },
+        "carpet_vip_roughness_512.webp": {
+          "sha256": "1f095ee638ca2e95150b17c26a381a1839d2caf0f8997b25d4588d7104dfb228",
+          "bytes": 43554
+        }
+      }
+    },
+    {
+      "source": "textures/club/club_wall_padded.webp",
+      "albedoSha256": "d3ef9ccb0570b058ea313a7c8d1218d6ad42d6fe8a3c4e3047d5cac9a965d479",
+      "profile": {
+        "kind": "padded",
+        "relief": "seams",
+        "strength": 9,
+        "roughness": 0.88,
+        "variation": 0.045,
+        "scale": 0.5,
+        "wet": 0
+      },
+      "outputs": {
+        "club_wall_padded_normal_1024.webp": {
+          "sha256": "c3c7cea09df2778fe42ca3a3d6c16205b1641cfec7e05bd89456605fc10b8c0a",
+          "bytes": 1099758
+        },
+        "club_wall_padded_roughness_1024.webp": {
+          "sha256": "b216ecaa2146d12089b82544e15ea3d8c4b916f72a0b1d5547942e99495ef42b",
+          "bytes": 246948
+        },
+        "club_wall_padded_roughness_512.webp": {
+          "sha256": "4d02b2a271b9b7fb89de3b29b8bfe47ea2e67fd78a76037b5130ee0cb20302a8",
+          "bytes": 94066
+        }
+      }
+    },
+    {
+      "source": "textures/club/curtain_velvet.webp",
+      "albedoSha256": "6445c20991d469f53ffecfbf63eef060ad30970cd0fc052e59abe276371bac0b",
+      "profile": {
+        "kind": "fabric",
+        "relief": "grain",
+        "strength": 1.8,
+        "roughness": 0.95,
+        "variation": 0.025,
+        "scale": 0.35,
+        "wet": 0
+      },
+      "outputs": {
+        "curtain_velvet_normal_1024.webp": {
+          "sha256": "9386bb4934ede1ae0840da1a718aa183a9baef2e7901df332aa6c881a301549c",
+          "bytes": 196218
+        },
+        "curtain_velvet_roughness_1024.webp": {
+          "sha256": "99bec7729677ec155b629d80836e11c0e39359663e375d9225da6f097fa605fe",
+          "bytes": 93476
+        },
+        "curtain_velvet_roughness_512.webp": {
+          "sha256": "df3167c9e985ed69c3e91f59c271c81482ad2a313e946f0e8c10f6a686ec913a",
+          "bytes": 37480
+        }
+      }
+    },
+    {
+      "source": "textures/club/floor_polished_concrete.webp",
+      "albedoSha256": "938e18c8ed2302aebd0901ccaf96bc06275f776889ca68a5a3de65783c828b40",
+      "profile": {
+        "kind": "concrete",
+        "relief": "grain",
+        "strength": 3,
+        "roughness": 0.48,
+        "variation": 0.06,
+        "scale": 0.5,
+        "wet": 0
+      },
+      "outputs": {
+        "floor_polished_concrete_normal_1024.webp": {
+          "sha256": "6c24306af55615eb4fc6ee9208328ef61f474b5812a11942f0abc747100c7497",
+          "bytes": 331608
+        },
+        "floor_polished_concrete_roughness_1024.webp": {
+          "sha256": "e9b9e92648a909a9583a69b77d3718e07034ba59e3fe7b20ae73b7893986df36",
+          "bytes": 222370
+        },
+        "floor_polished_concrete_roughness_512.webp": {
+          "sha256": "6ce76a40ce77a81505a51009dd1215bb33be5606e5ab8eea0e1957995708424b",
+          "bytes": 81188
+        }
+      }
+    },
+    {
+      "source": "textures/elevator/car_floor_diamond.webp",
+      "albedoSha256": "6423324a3808f01de4d5e295de82371353017c51f1ef16eb03638daa25bc161f",
+      "profile": {
+        "kind": "metal",
+        "relief": "grooves",
+        "strength": 10,
+        "roughness": 0.65,
+        "variation": 0.1,
+        "scale": 0.5,
+        "wet": 0
+      },
+      "outputs": {
+        "car_floor_diamond_normal_1024.webp": {
+          "sha256": "bc4a4a7227748853b215d4d03f346c0ebe83ee601fdb38a57bdb662899c5f82f",
+          "bytes": 984098
+        },
+        "car_floor_diamond_roughness_1024.webp": {
+          "sha256": "900386f255ecca14cba509f408ae68534463b7c780605c3c1cdb2e708ddb8b97",
+          "bytes": 218046
+        },
+        "car_floor_diamond_roughness_512.webp": {
+          "sha256": "1059d0a03bf447fa913bc32c45adcb1c458fdc57ac62d6157cedae4735559871",
+          "bytes": 84478
+        }
+      }
+    },
+    {
+      "source": "textures/elevator/car_wall_steel.webp",
+      "albedoSha256": "5e11c5751c9170d133e88122202ebb0eac9afae6bf0c8e0cf423789d7b452f16",
+      "profile": {
+        "kind": "metal",
+        "relief": "grooves",
+        "strength": 10,
+        "roughness": 0.65,
+        "variation": 0.1,
+        "scale": 0.5,
+        "wet": 0
+      },
+      "outputs": {
+        "car_wall_steel_normal_1024.webp": {
+          "sha256": "b030256e8117d410e2d5fce3ba1d67e418a6c0d4593ddb1f421530247d099948",
+          "bytes": 744920
+        },
+        "car_wall_steel_roughness_1024.webp": {
+          "sha256": "cda9f21af2dcf880f7df82718a203de6a0e4941223ae0e547f01fd38ef1ad41d",
+          "bytes": 200602
+        },
+        "car_wall_steel_roughness_512.webp": {
+          "sha256": "4fb0326db1a8cde7cdc0a9e9029a09f8b4947374b322b924907ea7c57e70a389",
+          "bytes": 76798
+        }
+      }
+    },
+    {
+      "source": "textures/elevator/concrete_bare.webp",
+      "albedoSha256": "866260b78e0ae19b4b3abf17bbeb9a88d4681219fa4de2f5b477d92f2b8d9a45",
+      "profile": {
+        "kind": "concrete",
+        "relief": "grain",
+        "strength": 5,
+        "roughness": 0.88,
+        "variation": 0.06,
+        "scale": 0.5,
+        "wet": 0
+      },
+      "outputs": {
+        "concrete_bare_normal_1024.webp": {
+          "sha256": "7347efc1cac0bf904ff29f0bcbfca032d9da1b5e3dcc3eab2b41d98a863ce782",
+          "bytes": 488232
+        },
+        "concrete_bare_roughness_1024.webp": {
+          "sha256": "2251c058a56defe18bee2cade5a674fb36e524d094cdccff0d112e3523e7b666",
+          "bytes": 247418
+        },
+        "concrete_bare_roughness_512.webp": {
+          "sha256": "678050a7d29e1b5618ba53f5c5acc6812aadec10f9ae0e02418e93ff7e865156",
+          "bytes": 89310
+        }
+      }
+    },
+    {
+      "source": "textures/elevator/hazard_sill.webp",
+      "albedoSha256": "40f6bd2e2b58a1b7ace84f479d29da0c7c045c063d645062c42a0753cf4648c3",
+      "profile": {
+        "kind": "metal",
+        "relief": "grooves",
+        "strength": 10,
+        "roughness": 0.65,
+        "variation": 0.1,
+        "scale": 0.5,
+        "wet": 0
+      },
+      "outputs": {
+        "hazard_sill_normal_1024.webp": {
+          "sha256": "c981556155391238c6412af1aea99424af795ea1afd77378fbdab6152d229be6",
+          "bytes": 378160
+        },
+        "hazard_sill_roughness_1024.webp": {
+          "sha256": "d788c4840b7cb7ffce16e3b3f59268be7bb26db0db17ee154d1de7bccd706bfc",
+          "bytes": 200934
+        },
+        "hazard_sill_roughness_512.webp": {
+          "sha256": "889bbe44ee5b5aed5315796271dc270e6a86aef261f1177925c576d7e8ee5117",
+          "bytes": 82912
+        }
+      }
+    },
+    {
+      "source": "textures/elevator/marble_grey.webp",
+      "albedoSha256": "9927f8a2887ae6f84c648dcc6d8242a0c59c53948f22277dfca6baef7f91ad89",
+      "profile": {
+        "kind": "marble",
+        "relief": "grain",
+        "strength": 1.5,
+        "roughness": 0.34,
+        "variation": 0.07,
+        "scale": 0.3,
+        "wet": 0
+      },
+      "outputs": {
+        "marble_grey_normal_1024.webp": {
+          "sha256": "a0189bf542157e7e8e7f7ed9631dddd2552f1d38c591699de13476765dee9e75",
+          "bytes": 377016
+        },
+        "marble_grey_roughness_1024.webp": {
+          "sha256": "fd368cea250b37d2befaa35f02890739562ca8494250cd8e16baf3deae7f7629",
+          "bytes": 286812
+        },
+        "marble_grey_roughness_512.webp": {
+          "sha256": "416d579d269f66f01cd0cee778699f68fa1f9eaa00fffe882282630521e533a9",
+          "bytes": 104092
+        }
+      }
+    },
+    {
+      "source": "textures/elevator/shaft_concrete.webp",
+      "albedoSha256": "c944918156dfea9f997e2f32ecd1872eac2b69a32062d492cc7fc507e760a0bc",
+      "profile": {
+        "kind": "concrete",
+        "relief": "grain",
+        "strength": 5,
+        "roughness": 0.88,
+        "variation": 0.06,
+        "scale": 0.5,
+        "wet": 0
+      },
+      "outputs": {
+        "shaft_concrete_normal_1024.webp": {
+          "sha256": "8b993643d444ad8bdd237907ed185ace9b4497396fc68c3f8189f47790fc2778",
+          "bytes": 468346
+        },
+        "shaft_concrete_roughness_1024.webp": {
+          "sha256": "907d8f48ae37dad65e05d520fccbd43144d367e7ae55de26977198263436f83b",
+          "bytes": 240966
+        },
+        "shaft_concrete_roughness_512.webp": {
+          "sha256": "863cde975fff3760fb1fe5d46fad3bdbec2cd00840dbf28393f20d67b84cc014",
+          "bytes": 88158
+        }
+      }
+    },
+    {
+      "source": "textures/facade-brick.webp",
+      "albedoSha256": "b305d0428f797886fa8453c4052036f78da0286157f1e3928a09f1225c4af810",
+      "profile": {
+        "kind": "brick",
+        "relief": "seams",
+        "strength": 14,
+        "roughness": 0.9,
+        "variation": 0.055,
+        "scale": 0.65,
+        "wet": 0
+      },
+      "outputs": {
+        "facade-brick_normal_1024.webp": {
+          "sha256": "c3d995e3d6e9a505645ef617ccccda488d75dbf4b04f731202707814c2791c15",
+          "bytes": 586388
+        },
+        "facade-brick_roughness_1024.webp": {
+          "sha256": "9bdb70942768cb843991ca3131519fcb1baafc6fbae03c1dbbb7db2571cd4d5c",
+          "bytes": 116638
+        },
+        "facade-brick_roughness_512.webp": {
+          "sha256": "a2c4f76b1c5223313fa9a09778dee2bfc04c78404e8fe9c3f0644650b8f716ea",
+          "bytes": 47686
+        }
+      }
+    },
+    {
+      "source": "textures/facade-brownstone.webp",
+      "albedoSha256": "e00f149ea98f5219e4a1eabcf27f0c1ae0c54551c4fbc293e4b137f8f69ee314",
+      "profile": {
+        "kind": "stone",
+        "relief": "seams",
+        "strength": 10,
+        "roughness": 0.86,
+        "variation": 0.05,
+        "scale": 0.5,
+        "wet": 0
+      },
+      "outputs": {
+        "facade-brownstone_normal_1024.webp": {
+          "sha256": "71e80d561fccf1c18a07b720dc5df5334816ed023f6f619b2f0535e6c259b484",
+          "bytes": 458724
+        },
+        "facade-brownstone_roughness_1024.webp": {
+          "sha256": "28a4b24a9c8e7f89efab013f88050a848b4534bc9aca350f9e0bf0341c263056",
+          "bytes": 140282
+        },
+        "facade-brownstone_roughness_512.webp": {
+          "sha256": "498f09de125d2b064463b7883c270a8ef02ae528b83247ad50e1d62c0924fa1e",
+          "bytes": 56622
+        }
+      }
+    },
+    {
+      "source": "textures/facade-club.webp",
+      "albedoSha256": "e52e6d79f1bcdca2f56470f8a3b86eeced962c0e91271893b63c548133f5f10f",
+      "profile": {
+        "kind": "brick",
+        "relief": "seams",
+        "strength": 14,
+        "roughness": 0.9,
+        "variation": 0.055,
+        "scale": 0.65,
+        "wet": 0
+      },
+      "outputs": {
+        "facade-club_normal_1024.webp": {
+          "sha256": "19ec080b54aa93173e9bf6c3e9d65a623626df62a33e2185c05840d95d5d90a5",
+          "bytes": 507446
+        },
+        "facade-club_roughness_1024.webp": {
+          "sha256": "74d5579177d06deea3007db550d0538f690f49114e3984b96b3e328d732c3c16",
+          "bytes": 122128
+        },
+        "facade-club_roughness_512.webp": {
+          "sha256": "b9d3630c9374b1256451aa8496f9c589f9eb639457dd559c13231fc2409a645d",
+          "bytes": 50024
+        }
+      }
+    },
+    {
+      "source": "textures/penthouse/bar_onyx.webp",
+      "albedoSha256": "543b65a076c3bd46f42db2456505504978d9aa2d697ccf6485df8d219d8dfa6f",
+      "profile": {
+        "kind": "marble",
+        "relief": "grain",
+        "strength": 1.5,
+        "roughness": 0.34,
+        "variation": 0.07,
+        "scale": 0.3,
+        "wet": 0
+      },
+      "outputs": {
+        "bar_onyx_normal_1024.webp": {
+          "sha256": "6b5bbf9a917e4d2f3a15b26c4aa2cf781a4a5f0ce578dc9c312d1b4f28600012",
+          "bytes": 317772
+        },
+        "bar_onyx_roughness_1024.webp": {
+          "sha256": "f9793466bebb65c44e884024ba7c63715329626e1a8c4a447d815dff30999565",
+          "bytes": 329008
+        },
+        "bar_onyx_roughness_512.webp": {
+          "sha256": "eff2d5a2484da92980089205f1c4d161c5eb5949a7f6718ff356574f303e5f39",
+          "bytes": 121558
+        }
+      }
+    },
+    {
+      "source": "textures/penthouse/ceiling_coffered.webp",
+      "albedoSha256": "5e23a6db4b1150383e6bc585cde2811f436390a99c0807ba80c84b18808364ac",
+      "profile": {
+        "kind": "wood",
+        "relief": "grooves",
+        "strength": 9,
+        "roughness": 0.62,
+        "variation": 0.08,
+        "scale": 0.55,
+        "wet": 0
+      },
+      "outputs": {
+        "ceiling_coffered_normal_1024.webp": {
+          "sha256": "8660479f0256229d2edc61018203d8d9b9a9adb2fa2f8241f987583c40c6434a",
+          "bytes": 351530
+        },
+        "ceiling_coffered_roughness_1024.webp": {
+          "sha256": "7f2f69bb88664bbadb40a4679f41302926bfbc6585a10ab5673aa1a16d5ff6a6",
+          "bytes": 98208
+        },
+        "ceiling_coffered_roughness_512.webp": {
+          "sha256": "bc65bbe13f069c239f4a9a60fb95243fd473caf5f46a7bd45b17686387bc89ba",
+          "bytes": 39794
+        }
+      }
+    },
+    {
+      "source": "textures/penthouse/floor_marble_black.webp",
+      "albedoSha256": "e039a700d643e19a4ab15283fc5955f1c8ecc425861ff2fb2bcfcafeed55a5d6",
+      "profile": {
+        "kind": "marble",
+        "relief": "grain",
+        "strength": 1.5,
+        "roughness": 0.34,
+        "variation": 0.07,
+        "scale": 0.3,
+        "wet": 0
+      },
+      "outputs": {
+        "floor_marble_black_normal_1024.webp": {
+          "sha256": "1b3deb90262010c208cd6e5852389bdd36b52be4fcfe6398319d1dd919d58a42",
+          "bytes": 416808
+        },
+        "floor_marble_black_roughness_1024.webp": {
+          "sha256": "cadc3f181310cf96042b32d12512e048101a1c2e72f51f63ad8d1611e309df16",
+          "bytes": 289088
+        },
+        "floor_marble_black_roughness_512.webp": {
+          "sha256": "48996b4f9b3e405b8ec69a094176280ef11dab871b3cbaf50f23d8f2922f20cd",
+          "bytes": 104910
+        }
+      }
+    },
+    {
+      "source": "textures/penthouse/rug_fur_white.webp",
+      "albedoSha256": "2fddcfb53fa9b65a9e2162d00ecd990cff133dbd9a81189e024314d0599b374a",
+      "profile": {
+        "kind": "fabric",
+        "relief": "grain",
+        "strength": 1.8,
+        "roughness": 0.95,
+        "variation": 0.025,
+        "scale": 0.35,
+        "wet": 0
+      },
+      "outputs": {
+        "rug_fur_white_normal_1024.webp": {
+          "sha256": "3f97c54fc1760eb0a34d1fc5707379347b861393b1ca55814de87df7169ecb1e",
+          "bytes": 126240
+        },
+        "rug_fur_white_roughness_1024.webp": {
+          "sha256": "f14adcc2a78ed4a5a4162d5c346a4c3bea9508a9cbbbccf3b270b49023b0fbb1",
+          "bytes": 67056
+        },
+        "rug_fur_white_roughness_512.webp": {
+          "sha256": "522efced60038d174f918cda982ebb346cefe8ad7ded531f9b836546a05bd5bb",
+          "bytes": 26536
+        }
+      }
+    },
+    {
+      "source": "textures/penthouse/wall_damask.webp",
+      "albedoSha256": "72cfd425aa9db57c7490eaecadaa9a8ff7dc091e23d56af77325c0879b871a35",
+      "profile": {
+        "kind": "fabric",
+        "relief": "grain",
+        "strength": 1.8,
+        "roughness": 0.95,
+        "variation": 0.025,
+        "scale": 0.35,
+        "wet": 0
+      },
+      "outputs": {
+        "wall_damask_normal_1024.webp": {
+          "sha256": "bae9e04b2ee7a9a6cb51421afd2878ad7000615a324225ac6afe85e8ac58139e",
+          "bytes": 79988
+        },
+        "wall_damask_roughness_1024.webp": {
+          "sha256": "85c9f0b3b0e41c5cbb1631309fed198c2e46da92b7616ee26a571bff8518559f",
+          "bytes": 47794
+        },
+        "wall_damask_roughness_512.webp": {
+          "sha256": "6840c225fa81a2279c2af583a8fd04a777222920aeca62da6cf7f445a5db1246",
+          "bytes": 20322
+        }
+      }
+    },
+    {
+      "source": "textures/penthouse/wall_ebony_slats.webp",
+      "albedoSha256": "016f87e436e3f04641e5e3b2b83314856ef15c9d35dbd77647ad436642987603",
+      "profile": {
+        "kind": "wood",
+        "relief": "grooves",
+        "strength": 9,
+        "roughness": 0.62,
+        "variation": 0.08,
+        "scale": 0.55,
+        "wet": 0
+      },
+      "outputs": {
+        "wall_ebony_slats_normal_1024.webp": {
+          "sha256": "4166b4e6ef687beaf15a486f32e8f418bdb80960c83ea479f7322935b17767b7",
+          "bytes": 302552
+        },
+        "wall_ebony_slats_roughness_1024.webp": {
+          "sha256": "b9adde6931bd12db0d7572af3820128f577b5f171f2d76b397550890d898e70a",
+          "bytes": 76318
+        },
+        "wall_ebony_slats_roughness_512.webp": {
+          "sha256": "4ab2229e030e443f370925da1e647fb6e71dc363d9345b7f9e0d7c6f80771900",
+          "bytes": 32630
+        }
+      }
+    },
+    {
+      "source": "textures/shutter.webp",
+      "albedoSha256": "7ca8e66aa307f485f7558224bd8312d734434e18584580bb8e017741b34c04f3",
+      "profile": {
+        "kind": "metal",
+        "relief": "grooves",
+        "strength": 10,
+        "roughness": 0.65,
+        "variation": 0.1,
+        "scale": 0.5,
+        "wet": 0
+      },
+      "outputs": {
+        "shutter_normal_1024.webp": {
+          "sha256": "2566a6959950e9c77061ec2dd164a477b4a91dfcfeda3dadd083dd4dde9a4bd0",
+          "bytes": 316148
+        },
+        "shutter_roughness_1024.webp": {
+          "sha256": "8edc0938cecf3a89ec0e1bb47bf44bad4c0e0b259791686ae009b15e4c5253be",
+          "bytes": 105268
+        },
+        "shutter_roughness_512.webp": {
+          "sha256": "f14c1b2bfff437dce3eabc4aaa168706c22534f93965882ca6d840406cbc61e1",
+          "bytes": 42878
+        }
+      }
+    },
+    {
+      "source": "textures/sidewalk.webp",
+      "albedoSha256": "9a7013234fc5eb0081759dcb183e1c50c4b14c63f1920c2439808666078fc4c4",
+      "profile": {
+        "kind": "stone",
+        "relief": "seams",
+        "strength": 10,
+        "roughness": 0.86,
+        "variation": 0.05,
+        "scale": 0.5,
+        "wet": 0.25
+      },
+      "outputs": {
+        "sidewalk_normal_1024.webp": {
+          "sha256": "2fbdcef2fddf3efb41e9280237d7314784fee6245edd627097e3a6c19f41fb68",
+          "bytes": 595768
+        },
+        "sidewalk_roughness_1024.webp": {
+          "sha256": "0b3472519d8e3f61013543e3431af6c56ad07fb4df935ea3125661fab0a29b2b",
+          "bytes": 137982
+        },
+        "sidewalk_roughness_512.webp": {
+          "sha256": "76a179bf51dd48a41a8e478ace8efcac29f19e5f6775260c47db1fe8c97e0634",
+          "bytes": 55178
+        }
+      }
+    }
+  ]
+}

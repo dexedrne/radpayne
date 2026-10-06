@@ -16,7 +16,7 @@
 import { Fragment, createElement, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { DirectionalLight, Vector3, type Object3D } from "three";
-import { abs, dot, float, materialColor, materialReference, normalView, normalWorld, positionViewDirection, positionWorld, pow, replaceDefaultUV, saturate, select, sign, vec2, vec3 } from "three/tsl";
+import { abs, dot, float, materialColor, materialReference, normalView, normalWorldGeometry, positionViewDirection, positionWorld, pow, replaceDefaultUV, saturate, select, sign, vec2, vec3 } from "three/tsl";
 import type { MeshStandardNodeMaterial } from "three/webgpu";
 import { FRAME } from "../frame.ts";
 
@@ -38,7 +38,8 @@ export function readTokens(name: string): Tokens {
 
 /** World-space UV: walls along x use (-+z, y), walls along z use (x, y), floors / ceilings (x, z). */
 export const worldUV = (): N => {
-  const n = normalWorld, p = positionWorld;
+  // Relief changes lighting, never the choice of projection plane.
+  const n = normalWorldGeometry, p = positionWorld;
   const wallX = vec2(p.z.mul(sign(n.x)).negate(), p.y);
   const wallZ = vec2(p.x.mul(sign(n.z)), p.y);
   const top = vec2(p.x, p.z);

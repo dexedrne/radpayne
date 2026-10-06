@@ -66,11 +66,12 @@ test("graphics settings: URL overrides, saved values, old Effects / Quality, bac
   assert.ok(dprFor(50, 1.5) < dprFor(75, 1.5) && dprFor(75, 1.5) < dprFor(100, 1.5));
 });
 
-test("graphics changes: only the street's mirror going on or off (or MSAA) builds the shaders again", () => {
+test("graphics changes: surface normals, the street's mirror or MSAA builds the shaders again", () => {
   for (const a of PRESET_ORDER) for (const b of PRESET_ORDER) {
     const flip = (PRESETS[a].reflections !== "off") !== (PRESETS[b].reflections !== "off");
-    assert.equal(rebuildsShaders(PRESETS[a], PRESETS[b], true), flip, `${a} -> ${b} on the street`);
-    assert.equal(rebuildsShaders(PRESETS[a], PRESETS[b], false), false, `${a} -> ${b} in a room without the mirror`);
+    const normals = PRESETS[a].lite !== PRESETS[b].lite;
+    assert.equal(rebuildsShaders(PRESETS[a], PRESETS[b], true), flip || normals, `${a} -> ${b} on the street`);
+    assert.equal(rebuildsShaders(PRESETS[a], PRESETS[b], false), normals, `${a} -> ${b} in a room without the mirror`);
   }
   assert.equal(rebuildsShaders(PRESETS.high, { ...PRESETS.high, msaa: false }, false), true);
 });

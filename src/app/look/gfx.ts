@@ -156,11 +156,11 @@ function save(g: Gfx): void {
 }
 
 /** Whether going from `a` to `b` builds the room's shaders again (PlayPage holds the room's render while
- *  they compile): MSAA (every look's scene pass), or the puddle mirror going on or off where there is one
- *  (`mirror`: room 1's street; no other look has a reflector). Bloom, rain, the resolution and Low's
- *  lighter scene apply without it. */
+ *  they compile): desktop surface normals (lite), MSAA, or the puddle mirror going on or off where there is one
+ *  (`mirror`: room 1's street; no other look has a reflector). Bloom, rain and resolution apply
+ *  without recompiling. */
 export function rebuildsShaders(a: Omit<Gfx, "preset">, b: Omit<Gfx, "preset">, mirror: boolean): boolean {
-  return a.msaa !== b.msaa || (mirror && (a.reflections !== "off") !== (b.reflections !== "off"));
+  return a.msaa !== b.msaa || (!MOBILE && a.lite !== b.lite) || (mirror && (a.reflections !== "off") !== (b.reflections !== "off"));
 }
 
 export function setPreset(p: Preset): void {

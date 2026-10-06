@@ -10,6 +10,7 @@ import { ClubLook } from "./club.tsx";
 import { BackroomsLook } from "./backrooms.tsx";
 import { ElevatorLook, PenthouseLook } from "./tower.tsx";
 import { AirshipLook, CountingLook, GardenLook, RoofLook, VaultLook } from "./sky.tsx";
+import { PbrMaterials } from "./pbr.tsx";
 
 export const FOG = "#0b0f1c";
 
@@ -50,5 +51,5 @@ export const LOOKS: Record<string, (p: LookProps) => React.ReactNode> = {
 
 export function RoomLook(p: LookProps) {
   const L = LOOKS[(p.level.room.look as string) ?? "greybox"] ?? GreyboxLook;
-  return <L {...p} />;
+  return <><PbrMaterials level={p.level} /><L {...p} /></>;
 }
