@@ -22,7 +22,7 @@ test("roster: #250 carries the AK, everyone else the pistols; every hero has a g
   }
 });
 
-test("roster: the two Retardios follow the six Radbros, with their own files and their own grips", () => {
+test("roster: the two Retardios follow the Radbros, with their own files and their own grips", () => {
   assert.deepEqual(HEROES.map(h => h.id), [...RADBROS.map(r => r.id), "retardio555", "retardio85"]);
   assert.deepEqual(RETARDIOS.map(r => `${r.kind} ${r.name}`), ["RETARDIO #555", "RETARDIO #85"]);
   assert.equal(heroFile("652"), "radbro652");

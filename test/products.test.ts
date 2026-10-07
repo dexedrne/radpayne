@@ -10,7 +10,7 @@ import { GAME, IS_CUT } from "../src/product.ts";
 import { DIFFICULTY, MADAME, RADPAYNE_DIFFICULTIES, type Difficulty } from "../src/sim/tuning.ts";
 import { ARRIVE, BEAM, CH2_DIFF, COUNTESS, ROOF, SNIPER2, killsFor, perDiff } from "../src/sim/tuning2.ts";
 import { CUT } from "../src/sim/cut.ts";
-import { HEROES, RADBROS, RETARDIOS, defaultHeroOf, fixedDifficultyOf, pickFor, rosterOf } from "../src/ui/store.ts";
+import { HEROES, RADBROS, PIN_RADBROS, RETARDIOS, defaultHeroOf, fixedDifficultyOf, pickFor, rosterOf } from "../src/ui/store.ts";
 import { CUT_TEXT, textFor } from "../src/ui/cutText.ts";
 import { NARRATION } from "../src/app/director.ts";
 import { GAME_INFO, RADPAYNE, RETARDIOPAYNE } from "../src/radbro/bridge.ts";
@@ -70,23 +70,26 @@ test("RadPayne's tuning: its four difficulties, Madame Pockit's and chapter 2's 
   for (const [id, want] of Object.entries(rosters)) assert.deepEqual(RAD4.map(d => new Game(level(id), { seed: 1, difficulty: d }).enemies.length), want, id);
 });
 
-test("RadPayne plays the six Radbros, #4764 first pick (the two Retardios are RetardioPayne's)", () => {
+test("RadPayne plays eight Radbros with the main four first; RetardioPayne keeps its two", () => {
   assert.deepEqual(RADBROS.map(h => [h.id, h.kind, h.name, h.color, h.weapon ?? "", (h.start ?? []).join()]), [
-    ["652", "RADBRO", "#652", "#ff3d7f", "", ""],
     ["4764", "RADBRO", "#4764", "#3ff0ff", "", ""],
-    ["2564", "RADBRO", "#2564", "#b8c4ff", "", ""],
+    ["652", "RADBRO", "#652", "#ff3d7f", "", ""],
+    ["3704", "RADBRO", "#3704", "#ffd23f", "", ""],
+    ["3710", "RADBRO", "#3710", "#4acb9a", "", ""],
     ["723", "RADBRO", "#723", "#ffb03f", "", "shotgun"],
     ["3171", "RADBRO", "#3171", "#ffdc4a", "", ""],
     ["250", "RADBRO", "#250", "#ff5a3c", "ak", ""],
+    ["2564", "RADBRO", "#2564", "#b8c4ff", "", ""],
   ]);
   assert.deepEqual(RETARDIOS.map(h => [h.id, h.kind, h.name]), [["retardio555", "RETARDIO", "#555"], ["retardio85", "RETARDIO", "#85"]]);
   assert.deepEqual(rosterOf("radpayne").map(h => h.id), RADBROS.map(h => h.id), "RadPayne: the Radbros only (the Retardios are RetardioPayne's)");
-  assert.deepEqual(HEROES.map(h => h.id), ["652", "4764", "2564", "723", "3171", "250", "retardio555", "retardio85"]);
+  assert.deepEqual(HEROES.map(h => h.id), ["4764", "652", "3704", "3710", "723", "3171", "250", "2564", "retardio555", "retardio85"]);
   assert.equal(defaultHeroOf("radpayne"), "4764");
   assert.equal(pickFor("radpayne", "652"), "652");
   assert.equal(pickFor("radpayne", "retardio85"), "4764", "a Retardio pick falls back on RadPayne");
   assert.equal(pickFor("radpayne", "nobody"), "4764");
   assert.equal(fixedDifficultyOf("radpayne"), null);
+  assert.deepEqual(PIN_RADBROS.map(h => h.id).sort(), ["250", "2564", "3171", "4764", "652", "723"].sort(), "only the six placed pins count toward completion");
 });
 
 test("one build-time switch: VITE_GAME picks the game; only dev and test builds take ?game=", () => {

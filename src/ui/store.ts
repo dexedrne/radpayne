@@ -8,7 +8,7 @@ import type { BaseWeapon, WeaponId } from "../combat/weapons.ts";
 import type { GameId } from "../brands.ts";
 import { GAME } from "../product.ts";
 
-export type RadbroId = "652" | "4764" | "2564" | "723" | "3171" | "250";
+export type RadbroId = "652" | "4764" | "3704" | "3710" | "2564" | "723" | "3171" | "250";
 /** The owner's two Retardios (#555 the cousin, #85 the classic): built on the Radbro rig with the
  *  Radbros' clips, so they play like a Radbro. Their ids keep them apart from the Radbro numbers. */
 export type RetardioId = "retardio555" | "retardio85";
@@ -18,13 +18,17 @@ export type HeroId = RadbroId | RetardioId;
  *  on top of it (in hand; ammo runs out like a pickup's). kind: the card's label in front of the name. */
 export type Hero<I extends HeroId = HeroId> = { id: I; kind: "RADBRO" | "RETARDIO"; name: string; blurb: string; color: string; weapon?: BaseWeapon; start?: WeaponId[] };
 export const RADBROS: Array<Hero<RadbroId>> = [
-  { id: "652", kind: "RADBRO", name: "#652", blurb: "the original. he has been here before.", color: "#ff3d7f" },
   { id: "4764", kind: "RADBRO", name: "#4764", blurb: "brought a katana to a gunfight. also guns.", color: "#3ff0ff" },
-  { id: "2564", kind: "RADBRO", name: "#2564", blurb: "GHOST. you won't see him. they won't either.", color: "#b8c4ff" },
+  { id: "652", kind: "RADBRO", name: "#652", blurb: "the original. he has been here before.", color: "#ff3d7f" },
+  { id: "3704", kind: "RADBRO", name: "#3704", blurb: "yellow hair. golden hour, all night.", color: "#ffd23f" },
+  { id: "3710", kind: "RADBRO", name: "#3710", blurb: "green hair. keeps his cool in the rain.", color: "#4acb9a" },
   { id: "723", kind: "RADBRO", name: "#723", blurb: "cowboy. rides in with a shotgun. this street ain't big enough.", color: "#ffb03f", start: ["shotgun"] },
   { id: "3171", kind: "RADBRO", name: "#3171", blurb: "wears a halo. isn't one.", color: "#ffdc4a" },
   { id: "250", kind: "RADBRO", name: "#250", blurb: "rad to the bone. brought his own rifle.", color: "#ff5a3c", weapon: "ak" },
+  { id: "2564", kind: "RADBRO", name: "#2564", blurb: "GHOST. you won't see him. they won't either.", color: "#b8c4ff" },
 ];
+/** The six pins placed in the existing chapters. */
+export const PIN_RADBROS = RADBROS.filter(h => h.id !== "3704" && h.id !== "3710");
 export const RETARDIOS: Array<Hero<RetardioId>> = [
   { id: "retardio555", kind: "RETARDIO", name: "#555", blurb: "the cousin. not here for the food.", color: "#8fe36a" },
   { id: "retardio85", kind: "RETARDIO", name: "#85", blurb: "the classic. needs money for a porsche.", color: "#c58bff" },

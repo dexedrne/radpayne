@@ -15,6 +15,9 @@ export const RADBRO_GAIT: Record<HeroId, Gait> = {
   "4764": { run: 3.07, walk: 0.54 },
   "2564": { run: 2.79, walk: 0.51 },
   "723": { run: 3.12, walk: 0.57 },
+  // #723's runtime speeds times the new rigs' planted-foot stride, sampled at 60 Hz.
+  "3704": { run: 3.51, walk: 0.56 },
+  "3710": { run: 3.81, walk: 0.59 },
   // #3171 / #250: their shooter-clip manifest speeds (Aim_Run / Aim_Walk_Fwd, a different foot measure)
   // scaled by the other four's mean ratio to these numbers (run x2.18, walk x1.08; each within 4%)
   "3171": { run: 2.89, walk: 0.52 },

@@ -36,7 +36,7 @@ export const BRANDS: Record<GameId, Brand> = {
     description: "They took the bag. He came back for it, one frozen second at a time. A noir bullet-time shooter in the browser with the Radbros.",
     ogImage: "og4.jpg",
     accent: "#ff3fa8",
-    ogAlt: "RadPayne, bullet-time noir: Radbros #4764, #652, #723 and #2564 dive through the rain in bullet time with pistols blazing on a neon-lit street, the Milady gang shooting back",
+    ogAlt: "RadPayne, bullet-time noir: Radbros #4764, #652, yellow-haired #3704 and green-haired #3710 dive through the rain with pistols blazing on a neon-lit street",
     other: "retardiopayne",
     otherBlurb: "the harder cut, with the Retardios",
   },

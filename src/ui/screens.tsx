@@ -5,7 +5,7 @@
 import "./hud/tokens.css";
 import { useEffect, useMemo, useState } from "react";
 import { loadPins } from "./pins.ts";
-import { RADBROS, ROSTER, heroFile, heroOf, setSetting, setVolume, store, useUi, type AimAssist, type DmgColour, type HudSize, type HeroId, type Results, type ThreatMode, type Chatter, type KillcamMode } from "./store.ts";
+import { PIN_RADBROS, ROSTER, heroFile, heroOf, setSetting, setVolume, store, useUi, type AimAssist, type DmgColour, type HudSize, type HeroId, type Results, type ThreatMode, type Chatter, type KillcamMode } from "./store.ts";
 import { DIFFICULTY, RADPAYNE_DIFFICULTIES, type Difficulty } from "../sim/tuning.ts";
 import { BRAND, IS_CUT, OTHER } from "../product.ts";
 import { setGfx, setPreset, useGfx, type Bloom, type Preset, type Rain, type Reflections, type Res } from "../app/look/gfx.ts";
@@ -573,7 +573,7 @@ export function ResultsScreen({ onRetry, onTitle, onNext }: { onRetry: () => voi
             ))}
           </div>
           <div className="rp-pins" data-testid="pins">
-            {RADBROS.map(b => {
+            {PIN_RADBROS.map(b => {
               const got = have.includes(b.id);
               return (
                 <div key={b.id} className={`pin${got ? " got" : ""}`} style={{ borderColor: b.color, background: got ? b.color : "transparent" }} title={`#${b.id}`}>
@@ -582,12 +582,12 @@ export function ResultsScreen({ onRetry, onTitle, onNext }: { onRetry: () => voi
                 </div>
               );
             })}
-            <span className="total">PINS {RADBROS.filter(b => have.includes(b.id)).length}/{RADBROS.length}</span>
+            <span className="total">PINS {PIN_RADBROS.filter(b => have.includes(b.id)).length}/{PIN_RADBROS.length}</span>
           </div>
           {/* chapter 2's gold editions (g<id>), once one has turned up */}
-          {RADBROS.some(b => have.includes(`g${b.id}`)) && (
+          {PIN_RADBROS.some(b => have.includes(`g${b.id}`)) && (
             <div className="rp-pins" data-testid="gold-pins">
-              {RADBROS.map(b => {
+              {PIN_RADBROS.map(b => {
                 const got = have.includes(`g${b.id}`);
                 return (
                   <div key={b.id} className={`pin${got ? " got" : ""}`} style={{ borderColor: "#e8c24a", background: got ? "#e8c24a" : "transparent" }} title={`gold #${b.id}`}>
@@ -596,7 +596,7 @@ export function ResultsScreen({ onRetry, onTitle, onNext }: { onRetry: () => voi
                   </div>
                 );
               })}
-              <span className="total">GOLD {RADBROS.filter(b => have.includes(`g${b.id}`)).length}/{RADBROS.length}</span>
+              <span className="total">GOLD {PIN_RADBROS.filter(b => have.includes(`g${b.id}`)).length}/{PIN_RADBROS.length}</span>
             </div>
           )}
           <div className="rp-rbtns">

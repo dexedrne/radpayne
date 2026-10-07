@@ -687,7 +687,7 @@ npm run build:retardiopayne   # its production build in dist/ (VITE_GAME=retardi
 
 RadPayne is under the [Viral Public License](LICENSE), the same license as Milady, Remilio and
 react-three-game. Fork it, remix it, ship your own version, sell it; no credit needed. Anything made
-from it keeps the license. The four Radbros are also free to use on their own, as rigged and animated
+from it keeps the license. The Radbros are also free to use on their own, as rigged and animated
 models: [dexedrne/radbros-3d](https://github.com/dexedrne/radbros-3d).
 
 The license covers what is in this repo. It does not cover the Pockit Milady models: they are prnth's,
@@ -699,10 +699,16 @@ your own thing.
 - Built on [react-three-game](https://prnth.com/react-three-game/) by prnth, used with his permission.
 - The Milady gang are [Pockit](https://github.com/prnthh/Pockit) models by prnth, used with his
   permission. They load at runtime from one pinned commit and are not part of this repo.
-- Radbros #652, #4764, #2564 and #723 are dexedrne's own, used with permission from the Radbro Webring
+- Radbros #4764, #652, #3704, #3710, #723, #3171, #250 and #2564 are dexedrne's own, used with permission from the Radbro Webring
   dev. The models come from RadRun.
 - Retardio Cousin #555 and Retardio Classic #85 are dexedrne's own; their models are built on the
   Radbro rig.
 - Fonts: Bebas Neue by Dharma Type and Courier Prime by the Courier Prime Project Authors, under the
   SIL Open Font License 1.1 (the licences are next to the files in `public/fonts`).
 - By [@dexedrne](https://x.com/dexedrne).
+
+## Yellow and green Radbros
+
+RadPayne includes #3704 (yellow hair) and #3710 (green hair), with the same optimized bodies, locomotion, pistol and long-gun packs as the other picks. Their grips follow #723 through each hand’s bind offset; gait rates use each rig’s measured planted-foot stride. RetardioPayne keeps its two Retardios. The existing six placed pins keep their completion total.
+
+The main four (#4764, #652, #3704, #3710) lead the promotional art. Replaced share cards keep the previous image beside each file as `*.prev.jpg`; `public/ui/key-art.webp` is textless, and `public/ui/cartridge.webp` keeps all four centered in a square. Story panels retain #4764’s narrative.

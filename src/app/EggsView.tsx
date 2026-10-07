@@ -7,7 +7,7 @@
 //  - the RadRun arcade cabinet in room 2's vestibule: its screen pans the key art in attract mode under
 //    the club's bloom cap; E and it plays a jingle and the screen flashes. The react-three-game sticker
 //    on its side, and on a flight case in the coat room.
-//  - the dev photo wall behind room 3's false wall: six polaroids of the Radbros on cork, red string,
+//  - the dev photo wall behind room 3's false wall: the Radbros' polaroids on cork, red string,
 //    a red circle round the one being played; the labels are only the numbers.
 import { assetUrl } from "./assets.ts";
 import { useEffect, useMemo } from "react";
@@ -150,7 +150,7 @@ function build(m: Marker, playing: string): Built | null {
   if (egg === "photowall") {
     const board = new Mesh(new PlaneGeometry(1.7, 1.06), own(new MeshStandardMaterial({ map: cork(), roughness: 0.9, emissive: "#3a2a1a", emissiveIntensity: 0.4 })));
     root.add(board);
-    const spots: Array<[number, number]> = [[-0.58, 0.22], [0, 0.26], [0.58, 0.2], [-0.52, -0.25], [0.04, -0.22], [0.6, -0.27]];
+    const spots: Array<[number, number]> = RADBROS.map((_, i) => [(i % 4 - 1.5) * 0.4, 0.24 - Math.floor(i / 4) * 0.48]);
     RADBROS.forEach((b, i) => {
       const p = polaroid(b.id, b.id === playing);
       p.position.set(spots[i][0], spots[i][1], 0.012 + i * 0.001);
@@ -159,7 +159,7 @@ function build(m: Marker, playing: string): Built | null {
     });
     // red string between the photos (flat on the cork)
     const red = own(new MeshBasicMaterial({ color: "#b3121b" }));
-    const links: Array<[number, number]> = [[0, 1], [1, 2], [0, 4], [4, 5], [3, 4], [1, 5]];
+    const links: Array<[number, number]> = [[0, 1], [1, 2], [0, 4], [4, 5], [3, 4], [1, 5], [2, 6], [5, 7]];
     for (const [a, b] of links) {
       const [ax, ay] = spots[a], [bx, by] = spots[b];
       const len = Math.hypot(bx - ax, by - ay);
