@@ -1,3 +1,4 @@
+import { isPhone } from './phone.ts';
 import { lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import PlayPage from "./app/PlayPage.tsx";
@@ -11,6 +12,9 @@ window.addEventListener("unhandledrejection", e => console.error("[unhandledreje
 
 // RadPayne or RetardioPayne (product.ts): the palette's data-game, and a dev page's ?game= title and icon.
 applyBrand();
+const phoneLayout = () => { document.documentElement.toggleAttribute('data-phone', isPhone()); };
+phoneLayout();
+addEventListener('vyvanse:device', phoneLayout);
 // Framed on radbro.fun: tell the portal what this is; the first click focuses the frame + unlocks the audio.
 startBridge({ onFirstGesture: unlockAudio });
 // the last device used (keys / a pad, and which pad) decides every prompt; pads hot-plug

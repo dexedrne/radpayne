@@ -424,3 +424,21 @@
 :root[data-game="retardiopayne"] .rp-tag { border-left-color: var(--rt-blue); }
 :root[data-game="retardiopayne"] .rp-tbc { color: var(--ink); }
 :root[data-game="retardiopayne"] .rp-ctx b.p { color: var(--rt-blush); }
+
+/* The launcher already insets its iframe; standalone Safari supplies these env values. */
+:root[data-phone] #root, :root[data-phone] .rp-layer {
+  inset: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+:root[data-phone] .rp-layer { overflow: auto; }
+:root[data-phone] .rp-title { width: calc(100% - 32px); padding: 16px 0; }
+:root[data-phone] .rp-wordmark { font-size: clamp(48px, 10vw, 76px); }
+:root[data-phone] .rp-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+:root[data-phone] .rp-card img { width: 64px; min-height: 92px; }
+:root[data-phone] .rp-card .d { font-size: 13px; }
+:root[data-phone] .rp-row { gap: 12px; }
+:root[data-phone] .rp-title-hint { flex-wrap: wrap; }
+:root[data-phone] .rp-controls { grid-template-columns: 1fr; }
+:root[data-phone] .rp-menu-page { margin: auto; flex-wrap: wrap; padding: 12px; }
+:root[data-phone] .rp-menu-col, :root[data-phone] .rp-settings, :root[data-phone] .rp-loading { width: min(440px, calc(100vw - 48px)); box-sizing: border-box; }
+:root[data-phone] .rp-page { width: calc(100% - 24px); display: block; margin: auto; }
+:root[data-phone] .rp-mbtn, :root[data-phone] .rp-seg button { min-height: 44px; touch-action: manipulation; }

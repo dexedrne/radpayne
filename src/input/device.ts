@@ -1,3 +1,4 @@
+import { getPads, isPhone } from '../phone.ts';
 // The last-used device decides the prompts: a pad button or a stick push shows that pad's glyphs
 // (PlayStation for a Sony pad, else Xbox), a key, a click or a real mouse move goes back to the keys.
 // Also which pad is "the" pad: the one last used (a DualSense on Linux can list its motion sensors as a
@@ -16,8 +17,7 @@ let activeIndex = -1;
 
 function listPads(): Gamepad[] {
   try {
-    const nav = typeof navigator !== "undefined" ? navigator : null;
-    const pads = nav && typeof nav.getGamepads === "function" ? nav.getGamepads() : [];
+    const pads = getPads();
     return Array.from(pads ?? []).filter((p): p is Gamepad => !!p && p.connected);
   } catch {
     return [];
@@ -70,6 +70,7 @@ export function watchDevices(): () => void {
     const pads = listPads();
     const connected = pads.length > 0;
     if (connected !== useDevice.getState().connected) useDevice.setState({ connected, ...(connected ? {} : { device: "kbm" as Device }) });
+    if (connected && isPhone() && !useDevice.getState().id) notePad(activePad()!);
     for (const p of pads) {
       if (p.mapping !== "standard" && pads.some(q => q.mapping === "standard")) continue;
       const busy = padBusy(p);
@@ -89,6 +90,7 @@ export function watchDevices(): () => void {
   const plug = () => {
     const pads = listPads();
     if (!pads.length) { activeIndex = -1; useDevice.setState({ connected: false, device: "kbm" }); }
+    else if (isPhone()) notePad(activePad()!);
     else useDevice.setState({ connected: true });
   };
   addEventListener("keydown", key, true);
