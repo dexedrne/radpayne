@@ -1,3 +1,4 @@
+import { isPhone } from '../phone.ts';
 // Phones and tablets (an iPad, an iPhone, an Android phone or tablet): the lighter path. Their first visit
 // starts on the Low graphics (look/gfx.ts; a choice they make is kept), the canvas stays at MOBILE_DPR
 // pixels a point at most whatever the Resolution, and the characters wear lighter materials (lit by the
@@ -35,7 +36,8 @@ function detect(): { mobile: boolean; why: string } {
 
 const found = detect();
 /** A phone or a tablet (this page load). */
-export const MOBILE = found.mobile;
+export let MOBILE = found.mobile || isPhone();
+if (typeof window !== 'undefined') addEventListener('vyvanse:device', () => { MOBILE = found.mobile || isPhone(); });
 /** Why (the console's line). */
 export const MOBILE_WHY = found.why;
 

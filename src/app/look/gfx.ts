@@ -1,3 +1,4 @@
+import { isPhone } from '../../phone.ts';
 // Graphics settings (pause menu > Display, and the title's GRAPHICS row): a preset (Low / Medium /
 // High / Cinematic) plus the individual controls it sets. Changing a control by hand makes the preset
 // "custom". Everything applies live; persisted as localStorage radpayne.gfx (JSON).
@@ -101,6 +102,7 @@ type Store = { getItem(k: string): string | null };
  *  backend. */
 export function initialGfx(search: string, st: Store | null, webgl2 = false, mobile = false): Gfx {
   const q = new URLSearchParams(search);
+  if (q.get('device') === 'phone') return fromPreset('low');
   const gp = q.get("gfx");
   if (gp && (PRESET_ORDER as readonly string[]).includes(gp)) return fromPreset(gp as Preset);
   if (q.get("q") === "low") return fromPreset("low");
@@ -134,6 +136,7 @@ function storage(): Storage | null {
 }
 
 export const useGfx = create<Gfx>(() => initialGfx(typeof location === "undefined" ? "" : location.search, storage(), typeof location !== "undefined" && webgl2Likely(), MOBILE));
+if (typeof window !== 'undefined') addEventListener('vyvanse:device', () => { if (isPhone()) useGfx.setState(fromPreset('low')); });
 if (MOBILE) console.info(`[gfx] a phone or a tablet (${MOBILE_WHY}): ${useGfx.getState().preset}${useGfx.getState().preset === DEFAULT_MOBILE ? "" : " (saved)"}, the canvas at ${MOBILE_DPR} px a point at most`);
 
 /** The renderer came up (Scene): a WebGPU browser that fell back to WebGL2 gets the WebGL2 default,
@@ -164,6 +167,7 @@ export function rebuildsShaders(a: Omit<Gfx, "preset">, b: Omit<Gfx, "preset">, 
 }
 
 export function setPreset(p: Preset): void {
+  if (isPhone()) { useGfx.setState(fromPreset('low')); return; }
   chosen = true;
   const g = fromPreset(p);
   useGfx.setState(g);
@@ -172,6 +176,7 @@ export function setPreset(p: Preset): void {
 
 /** One control by hand (the preset becomes whatever it now matches, usually "custom"). */
 export function setGfx<K extends "bloom" | "reflections" | "rain" | "res">(k: K, v: Gfx[K]): void {
+  if (isPhone()) return;
   chosen = true;
   const cur = useGfx.getState();
   const next = { ...cur, [k]: v };

@@ -1,3 +1,4 @@
+import { isPhone } from '../phone.ts';
 // Title (Radbro pick, difficulty, graphics preset, controls, credits), loading, pause + settings and results
 // screens: React DOM over the canvas in the noir-comic style (ink plates, cream captions, keycaps).
 // The canvas behind them is dimmed / blurred by PlayPage (canvasFx). Keyboard and gamepad work
@@ -148,6 +149,7 @@ function OtherGame() {
 
 export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean }) {
   const radbro = useUi(s => s.radbro);
+  const phonePad = useDevice(s => s.connected);
   const diff = useUi(s => s.difficulty);
   const preset = useGfx(s => s.preset);
   const fonts = useFontsReady();
@@ -224,6 +226,7 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
             </button>
           )}
         </div>
+        {isPhone() && !phonePad && <p data-phone-pad-only>Connect a controller to play. Touch works in the menus; aiming uses the right stick.</p>}
         <KeyList className="rp-controls" />
         <div className="rp-credits">
           desktop: keyboard + mouse, or a gamepad (PlayStation or Xbox). built on{" "}

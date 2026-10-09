@@ -122,3 +122,11 @@ test("matrices: walked once for a frame of passes, and not under a hidden actor 
   assert.throws(() => renderFrame(scene, () => { throw new Error("x"); }));
   assert.equal(scene.matrixWorldAutoUpdate, true);
 });
+
+test('launcher phone profile overrides saved and URL graphics', () => {
+  const saved = store({ 'radpayne.gfx': JSON.stringify(PRESETS.high) });
+  const g = initialGfx('?device=phone&gfx=cinematic', saved, false, false);
+  assert.equal(g.preset, 'low');
+  assert.equal(g.reflections, 'off');
+  assert.equal(g.lite, true);
+});
