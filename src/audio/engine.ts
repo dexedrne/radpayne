@@ -115,8 +115,13 @@ export function unlockAudio(): void {
       }
       eng = { ac, master, musicIn, musicFilter, duck, musicGain, sfxGain, voiceGain, talk, noise };
       applyVolumes();
-      // Tab hidden = suspend (the game pauses too); back = resume unless muted.
+      // Tab hidden = suspend (the game pauses too); back = resume unless muted. A phone call on iOS
+      // sets the context "interrupted": resume it as soon as it is allowed again.
       document.addEventListener("visibilitychange", () => { hidden = document.hidden; sync(); });
+      ac.addEventListener?.("statechange", () => {
+        const state = ac.state as string;
+        if ((state === "interrupted" || state === "suspended") && wantRunning()) sync();
+      });
       hidden = document.hidden;
       // Some browsers only resume inside a gesture: retry on the next one.
       const retry = () => sync();

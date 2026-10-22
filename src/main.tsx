@@ -1,4 +1,6 @@
 import { isPhone } from './phone.ts';
+import { markDevice } from './ui/mobile.ts';
+import { installViewport } from './ui/viewport.ts';
 import { lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import PlayPage from "./app/PlayPage.tsx";
@@ -12,8 +14,11 @@ window.addEventListener("unhandledrejection", e => console.error("[unhandledreje
 
 // RadPayne or RetardioPayne (product.ts): the palette's data-game, and a dev page's ?game= title and icon.
 applyBrand();
-const phoneLayout = () => { document.documentElement.toggleAttribute('data-phone', isPhone()); };
+const phoneLayout = () => markDevice(isPhone());
 phoneLayout();
+// the viewport shell (Safari's toolbar, rotation, a return from the background) is installed before the
+// first frame; the launcher's device tell can change the phone layout later.
+installViewport();
 addEventListener('vyvanse:device', phoneLayout);
 // Framed on radbro.fun: tell the portal what this is; the first click focuses the frame + unlocks the audio.
 startBridge({ onFirstGesture: unlockAudio });

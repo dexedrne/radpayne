@@ -19,6 +19,11 @@
   --dmg: var(--red);
   --s: 1;
   --m: 28px;
+  /* the hardware's own margins (index.html reads them from env(); a test may stand values in) */
+  --sai-top: env(safe-area-inset-top, 0px);
+  --sai-right: env(safe-area-inset-right, 0px);
+  --sai-bottom: env(safe-area-inset-bottom, 0px);
+  --sai-left: env(safe-area-inset-left, 0px);
   --display: "Bebas Neue", Impact, "Arial Narrow", sans-serif;
   --type: "Courier Prime", "Courier New", monospace;
 }
@@ -73,7 +78,7 @@
 .rp-fxl { position: fixed; inset: 0; pointer-events: none; }
 
 /* top-left: room tag, tally, objective */
-.rp-tl { position: fixed; left: var(--m); top: var(--m); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; max-width: 560px; z-index: 10; }
+.rp-tl { position: fixed; left: calc(var(--m) + var(--sai-left)); top: calc(var(--m) + var(--sai-top)); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; max-width: min(560px, calc(100vw - 2 * var(--m) - var(--sai-left) - var(--sai-right))); z-index: 10; }
 .rp-tally { display: flex; gap: 4px; align-items: center; background: var(--panel-bg); padding: 5px 12px 5px 8px; outline: 2px solid var(--ink); box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6); }
 .rp-tally svg { width: 26px; height: 26px; overflow: visible; display: block; }
 .rp-tally .flip { animation: rp-flip 200ms linear; }
@@ -86,7 +91,7 @@
 .rp-obj.hide { opacity: 0; }
 
 /* bottom-left strip */
-.rp-strip { position: fixed; left: var(--m); bottom: var(--m); display: flex; gap: 8px; align-items: stretch; z-index: 10; }
+.rp-strip { position: fixed; left: calc(var(--m) + var(--sai-left)); bottom: calc(var(--m) + var(--sai-bottom)); display: flex; gap: 8px; align-items: stretch; z-index: 10; }
 .rp-strip .rp-panel { transition: border-color 150ms, box-shadow 150ms; }
 .rp-tank { width: 150px; height: 150px; display: flex; align-items: flex-end; gap: 8px; padding: 12px 12px 12px 14px; }
 .rp-tank .read { display: flex; flex-direction: column; gap: 6px; padding-bottom: 2px; }
@@ -119,12 +124,12 @@
 .rp-cans .pop { animation: rp-pop 200ms ease-out; }
 .rp-cans .drain { animation: rp-drain 250ms linear forwards; }
 .rp-cans.red .empty { animation: rp-redflash 200ms steps(1, end); }
-.rp-nudge { position: fixed; left: var(--m); bottom: calc(var(--m) + 212px); z-index: 11; transition: opacity 150ms; }
+.rp-nudge { position: fixed; left: calc(var(--m) + var(--sai-left)); bottom: calc(var(--m) + var(--sai-bottom) + 212px); z-index: 11; transition: opacity 150ms; }
 .rp-nudge .rp-cap { font-size: 20px; padding: 8px 12px; animation: rp-in-left 180ms ease-out; }
 .rp-nudge.hide { opacity: 0; }
 
 /* bottom-right: tabs + ammo */
-.rp-br { position: fixed; right: var(--m); bottom: var(--m); display: flex; flex-direction: column; align-items: flex-end; gap: 8px; z-index: 10; }
+.rp-br { position: fixed; right: calc(var(--m) + var(--sai-right)); bottom: calc(var(--m) + var(--sai-bottom)); display: flex; flex-direction: column; align-items: flex-end; gap: 8px; z-index: 10; }
 .rp-slots { display: flex; gap: 6px; }
 .rp-slot { font: 400 18px/1 var(--display); letter-spacing: 1.5px; padding: 5px 9px 3px; border: 2px solid var(--ink); background: var(--panel-bg); color: rgba(243, 234, 216, 0.85); white-space: nowrap; position: relative; }
 .rp-slot.cur { background: var(--paper); color: var(--ink); animation: rp-tabpop 150ms ease-out; }
@@ -165,8 +170,8 @@
 .rp-reload .bar i { display: block; height: 100%; background: var(--sand); }
 
 /* bottom centre: subtitle + hint row */
-.rp-sub { position: fixed; left: 50%; bottom: 34px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; width: 780px; z-index: 11; transition: opacity 150ms; }
-.rp-sub.narrow { bottom: 212px; }
+.rp-sub { position: fixed; left: 50%; bottom: calc(34px + var(--sai-bottom)); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; width: 780px; max-width: calc(100vw - 2 * var(--m) - var(--sai-left) - var(--sai-right)); z-index: 11; transition: opacity 150ms; }
+.rp-sub.narrow { bottom: calc(212px + var(--sai-bottom)); }
 .rp-sub .rp-cap { font-size: 22px; text-align: center; max-width: 100%; transition: opacity 150ms; }
 .rp-sub .rp-cap.hide { opacity: 0; }
 .rp-hint { display: flex; align-items: center; gap: 8px; background: var(--ink); padding: 6px 10px; outline: 2px solid var(--ink); font: 700 17px/1 var(--type); color: var(--paper); white-space: nowrap; }
@@ -223,7 +228,8 @@
 .rp-kc .prog-bg { position: fixed; left: 0; right: 0; bottom: calc(11vh - 5px); height: 5px; background: rgba(243, 234, 216, 0.18); }
 
 /* ---------- menus ---------- */
-.rp-layer { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; color: var(--paper); font: 700 17px/1.4 var(--type); }
+.rp-layer { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; box-sizing: border-box; padding: var(--sai-top) var(--sai-right) var(--sai-bottom) var(--sai-left); touch-action: pan-y; overscroll-behavior: contain; color: var(--paper); font: 700 17px/1.4 var(--type); }
+.rp-layer button, .rp-layer a, .rp-layer input { touch-action: manipulation; }
 .rp-dim { position: absolute; inset: 0; background: rgba(5, 6, 12, 0.55); }
 .rp-menu-page { position: relative; display: flex; justify-content: center; align-items: flex-start; gap: 28px; }
 .rp-menu-col { display: flex; flex-direction: column; gap: 12px; width: 440px; }
@@ -242,7 +248,7 @@
 .rp-mbtn:disabled { opacity: 0.5; cursor: default; }
 .rp-mbtn:focus { outline-offset: 0; }
 .rp-confirm { font-size: 20px; }
-.rp-settings { width: 660px; padding: 0 24px 18px; display: flex; flex-direction: column; gap: 4px; max-height: calc(100vh - 32px); overflow-y: auto; }
+.rp-settings { width: 660px; padding: 0 24px 18px; display: flex; flex-direction: column; gap: 4px; max-height: calc(100dvh - var(--sai-top) - var(--sai-bottom) - 32px); overflow-y: auto; }
 /* on a short screen the panel scrolls; its rows keep their height (they never squeeze over each other) */
 .rp-settings .rp-set, .rp-settings h3, .rp-settings .rp-tabs, .rp-settings .rp-foot-hint { flex-shrink: 0; }
 .rp-tabs { display: flex; margin: 0 -24px 8px; border-bottom: 3px solid var(--paper); }
@@ -425,20 +431,83 @@
 :root[data-game="retardiopayne"] .rp-tbc { color: var(--ink); }
 :root[data-game="retardiopayne"] .rp-ctx b.p { color: var(--rt-blush); }
 
-/* The launcher already insets its iframe; standalone Safari supplies these env values. */
-:root[data-phone] #root, :root[data-phone] .rp-layer {
-  inset: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
-}
-:root[data-phone] .rp-layer { overflow: auto; }
+/* On a phone the canvas runs edge to edge under the island and the home indicator (the HUD and the
+   menus keep clear of them above); the launcher's iframe is already inset; standalone Safari supplies
+   these env values. */
+:root[data-phone] .rp-layer { overflow: auto; -webkit-overflow-scrolling: touch; }
 :root[data-phone] .rp-title { width: calc(100% - 32px); padding: 16px 0; }
 :root[data-phone] .rp-wordmark { font-size: clamp(48px, 10vw, 76px); }
-:root[data-phone] .rp-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-:root[data-phone] .rp-card img { width: 64px; min-height: 92px; }
-:root[data-phone] .rp-card .d { font-size: 13px; }
+:root[data-phone] .rp-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+/* four rows of two: 84 rather than 92 keeps the last row and PLAY above the fold on a 932-point screen */
+:root[data-phone] .rp-card img { width: 64px; min-height: 84px; }
+:root[data-phone] .rp-card .d { font-size: 13px; line-height: 1.2; }
 :root[data-phone] .rp-row { gap: 12px; }
 :root[data-phone] .rp-title-hint { flex-wrap: wrap; }
 :root[data-phone] .rp-controls { grid-template-columns: 1fr; }
 :root[data-phone] .rp-menu-page { margin: auto; flex-wrap: wrap; padding: 12px; }
 :root[data-phone] .rp-menu-col, :root[data-phone] .rp-settings, :root[data-phone] .rp-loading { width: min(440px, calc(100vw - 48px)); box-sizing: border-box; }
 :root[data-phone] .rp-page { width: calc(100% - 24px); display: block; margin: auto; }
-:root[data-phone] .rp-mbtn, :root[data-phone] .rp-seg button { min-height: 44px; touch-action: manipulation; }
+/* the menu is drawn at --s (0.72-0.86 on a phone): ask for the height before that zoom, so a button
+   still measures a full 44 points under the thumb */
+:root[data-phone] .rp-mbtn, :root[data-phone] .rp-seg button { min-height: calc(44px / var(--s)); touch-action: manipulation; }
+:root[data-phone] .rp-settings { max-height: calc(100dvh - var(--sai-top) - var(--sai-bottom) - 32px); }
+.rp-fs-hint, [data-phone-pad-only] {
+  margin: 10px 0 0; max-width: 780px; padding: 10px 14px; box-sizing: border-box;
+  background: rgba(11, 10, 13, 0.72); border-left: 5px solid var(--pink);
+  font: 700 16px/1.35 var(--type); color: var(--paper);
+}
+
+/* A landscape phone is 390-450 points tall: the title has to fit that, and the controls list, the
+   credits and the other game's link wait below the fold instead of pushing PLAY off the screen. */
+@media (orientation: landscape) and (max-height: 540px) {
+  :root[data-phone] .rp-title { width: calc(100% - 24px); padding: 6px 0; }
+  :root[data-phone] .rp-wordmark { font-size: clamp(34px, 6.5vw, 52px); }
+  :root[data-phone] .rp-cutbadge { font-size: 20px; margin-bottom: 8px; }
+  :root[data-phone] .rp-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 8px; }
+  :root[data-phone] .rp-card img { width: 44px; min-height: 56px; }
+  :root[data-phone] .rp-card .d, :root[data-phone] .rp-controls, :root[data-phone] .rp-credits, :root[data-phone] .rp-other, :root[data-phone] .rp-cutnote, :root[data-phone] .rp-title-hint { display: none; }
+  :root[data-phone] .rp-row { gap: 10px; margin-bottom: 8px; }
+  :root[data-phone] .rp-play { min-width: 190px; font-size: 32px; padding: 8px 16px 6px; }
+  :root[data-phone] .rp-menu-page { gap: 12px; padding: 6px; }
+  :root[data-phone] .rp-menu-col { width: min(400px, calc(100vw - 32px)); }
+  :root[data-phone] .rp-settings { max-height: calc(100dvh - var(--sai-top) - var(--sai-bottom) - 12px); }
+}
+
+/* No number row on a phone: the weapon is named in the ammo plate and the ◀/▶ thumb buttons change it. */
+:root[data-touch] .rp-slots { display: none; }
+
+/* The on-screen controls own the bottom ~300 px while playing on a touch screen. In portrait the
+   bottom HUD stacks down from under the top-left objective instead: ammo, then the health/copium
+   strip, then the narrator's caption and the hint, all above the thumbs. The
+   bottom offsets are divided by --s because those layers are zoomed and the thumbs are not. */
+@media (orientation: portrait) {
+  :root[data-touch] .rp-br { top: calc(var(--sai-top) + 110px); bottom: auto; }
+  :root[data-touch] .rp-strip { top: calc(var(--sai-top) + 294px); bottom: auto; }
+  :root[data-touch] .rp-sub, :root[data-touch] .rp-sub.narrow { top: auto; bottom: calc((10px + var(--sai-bottom) + 282px) / var(--s)); }
+  :root[data-touch] .rp-nudge { top: auto; bottom: calc((10px + var(--sai-bottom) + 338px) / var(--s)); }
+}
+
+@media (orientation: landscape) {
+  /* wide: the bottom-left and bottom-right HUD go to the top corners (the tally is top-left; the
+     ammo top-right), and the thumbs' corners stay clear */
+  :root[data-touch] .rp-strip { top: calc(var(--m) + var(--sai-top) + 84px); bottom: auto; }
+  /* the ammo sits on the top edge: the thumb's tool grid starts 155 px down, and the slot tabs (which
+     the phone never presses) would push the panel into it */
+  :root[data-touch] .rp-br { top: calc(var(--sai-top) + 4px); bottom: auto; }
+  :root[data-touch] .rp-sub, :root[data-touch] .rp-sub.narrow { bottom: calc(var(--sai-bottom) + 132px); }
+  :root[data-touch] .rp-nudge { top: calc(var(--m) + var(--sai-top) + 170px); bottom: auto; }
+  /* the top-right corner now belongs to the ammo; a thumb reaches Pause at the bottom centre */
+  :root[data-touch] .rp-tbtn.pause { top: auto; right: auto; left: 50%; bottom: calc(10px + var(--sai-bottom)); transform: translateX(-50%); }
+}
+
+/* On a short landscape phone (393-400 px tall) the ammo's two bullet rows would reach down into the
+   tool grid; the count and the RELOAD thumb carry the same information, so drop the rows there. */
+@media (orientation: landscape) and (max-height: 400px) {
+  :root[data-touch] .rp-ammo .row { display: none; }
+}
+
+/* A dual-screen phone (a Surface Duo or a fold): the HUD keeps off the hinge and uses one segment. */
+@media (horizontal-viewport-segments: 2), (vertical-viewport-segments: 2) {
+  :root[data-dual] .rp-tl { left: calc(env(viewport-segment-left 0 0, 0px) + var(--m) + var(--sai-left)); }
+  :root[data-dual] .rp-br { right: calc(100vw - env(viewport-segment-right 1 0, 100vw) + var(--m) + var(--sai-right)); }
+}

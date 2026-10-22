@@ -1,0 +1,61 @@
+/* The on-screen thumbs (TouchControls.tsx). Everything here is pointer-driven and sits inside the safe
+   area; the HUD moves up while these are mounted (tokens.css), so a thumb never covers ammo or health. */
+.rp-touch { position: fixed; inset: 0; z-index: 12; pointer-events: none; touch-action: none; -webkit-user-select: none; user-select: none; }
+.rp-touch button { font-family: var(--display); letter-spacing: 1px; -webkit-tap-highlight-color: transparent; touch-action: none; }
+
+/* the right half drags the view; buttons above it take their own pointers */
+.rp-touch-look { position: absolute; top: 0; right: 0; bottom: 0; width: 52%; pointer-events: auto; touch-action: none; }
+
+.rp-stick {
+  position: absolute; z-index: 2; pointer-events: auto; touch-action: none;
+  left: calc(14px + var(--sai-left)); bottom: calc(14px + var(--sai-bottom));
+  width: 136px; height: 136px; border-radius: 50%;
+  border: 2px solid rgba(243, 234, 216, 0.42);
+  background: radial-gradient(circle at 50% 50%, rgba(11, 10, 13, 0.42) 0 38%, rgba(11, 10, 13, 0.2) 40% 100%);
+  box-shadow: inset 0 0 0 2px rgba(11, 10, 13, 0.5);
+}
+.rp-stick::before { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: rgba(243, 234, 216, 0.5); }
+.rp-stick-knob {
+  position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px; border-radius: 50%;
+  background: rgba(243, 234, 216, 0.18); border: 2.5px solid rgba(243, 234, 216, 0.72);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); pointer-events: none;
+}
+
+.rp-thumb {
+  position: absolute; z-index: 2; right: calc(10px + var(--sai-right)); bottom: calc(10px + var(--sai-bottom));
+  width: 220px; height: 274px; pointer-events: none;
+}
+.rp-tbtn {
+  position: absolute; pointer-events: auto; box-sizing: border-box; padding: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  color: var(--paper); background: rgba(11, 10, 13, 0.62);
+  border: 2.5px solid rgba(243, 234, 216, 0.62); border-radius: 50%;
+  font: 400 14px/1 var(--display); letter-spacing: 1px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.55); -webkit-user-select: none; user-select: none;
+}
+.rp-tbtn:active, .rp-tbtn[data-on] { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+.rp-tbtn.fire { right: 0; bottom: 0; width: 84px; height: 84px; font-size: 18px; border-color: var(--pink); }
+.rp-tbtn.aim { right: 92px; bottom: 8px; width: 62px; height: 62px; font-size: 13px; }
+.rp-tbtn.jump { right: 2px; bottom: 92px; width: 56px; height: 56px; font-size: 12px; }
+.rp-tools { position: absolute; right: 0; bottom: 156px; width: 264px; display: grid; grid-template-columns: repeat(5, 48px); gap: 6px; }
+.rp-tools .rp-tbtn { position: relative; width: 48px; height: 48px; border-radius: 12px; font-size: 10.5px; letter-spacing: 0.5px; }
+.rp-tbtn.pause {
+  position: absolute; z-index: 3; top: calc(10px + var(--sai-top)); right: calc(10px + var(--sai-right));
+  width: 46px; height: 46px; border-radius: 12px; font-size: 15px; letter-spacing: 0;
+}
+
+/* a shallow landscape phone (430 points): the thumb clusters come in a little, still 44 px a button */
+@media (max-height: 480px) {
+  .rp-stick { width: 118px; height: 118px; }
+  .rp-stick-knob { width: 50px; height: 50px; margin: -25px; }
+  .rp-thumb { height: 252px; }
+  .rp-tbtn.fire { width: 78px; height: 78px; }
+  .rp-tbtn.aim { right: 86px; width: 58px; height: 58px; }
+  .rp-tbtn.jump { bottom: 84px; width: 52px; height: 52px; }
+  .rp-tools { bottom: 142px; grid-template-columns: repeat(5, 48px); gap: 6px; }
+}
+
+/* a dual-screen phone: the thumbs stay on the screen's own outer edges, clear of the hinge */
+@media (horizontal-viewport-segments: 2) {
+  .rp-stick { left: calc(env(viewport-segment-left 1 0, 0px) + 14px + var(--sai-left)); }
+}

@@ -403,7 +403,10 @@ export function CameraView({ s }: { s: Session }) {
     tmp.fov += (fovWant - tmp.fov) * Math.min(1, (p.zoom || fovWant === FOV_SCOPE ? 30 : 8) * dt);
     s.input.fovK = p.zoom ? Math.tan((tmp.fov * Math.PI) / 360) / Math.tan((FOV * Math.PI) / 360) : 1;
     if (!adsOn) tmp.ads = 0;
-    const fovNow = tmp.fov * (1 - tmp.ads * (1 - FOV_AIM / FOV)) * (1 - pk * PUNCH.zoom);
+    // a phone held upright: the window is narrow across, so the lens opens a little (the fight stays a
+    // fight, not a slot); a landscape or desktop window (aspect >= 1) is untouched
+    const portraitK = cam instanceof PerspectiveCamera && cam.aspect < 1 ? Math.min(1.22, 1 + (1 - cam.aspect) * 0.35) : 1;
+    const fovNow = tmp.fov * portraitK * (1 - tmp.ads * (1 - FOV_AIM / FOV)) * (1 - pk * PUNCH.zoom);
     camView.fov = fovNow;
     camView.aim = tmp.ads;
     if (cam instanceof PerspectiveCamera && Math.abs(cam.fov - fovNow) > 0.01) {

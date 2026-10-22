@@ -20,6 +20,12 @@ import { BTN, lookCurve, radial, readPad } from "./pad.ts";
 
 /** Radians per mouse pixel at sensitivity 1. */
 const MOUSE_K = 0.0022;
+/** Radians per pixel of a thumb drag on the glass (the right thumb's look area). */
+const TOUCH_K = 0.0032;
+
+/** The on-screen buttons (TouchControls.tsx). */
+export type TouchButton =
+  | "fire" | "aim" | "jump" | "dodge" | "reload" | "bt" | "melee" | "nade" | "interact" | "copium" | "cover" | "prev" | "next";
 /** Gamepad right stick: radians per second at full tilt (sensitivity 1). */
 const PAD_YAW = 4;
 const PAD_PITCH = 2.75;
@@ -49,6 +55,9 @@ export class InputLatch {
   rmb = false;
   /** What drove the aim last: the mouse / keys or the pad (the assist is the pad's only). */
   via: "kbm" | "pad" = "kbm";
+  /** The on-screen thumbs (a touch screen): the left stick's vector (down positive, as the pad's), the
+   *  right thumb's drag, and the buttons held. They feed the same frame as the keys and the pad. */
+  readonly touch = { mx: 0, my: 0, fire: false, aim: false, melee: false, nade: false };
   private edges = { bt: false, dodge: false, jump: false, reload: false, copium: false, skip: false, slot: 0, melee: false, throw: false, interact: false, cover: false, stow: false };
   /** In cover (the game sets it): right mouse pops him out while held instead of toggling bullet time. */
   coverMode = false;
@@ -109,6 +118,52 @@ export class InputLatch {
     this.via = "kbm";
     this.edges.slot = dy > 0 ? 9 : 8; // 8 = previous, 9 = next (the game maps them)
   }
+  /** The on-screen stick: x right, y down, each -1..1 (out of the thumbstick's dead zone). */
+  touchMove(x: number, y: number): void {
+    const l = Math.hypot(x, y);
+    const k = l > 1 ? 1 / l : 1;
+    this.touch.mx = x * k;
+    this.touch.my = y * k;
+  }
+  /** The right thumb's drag: pixels since the last move, the same aim as the mouse (a little faster: a
+   *  thumb travels less than a mouse, and the frame is under it). */
+  touchLook(dx: number, dy: number): void {
+    if (Math.abs(dx) + Math.abs(dy) < 0.01) return;
+    const k = TOUCH_K * this.sensitivity * this.fovK;
+    this.yaw -= dx * k;
+    this.pitch -= dy * k * (this.invertY ? -1 : 1);
+    this.clampPitch();
+  }
+  /** A touch button went down. */
+  touchDown(b: TouchButton): void {
+    this.anyPress = true;
+    this.edges.skip = true;
+    switch (b) {
+      case "fire": this.touch.fire = true; break;
+      case "aim": this.touch.aim = true; break;
+      case "melee": this.touch.melee = true; this.edges.melee = true; break;
+      case "nade": this.touch.nade = true; this.edges.throw = true; break;
+      case "jump": this.edges.jump = true; break;
+      case "dodge": this.edges.dodge = true; break;
+      case "reload": if (this.useHere) this.edges.interact = true; else this.edges.reload = true; break;
+      case "interact": this.edges.interact = true; break;
+      case "bt": this.edges.bt = true; break;
+      case "copium": this.edges.copium = true; break;
+      case "cover": this.edges.cover = true; break;
+      case "next": this.edges.slot = 9; break;
+      case "prev": this.edges.slot = 8; break;
+    }
+  }
+  /** A touch button let go. */
+  touchUp(b: TouchButton): void {
+    switch (b) {
+      case "fire": this.touch.fire = false; break;
+      case "aim": this.touch.aim = false; break;
+      case "melee": this.touch.melee = false; break;
+      case "nade": this.touch.nade = false; break;
+      default: break;
+    }
+  }
   clear(): void {
     // G (or Triangle) let go by the focus loss or the pause, not by him: the frag goes back instead of
     // flying (kept through flush)
@@ -116,6 +171,8 @@ export class InputLatch {
     this.keys.clear();
     this.lmb = false;
     this.rmb = false;
+    this.touch.mx = this.touch.my = 0;
+    this.touch.fire = this.touch.aim = this.touch.melee = this.touch.nade = false;
   }
   private clampPitch(): void {
     this.pitch = this.pitch < PITCH_MIN ? PITCH_MIN : this.pitch > PITCH_MAX ? PITCH_MAX : this.pitch;
@@ -207,18 +264,18 @@ export class InputLatch {
     const f = this.frame;
     const kx = (this.keys.has("KeyD") || this.keys.has("ArrowRight") ? 1 : 0) - (this.keys.has("KeyA") || this.keys.has("ArrowLeft") ? 1 : 0);
     const ky = (this.keys.has("KeyW") || this.keys.has("ArrowUp") ? 1 : 0) - (this.keys.has("KeyS") || this.keys.has("ArrowDown") ? 1 : 0);
-    let mx = kx + this.pad.lx, my = ky - this.pad.ly;
+    let mx = kx + this.pad.lx + this.touch.mx, my = ky - this.pad.ly - this.touch.my;
     const l = Math.sqrt(mx * mx + my * my);
     if (l > 1) { mx /= l; my /= l; }
     f.moveX = mx;
     f.moveY = my;
     f.yaw = this.yaw;
     f.pitch = this.pitch;
-    f.fire = this.lmb || this.pad.fire;
-    f.zoom = this.zoomMode && (this.rmb || this.pad.aim);
-    f.guard = this.keys.has("KeyF") || this.pad.circle;
-    f.nade = this.keys.has("KeyG") || this.pad.triangle;
-    f.aim = this.rmb || this.pad.aim;
+    f.fire = this.lmb || this.pad.fire || this.touch.fire;
+    f.zoom = this.zoomMode && (this.rmb || this.pad.aim || this.touch.aim);
+    f.guard = this.keys.has("KeyF") || this.pad.circle || this.touch.melee;
+    f.nade = this.keys.has("KeyG") || this.pad.triangle || this.touch.nade;
+    f.aim = this.rmb || this.pad.aim || this.touch.aim;
     const e = this.edges;
     f.bt = e.bt; f.dodge = e.dodge; f.jump = e.jump; f.reload = e.reload; f.copium = e.copium; f.skip = e.skip; f.slot = e.slot;
     f.melee = e.melee; f.throw = e.throw; f.interact = e.interact; f.cover = e.cover; f.stow = e.stow;

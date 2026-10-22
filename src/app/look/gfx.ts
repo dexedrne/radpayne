@@ -26,7 +26,7 @@ import { isPhone } from '../../phone.ts';
 // device), where the canvas also stays at MOBILE_DPR pixels a point at most whatever the Resolution. Any of
 // them can pick any preset; a choice is saved.
 import { create } from "zustand";
-import { MOBILE, MOBILE_DPR, MOBILE_WHY } from "../../ui/mobile.ts";
+import { HIGH_END_PHONE, MOBILE, MOBILE_DPR, MOBILE_DPR_CAP, MOBILE_WHY } from "../../ui/mobile.ts";
 
 export type Preset = "low" | "medium" | "high" | "cinematic";
 export type Bloom = "off" | "subtle" | "original";
@@ -49,6 +49,9 @@ export const DEFAULT_PRESET: Preset = "high";
 export const DEFAULT_WEBGL2: Preset = "medium";
 /** The default on a phone or a tablet (ui/mobile.ts). */
 export const DEFAULT_MOBILE: Preset = "low";
+/** A recent full-size iPhone (ui/mobile.ts: a 3x screen 390 points or wider) starts on Medium: bloom,
+ *  the full crowd, the rain, at a 1.5 px-a-point canvas. Every other phone keeps Low. */
+export const DEFAULT_HIGH_END: Preset = "medium";
 
 /** Rain streaks drawn per setting (the mesh holds RAIN.max; thin is the default). */
 export const RAIN = { max: 2600, thin: 2600, light: 1100 } as const;
@@ -100,9 +103,9 @@ type Store = { getItem(k: string): string | null };
 /** The settings for this page load: URL overrides first (not saved), then the saved ones, then the
  *  old Effects / Quality settings, then the default for the device (a phone or a tablet: Low) or the
  *  backend. */
-export function initialGfx(search: string, st: Store | null, webgl2 = false, mobile = false): Gfx {
+export function initialGfx(search: string, st: Store | null, webgl2 = false, mobile = false, highEnd = false): Gfx {
   const q = new URLSearchParams(search);
-  if (q.get('device') === 'phone') return fromPreset('low');
+  if (q.get('device') === 'phone') return fromPreset(highEnd ? DEFAULT_HIGH_END : 'low');
   const gp = q.get("gfx");
   if (gp && (PRESET_ORDER as readonly string[]).includes(gp)) return fromPreset(gp as Preset);
   if (q.get("q") === "low") return fromPreset("low");
@@ -113,7 +116,7 @@ export function initialGfx(search: string, st: Store | null, webgl2 = false, mob
   if (saved) return saved;
   if (get("radpayne.quality") === "low") return fromPreset("low"); // Low has everything Clean had, too
   if (get("radpayne.fx") === "clean") return clean();
-  return fromPreset(mobile ? DEFAULT_MOBILE : webgl2 ? DEFAULT_WEBGL2 : DEFAULT_PRESET);
+  return fromPreset(mobile ? (highEnd ? DEFAULT_HIGH_END : DEFAULT_MOBILE) : webgl2 ? DEFAULT_WEBGL2 : DEFAULT_PRESET);
 }
 
 /** Whether this browser will run the WebGL2 fallback (no WebGPU, or ?webgl2). */
@@ -135,9 +138,9 @@ function storage(): Storage | null {
   }
 }
 
-export const useGfx = create<Gfx>(() => initialGfx(typeof location === "undefined" ? "" : location.search, storage(), typeof location !== "undefined" && webgl2Likely(), MOBILE));
-if (typeof window !== 'undefined') addEventListener('vyvanse:device', () => { if (isPhone()) useGfx.setState(fromPreset('low')); });
-if (MOBILE) console.info(`[gfx] a phone or a tablet (${MOBILE_WHY}): ${useGfx.getState().preset}${useGfx.getState().preset === DEFAULT_MOBILE ? "" : " (saved)"}, the canvas at ${MOBILE_DPR} px a point at most`);
+export const useGfx = create<Gfx>(() => initialGfx(typeof location === "undefined" ? "" : location.search, storage(), typeof location !== "undefined" && webgl2Likely(), MOBILE, HIGH_END_PHONE));
+if (typeof window !== 'undefined') addEventListener('vyvanse:device', () => { if (isPhone() && !chosen) useGfx.setState(fromPreset(HIGH_END_PHONE ? DEFAULT_HIGH_END : 'low')); });
+if (MOBILE) console.info(`[gfx] a phone or a tablet (${MOBILE_WHY}): ${useGfx.getState().preset}${HIGH_END_PHONE ? " (a recent full-size iPhone)" : ""}${useGfx.getState().preset === DEFAULT_MOBILE || useGfx.getState().preset === DEFAULT_HIGH_END ? "" : " (saved)"}, the canvas at ${MOBILE_DPR_CAP} px a point at most`);
 
 /** The renderer came up (Scene): a WebGPU browser that fell back to WebGL2 gets the WebGL2 default,
  *  unless the settings were saved or picked in the URL or on this page. */
@@ -167,7 +170,6 @@ export function rebuildsShaders(a: Omit<Gfx, "preset">, b: Omit<Gfx, "preset">, 
 }
 
 export function setPreset(p: Preset): void {
-  if (isPhone()) { useGfx.setState(fromPreset('low')); return; }
   chosen = true;
   const g = fromPreset(p);
   useGfx.setState(g);
@@ -176,7 +178,6 @@ export function setPreset(p: Preset): void {
 
 /** One control by hand (the preset becomes whatever it now matches, usually "custom"). */
 export function setGfx<K extends "bloom" | "reflections" | "rain" | "res">(k: K, v: Gfx[K]): void {
-  if (isPhone()) return;
   chosen = true;
   const cur = useGfx.getState();
   const next = { ...cur, [k]: v };
@@ -187,10 +188,10 @@ export function setGfx<K extends "bloom" | "reflections" | "rain" | "res">(k: K,
 
 /** Canvas pixel ratio for a resolution setting (100 % = the screen's own, capped at 1.75, or MOBILE_DPR on
  *  a phone or a tablet; 75 % never under one pixel per screen pixel, so the thin neon stays whole; 50 %
- *  the only one that goes under). */
-export function dprFor(res: Res, deviceRatio: number, mobile = MOBILE): number {
+ *  the only one that goes under). A recent full-size iPhone caps at HIGH_END_DPR instead. */
+export function dprFor(res: Res, deviceRatio: number, mobile = MOBILE, cap = MOBILE_DPR_CAP): number {
   const dr = deviceRatio || 1;
-  const full = Math.min(mobile ? MOBILE_DPR : 1.75, dr);
+  const full = Math.min(mobile ? cap : 1.75, dr);
   const r = full * (res / 100);
   return Math.max(0.5, res >= 75 ? Math.max(Math.min(1, dr), r) : r);
 }

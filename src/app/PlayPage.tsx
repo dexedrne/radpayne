@@ -56,6 +56,9 @@ import { IS_CUT } from "../product.ts";
 import { roomText } from "../ui/rooms.ts";
 import { bridge, roomResult } from "../radbro/bridge.ts";
 import { BossBar } from "../ui/hud/BossBar.tsx";
+import { TouchControls } from "../ui/TouchControls.tsx";
+import { TOUCH } from "../ui/mobile.ts";
+import { requestFullScreenIfAvailable } from "../ui/viewport.ts";
 import { MADAME } from "../sim/tuning.ts";
 import { COUNTESS } from "../sim/tuning2.ts";
 import { CHAPTERS, chapterOf, markCleared } from "../ui/chapters.ts";
@@ -83,6 +86,9 @@ const ROOM = params.get("room") ?? "room1";
 const EXTRA = DEV ? params.get("extra") ?? "" : "";
 /** Dev: ?still hides the "click to fight" veil (camera-marker screenshots without the bot). */
 const STILL = DEV && params.has("still");
+/** Dev: ?nowarm skips the off-frame shader warm-up (a software GL screenshot box compiles it for minutes;
+ *  the first visible frame compiles what it needs instead). */
+const NOWARM = DEV && params.has("nowarm");
 /** Dev: ?loadout=shotgun,sniper owns those weapons from the start (the last one in hand; any weapon id);
  *  ?grenades=N starts with N frags. */
 const LOADOUT = HOLDCHECK && HOLDCHECK !== "pistols" ? [HOLDCHECK] : (DEV ? params.get("loadout") ?? "" : "").split(",").filter((w): w is WeaponId => w in WEAPONS && w !== "pistols" && w !== "ak");
@@ -136,7 +142,7 @@ async function warmScene(onProgress?: (f: number) => void, settle = 3): Promise<
   renderGate.warming++;
   try {
     await frames(settle);
-    await warmLook({ onProgress });
+    if (!NOWARM) await warmLook({ onProgress });
   } finally {
     renderGate.warming--;
   }
@@ -275,6 +281,8 @@ export default function PlayPage() {
   const [padFight, setPadFightState] = useState(false);
   const padFightRef = useRef(false);
   const setPadFight = (on: boolean) => { padFightRef.current = on; setPadFightState(on); };
+  /** A gamepad is the last device: the on-screen thumbs step aside for it. */
+  const padOn = useDevice(d => d.connected && d.device === "pad");
   /** The "click to fight" prompt is up: playing, no pointer lock, not on the pad. */
   const awaitingFight = () => useUi.getState().screen === "play" && !useUi.getState().locked && !padFightRef.current && !AUTO;
 
@@ -412,7 +420,13 @@ export default function PlayPage() {
 
   /** When the pause menu last closed (its Options press must not pause again). */
   const resumedAt = useRef(0);
-  const lock = () => { if (!AUTO) void (canvasEl()?.requestPointerLock() as unknown as Promise<void> | undefined)?.catch?.(() => undefined); };
+  /** Pointer lock where the browser has it. iOS Safari has none, and the thumbs play (padFight) without it. */
+  const requestLock = () => {
+    const el = canvasEl();
+    if (!el || typeof el.requestPointerLock !== "function") return;
+    void (el.requestPointerLock() as unknown as Promise<void> | undefined)?.catch?.(() => undefined);
+  };
+  const lock = () => { if (!AUTO) requestLock(); };
 
   /** Gamepad A / Start on the prompt: play without the pointer lock. Runs inside the session's
    *  frame, after the pad poll and before the steps, so the flush drops the press. */
@@ -430,12 +444,18 @@ export default function PlayPage() {
     loadLater();
     aheadOf(session.roomId);
     bridge().result("run");
-    setPadFight(false);
     session.input.flush();
     session.stepper.reset();
-    // the sim runs once the pointer is locked (the lock handler unpauses); the bot needs no lock
-    session.paused = !AUTO && !document.pointerLockElement;
-    lock();
+    if (TOUCH) {
+      // a touch screen has no pointer lock: the thumbs play without it (the pad's own no-lock path)
+      setPadFight(true);
+      session.paused = !AUTO;
+    } else {
+      setPadFight(false);
+      // the sim runs once the pointer is locked (the lock handler unpauses); the bot needs no lock
+      session.paused = !AUTO && !document.pointerLockElement;
+      lock();
+    }
   }, [session]);
 
   /** Get a room ready to start (once per session; the room must be the one in the canvas): the Radbro,
@@ -467,7 +487,7 @@ export default function PlayPage() {
       await levelTextures(s);
       await frames(12);
       const tf = performance.now();
-      await warmLook({ hidden: true, onProgress: f => step(0.6 + 0.3 * f, "shaders") });
+      if (!NOWARM) await warmLook({ hidden: true, onProgress: f => step(0.6 + 0.3 * f, "shaders") });
       step(0.9, "sounds");
       // room 1's own sounds; a later room's (already loading since room 1 started; a dev ?room= start
       // asks for them here)
@@ -528,6 +548,7 @@ export default function PlayPage() {
     if (!session) return;
     if (useUi.getState().chapter === 2 && !params.has("room")) { void startChapter2(); return; }
     unlockAudio();
+    requestFullScreenIfAvailable(); // Android and the like, inside this click; iPhone uses the home-screen app
     void loadSamples();
     chapterRun.clear();
     // straight to cutscene 1 once its lines are in (the room's files load under the panels; the room's
@@ -575,7 +596,7 @@ export default function PlayPage() {
     ns.stepper.reset();
     // a pad player goes straight on (no lock needed); a mouse player gets the prompt if the lock is gone
     ns.paused = !BOT && !document.pointerLockElement && !padFightRef.current;
-    if (!BOT) void (canvasEl()?.requestPointerLock() as unknown as Promise<void> | undefined)?.catch?.(() => undefined);
+    if (!BOT) requestLock();
   }, []);
 
   /** Chapter 2 from the title's chapter select or chapter 1's results: its intro (ch2a) while its first
@@ -722,6 +743,7 @@ export default function PlayPage() {
       {screen === "loading" && <Loading />}
       {screen === "cutscene" && cut && <Cutscene key={cut.data.id} data={cut.data} onDone={() => { const then = cut.then; setCut(null); then(); }} />}
       {screen === "play" && <Hud />}
+      {screen === "play" && TOUCH && !padOn && session && <TouchControls input={session.input} onPause={pause} />}
       {screen === "play" && <BossBar />}
       {screen === "play" && !locked && !padFight && !AUTO && !STILL && <FightPrompt onLock={() => { session?.input.flush(); lock(); }} />}
       {screen === "paused" && <Pause onResume={() => { resumedAt.current = performance.now(); useUi.setState({ screen: "play" }); if (session) { session.input.flush(); session.paused = !BOT && !document.pointerLockElement && !padFightRef.current; } lock(); }} onRestart={retry} onQuit={toTitle} />}

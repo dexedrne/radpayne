@@ -4,7 +4,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Bone, BoxGeometry, Float32BufferAttribute, Frustum, Group, Matrix4, Mesh, MeshBasicMaterial, PerspectiveCamera, Scene, Skeleton, SkinnedMesh, Uint16BufferAttribute, Vector3 } from "three";
-import { mobileFrom, MOBILE_DPR } from "../src/ui/mobile.ts";
+import { readFileSync } from "node:fs";
+import { HIGH_END_DPR, highEndPhoneFrom, iosFrom, mobileFrom, MOBILE_DPR } from "../src/ui/mobile.ts";
+import { InputLatch } from "../src/input/input.ts";
 import { DEFAULT_MOBILE, DEFAULT_PRESET, PRESETS, dprFor, initialGfx } from "../src/app/look/gfx.ts";
 import { CULL_K, cullBody, viewFrustum } from "../src/app/cull.ts";
 import { renderFrame, walkWhenShown } from "../src/app/look/matrices.ts";
@@ -129,4 +131,66 @@ test('launcher phone profile overrides saved and URL graphics', () => {
   assert.equal(g.preset, 'low');
   assert.equal(g.reflections, 'off');
   assert.equal(g.lite, true);
+});
+
+test('a recent full-size iPhone starts on Medium and caps its canvas at 1.5 px a point; older phones stay Low', () => {
+  const iphone = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1";
+  assert.equal(iosFrom(iphone), true);
+  assert.equal(iosFrom("Mozilla/5.0 (iPad; CPU OS 18_6 like Mac OS X) AppleWebKit/605.1.15"), false);
+  assert.equal(highEndPhoneFrom(iphone, 3, 393), true);
+  assert.equal(highEndPhoneFrom(iphone, 3, 375), false, "a mini/SE-sized screen");
+  assert.equal(highEndPhoneFrom(iphone, 2, 390), false, "not a 3x screen");
+  assert.equal(initialGfx("", store({}), false, true, true).preset, "medium");
+  assert.equal(initialGfx("", store({}), true, true, true).preset, "medium", "even on the WebGL2 fallback");
+  assert.equal(initialGfx("", store({ "radpayne.gfx": JSON.stringify(PRESETS.low) }), false, true, true).preset, "low", "a saved choice still wins");
+  assert.equal(dprFor(100, 3, true, HIGH_END_DPR), 1.5);
+  assert.equal(dprFor(75, 3, true, HIGH_END_DPR), 1.125, "75 % of 1.5 is still over one pixel a point");
+  assert.equal(dprFor(100, 3, true), MOBILE_DPR, "every other phone/tablet keeps its cap");
+});
+
+test('the on-screen thumbs feed the same input frame as keys and a pad (move, look, fire, aim, edges)', () => {
+  const i = new InputLatch();
+  i.touchMove(1, -1);
+  let f = i.consume();
+  assert.ok(f.moveX > 0.7 && f.moveY > 0.7, "right and forward");
+  i.touchLook(100, 0);
+  assert.ok(i.yaw < 0, "a rightward drag turns right");
+  i.touchDown("fire"); i.touchDown("aim"); i.touchDown("reload"); i.touchDown("jump");
+  f = i.consume();
+  assert.equal(f.fire, true);
+  assert.equal(f.aim, true);
+  assert.equal(f.reload, true);
+  assert.equal(f.jump, true, "the press edge");
+  i.touchUp("fire"); i.touchUp("aim");
+  f = i.consume();
+  assert.equal(f.fire, false);
+  assert.equal(f.aim, false);
+  assert.equal(f.jump, false, "an edge is consumed once");
+  i.touchDown("nade");
+  assert.equal(i.consume().nade, true, "the frag held");
+  i.touchUp("nade");
+  assert.equal(i.consume().nade, false);
+  i.clear();
+  assert.equal(i.touch.fire, false);
+  assert.equal(i.consume().moveX, 0);
+});
+
+test('the page is set up for the iPhone screen: cover viewport, installed-app metas, both orientations, no 100vh', () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(html, /name="viewport"[^>]*viewport-fit=cover/);
+  assert.match(html, /interactive-widget=resizes-content/);
+  assert.match(html, /name="apple-mobile-web-app-capable" content="yes"/);
+  assert.match(html, /apple-mobile-web-app-status-bar-style" content="black-translucent"/);
+  assert.match(html, /rel="apple-touch-icon"/);
+  assert.match(html, /rel="manifest" href="\/manifest\.webmanifest"/);
+  assert.match(html, /100dvh/);
+  const manifest = JSON.parse(readFileSync(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"));
+  assert.equal(manifest.orientation, "any");
+  assert.ok(manifest.display === "fullscreen" || manifest.display === "standalone");
+  assert.ok(manifest.icons.some((i: { sizes: string }) => i.sizes === "512x512"));
+  const css = readFileSync(new URL("../src/ui/hud/tokens.css", import.meta.url), "utf8");
+  assert.ok(!/\b100vh\b/.test(css), "no fixed layout waits on 100vh (Safari's toolbar)");
+  assert.match(css, /--sai-top: env\(safe-area-inset-top/);
+  assert.match(css, /\.rp-tl \{ position: fixed; left: calc\(var\(--m\) \+ var\(--sai-left\)\)/);
+  assert.match(css, /\.rp-br \{ position: fixed; right: calc\(var\(--m\) \+ var\(--sai-right\)\)/);
 });

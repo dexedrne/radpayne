@@ -1,4 +1,5 @@
 import { isPhone } from '../phone.ts';
+import { IOS, STANDALONE, TOUCH } from './mobile.ts';
 // Title (Radbro pick, difficulty, graphics preset, controls, credits), loading, pause + settings and results
 // screens: React DOM over the canvas in the noir-comic style (ink plates, cream captions, keycaps).
 // The canvas behind them is dimmed / blurred by PlayPage (canvasFx). Keyboard and gamepad work
@@ -226,7 +227,8 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
             </button>
           )}
         </div>
-        {isPhone() && !phonePad && <p data-phone-pad-only>Connect a controller to play. Touch works in the menus; aiming uses the right stick.</p>}
+        {TOUCH && !phonePad && !IOS && <p data-phone-pad-only>Play with the thumbs: the left stick moves, the right thumb aims. A Bluetooth controller works too.</p>}
+        {IOS && !STANDALONE && <p className="rp-fs-hint" data-testid="ios-fullscreen-hint">Full screen: Share, then “Add to Home Screen” and open it from there.</p>}
         <KeyList className="rp-controls" />
         <div className="rp-credits">
           desktop: keyboard + mouse, or a gamepad (PlayStation or Xbox). built on{" "}

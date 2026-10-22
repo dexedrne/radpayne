@@ -45,3 +45,64 @@ export const MOBILE_WHY = found.why;
  *  2 (or 3) would be four (or nine) times the pixels to fill, and an iPad's GPU fills each of them through
  *  the scene pass's MSAA and the post chain. */
 export const MOBILE_DPR = 1.25;
+/** A recent full-size iPhone (a 3x screen at 390 points or wider: the 12 and on) draws a little sharper:
+ *  1.5 px a point is still under half of its 3, and the GPU has the headroom. */
+export const HIGH_END_DPR = 1.5;
+
+/** Whether this is an iPhone/iPod (iPadOS on a Mac's UA still says Macintosh). */
+export function iosFrom(ua: string): boolean {
+  return /\biPhone\b|\biPod\b/.test(ua || "");
+}
+
+/** iPhones with a 3x screen 390 points wide or more: the ones that can take Medium and 1.5x without
+ *  dropping frames. Deliberately conservative: an SE, a mini-sized screen or an older phone stays Low. */
+export function highEndPhoneFrom(ua: string, dpr: number, minSide: number): boolean {
+  return iosFrom(ua) && dpr >= 3 && minSide >= 390;
+}
+
+/** A home-screen app (standalone), not a Safari tab. */
+export function standaloneFrom(standalone: boolean | undefined, displayMode: boolean): boolean {
+  return !!standalone || displayMode;
+}
+
+type Env = {
+  ua: string; platform: string; touch: number; dpr: number; minSide: number;
+  standalone?: boolean; displayMode?: boolean;
+};
+function env(): Env | null {
+  if (typeof navigator === "undefined" || typeof window === "undefined") return null;
+  const n = navigator as Navigator & { standalone?: boolean; userAgentData?: { mobile?: boolean } };
+  const scr = typeof screen !== "undefined" ? screen : undefined;
+  return {
+    ua: n.userAgent ?? "", platform: (n as Navigator & { platform?: string }).platform ?? "",
+    touch: n.maxTouchPoints ?? 0, dpr: typeof devicePixelRatio === "number" ? devicePixelRatio : 1,
+    minSide: scr ? Math.min(scr.width, scr.height) : 0,
+    standalone: n.standalone,
+    displayMode: typeof matchMedia === "function" && matchMedia("(display-mode: standalone)").matches,
+  };
+}
+
+const e = env();
+/** iPhone / iPod Safari (or an iOS home-screen app). */
+export const IOS = e ? iosFrom(e.ua) : false;
+/** This page is launched from the home screen (no browser chrome). */
+export const STANDALONE = e ? standaloneFrom(e.standalone, !!e.displayMode) : false;
+/** The screen is a touch screen (a Mac with a touch bar says 0). */
+export const TOUCH = e ? e.touch > 0 : false;
+/** A recent full-size iPhone: Medium graphics and a 1.5 px-a-point canvas by default. */
+export const HIGH_END_PHONE = e ? highEndPhoneFrom(e.ua, e.dpr, e.minSide) : false;
+/** The canvas cap for this device (HIGH_END_DPR on a recent full-size iPhone, MOBILE_DPR else). */
+export const MOBILE_DPR_CAP = HIGH_END_PHONE ? HIGH_END_DPR : MOBILE_DPR;
+/** A foldable / dual-screen phone (two viewport segments): the layout keeps clear of the hinge. */
+export const DUAL_SCREEN = typeof matchMedia === "function" && matchMedia("(horizontal-viewport-segments: 2), (vertical-viewport-segments: 2)").matches;
+
+/** Mark the document for CSS (and the console): phone, touch, iOS, installed, dual-screen. */
+export function markDevice(isPhoneDevice = false): void {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  root.toggleAttribute("data-phone", MOBILE || isPhoneDevice);
+  root.toggleAttribute("data-touch", TOUCH);
+  root.toggleAttribute("data-ios", IOS);
+  root.toggleAttribute("data-standalone", STANDALONE);
+  root.toggleAttribute("data-dual", DUAL_SCREEN);
+}
