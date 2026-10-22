@@ -87,6 +87,7 @@ export function brandHtml(html: string, game: GameId): string {
     swap(new RegExp(`(<meta ${attr}="${key.replace(/[:.]/g, m => `\\${m}`)}" content=")[^"]*(")`), `$1${escapeAttr(value)}$2`, `${attr}=${key}`);
   swap(/<title>[^<]*<\/title>/, `<title>${b.name}</title>`, "<title>");
   meta("name", "description", b.description);
+  meta("name", "apple-mobile-web-app-title", b.name);
   swap(/(<link rel="canonical" href=")[^"]*(")/, `$1${b.url}/$2`, "canonical");
   meta("property", "og:site_name", b.name);
   meta("property", "og:url", `${b.url}/`);
