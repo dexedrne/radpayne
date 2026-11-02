@@ -62,12 +62,12 @@ export const RADPAYNE: GameInfo = {
   viewport: { width: 1280, height: 720 },
 };
 
-/** RetardioPayne (product.ts): the same game, the harder cut, the two Retardios (no #4764: no katana). */
+/** RetardioPayne (product.ts): the same game, the harder cut, the three Retardios (no #4764: no katana). */
 export const RETARDIOPAYNE: GameInfo = {
   ...RADPAYNE,
   game: "retardiopayne",
   title: "RetardioPayne",
-  objective: "The harder cut: as Retardio #555 or #85, shoot your way through the Milady gang's club and up to Madame Pockit's penthouse in bullet time: clear every room, then walk to the door.",
+  objective: "The harder cut: as Retardio #555, #85 or #2214, shoot your way through the Milady gang's club and up to Madame Pockit's penthouse in bullet time: clear every room, then walk to the door.",
   controls: RADPAYNE.controls.filter(c => !c.includes("#4764")).map(c => (c.startsWith("F: melee") ? "F: melee" : c)),
 };
 /** This page's game. */

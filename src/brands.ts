@@ -1,4 +1,4 @@
-// The two games this code ships: RadPayne, and RetardioPayne (the same game with only the two Retardios
+// The two games this code ships: RadPayne, and RetardioPayne (the same game with only the Retardios
 // to play, one fixed harder difficulty, its own look). Pure data and string helpers: vite.config.ts
 // (the page head, the share image), the page (product.ts) and the tests read it.
 //   build: VITE_GAME=retardiopayne (npm run build:retardiopayne / dev:retardiopayne); anything else is
@@ -45,7 +45,7 @@ export const BRANDS: Record<GameId, Brand> = {
     name: "RetardioPayne",
     wordmark: ["RETARDIO", "PAYNE"],
     url: "https://retardiopayne.vyvanse.beer",
-    description: "The harder cut of RadPayne. Retardio #555 and Retardio #85 go back for the bag through the rain, one frozen second at a time. A noir bullet-time shooter in the browser.",
+    description: "The harder cut of RadPayne. Retardio #555, Retardio #85 and Retardio #2214 go back for the bag through the rain, one frozen second at a time. A noir bullet-time shooter in the browser.",
     ogImage: "og.jpg",
     accent: "#f2899a",
     ogAlt: "RetardioPayne, the harder cut: Retardio Cousin #555 and Retardio Classic #85 in the rain on a neon-lit street, guns drawn",

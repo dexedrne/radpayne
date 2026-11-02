@@ -1,4 +1,4 @@
-// Which game this page is (brands.ts): RadPayne, or RetardioPayne, the harder cut with only the two
+// Which game this page is (brands.ts): RadPayne, or RetardioPayne, the harder cut with only the
 // Retardios. Decided once, at load: the build's VITE_GAME, or in a dev / test build ?game= over it.
 // Outside a page (the node tests, the tools) it is RadPayne.
 import { BRANDS, otherGameHref, resolveGame, type GameId } from "./brands.ts";

@@ -128,7 +128,7 @@ function useFontsReady(): boolean {
   return ok;
 }
 
-/** A hero's card portrait (public/ui/radbro652.webp, retardio555.webp). */
+/** A hero's card portrait (public/ui/radbro652.webp, retardio555.webp, retardio2214.webp). */
 const portraitPath = (id: HeroId) => assetUrl(`/ui/${heroFile(id)}.webp`);
 
 // ---- title ---------------------------------------------------------------------------------------
@@ -233,7 +233,7 @@ export function Title({ onPlay, ready }: { onPlay: () => void; ready: boolean })
         <div className="rp-credits">
           desktop: keyboard + mouse, or a gamepad (PlayStation or Xbox). built on{" "}
           <a href="https://prnth.com/react-three-game/" target="_blank" rel="noreferrer">react-three-game</a> and the Pockit Miladys by prnth,
-          used with permission · Radbros by dexedrne, used with the Radbro Webring dev's permission{IS_CUT ? " · Retardio #555 and #85 by dexedrne" : ""}
+          used with permission · Radbros by dexedrne, used with the Radbro Webring dev's permission{IS_CUT ? " · Retardio #555, #85 and #2214 by dexedrne" : ""}
         </div>
         <OtherGame />
       </div>

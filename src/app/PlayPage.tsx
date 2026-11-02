@@ -71,7 +71,7 @@ const BOT = DEV && params.has("bot");
 const BOT_DEMO = params.get("bot") === "demo";
 const SKIP = DEV && (params.has("skip") || BOT || !!HOLDCHECK);
 /** Dev: ?radbro=<id> plays that Radbro for this page load (the hold check loops over them); RetardioPayne
- *  takes only its two Retardios. */
+ *  takes only its Retardios. */
 const RADBRO_PARAM = DEV ? ROSTER.find(r => r.id === params.get("radbro"))?.id : undefined;
 /** The loading card's word for his files. */
 const HERO_LOAD = IS_CUT ? "retardio" : "radbro";
