@@ -400,7 +400,7 @@
 .rp-frag { position: fixed; left: 50%; top: 50%; z-index: 9; pointer-events: none; }
 
 /* ---------- RetardioPayne (product.ts sets <html data-game="retardiopayne">) ----------
-   Its own accents from the two Retardios: #85's pink and blue eyeshadow and his purple freckles, #555's
+   Its own accents from #85 and #555: #85's pink and blue eyeshadow and his purple freckles, #555's
    heart blush. The jobs stay the same (paper text, red harm, sand time, the cream captions); the pink
    accent turns into theirs and the blue takes the headings, the focus bars and the room tag. */
 :root[data-game="retardiopayne"] {
@@ -416,7 +416,8 @@
 :root[data-game="retardiopayne"] .rp-wordrow .rp-wordmark::after { content: ""; display: block; height: 8px; margin: 2px 0 0 4px; width: 62%; background: radial-gradient(circle, var(--rt-freckle) 2.6px, transparent 3.2px) 0 50% / 22px 8px repeat-x; opacity: 0.85; }
 .rp-cutbadge { margin-bottom: 24px; font: 400 30px/1 var(--display); letter-spacing: 4px; color: var(--ink); background: var(--rt-blush); padding: 8px 14px 5px; border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); transform: rotate(-2deg); white-space: nowrap; }
 .rp-cutnote { max-width: 860px; margin: -14px 0 22px; font: 700 17px/1.35 var(--type); color: rgba(243, 234, 216, 0.75); }
-:root[data-game="retardiopayne"] .rp-cards { grid-template-columns: repeat(2, minmax(0, 420px)); }
+/* the three Retardios side by side (a phone keeps its two columns, landscape its four) */
+:root[data-game="retardiopayne"] .rp-cards { grid-template-columns: repeat(3, minmax(0, 420px)); }
 :root[data-game="retardiopayne"] .rp-card img { width: 132px; min-height: 168px; }
 :root[data-game="retardiopayne"] .rp-row .grp .h,
 :root[data-game="retardiopayne"] .rp-settings h3 { color: var(--rt-blue); }
