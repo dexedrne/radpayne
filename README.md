@@ -90,7 +90,7 @@ npm install
 npm run dev        # http://localhost:4880
 ```
 
-Pick a Radbro and a difficulty, then press **PLAY** (the two Retardios, #555 and #85, play in RetardioPayne). Click the game to lock the mouse.
+Pick a Radbro and a difficulty, then press **PLAY** (the three Retardios, #555, #85 and #2214, play in RetardioPayne). Click the game to lock the mouse.
 
 **Difficulty** (the title, or the pause menu's Settings from the next restart or room; remembered):
 **Chill** (the story: the first release's easy), **Normal** (the default, and tougher than the first
@@ -418,7 +418,7 @@ npm run pbr-maps         # derive seamless normal / roughness maps (needs ImageM
     `cam-dais`, `cam-rug`, `cam-door-a`).
   - `?loadout=shotgun,sniper` starts with those weapons (any weapon id; the last one in hand),
     `?grenades=N` with N frags.
-  - `?radbro=<id>` plays that Radbro for one page load (in RetardioPayne, `retardio555` / `retardio85`).
+  - `?radbro=<id>` plays that Radbro for one page load (in RetardioPayne, `retardio555` / `retardio85` / `retardio2214`).
   - `?holdcheck=<weapon id>` runs the hold check: an empty street, that gun in hand,
     and a scripted player instead of the input (`src/app/dev/holdcheck.ts`, `window.__holdcheck`).
   - `?bot&tour` is the arsenal tour: the bot fights on each new gun in turn, then walks the room's
@@ -462,6 +462,13 @@ input log. Bullet time is a time scale on it.
     against the Radbros', so their grips in `src/anim/grips.ts` are their own measures; their ids
     (`retardio555`, `retardio85`) name the files (`heroFile` in `src/ui/store.ts`). The pins stay
     the six Radbros'.
+  - `public/models/retardio2214.*` (with `public/ui/retardio2214.webp`): Retardio Cousin Classic #2214, a
+    boy with long red hair, built the same way (the same 24 bones, metres, 1.70 m, #723's clips retargeted
+    onto him, all three packs). His grips are his own palms with #723's grip turned by his hands' bind
+    offset (about 158 deg). His gait is #723's times his stride on the `.gun` pack's `Aim_Run` /
+    `Aim_Walk_Fwd` (x1.06 / x1.02): his character file's own `Run_02` / `Casual_Walk` are a fitted pair of
+    loops this game does not play, so they are not the measure. His portrait is his game model in the
+    Idle pose, framed like the others but seen from 8 deg to his right, so the TUNA print on his shirt reads.
   - `public/models/radbro4764.glb` wears his katana (1.03 m) on the left hip as its own rigid node
     (`Katana`, on the hips): the game splits its hilt off to hide while the blade is drawn, and the
     drawn katana (`src/app/guns.ts`) takes the same hilt.
@@ -602,7 +609,8 @@ input log. Bullet time is a time scale on it.
 ## RetardioPayne
 
 The same code ships a second game: **RetardioPayne**, the harder cut, at retardiopayne.vyvanse.beer. Only
-the two Retardios are there to play (Retardio Cousin #555 and Retardio Classic #85; no Radbro in the
+the three Retardios are there to play (Retardio Cousin #555, Retardio Classic #85 and Retardio Cousin
+Classic #2214; no Radbro in the
 select, and the player is a Retardio wherever the game shows or spawns him), on one fixed difficulty, with
 its own wordmark, palette, scene grade, favicon and share image. The gang, the rival heavies and the rooms
 are RadPayne's. Each title has a small link to the other game.
@@ -701,14 +709,18 @@ your own thing.
   permission. They load at runtime from one pinned commit and are not part of this repo.
 - Radbros #4764, #652, #3704, #3710, #723, #3171, #250 and #2564 are dexedrne's own, used with permission from the Radbro Webring
   dev. The models come from RadRun.
-- Retardio Cousin #555 and Retardio Classic #85 are dexedrne's own; their models are built on the
-  Radbro rig.
+- Retardio Cousin #555, Retardio Classic #85 and Retardio Cousin Classic #2214 are dexedrne's own; their
+  models are built on the Radbro rig.
 - Fonts: Bebas Neue by Dharma Type and Courier Prime by the Courier Prime Project Authors, under the
   SIL Open Font License 1.1 (the licences are next to the files in `public/fonts`).
 - By [@dexedrne](https://x.com/dexedrne).
 
 ## Yellow and green Radbros
 
-RadPayne includes #3704 (yellow hair) and #3710 (green hair), with the same optimized bodies, locomotion, pistol and long-gun packs as the other picks. Their grips follow #723 through each hand’s bind offset; gait rates use each rig’s measured planted-foot stride. RetardioPayne keeps its two Retardios. The existing six placed pins keep their completion total.
+RadPayne includes #3704 (yellow hair) and #3710 (green hair), with the same optimized bodies, locomotion, pistol and long-gun packs as the other picks. Their grips follow #723 through each hand’s bind offset; gait rates use each rig’s measured planted-foot stride. RetardioPayne keeps its Retardios. The existing six placed pins keep their completion total.
 
 The main four (#4764, #652, #3704, #3710) lead the promotional art. Replaced share cards keep the previous image beside each file as `*.prev.jpg`; `public/ui/key-art.webp` is textless, and `public/ui/cartridge.webp` keeps all four centered in a square. Story panels retain #4764’s narrative.
+
+## Retardio #2214
+
+RetardioPayne adds Retardio Cousin Classic #2214 (long red hair, a black TUNA tank) as its third pick, after #555 and #85, with the same model, clip, pistol and long-gun packs; RadPayne stays the Radbros only. His grips follow #723 through each hand’s bind offset at his own palms, and his gait is #723’s times his measured stride, so his feet stay planted. The title shows the three Retardio cards in one row (a phone keeps its two columns). The share image and the cutscene panels still show #555 and #85.
