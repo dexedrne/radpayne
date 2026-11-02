@@ -70,7 +70,7 @@ test("RadPayne's tuning: its four difficulties, Madame Pockit's and chapter 2's 
   for (const [id, want] of Object.entries(rosters)) assert.deepEqual(RAD4.map(d => new Game(level(id), { seed: 1, difficulty: d }).enemies.length), want, id);
 });
 
-test("RadPayne plays eight Radbros with the main four first; RetardioPayne keeps its two", () => {
+test("RadPayne plays eight Radbros with the main four first; RetardioPayne keeps its three", () => {
   assert.deepEqual(RADBROS.map(h => [h.id, h.kind, h.name, h.color, h.weapon ?? "", (h.start ?? []).join()]), [
     ["4764", "RADBRO", "#4764", "#3ff0ff", "", ""],
     ["652", "RADBRO", "#652", "#ff3d7f", "", ""],
@@ -81,12 +81,13 @@ test("RadPayne plays eight Radbros with the main four first; RetardioPayne keeps
     ["250", "RADBRO", "#250", "#ff5a3c", "ak", ""],
     ["2564", "RADBRO", "#2564", "#b8c4ff", "", ""],
   ]);
-  assert.deepEqual(RETARDIOS.map(h => [h.id, h.kind, h.name]), [["retardio555", "RETARDIO", "#555"], ["retardio85", "RETARDIO", "#85"]]);
+  assert.deepEqual(RETARDIOS.map(h => [h.id, h.kind, h.name]), [["retardio555", "RETARDIO", "#555"], ["retardio85", "RETARDIO", "#85"], ["retardio2214", "RETARDIO", "#2214"]]);
   assert.deepEqual(rosterOf("radpayne").map(h => h.id), RADBROS.map(h => h.id), "RadPayne: the Radbros only (the Retardios are RetardioPayne's)");
-  assert.deepEqual(HEROES.map(h => h.id), ["4764", "652", "3704", "3710", "723", "3171", "250", "2564", "retardio555", "retardio85"]);
+  assert.deepEqual(HEROES.map(h => h.id), ["4764", "652", "3704", "3710", "723", "3171", "250", "2564", "retardio555", "retardio85", "retardio2214"]);
   assert.equal(defaultHeroOf("radpayne"), "4764");
   assert.equal(pickFor("radpayne", "652"), "652");
   assert.equal(pickFor("radpayne", "retardio85"), "4764", "a Retardio pick falls back on RadPayne");
+  assert.equal(pickFor("radpayne", "retardio2214"), "4764");
   assert.equal(pickFor("radpayne", "nobody"), "4764");
   assert.equal(fixedDifficultyOf("radpayne"), null);
   assert.deepEqual(PIN_RADBROS.map(h => h.id).sort(), ["250", "2564", "3171", "4764", "652", "723"].sort(), "only the six placed pins count toward completion");
@@ -143,11 +144,14 @@ test("the page head: RadPayne's index.html as it is; RetardioPayne's own title, 
 });
 
 test("RetardioPayne plays only the Retardios on its one fixed difficulty", () => {
-  assert.deepEqual(rosterOf("retardiopayne").map(h => h.id), ["retardio555", "retardio85"]);
+  assert.deepEqual(rosterOf("retardiopayne").map(h => h.id), ["retardio555", "retardio85", "retardio2214"]);
   assert.ok(rosterOf("retardiopayne").every(h => h.kind === "RETARDIO"));
   assert.equal(defaultHeroOf("retardiopayne"), "retardio555");
   for (const r of RADBROS) assert.equal(pickFor("retardiopayne", r.id), "retardio555", `#${r.id} is no pick in RetardioPayne`);
   assert.equal(pickFor("retardiopayne", "retardio85"), "retardio85");
+  assert.equal(pickFor("retardiopayne", "retardio2214"), "retardio2214");
+  // each card has its own colour
+  assert.equal(new Set(rosterOf("retardiopayne").map(h => h.color)).size, rosterOf("retardiopayne").length);
   assert.equal(fixedDifficultyOf("retardiopayne"), "retardio");
   assert.ok(!RADPAYNE_DIFFICULTIES.includes("retardio"), "RadPayne never offers it");
   assert.equal(DIFFICULTY.retardio, CUT.diff);

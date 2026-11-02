@@ -22,11 +22,12 @@ test("roster: #250 carries the AK, everyone else the pistols; every hero has a g
   }
 });
 
-test("roster: the two Retardios follow the Radbros, with their own files and their own grips", () => {
-  assert.deepEqual(HEROES.map(h => h.id), [...RADBROS.map(r => r.id), "retardio555", "retardio85"]);
-  assert.deepEqual(RETARDIOS.map(r => `${r.kind} ${r.name}`), ["RETARDIO #555", "RETARDIO #85"]);
+test("roster: the three Retardios follow the Radbros, with their own files and their own grips", () => {
+  assert.deepEqual(HEROES.map(h => h.id), [...RADBROS.map(r => r.id), "retardio555", "retardio85", "retardio2214"]);
+  assert.deepEqual(RETARDIOS.map(r => `${r.kind} ${r.name}`), ["RETARDIO #555", "RETARDIO #85", "RETARDIO #2214"]);
   assert.equal(heroFile("652"), "radbro652");
   assert.equal(heroFile("retardio85"), "retardio85");
+  assert.equal(heroFile("retardio2214"), "retardio2214");
   for (const h of HEROES) {
     for (const f of [`models/${heroFile(h.id)}.glb`, `models/${heroFile(h.id)}.clips.glb`, `models/${heroFile(h.id)}.gun.glb`, `models/${heroFile(h.id)}.r2.glb`, `ui/${heroFile(h.id)}.webp`]) {
       assert.ok(fs.existsSync(new URL(`../public/${f}`, import.meta.url)), f);
@@ -34,6 +35,8 @@ test("roster: the two Retardios follow the Radbros, with their own files and the
   }
   // their hand bones are rolled ~180 deg against the Radbros': never a Radbro's numbers
   for (const r of RETARDIOS) for (const b of RADBROS) assert.notDeepEqual(RADBRO_GRIPS[r.id], RADBRO_GRIPS[b.id], `${r.id} vs #${b.id}`);
+  // and each Retardio is his own rig: never another Retardio's numbers either
+  for (const a of RETARDIOS) for (const b of RETARDIOS) if (a.id !== b.id) assert.notDeepEqual(RADBRO_GRIPS[a.id], RADBRO_GRIPS[b.id], `${a.id} vs ${b.id}`);
 });
 
 test("AK: full auto, 10 rounds a second from one 30-round mag, then a 2.2 s reload from an endless reserve", () => {

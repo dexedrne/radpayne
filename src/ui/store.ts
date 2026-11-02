@@ -9,9 +9,9 @@ import type { GameId } from "../brands.ts";
 import { GAME } from "../product.ts";
 
 export type RadbroId = "652" | "4764" | "3704" | "3710" | "2564" | "723" | "3171" | "250";
-/** The owner's two Retardios (#555 the cousin, #85 the classic): built on the Radbro rig with the
- *  Radbros' clips, so they play like a Radbro. Their ids keep them apart from the Radbro numbers. */
-export type RetardioId = "retardio555" | "retardio85";
+/** The owner's Retardios (#555 the cousin, #85 the classic, #2214 the cousin classic): built on the Radbro
+ *  rig with the Radbros' clips, so they play like a Radbro. Their ids keep them apart from the Radbro numbers. */
+export type RetardioId = "retardio555" | "retardio85" | "retardio2214";
 /** Anyone who can be picked to play. */
 export type HeroId = RadbroId | RetardioId;
 /** weapon: the base gun he carries (slot 1) when it is not the dual pistols. start: guns he walks in with
@@ -32,11 +32,12 @@ export const PIN_RADBROS = RADBROS.filter(h => h.id !== "3704" && h.id !== "3710
 export const RETARDIOS: Array<Hero<RetardioId>> = [
   { id: "retardio555", kind: "RETARDIO", name: "#555", blurb: "the cousin. not here for the food.", color: "#8fe36a" },
   { id: "retardio85", kind: "RETARDIO", name: "#85", blurb: "the classic. needs money for a porsche.", color: "#c58bff" },
+  { id: "retardio2214", kind: "RETARDIO", name: "#2214", blurb: "the cousin classic. long red hair, tuna on the shirt.", color: "#ff4b4b" },
 ];
 /** The character select, in order (the pins stay the six Radbros'). */
 export const HEROES: Hero[] = [...RADBROS, ...RETARDIOS];
 /** Who a game lets you play, in its character select's order, and its default pick: RadPayne the Radbros
- *  (#4764 first: he is the hero of the comic panels); RetardioPayne only the two Retardios. */
+ *  (#4764 first: he is the hero of the comic panels); RetardioPayne only the three Retardios. */
 export const rosterOf = (game: GameId): Hero[] => (game === "retardiopayne" ? RETARDIOS : RADBROS);
 export const defaultHeroOf = (game: GameId): HeroId => (game === "retardiopayne" ? "retardio555" : "4764");
 /** The difficulty a game plays: RadPayne's is the player's (remembered); RetardioPayne has its one. */
@@ -47,7 +48,7 @@ const FIXED_DIFF = fixedDifficultyOf(GAME);
 export const heroOf = (id: HeroId): Hero => HEROES.find(h => h.id === id) ?? ROSTER.find(h => h.id === defaultHeroOf(GAME)) ?? RADBROS[1];
 /** A hero id this page may play (else its default). */
 export const pickFor = (game: GameId, v: string | null | undefined): HeroId => (rosterOf(game).some(h => h.id === v) ? (v as HeroId) : defaultHeroOf(game));
-/** File stem of a hero's models and portrait: radbro652, retardio555. */
+/** File stem of a hero's models and portrait: radbro652, retardio555, retardio2214. */
 export const heroFile = (id: HeroId): string => (id.startsWith("retardio") ? id : `radbro${id}`);
 
 export type Screen = "title" | "loading" | "cutscene" | "play" | "paused" | "results";
