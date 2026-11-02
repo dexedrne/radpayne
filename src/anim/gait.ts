@@ -23,12 +23,12 @@ export const RADBRO_GAIT: Record<HeroId, Gait> = {
   "3171": { run: 2.89, walk: 0.52 },
   "250": { run: 3.28, walk: 0.59 },
   // the Retardios: #723's own cycles retargeted onto their legs, so #723's numbers times their measured
-  // stride against his (#555: run x1.22, walk x1.12; #85: run x1.11, walk x1.08; #2214: run x1.06,
-  // walk x1.02, measured on the .gun pack's Aim_Run / Aim_Walk_Fwd, since his character file's own
+  // stride against his (#555: run x1.22, walk x1.12; #85: run x1.11, walk x1.08; #2214: run x1.055,
+  // walk x1.03, measured on the .gun pack's Aim_Run / Aim_Walk_Fwd, since his character file's own
   // Run_02 / Casual_Walk are a different, fitted pair of loops that this game does not play)
   retardio555: { run: 3.81, walk: 0.64 },
   retardio85: { run: 3.46, walk: 0.62 },
-  retardio2214: { run: 3.29, walk: 0.58 },
+  retardio2214: { run: 3.29, walk: 0.59 },
 };
 
 /** The Miladys' clips come from #723's rig; scale by her leg length (hips height) against #723's. */

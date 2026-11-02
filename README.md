@@ -466,7 +466,7 @@ input log. Bullet time is a time scale on it.
     boy with long red hair, built the same way (the same 24 bones, metres, 1.70 m, #723's clips retargeted
     onto him, all three packs). His grips are his own palms with #723's grip turned by his hands' bind
     offset (about 158 deg). His gait is #723's times his stride on the `.gun` pack's `Aim_Run` /
-    `Aim_Walk_Fwd` (x1.06 / x1.02): his character file's own `Run_02` / `Casual_Walk` are a fitted pair of
+    `Aim_Walk_Fwd` (x1.055 / x1.03): his character file's own `Run_02` / `Casual_Walk` are a fitted pair of
     loops this game does not play, so they are not the measure. His portrait is his game model in the
     Idle pose, framed like the others but seen from 8 deg to his right, so the TUNA print on his shirt reads.
   - `public/models/radbro4764.glb` wears his katana (1.03 m) on the left hip as its own rigid node
